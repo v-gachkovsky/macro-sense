@@ -94,6 +94,9 @@ local function Row(i)
     r:SetScript("OnEnter", function() if not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end end)
     r:SetScript("OnLeave", function() r.bg:SetShown(r.selected); r.bg:SetAlpha(1) end)
     r:SetScript("OnClick", function() Window.Select(r.index) end)
+    -- Drag a macro onto an action bar, like in the Blizzard macro window.
+    r:RegisterForDrag("LeftButton")
+    r:SetScript("OnDragStart", function() Window.Pickup(r.index) end)
     ns.OnStyle(function(s) r.bg:SetColorTexture(ns.RGB(s.selection)) end)
     return r
 end
@@ -212,6 +215,13 @@ function Window.Save()
     iconTex:SetTexture(ns.IconTexture(state.icon))
     Window.RefreshList()
     UpdateStatus()
+end
+
+-- Put a macro on the cursor, to drop on an action bar. A new macro has to be saved first.
+function Window.Pickup(index)
+    if not index then return ns.Print("save the macro first, then drag it to an action bar") end
+    if InCombatLockdown() then return ns.Print("action bars cannot be changed in combat") end
+    PickupMacro(index)
 end
 
 -- Bindings or action bars changed.
@@ -388,6 +398,15 @@ local function Build()
     local iconFrame = CreateFrame("Button", "MacroSenseIconButton", main, "BackdropTemplate")
     iconFrame:SetSize(38, 38)
     iconFrame:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    iconFrame:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Click: choose an icon", 1, 1, 1)
+        GameTooltip:AddLine("Drag: put the macro on an action bar", 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    iconFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    iconFrame:RegisterForDrag("LeftButton")
+    iconFrame:SetScript("OnDragStart", function() Window.Pickup(state.index) end)
     iconFrame:SetScript("OnClick", function()
         if ns.IconPicker.IsShown() then return ns.IconPicker.Close() end
         ns.IconPicker.Open(frame, state.icon, function(icon)
@@ -408,7 +427,9 @@ local function Build()
     nameBox:SetScript("OnTextChanged", function() UpdateStatus() end)
     local nameHint = ns.Text(main, 11, "dim")
     nameHint:SetPoint("LEFT", nameBox, "RIGHT", 10, 0)
-    nameHint:SetText("click the icon to change it")
+    nameHint:SetText("click or drag the icon")
+    nameHint:SetPoint("RIGHT", main, "RIGHT", -12, 0)
+    nameHint:SetWordWrap(false)
 
     -- Status bar: position, length, Save / Revert.
     local bar = CreateFrame("Frame", nil, main, "BackdropTemplate")
