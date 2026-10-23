@@ -32,8 +32,10 @@ MacroSense is in the addon menu by the minimap too.
 
 ## Installation
 
-Copy the `MacroSense` folder into `World of Warcraft/<client>/Interface/AddOns/`, or install it from
-CurseForge once it is published. For development, symlink the folder from this repository instead.
+Install it from [CurseForge](https://www.curseforge.com/wow/addons/macro-sense), or download the zip from
+[Releases](https://github.com/v-gachkovsky/macro-sense/releases) and unpack it into
+`World of Warcraft/<client>/Interface/AddOns/`. For development, symlink the `MacroSense` folder from this
+repository instead.
 
 ## Autocomplete
 
