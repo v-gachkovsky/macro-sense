@@ -1,0 +1,184 @@
+-- Game data for completion: registered slash commands and the spellbook. Cached until the game says it changed.
+local _, ns = ...
+
+local commandCache, spellCache, itemCache
+
+-- The Mac client also knows the Command key.
+if IsMacClient and IsMacClient() then
+    table.insert(ns.data.modifiers, { name = "cmd", hint = "Mac" })
+end
+
+------------------------------------------------------------------------
+-- Slash commands
+------------------------------------------------------------------------
+local hints = {}
+for _, c in ipairs(ns.data.commands) do hints[c.name] = c.hint end
+
+-- Every alias of a command key: SLASH_CAST1 = "/cast", SLASH_CAST2 = "/spell", ...
+local function aliases(key)
+    local out, i = {}, 1
+    while _G["SLASH_" .. key .. i] do
+        out[#out + 1] = _G["SLASH_" .. key .. i]:gsub("^/", ""):lower()
+        i = i + 1
+    end
+    return out
+end
+
+-- Localized aliases of the action commands go to the parser (/zaubern = /cast in German clients).
+local ACTION_KEYS = {
+    CAST = "cast", USE = "use", CASTSEQUENCE = "castsequence", CASTRANDOM = "castrandom",
+    USERANDOM = "userandom", CANCELAURA = "cancelaura", EQUIP = "equip", EQUIP_TO_SLOT = "equipslot",
+}
+function ns.RegisterActionCommands()
+    for key, base in pairs(ACTION_KEYS) do
+        for _, name in ipairs(aliases(key)) do ns.Parser.actionCommands[name] = base end
+    end
+end
+
+function ns.sources.commands()
+    if commandCache then return commandCache end
+    local seen, out = {}, {}
+    local function add(name)
+        if not seen[name] and not name:find("%s") then
+            seen[name] = true
+            out[#out + 1] = { name = name, hint = hints[name] }
+        end
+    end
+    -- Common macro commands first, then everything the game and addons registered.
+    for _, c in ipairs(ns.data.commands) do add(c.name) end
+    local extra = {}
+    -- Chat types (/say) and emotes (/dance) are not in SlashCmdList.
+    for _, cmdList in ipairs({ SecureCmdList or {}, SlashCmdList, ChatTypeInfo or {} }) do
+        for key in pairs(cmdList) do
+            for _, name in ipairs(aliases(key)) do extra[#extra + 1] = name end
+        end
+    end
+    for i = 1, 1000 do
+        if _G["EMOTE" .. i .. "_TOKEN"] then
+            for j = 1, 10 do
+                local cmd = _G["EMOTE" .. i .. "_CMD" .. j]
+                if cmd then extra[#extra + 1] = cmd:gsub("^/", ""):lower() end
+            end
+        end
+    end
+    table.sort(extra)
+    for _, name in ipairs(extra) do add(name) end
+    commandCache = out
+    return out
+end
+
+-- Highlighting marks commands the game does not know.
+local commandSet, commandSetFor
+function ns.Highlight.isCommand(name)
+    local list = ns.sources.commands()
+    if commandSetFor ~= list then
+        commandSet, commandSetFor = {}, list
+        for _, c in ipairs(list) do commandSet[c.name] = true end
+    end
+    return commandSet[name] or false
+end
+
+------------------------------------------------------------------------
+-- Spellbook (Retail C_SpellBook, older flavors GetSpellBookItem*)
+------------------------------------------------------------------------
+local function retailSpells(add)
+    local bank = Enum.SpellBookSpellBank.Player
+    for tab = 1, C_SpellBook.GetNumSpellBookSkillLines() do
+        local line = C_SpellBook.GetSpellBookSkillLineInfo(tab)
+        if line and not line.shouldHide then
+            for slot = line.itemIndexOffset + 1, line.itemIndexOffset + line.numSpellBookItems do
+                local item = C_SpellBook.GetSpellBookItemInfo(slot, bank)
+                if item and item.itemType == Enum.SpellBookItemType.Spell and not item.isPassive then
+                    add(item.name, item.iconID, item.subName)
+                end
+            end
+        end
+    end
+end
+
+local function classicSpells(add)
+    local book = BOOKTYPE_SPELL or "spell"
+    for tab = 1, GetNumSpellTabs() do
+        local _, _, offset, count = GetSpellTabInfo(tab)
+        for slot = offset + 1, offset + count do
+            local kind = GetSpellBookItemInfo(slot, book)
+            if kind == "SPELL" and not IsPassiveSpell(slot, book) then
+                local name, sub = GetSpellBookItemName(slot, book)
+                add(name, GetSpellBookItemTexture(slot, book), sub)
+            end
+        end
+    end
+end
+
+function ns.sources.spells()
+    if spellCache then return spellCache end
+    local seen, out = {}, {}
+    -- Older flavors list every learned rank: one entry per name, its ranks ("Rank 1", ...) in spellbook order.
+    local function add(name, icon, sub)
+        if not name then return end
+        local spell = seen[name]
+        if not spell then
+            spell = { name = name, icon = icon, ranks = {} }
+            seen[name] = spell
+            out[#out + 1] = spell
+        end
+        if sub and sub ~= "" then table.insert(spell.ranks, sub) end
+    end
+    if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
+        retailSpells(add)
+    else
+        classicSpells(add)
+    end
+    table.sort(out, function(a, b) return a.name < b.name end)
+    spellCache = out
+    return out
+end
+
+------------------------------------------------------------------------
+-- Items in bags and equipped gear
+------------------------------------------------------------------------
+local Container = C_Container or {}
+local NumSlots = Container.GetContainerNumSlots or GetContainerNumSlots
+local ItemLink = Container.GetContainerItemLink or GetContainerItemLink
+local ItemSpell = C_Item and C_Item.GetItemSpell or GetItemSpell
+local Equippable = C_Item and C_Item.IsEquippableItem or IsEquippableItem
+local ItemIcon = C_Item and C_Item.GetItemIconByID or GetItemIcon
+local ItemCount = C_Item and C_Item.GetItemCount or GetItemCount
+local LAST_BAG = (NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4)
+
+-- "[Name]" from a link, without quality / texture markup (crafted reagents carry an atlas icon).
+local function linkName(link)
+    local name = link and link:match("%[(.-)%]")
+    return name and name:gsub("|A.-|a", ""):gsub("|T.-|t", ""):match("^%s*(.-)%s*$")
+end
+
+function ns.sources.items()
+    if itemCache then return itemCache end
+    local seen, out = {}, {}
+    local function add(link, where)
+        local name = linkName(link)
+        if not name or name == "" or seen[name] then return end
+        seen[name] = true
+        local id = tonumber(link:match("item:(%d+)"))
+        local count = id and ItemCount(id) or 0
+        out[#out + 1] = {
+            name = name, icon = id and ItemIcon(id),
+            hint = where == "equipped" and "equipped" or (count > 1 and ("x" .. count) or "item"),
+            usable = ItemSpell(link) ~= nil,
+            equippable = Equippable(link) and true or false,
+        }
+    end
+    for slot = 1, 19 do add(GetInventoryItemLink("player", slot), "equipped") end
+    for bag = 0, LAST_BAG do
+        for slot = 1, NumSlots(bag) or 0 do add(ItemLink(bag, slot), "bag") end
+    end
+    table.sort(out, function(a, b) return a.name < b.name end)
+    itemCache = out
+    return out
+end
+
+function ns.InvalidateSources(what)
+    if not what or what == "commands" then commandCache = nil end
+    if not what or what == "spells" then spellCache = nil end
+    if not what or what == "items" then itemCache = nil end
+end

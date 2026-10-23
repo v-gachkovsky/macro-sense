@@ -1,0 +1,129 @@
+local _, ns = ...
+ns = ns or {}
+
+-- Static completion data. `arg` = the condition takes a value ("mod:" opens modifier completion).
+-- Conditions missing in some game versions are harmless: the game just ignores them.
+ns.data = {
+    meta = {
+        { name = "showtooltip", hint = "icon + tooltip of a spell" },
+        { name = "show",        hint = "icon of a spell" },
+    },
+
+    -- Fallback list; Core adds every slash command registered in the game (Blizzard and addons).
+    commands = {
+        { name = "cast",             hint = "cast a spell" },
+        { name = "use",              hint = "use an item or spell" },
+        { name = "castsequence",     hint = "cast spells in order" },
+        { name = "castrandom",       hint = "cast a random spell" },
+        { name = "userandom",        hint = "use a random item" },
+        { name = "stopcasting",      hint = "stop the current cast" },
+        { name = "stopmacro",        hint = "stop the macro" },
+        { name = "startattack",      hint = "start auto attack" },
+        { name = "stopattack",       hint = "stop auto attack" },
+        { name = "cancelaura",       hint = "remove a buff" },
+        { name = "cancelform",       hint = "leave the current form" },
+        { name = "target",           hint = "target a unit" },
+        { name = "targetenemy",      hint = "next enemy" },
+        { name = "targetfriend",     hint = "next friend" },
+        { name = "targetlasttarget", hint = "previous target" },
+        { name = "cleartarget",      hint = "clear the target" },
+        { name = "assist",           hint = "target of a unit" },
+        { name = "focus",            hint = "set focus" },
+        { name = "clearfocus",       hint = "clear focus" },
+        { name = "petattack",        hint = "pet attacks" },
+        { name = "petfollow",        hint = "pet follows" },
+        { name = "petstay",          hint = "pet stays" },
+        { name = "petpassive",       hint = "pet passive" },
+        { name = "petdefensive",     hint = "pet defensive" },
+        { name = "petassist",        hint = "pet assist" },
+        { name = "equip",            hint = "equip an item" },
+        { name = "equipslot",        hint = "equip into a slot" },
+        { name = "click",            hint = "click a button" },
+        { name = "dismount",         hint = "leave the mount" },
+        { name = "leavevehicle",     hint = "leave the vehicle" },
+        { name = "run",              hint = "run Lua" },
+        { name = "script",           hint = "run Lua" },
+        { name = "say",              hint = "chat" },
+        { name = "yell",             hint = "chat" },
+        { name = "party",            hint = "chat" },
+        { name = "raid",             hint = "chat" },
+        { name = "emote",            hint = "chat" },
+        { name = "whisper",          hint = "chat" },
+    },
+
+    conditions = {
+        { name = "combat",           hint = "in combat" },
+        { name = "nocombat",         hint = "out of combat" },
+        { name = "mod",              hint = "modifier held", arg = true },
+        { name = "nomod",            hint = "no modifier held", arg = true },
+        { name = "harm",             hint = "unit is hostile" },
+        { name = "help",             hint = "unit is friendly" },
+        { name = "exists",           hint = "unit exists" },
+        { name = "noexists",         hint = "unit does not exist" },
+        { name = "dead",             hint = "unit is dead" },
+        { name = "nodead",           hint = "unit is alive" },
+        { name = "@",                hint = "target unit", insert = "@" },
+        { name = "target=",          hint = "target unit" },
+        { name = "stance",           hint = "stance / form", arg = true },
+        { name = "form",             hint = "stance / form", arg = true },
+        { name = "noform",           hint = "no form" },
+        { name = "stealth",          hint = "stealthed" },
+        { name = "mounted",          hint = "on a mount" },
+        { name = "flying",           hint = "flying" },
+        { name = "flyable",          hint = "flying allowed" },
+        { name = "advflyable",       hint = "skyriding allowed" },
+        { name = "swimming",         hint = "swimming" },
+        { name = "indoors",          hint = "indoors" },
+        { name = "outdoors",         hint = "outdoors" },
+        { name = "resting",          hint = "in a rested area" },
+        { name = "channeling",       hint = "channeling a spell", arg = true },
+        { name = "group",            hint = "in a group", arg = true },
+        { name = "pet",              hint = "pet is out", arg = true },
+        { name = "nopet",            hint = "no pet" },
+        { name = "spec",             hint = "active specialization", arg = true },
+        { name = "known",            hint = "spell is known", arg = true },
+        { name = "talent",           hint = "talent row/column", arg = true },
+        { name = "pvptalent",        hint = "pvp talent", arg = true },
+        { name = "equipped",         hint = "item type equipped", arg = true },
+        { name = "worn",             hint = "item type equipped", arg = true },
+        { name = "button",           hint = "mouse button", arg = true },
+        { name = "btn",              hint = "mouse button", arg = true },
+        { name = "actionbar",        hint = "action bar page", arg = true },
+        { name = "bar",              hint = "action bar page", arg = true },
+        { name = "bonusbar",         hint = "bonus bar", arg = true },
+        { name = "extrabar",         hint = "extra action bar" },
+        { name = "overridebar",      hint = "override bar" },
+        { name = "possessbar",       hint = "possess bar" },
+        { name = "vehicleui",        hint = "in a vehicle" },
+        { name = "unithasvehicleui", hint = "unit in a vehicle" },
+        { name = "canexitvehicle",   hint = "can leave vehicle" },
+        { name = "petbattle",        hint = "in a pet battle" },
+        { name = "cursor",           hint = "holding something on cursor" },
+    },
+
+    modifiers = {
+        { name = "shift" }, { name = "ctrl" }, { name = "alt" },
+    },
+
+    -- Values for "btn:" / "button:".
+    buttons = {
+        { name = "1", hint = "left" }, { name = "2", hint = "right" }, { name = "3", hint = "middle" },
+        { name = "4" }, { name = "5" },
+    },
+
+    units = {
+        { name = "player" }, { name = "target" }, { name = "focus" }, { name = "mouseover" },
+        { name = "cursor", hint = "ground at cursor" }, { name = "pet" }, { name = "none", hint = "no target" },
+        { name = "targettarget" }, { name = "focustarget" }, { name = "pettarget" }, { name = "mouseovertarget" },
+        { name = "vehicle" },
+    },
+}
+
+-- Numbered units: party1-4, raid1-40, ...
+for _, u in ipairs({ { "party", 4 }, { "partypet", 4 }, { "arena", 5 }, { "boss", 5 }, { "raid", 40 } }) do
+    for i = 1, u[2] do
+        table.insert(ns.data.units, { name = u[1] .. i })
+    end
+end
+
+return ns.data
