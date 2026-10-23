@@ -391,10 +391,17 @@ do
     local n = underlines()
     check("error underlined", n == 1, n)
     check("error in status", statusError():find('unknown condition "harmm"') ~= nil, statusError())
+    local function saveAlert()
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == "Save" then return o.alert:IsShown() end
+        end
+    end
+    check("save shows the alert icon", saveAlert() == true)
     check("cursor kept after measuring", rawCursor() == #raw(), rawCursor())
     ns.Window.Revert()
     NextFrame()
     check("no errors after revert", underlines() == 0 and statusError() == "", statusError())
+    check("no alert icon without errors", saveAlert() == false)
 
     -- The game reports cursor positions a frame late: underlines come from text widths instead.
     cursorEventsLate = true

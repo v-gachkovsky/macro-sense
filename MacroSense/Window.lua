@@ -57,8 +57,9 @@ local function UpdateStatus()
         local keys = ns.Shortcuts.KeysFor(state.index, state.name)
         message = ns.Shortcuts.Message(ns.Shortcuts.Conflicts(raw, keys))
     end
-    -- Syntax errors come first.
+    -- Syntax errors come first; Save shows an alert icon too (saving is still allowed).
     local errors = code.errors or {}
+    saveBtn.alert:SetShown(#errors > 0)
     if #errors > 0 then
         local e = errors[1]
         local more = #errors > 1 and string.format(" (+%d more)", #errors - 1) or ""
@@ -446,6 +447,19 @@ local function Build()
     bar:SetHeight(36)
     ns.Backdrop(bar, "panel", "panel")
     saveBtn = ns.Button(bar, "Save", 90, Window.Save, true)
+    saveBtn.alert = saveBtn:CreateTexture(nil, "OVERLAY")
+    saveBtn.alert:SetSize(16, 16)
+    saveBtn.alert:SetPoint("RIGHT", saveBtn.label, "LEFT", -4, 0)
+    saveBtn.alert:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew") -- triangle with "!"
+    saveBtn.alert:Hide()
+    saveBtn:HookScript("OnEnter", function(self)
+        if not self.alert:IsShown() then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("The macro has syntax errors", 1, 0.3, 0.3)
+        GameTooltip:AddLine("It can still be saved.", 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    saveBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     saveBtn:SetPoint("RIGHT", -8, 0)
     revertBtn = ns.Button(bar, "Revert", 90, Window.Revert)
     revertBtn:SetPoint("RIGHT", saveBtn, "LEFT", -6, 0)
