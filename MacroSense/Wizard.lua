@@ -20,12 +20,13 @@ Wizard.commands = {
     { key = "pet", name = "Pet commands" },
 }
 
--- What the pet can be told, the same in every client. Attack takes units, Move to goes to the cursor.
+-- What the pet can be told. Attack takes units, Move to goes to the cursor; `since`: the expansion it came with
+-- (Move To with Cataclysm: Classic Era and TBC have the command, but their game does nothing with it).
 Wizard.petActions = {
     { key = "attack", name = "Attack", command = "/petattack" },
     { key = "follow", name = "Follow", command = "/petfollow" },
     { key = "stay", name = "Stay", command = "/petstay" },
-    { key = "moveto", name = "Move to the cursor", command = "/petmoveto" },
+    { key = "moveto", name = "Move to the cursor", command = "/petmoveto", since = 3 },
     { key = "passive", name = "Passive", command = "/petpassive" },
     { key = "defensive", name = "Defensive", command = "/petdefensive" },
     { key = "aggressive", name = "Aggressive", command = "/petaggressive" },
@@ -33,6 +34,15 @@ Wizard.petActions = {
 }
 local PET_COMMANDS = {}
 for _, a in ipairs(Wizard.petActions) do PET_COMMANDS[a.key] = a.command end
+
+-- The pet's commands a game has: `expansion` is the client's (nil: all of them).
+function Wizard.PetActions(expansion)
+    local out = {}
+    for _, a in ipairs(Wizard.petActions) do
+        if not (expansion and a.since and expansion < a.since) then out[#out + 1] = a end
+    end
+    return out
+end
 -- A key held tells the pet this unless chosen otherwise.
 local PET_KEYS = { shift = "follow", ctrl = "stay", alt = "passive", cmd = "defensive" }
 

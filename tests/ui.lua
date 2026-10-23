@@ -2009,6 +2009,16 @@ do
     check("wizard: no units without an attack", shown() == "/petfollow [nomod:shift/ctrl]\n"
         .. "/petattack [mod:shift,@focus,harm,nodead]\n/petmoveto [mod:ctrl,@cursor]"
         and MacroSenseWizard.height == tall - 68, shown())
+    -- Classic Era and TBC have /petmoveto, but their game does nothing with it: not offered there.
+    LE_EXPANSION_LEVEL_CURRENT = 1
+    Fire(C("pet"), "OnClick")
+    check("wizard: no Move To before Cataclysm", menuItem("Follow") ~= nil and menuItem("Move to the cursor") == nil)
+    Fire(C("pet"), "OnClick")
+    LE_EXPANSION_LEVEL_CURRENT = 4
+    Fire(C("pet"), "OnClick")
+    check("wizard: Move To from Cataclysm on", menuItem("Move to the cursor") ~= nil)
+    Fire(C("pet"), "OnClick")
+    LE_EXPANSION_LEVEL_CURRENT = nil
     Fire(C("shift"), "OnClick")
     Fire(C("ctrl"), "OnClick")
     pick(C("command"), "/cast")
@@ -2061,6 +2071,22 @@ do
     ns.Window.SetScope("general")
     ns.Window.Select(1)
     NextFrame()
+end
+
+-- A command the client has but its game does nothing with: /petmoveto before Cataclysm is a warning.
+do
+    local function warned(raw)
+        local e = ns.Highlight.Errors(raw)[1]
+        return e and e.severity == "warning" and e.short or nil
+    end
+    LE_EXPANSION_LEVEL_CURRENT = 1
+    check("petmoveto: a warning in TBC", warned("/petmoveto [@cursor]") == "not in this game version",
+        warned("/petmoveto [@cursor]"))
+    check("petmoveto: other commands are fine", #ns.Highlight.Errors("/target party1") == 0)
+    LE_EXPANSION_LEVEL_CURRENT = 4
+    check("petmoveto: fine from Cataclysm on", warned("/petmoveto [@cursor]") == nil)
+    LE_EXPANSION_LEVEL_CURRENT = nil
+    check("petmoveto: fine where the version is not known", warned("/petmoveto") == nil)
 end
 
 -- Theme switch recolors without touching the text.

@@ -20,6 +20,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Search by first letters**: names of several words come up by the first letters of their words: `da`
   finds Demon Armor, `swp` Shadow Word: Pain, `ca` Curse of Agony (small words may be left out). Those come
   first in the list, then the names that start with what you typed, then the rest.
+- A command the game version has but does nothing with is a warning: `/petmoveto` in Classic Era and TBC,
+  where the pet's Move To is not in the game yet (it came with Cataclysm). The wizard doesn't offer it there.
 
 ### Fixed
 - Picking `nomod` from the suggestions no longer adds `:` after it: `[nomod]` alone is how it is used, and

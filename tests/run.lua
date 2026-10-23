@@ -878,6 +878,9 @@ do
     check("wizard units: /target, by name or units, not your target", keys(W.Units("target", "first"))
         == "none,mouseover,focus,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
         keys(W.Units("target", "first")))
+    check("wizard pet: Move To only from Cataclysm on (Classic Era 0, TBC 1)", not keys(W.PetActions(1)):find("moveto")
+        and keys(W.PetActions(3)):find("moveto") ~= nil and keys(W.PetActions(nil)):find("moveto") ~= nil
+        and keys(W.PetActions(0)):find("^attack,follow,stay,passive") ~= nil, keys(W.PetActions(1)))
     check("wizard units: the pet attacks neither the cursor, you nor itself", keys(W.Units("pet", "first"))
         == "default,target,mouseover,focus,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
         keys(W.Units("pet", "first")))

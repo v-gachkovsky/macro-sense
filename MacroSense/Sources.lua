@@ -117,6 +117,30 @@ function ns.sources.commands()
     return out
 end
 
+-- Commands every client has, but the game only carries out from an expansion on: the pet's Move To came with
+-- Cataclysm (3). LE_EXPANSION_LEVEL_CURRENT is the client's: 0 Classic Era, 1 TBC, 4 Mists of Pandaria.
+local LATER = { PET_MOVE_TO = 3 }
+
+-- The expansion a command (any of its names) came with, or nil.
+function ns.CommandSince(name)
+    for key, since in pairs(LATER) do
+        for _, alias in ipairs(aliases(key)) do
+            if alias == name then return since end
+        end
+    end
+end
+
+-- Whether this client's game carries out what came with `since` (unknown clients do).
+function ns.HasExpansion(since)
+    return not since or (LE_EXPANSION_LEVEL_CURRENT or since) >= since
+end
+
+function ns.Highlight.checkCommand(name)
+    if ns.HasExpansion(ns.CommandSince(name)) then return nil end
+    return string.format('"/%s" does nothing in this version of the game (it came with a later one)', name),
+        "not in this game version"
+end
+
 -- Highlighting marks commands the game does not know.
 local commandSet, commandSetFor
 function ns.Highlight.isCommand(name)

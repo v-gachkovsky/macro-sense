@@ -132,6 +132,8 @@ an empty `[]` removes both.
 - `/click`: a name no button has now is a warning (an addon may make it later), and so is a frame that is
   not a button; a misspelled mouse button (`RigthButton`) gets a fix; `down` as the last word is a warning,
   since the game reads it as no (`true` clicks on key press).
+- A command this game version has but does nothing with is a warning: `/petmoveto` in Classic Era and TBC
+  (the pet's Move To came with Cataclysm).
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
   yellow name; hover it to see the issues. The marks follow the saved text.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,

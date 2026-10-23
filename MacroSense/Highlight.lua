@@ -14,6 +14,9 @@ Highlight.checkAction = nil
 -- Set by Sources: function(name) -> nil, or what is wrong with the button "/click name" would click (message,
 -- short form).
 Highlight.checkClick = nil
+-- Set by Sources: function(name) -> nil, or why a command this client has does nothing in its game (message,
+-- short form). A warning.
+Highlight.checkCommand = nil
 
 local UNIT_ARGS = { target = true, tar = true, focus = true, assist = true, a = true }
 local LUA_KEYWORDS = {}
@@ -329,7 +332,9 @@ local function lineSpans(line, base, add)
     local name = cmd:lower()
     local known = name == "" or not Highlight.isCommand or Highlight.isCommand(name)
     if known then
-        add(cmdFrom, cmdTo, "command")
+        local problem, short
+        if Highlight.checkCommand and name ~= "" then problem, short = Highlight.checkCommand(name) end
+        add(cmdFrom, cmdTo, "command", problem, "warning", short and { short = short })
     else
         add(cmdFrom, cmdTo, "error", string.format('unknown command "/%s"', cmd))
     end

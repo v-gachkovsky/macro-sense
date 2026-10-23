@@ -479,7 +479,9 @@ local function Build()
     -- What the pet does without a key.
     blocks.pet = Block(34)
     Text(blocks.pet, "Pet", PAD, -5)
-    Choice(blocks.pet, "pet", 150, W.petActions, function() return spec.pet end, function(action)
+    -- Only what this game has (no Move To before Cataclysm).
+    local function petActions() return W.PetActions(LE_EXPANSION_LEVEL_CURRENT) end
+    Choice(blocks.pet, "pet", 150, petActions, function() return spec.pet end, function(action)
         spec.pet = action
         Arrange()
     end):SetPoint("TOPLEFT", X, -1)
@@ -519,7 +521,7 @@ local function Build()
         box:SetPoint("TOPLEFT", X, y)
         controls[key .. "Cast"] = box
         local row = { y = y, box = box, word = Text(blocks.keys, "then", X + 284, y - 5, "dim") }
-        row.pet = Choice(blocks.keys, key .. "Pet", 150, W.petActions, function() return spec.keys[key].pet end,
+        row.pet = Choice(blocks.keys, key .. "Pet", 150, petActions, function() return spec.keys[key].pet end,
             function(action)
                 spec.keys[key].pet = action
                 Arrange()
