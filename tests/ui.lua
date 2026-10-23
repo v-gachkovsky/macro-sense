@@ -106,7 +106,8 @@ UIParent = New("Frame")
 ------------------------------------------------------------------------
 function GetTime() return now end
 function IsMacClient() return true end
-C_AddOns = { IsAddOnLoaded = function() return false end }
+C_AddOns = { IsAddOnLoaded = function() return false end, GetAddOnMetadata = function() return "@project-version@" end }
+function GetBuildInfo() return "12.1.5", "60000", "Oct 1 2026", 120105 end
 C_Timer = { After = function(_, fn) timers[#timers + 1] = fn end }
 function IsControlKeyDown() return false end
 function IsShiftKeyDown() return false end
@@ -218,6 +219,17 @@ local function Send(name, ...)
 end
 Send("ADDON_LOADED", "MacroSense")
 Send("PLAYER_LOGIN")
+
+-- The early-development note shows once per version.
+local function printedWith(text)
+    for _, p in ipairs(printed) do if p:find(text, 1, true) then return true end end
+end
+check("welcome note on first login", printedWith("early development"))
+local count = #printed
+Send("PLAYER_LOGIN")
+check("welcome note only once per version", #printed == count, #printed - count)
+SlashCmdList.MACROSENSE("bug")
+check("/ms bug prints versions", printedWith("MacroSense dev, WoW 12.1.5 (120105), Mac"))
 
 CreateMacro("Nuke", 1, "#showtooltip\n/cast Fireball", false)
 ns.Window.Toggle()
