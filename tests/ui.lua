@@ -442,6 +442,38 @@ do
     NextFrame()
 end
 
+-- Backspace like the game does it: removes the unit before the cursor, a character or a whole color code.
+local function Backspace()
+    Fire(edit, "OnKeyDown", "BACKSPACE")
+    local t, c = edit.text, edit.cursor
+    local cut = 1
+    if t:sub(c - 1, c) == "|r" then cut = 2
+    elseif c >= 10 and t:sub(c - 9, c):find("^|c%x%x%x%x%x%x%x%x$") then cut = 10 end
+    edit.text = t:sub(1, c - cut) .. t:sub(c + 1)
+    edit:SetCursorPosition(c - cut)
+    Fire(edit, "OnTextChanged", true)
+    NextFrame()
+end
+edit:SetCursorPosition(#edit.text)
+Type("\n/cast [")
+check("pair typed", raw():sub(-8) == "/cast []", raw():sub(-8))
+Backspace()
+check("backspace in [] removes both", raw():sub(-7) == "\n/cast ", raw():sub(-8))
+check("deleting does not open the list", not ns.Popup:IsShown())
+-- If the cursor sits after a color code, Backspace takes the code: the character still goes.
+Type("[")
+edit:SetCursorPosition(edit.cursor + 12) -- after "[", its "|r" and the "|cffxxxxxx" of "]"
+Backspace()
+check("code-only backspace still removes the pair", raw():sub(-7) == "\n/cast ", raw():sub(-8))
+Type("Fire")
+check("typing after deleting works", raw():sub(-10) == "/cast Fire", raw():sub(-10))
+check("list opens again when typing", ns.Popup:IsShown())
+Backspace()
+check("an open list follows deletes", ns.Popup:IsShown() and raw():sub(-3) == "Fir")
+Key("ESCAPE", "OnEscapePressed")
+ns.Window.Revert()
+NextFrame()
+
 -- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").
 edit:SetCursorPosition(#edit.text)
 Type("\n/cast [@mouse")

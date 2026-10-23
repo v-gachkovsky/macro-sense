@@ -292,17 +292,18 @@ function Highlight.ToRaw(colored, cursor)
     return raw
 end
 
--- Cursor in raw text -> cursor in colored text (after any codes at that spot, so typing joins the next token).
+-- Cursor in raw text -> cursor in colored text: right after the visible character before it, before the
+-- codes that follow. Then Backspace removes that character, not an invisible color code.
 function Highlight.ToColored(colored, rawCursor)
+    if rawCursor <= 0 then return 0 end
     local raw, i = 0, 1
     while i <= #colored do
         local code = codeAt(colored, i)
         if code then
             i = i + code
-        elseif raw == rawCursor then
-            break
         else
             raw, i = raw + 1, i + 1
+            if raw == rawCursor then break end
         end
     end
     return i - 1
