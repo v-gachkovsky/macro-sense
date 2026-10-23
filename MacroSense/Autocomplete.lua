@@ -6,15 +6,23 @@ local Popup = ns.Popup
 -- Attach to a CodeBox. Suggestions are built from a snapshot (text, cursor, context) so that
 -- accepting one never depends on what the key that accepted it did to the text.
 function ns.AttachAutocomplete(box)
-    local snap, pending, guard, accepted
+    local snap, pending, guard, accepted, deleting
+    local lastLen = 0 -- text length before the latest change
 
     local function Update()
         pending = false
         if not ns.db.enabled or not box.edit:HasFocus() then return Popup:Hide() end
         local raw, cursor = box:GetRaw(), box:GetRawCursor()
         local ctx = ns.Parser.GetContext(raw, cursor)
+        local previous = snap
         snap = { raw = raw, cursor = cursor, ctx = ctx }
         local items = ns.Completion.Get(ctx)
+        -- After a delete the list stays only for the same word ("Fire" -> "Fir"), not a new place.
+        if deleting then
+            deleting = false
+            local old = previous and previous.ctx
+            if not (ctx and old and ctx.kind == old.kind and ctx.start == old.start) then items = {} end
+        end
         -- Right after a suggestion went in, open the list only for a next step ("cast " -> spells,
         -- "mod:" -> modifiers, a spell -> its ranks), not for longer words: "mouseover" -> "mouseovertarget".
         if accepted then
@@ -46,6 +54,8 @@ function ns.AttachAutocomplete(box)
     end
 
     box.onChange = function(raw, userInput)
+        local shorter = #raw < lastLen
+        lastLen = #raw
         if not userInput then return end
         accepted = nil
         if guard and guard.time == GetTime() and raw ~= guard.raw then
@@ -55,6 +65,9 @@ function ns.AttachAutocomplete(box)
         end
         guard = nil
         box:LockCursor(false)
+        -- Deleting does not open the list, like in an IDE.
+        if shorter and not Popup:IsShown() then return end
+        deleting = shorter
         Schedule()
     end
 
