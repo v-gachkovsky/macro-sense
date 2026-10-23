@@ -9,6 +9,7 @@ Parser.lua
 Data.lua
 Themes.lua
 Highlight.lua
+Editing.lua
 Completion.lua
 Sources.lua
 Shortcuts.lua

@@ -45,6 +45,7 @@ function ns.CreateCodeBox(parent, name)
         local raw = H.Strip(colored)
         if userInput then
             local cursor = H.ToRaw(colored, e:GetCursorPosition())
+            raw, cursor = ns.Editing.AutoPair(self.raw or "", raw, cursor)
             self:PushUndo()
             self:Render(raw, cursor)
         end
