@@ -1816,6 +1816,13 @@ do
     pick(C("shiftThen"), "Your target")
     check("wizard: a key falls back too", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead]"
         .. "[mod:shift,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Frostbolt", shown())
+    check("wizard: Cmd too, on a Mac", C("cmd") ~= nil and C("cmd").label.text == "Cmd")
+    Fire(C("cmd"), "OnClick")
+    TypeIn(C("cmdCast"), "fire b")
+    Fire(C("cmdCast"), "OnEnterPressed")
+    check("wizard: Cmd casts another spell", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead]"
+        .. "[mod:shift,harm,nodead] Polymorph; [mod:cmd] Fire Blast; [@mouseover,harm,nodead][] Frostbolt", shown())
+    Fire(C("cmd"), "OnClick")
     check("wizard: the trinkets by what is in the slot", C("trinket1").label.text == "Use trinket 1: Lucky Charm"
         and C("trinket2").label.text == "Use trinket 2: empty", C("trinket1").label.text)
     -- A long name is cut to stay in the window.

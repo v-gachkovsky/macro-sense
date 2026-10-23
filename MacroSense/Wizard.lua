@@ -25,7 +25,7 @@ Wizard.units = {
     { key = "arena3", name = "Arena enemy 3", filters = true },
     { key = "cursor", name = "At the cursor" },
 }
-Wizard.KEYS = { "shift", "ctrl", "alt" }
+Wizard.KEYS = { "shift", "ctrl", "alt", "cmd" } -- the form shows Cmd on a Mac only
 
 local filtered = {}
 for _, u in ipairs(Wizard.units) do filtered[u.key] = u.filters end

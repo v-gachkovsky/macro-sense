@@ -10,9 +10,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Macro wizard**: **New (Wizard)** over New / Copy / Delete opens a form for a new macro: the spell or item
   (by its name or the first letters of its words), on whom in order (mouseover, focus, your target, yourself,
   your pet, party members 1-4, target's target, arena enemies 1-3, the cursor, or as usual), friends, enemies
-  or anyone and alive only (set from the spell), another spell or unit on Shift / Ctrl / Alt (with a fallback unit of its own), and also: stop
-  your cast first, trinkets, auto attack, your pet. The macro shows as you choose; Create macro saves it under
-  a free name in the tab you pick and opens it in the editor.
+  or anyone and alive only (set from the spell), another spell or unit on Shift / Ctrl / Alt and Cmd on a Mac
+  (with a fallback unit of its own), and also: stop your cast first, trinkets, auto attack, your pet. The
+  macro shows as you choose; Create macro saves it under a free name in the tab you pick and opens it in the
+  editor.
 - **Search by first letters**: names of several words come up by the first letters of their words: `da`
   finds Demon Armor, `swp` Shadow Word: Pain, `ca` Curse of Agony (small words may be left out). Those come
   first in the list, then the names that start with what you typed, then the rest.

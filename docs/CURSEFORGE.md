@@ -26,7 +26,7 @@ Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** opens a 
 - **on whom, in order**: mouseover, focus, your target, yourself, your pet, party members 1-4, target's
   target, arena enemies 1-3, the cursor, or as usual
 - **friends, enemies or anyone**, alive only: set from the spell for you
-- **Shift, Ctrl, Alt**: another spell, or the same one on someone else, with a fallback of its own
+- **Shift, Ctrl, Alt** (and **Cmd** on a Mac): another spell, or the same one on someone else, with a fallback of its own
 - **and also**: stop your cast first, your trinkets, auto attack, your pet
 
 The macro shows as you choose; **Create macro** saves it and opens it in the editor.

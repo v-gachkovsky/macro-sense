@@ -788,6 +788,9 @@ do
         .. "[@mouseover,harm,nodead][] Fireball")
     expectText("keys: nothing after one that always holds", text({ action = heal, on = usual,
         keys = { shift = { on = { "player", "target" } } } }), "#showtooltip\n/cast [mod:shift,@player][] Flash Heal")
+    expectText("keys: Cmd on a Mac, after the others", text({ action = bolt, only = "enemies", on = usual,
+        keys = { shift = { action = sheep }, cmd = { action = kick, on = { "focus", "default" } } } }),
+        "#showtooltip\n/cast [mod:shift] Polymorph; [mod:cmd,@focus,harm,nodead][mod:cmd] Counterspell; Frostbolt")
     expectText("keys: a key alone", text({ keys = { ctrl = { action = sheep } } }), "#showtooltip\n/cast [mod:ctrl] Polymorph")
     expectText("keys: items only say /use", text({ action = stone, on = usual,
         keys = { shift = { action = { name = "Major Healing Potion", item = true } } } }),

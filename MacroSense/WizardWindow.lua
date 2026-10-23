@@ -11,7 +11,7 @@ local WIDTH, HEIGHT, PAD, LABEL = 560, 576, 14, 70
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
 local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
-local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt" }
+local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
 
 local frame, preview, counter, createBtn
 local controls = {} -- by name: what the tests drive and what starts over with each new form
@@ -261,6 +261,13 @@ local function FollowReaction(action)
 end
 
 local function Build()
+    -- Cmd is a key only on a Mac: its row there pushes the rest of the form down.
+    local keys = {}
+    for _, key in ipairs(W.KEYS) do
+        if key ~= "cmd" or (IsMacClient and IsMacClient()) then keys[#keys + 1] = key end
+    end
+    local below = (#keys - 3) * 32
+
     frame = CreateFrame("Frame", "MacroSenseWizard", UIParent, "BackdropTemplate")
     table.insert(UISpecialFrames, "MacroSenseWizard") -- Esc closes it
     frame:SetFrameStrata("HIGH")
@@ -268,7 +275,7 @@ local function Build()
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
     frame:EnableMouse(true)
-    frame:SetSize(WIDTH, HEIGHT)
+    frame:SetSize(WIDTH, HEIGHT + below)
     local pos = ns.db.wizard
     frame:SetPoint(pos and pos.point or "CENTER", UIParent, pos and pos.relPoint or "CENTER", pos and pos.x or 0,
         pos and pos.y or 20)
@@ -337,7 +344,7 @@ local function Build()
     -- Keys held: another spell or the same one, on units of their own, in the On row's columns.
     Text("With a key held", PAD, -195, "dim")
     Text("on", x + 158, -195, "dim")
-    for i, key in ipairs(W.KEYS) do
+    for i, key in ipairs(keys) do
         local y = -217 - (i - 1) * 32
         Check(key, KEY_NAMES[key], function() return spec.keys[key].active end,
             function(on) spec.keys[key].active = on end):SetPoint("TOPLEFT", PAD, y - 1)
@@ -351,26 +358,30 @@ local function Build()
         end
         Text("then", x + 284, y - 5, "dim")
     end
+    if controls.cmd then
+        Tip(controls.cmd, "Cmd", "On a key macOS uses with Cmd itself (Q quits the game, W, H, Tab, Space...) "
+            .. "macOS comes first: the editor warns when the macro sits on one.")
+    end
 
     -- Also.
-    Text("Also", PAD, -317, "dim")
+    Text("Also", PAD, -317 - below, "dim")
     Check("stopcasting", "Stop your cast first", function() return spec.stopcasting end,
-        function(on) spec.stopcasting = on end):SetPoint("TOPLEFT", PAD, -337)
+        function(on) spec.stopcasting = on end):SetPoint("TOPLEFT", PAD, -337 - below)
     Check("startattack", "Start auto attack", function() return spec.startattack end,
-        function(on) spec.startattack = on end):SetPoint("TOPLEFT", PAD, -361)
+        function(on) spec.startattack = on end):SetPoint("TOPLEFT", PAD, -361 - below)
     Check("petattack", "Your pet attacks your target", function() return spec.petattack end,
-        function(on) spec.petattack = on end):SetPoint("TOPLEFT", PAD, -385)
+        function(on) spec.petattack = on end):SetPoint("TOPLEFT", PAD, -385 - below)
     Check("trinket1", "Use trinket 1", function() return spec.trinket1 end,
-        function(on) spec.trinket1 = on end):SetPoint("TOPLEFT", PAD + 260, -337)
+        function(on) spec.trinket1 = on end):SetPoint("TOPLEFT", PAD + 260, -337 - below)
     Check("trinket2", "Use trinket 2", function() return spec.trinket2 end,
-        function(on) spec.trinket2 = on end):SetPoint("TOPLEFT", PAD + 260, -361)
+        function(on) spec.trinket2 = on end):SetPoint("TOPLEFT", PAD + 260, -361 - below)
     Tip(controls.stopcasting, "Stop your cast first",
         "For an interrupt or a save: it goes off at once, even in the middle of another cast.")
 
     -- The macro.
     local box = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    box:SetPoint("TOPLEFT", PAD, -419)
-    box:SetPoint("TOPRIGHT", -PAD, -419)
+    box:SetPoint("TOPLEFT", PAD, -419 - below)
+    box:SetPoint("TOPRIGHT", -PAD, -419 - below)
     box:SetHeight(100)
     ns.Backdrop(box, "bg", "border")
     preview = box:CreateFontString(nil, "OVERLAY")
