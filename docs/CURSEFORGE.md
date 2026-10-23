@@ -66,6 +66,13 @@ fires, and the icon `#showtooltip` shows. Hold Shift, Ctrl or Alt (Cmd on a Mac)
 summon another pet or point at a unit, and the notes change with it: you see every branch of a macro
 without casting anything. The game itself checks the conditions, exactly as when you press the key.
 
+## Shorten
+
+Hit the 255 character limit? **Shorten** writes the same macro in fewer characters and tells you how many
+it saves: `target=` becomes `@`, `[@mouseover,harm] Fear; Fear` becomes `[@mouseover,harm][]Fear`,
+`[pet:Succubus][pet:Incubus]` becomes `[pet:Succubus/Incubus]`, and spaces the game doesn't need go. The
+macro does exactly the same as before, and Ctrl+Z brings the old text back.
+
 ## Make it yours
 
 - **Seven color schemes**: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark.

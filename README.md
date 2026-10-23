@@ -99,6 +99,21 @@ mouseover unit: point at a unit in the world or at a unit frame to see the `@mou
 itself checks the conditions (`SecureCmdOptionParse`, what macros run with). Lines with syntax errors get
 no note. **Live preview** in the header turns it off; the text then takes the whole width.
 
+## Shorten
+
+Macros are limited to 255 characters. **Shorten** in the header writes the same macro in fewer characters
+and says how many it saves (`Shorten -41`):
+
+- `target=focus` becomes `@focus`; `modifier`, `button`, `actionbar`, `stance`, `equipped` become `mod`,
+  `btn`, `bar`, `form`, `worn` (also their `no` forms)
+- `[@mouseover,harm,nodead] Fear; Fear` becomes `[@mouseover,harm,nodead][]Fear`
+- `[pet:Succubus][pet:Incubus]` becomes `[pet:Succubus/Incubus]`, `[mod:alt] X; [mod:shift] X` becomes
+  `[mod:alt/shift]X` (only conditions that take alternatives, and not their `no` forms)
+- spaces the game doesn't need and empty lines go
+
+Chat, `/run`, commands of other addons and lines with errors stay as they are. Ctrl+Z (Cmd+Z on Mac)
+brings the old text back.
+
 ## Icons and action bars
 
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),
@@ -124,6 +139,7 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
   text. Pure Lua.
 - `MacroSense/Completion.lua`: ranks suggestions. Pure Lua.
 - `MacroSense/Spelling.lua`: the closest known name to a typo. Pure Lua.
+- `MacroSense/Shorten.lua`: the same macro in fewer characters. Pure Lua.
 - `MacroSense/Preview.lua`: what each line does now, for the live preview. Pure Lua; the game's condition
   check comes in from `Sources.lua` (`tests/fakeparse.lua` stands in for it in tests).
 - `MacroSense/Editing.lua`: auto-closing brackets. Pure Lua.
@@ -140,7 +156,7 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, schemes, shortcuts
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, schemes, shortcuts
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 

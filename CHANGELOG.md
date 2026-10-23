@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Shorten**: a button in the header writes the same macro in fewer characters and says how many it saves:
+  `target=` becomes `@`, long condition names become short ones (`modifier` -> `mod`, `stance` -> `form`,
+  ...), `[x] Fear; Fear` becomes `[x][]Fear`, `[pet:Succubus][pet:Incubus]` becomes
+  `[pet:Succubus/Incubus]`, and spaces the game doesn't need go. Chat, `/run`, other addons' commands and
+  lines with errors stay as they are; Ctrl+Z brings the old text back.
+
 ## [0.1.0-beta3] - 2026-10-23
 
 ### Added

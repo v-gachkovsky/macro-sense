@@ -14,6 +14,7 @@ Themes.lua
 Highlight.lua
 Spelling.lua
 Preview.lua
+Shorten.lua
 Editing.lua
 Completion.lua
 Sources.lua
