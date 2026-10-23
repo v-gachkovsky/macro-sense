@@ -1206,6 +1206,41 @@ do
     Send("UPDATE_MACROS")
 end
 
+-- Shorten: the button says how many characters it saves, a click shortens, Ctrl+Z brings the text back.
+do
+    local btn
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and tostring(o.label.text):find("^Shorten") then btn = o end
+    end
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    local long = "/cast [@mouseover,harm,nodead] Fireball; Fireball"
+    local shorter = "/cast [@mouseover,harm,nodead][]Fireball"
+    Type(long)
+    Key("ESCAPE", "OnEscapePressed")
+    NextFrame()
+    check("shorten: the button says what it saves", btn and btn.label.text == "Shorten -" .. (#long - #shorter)
+        and btn:IsEnabled(), btn and btn.label.text)
+    -- A line with an error is left alone, so it adds nothing.
+    Type("\n/cast [harmm] Fear; Fear")
+    Key("ESCAPE", "OnEscapePressed")
+    NextFrame()
+    check("shorten: lines with errors don't count", btn.label.text == "Shorten -" .. (#long - #shorter), btn.label.text)
+    Fire(btn, "OnClick")
+    NextFrame()
+    check("shorten: a click shortens", raw() == shorter .. "\n/cast [harmm] Fear; Fear", raw())
+    check("shorten: then nothing is left to save", btn.label.text == "Shorten" and not btn:IsEnabled(), btn.label.text)
+    IsControlKeyDown = function() return true end
+    Fire(edit, "OnKeyDown", "Z")
+    IsControlKeyDown = function() return false end
+    NextFrame()
+    check("shorten: undo brings the text back", raw() == long .. "\n/cast [harmm] Fear; Fear", raw())
+    check("shorten: and the button again", btn.label.text == "Shorten -" .. (#long - #shorter), btn.label.text)
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"

@@ -63,6 +63,13 @@ local function isSecure(name)
     return IsSecureCmd ~= nil and IsSecureCmd("/" .. name) and true or false
 end
 
+-- Commands whose text goes through the game's condition check: the action commands, /stopmacro and the
+-- other secure commands (/petattack, /target, ...).
+function ns.IsConditionalCommand(name)
+    local P = ns.Parser
+    return P.actionCommands[name] ~= nil or P.stopCommands[name] == true or isSecure(name)
+end
+
 local function secureNames()
     local keys, out = {}, {}
     for _, key in ipairs(SECURE_KEYS) do keys[key] = true end

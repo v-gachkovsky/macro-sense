@@ -17,6 +17,7 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, deleteBtn, tabs
+local shortenBtn
 
 local function MacroRange(scope)
     local general, character = GetNumMacros()
@@ -33,6 +34,40 @@ local function IsDirty()
     local body, name = code:GetRaw(), nameBox:GetText()
     if not state.index then return body ~= "" or name ~= "" or state.icon ~= NEW_ICON end
     return body ~= state.body or name ~= state.name or state.icon ~= state.savedIcon
+end
+
+------------------------------------------------------------------------
+-- Shorten: the same macro in fewer characters
+------------------------------------------------------------------------
+local shortened -- { raw, text }: the last text shortened and what it became
+
+local function Shortened(raw)
+    if not shortened or shortened.raw ~= raw then
+        -- Lines with syntax errors stay as they are.
+        local skip = {}
+        for _, e in ipairs(ns.Highlight.Errors(raw)) do
+            if e.severity == "error" then skip[e.line] = true end
+        end
+        shortened = { raw = raw, text = ns.Shorten.Text(raw, { conditional = ns.IsConditionalCommand, skip = skip }) }
+    end
+    return shortened.text
+end
+
+-- The button says how many characters it saves.
+local function UpdateShorten(raw)
+    local saved = Letters(raw) - Letters(Shortened(raw))
+    shortenBtn:SetEnabled(saved > 0)
+    shortenBtn.label:SetText(saved > 0 and string.format("Shorten -%d", saved) or "Shorten")
+end
+
+-- Undo brings the old text back.
+function Window.Shorten()
+    local raw = code:GetRaw()
+    local text = Shortened(raw)
+    if text == raw then return end
+    code:SetRaw(text, #text, true)
+    code:SetFocus()
+    code:CheckNow()
 end
 
 ------------------------------------------------------------------------
@@ -59,6 +94,7 @@ local function UpdateStatus()
     local countColor = letters > MAX_BODY and s.invalid or s.dim
     counter:SetText(string.format("Ln %d, Col %d    |cff%s%d / %d|r", line, col, countColor, letters, MAX_BODY))
     local dirty = IsDirty()
+    UpdateShorten(raw)
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
     revertBtn:SetEnabled(dirty and state.index ~= nil)
     deleteBtn:SetEnabled(state.index ~= nil)
@@ -552,10 +588,26 @@ local function Build()
     end)
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Shorten, left of the preview checkbox.
+    shortenBtn = ns.Button(main, "Shorten", 90, function() Window.Shorten() end)
+    shortenBtn:SetPoint("RIGHT", previewCheck, "LEFT", -12, 0)
+    shortenBtn:HookScript("OnEnter", function(self)
+        local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine("Shorten", 1, 1, 1)
+        GameTooltip:AddLine("The same macro in fewer characters: target= becomes @, modifier becomes mod, "
+            .. "[pet:Imp][pet:Felhunter] becomes [pet:Imp/Felhunter], [x] Fear; Fear becomes [x][]Fear, "
+            .. "and spaces the game doesn't need go.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(self:IsEnabled() and (undo .. " brings the old text back.") or "Nothing to shorten here.",
+            0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    shortenBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     local nameHint = ns.Text(main, 11, "dim")
     nameHint:SetPoint("LEFT", nameBox, "RIGHT", 10, 0)
     nameHint:SetText("click or drag the icon")
-    nameHint:SetPoint("RIGHT", previewCheck, "LEFT", -12, 0)
+    nameHint:SetPoint("RIGHT", shortenBtn, "LEFT", -12, 0)
     nameHint:SetWordWrap(false)
 
     -- Status bar: position, length, Save / Revert.

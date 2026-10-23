@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -479,6 +479,95 @@ do
     local results = P.Evaluate("/cast [@focus] Fear\n/cast [combat] Fear", { parse = fakeParse({ units = { focus = {} } }) })
     check("note colors", P.Note(results[1], noteColors) == "|cffaaaaaaFear|r|cffbbbbbb @focus|r", P.Note(results[1], noteColors))
     check("quiet note is dim", P.Note(results[2], noteColors) == "|cffddddddno match|r", P.Note(results[2], noteColors))
+end
+
+-- Shorten: the same macro in fewer characters.
+local conditionalSet = { stopcasting = true, target = true, focus = true, click = true, petattack = true,
+    petmoveto = true, petstay = true, petfollow = true }
+local function conditional(name)
+    return ns.Parser.actionCommands[name] ~= nil or ns.Parser.stopCommands[name] == true or conditionalSet[name] == true
+end
+local function short(body, skip) return ns.Shorten.Text(body, { conditional = conditional, skip = skip }) end
+local function expectShort(label, body, want, skip)
+    local got = short(body, skip)
+    check("shorten " .. label, got == want, "\n  got  " .. got .. "\n  want " .. want)
+end
+expectShort("target= becomes @", "/cast [target=focus,harm] Fear", "/cast [@focus,harm]Fear")
+expectShort("long condition names", "/cast [modifier:shift,nomodifier:ctrl,button:2,actionbar:1,stance:2,equipped:Shields] X",
+    "/cast [mod:shift,nomod:ctrl,btn:2,bar:1,form:2,worn:Shields]X")
+expectShort("spaces the game doesn't need", "/cast [ @mouseover , harm ] [mod: shift / ctrl] Fear ; Corruption  ",
+    "/cast [@mouseover,harm][mod:shift/ctrl]Fear;Corruption")
+expectShort("values keep their own spaces", "/cast [worn:Two-Handed Swords] Overpower", "/cast [worn:Two-Handed Swords]Overpower")
+expectShort("the same spell side by side", "/cast [@mouseover,harm,nodead] Fear; Fear", "/cast [@mouseover,harm,nodead][]Fear")
+expectShort("alternatives join", "/cast [mod:alt] Fear; [mod:shift] Fear", "/cast [mod:alt/shift]Fear")
+expectShort("pets join", "/cast [pet:Succubus,@mouseover,harm][pet:Incubus,@mouseover,harm] Seduction",
+    "/cast [pet:Succubus/Incubus,@mouseover,harm]Seduction")
+expectShort("in any order", "/cast [harm,pet:Imp][pet:Felhunter,harm] X", "/cast [harm,pet:Imp/Felhunter]X")
+expectShort("a group twice", "/cast [harm][harm] Fear", "/cast [harm]Fear")
+expectShort("not the no forms", "/cast [nomod:alt][nomod:shift] X", "/cast [nomod:alt][nomod:shift]X")
+expectShort("not other units", "/cast [@focus,harm][@target,harm] X", "/cast [@focus,harm][@target,harm]X")
+expectShort("not two differences", "/cast [mod:alt,pet:Imp][mod:shift,pet:Felhunter] X", "/cast [mod:alt,pet:Imp][mod:shift,pet:Felhunter]X")
+expectShort("not groups apart", "/cast [pet:Imp,@player][@focus][pet:Voidwalker,@player] X",
+    "/cast [pet:Imp,@player][@focus][pet:Voidwalker,@player]X")
+expectShort("not conditions without a list", "/cast [known:Fear][known:Howl of Terror] X", "/cast [known:Fear][known:Howl of Terror]X")
+expectShort("[] alone", "/cast [] Fear", "/cast Fear")
+expectShort("[] costs more than a short name", "/cast [mod] X; X", "/cast [mod]X;X")
+expectShort("sequence steps", "/castsequence reset=10 Corruption, Immolate , Shadow Bolt",
+    "/castsequence reset=10 Corruption,Immolate,Shadow Bolt")
+expectShort("random lists", "/castrandom Fear, Howl of Terror", "/castrandom Fear,Howl of Terror")
+expectShort("empty lines", "#showtooltip\n\n/cast Fear\n  \n", "#showtooltip\n/cast Fear")
+expectShort("#showtooltip", "#showtooltip [mod:alt] Fear; Corruption", "#showtooltip [mod:alt]Fear;Corruption")
+expectShort("#showtooltip alone", "#showtooltip ", "#showtooltip")
+expectShort("one space after the command", "/cast   Fear", "/cast Fear")
+expectShort("leading spaces stay", "  /cast [mod] Fear", "  /cast [mod]Fear")
+expectShort("commands without conditions", "/stopcasting  \n/petattack [mod:ctrl, harm]", "/stopcasting\n/petattack [mod:ctrl,harm]")
+for _, same in ipairs({ "/say hi ; [mod] x", "/run print( 1 )", "/dance  ", "hello ; world", "# a comment ; x",
+    "/cast [mod Fear", "/cast [[mod]] Fear", "/cast Fear [mod]" }) do
+    expectShort("leaves alone: " .. same, same, same)
+end
+expectShort("lines with errors stay", "/cast [harmm] Fear; Fear\n/cast [harm] Fear; Fear",
+    "/cast [harmm] Fear; Fear\n/cast [harm][]Fear", { [1] = true })
+-- The author's macros, shorter.
+expectShort("petSpells", fixtures.petSpells, "#showtooltip\n/cast [pet:Voidwalker,mod:alt]Sacrifice;[pet:Voidwalker]"
+    .. "Consume Shadows;[pet:Imp,@player]Fire Shield;[pet:Succubus/Incubus]Lash of Pain;[pet:Felhunter,mod:alt,@player]"
+    .. "[pet:Felhunter,@mouseover,exists][pet:Felhunter]Devour Magic")
+expectShort("petCC", fixtures.petCC, "#showtooltip\n/cast [pet:Felhunter,@mouseover,harm][pet:Felhunter]Spell Lock;"
+    .. "[pet:Succubus/Incubus,@mouseover,harm][pet:Succubus/Incubus]Seduction")
+expectShort("slow", fixtures.slow, "#showtooltip\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt]Curse of Tongues;"
+    .. "[@mouseover,harm,nodead][]Curse of Exhaustion")
+expectShort("petControl: nothing to do", fixtures.petControl, fixtures.petControl)
+-- Shortened, a macro does the same in every state (the stand-in for the game's check decides).
+do
+    local states = {
+        {}, { mods = { alt = true } }, { mods = { shift = true } }, { mods = { ctrl = true } }, { mods = { cmd = true } },
+        { mods = { alt = true, shift = true } }, { units = { mouseover = harmful } },
+        { units = { mouseover = { harm = true, dead = true } } }, { units = { mouseover = {}, focus = harmful } },
+        { mods = { alt = true }, units = { mouseover = harmful } }, { pet = "Felhunter" }, { pet = "Imp" },
+        { pet = "Succubus", units = { mouseover = harmful } }, { pet = "Incubus" },
+        { pet = "Voidwalker", mods = { alt = true } }, { combat = true, mods = { ctrl = true }, units = { target = harmful } },
+    }
+    local function notes(body, state)
+        local results, out = P.Evaluate(body, { parse = fakeParse(state) }), {}
+        for i = 1, results.n do
+            if results[i] then out[#out + 1] = P.Note(results[i], noteColors) end
+        end
+        return table.concat(out, " | ")
+    end
+    local bodies = {}
+    for name, body in pairs(fixtures) do bodies[name] = body end
+    bodies.alternatives = "/cast [mod:alt] Fear; [mod:shift] Fear; Corruption"
+    bodies.noForms = "/cast [nomod:alt][nomod:shift] Fear; Corruption"
+    bodies.units = "/cast [@focus,harm][@mouseover,harm][] Fear"
+    bodies.apart = "/cast [pet:Imp,@player][@focus,harm][pet:Felhunter,@player] Fear"
+    bodies.stop = "/stopmacro [combat]\n/cast [@mouseover,harm] Fear; Fear"
+    for name, body in pairs(bodies) do
+        local s = short(body)
+        local same = true
+        for _, state in ipairs(states) do
+            if notes(body, state) ~= notes(s, state) then same = false end
+        end
+        check("shortened does the same: " .. name, same and #s <= #body, s)
+    end
 end
 
 -- Every scheme colors every role and UI part.
