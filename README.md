@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/banner.png" width="560" alt="MacroSense"></p>
+<p align="center"><img src="docs/banner-v2.png" width="560" alt="MacroSense"></p>
 
 <p align="center">
   A macro editor for <b>World of Warcraft</b> that knows macros<br>
