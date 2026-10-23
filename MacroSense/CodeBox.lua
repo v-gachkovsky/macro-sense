@@ -48,7 +48,16 @@ function ns.CreateCodeBox(parent, name)
         local raw = H.Strip(colored)
         if userInput then
             local cursor = H.ToRaw(colored, e:GetCursorPosition())
-            raw, cursor = ns.Editing.AutoPair(self.raw or "", raw, cursor)
+            -- Backspace / Delete took an invisible color code instead of a character: remove the character.
+            local old = self.raw or ""
+            if raw == old and self.keyDownTime == GetTime() then
+                if self.keyDown == "BACKSPACE" and cursor > 0 then
+                    raw, cursor = raw:sub(1, cursor - 1) .. raw:sub(cursor + 1), cursor - 1
+                elseif self.keyDown == "DELETE" then
+                    raw = raw:sub(1, cursor) .. raw:sub(cursor + 2)
+                end
+            end
+            raw, cursor = ns.Editing.AutoPair(old, raw, cursor)
             self:PushUndo()
             self:Render(raw, cursor)
         end
@@ -82,6 +91,7 @@ function ns.CreateCodeBox(parent, name)
     edit:SetScript("OnEnterPressed", function() self:Key("ENTER", "script") end)
     edit:SetScript("OnArrowPressed", function(_, key) self:Key(key, "arrow") end)
     edit:SetScript("OnKeyDown", function(_, key)
+        self.keyDown, self.keyDownTime = key, GetTime()
         local mod = IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())
         if mod and key == "Z" then
             if IsShiftKeyDown() then self:Redo() else self:Undo() end
