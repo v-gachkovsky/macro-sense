@@ -18,7 +18,7 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, deleteBtn, tabs
-local shortenBtn, historyBtn, copyBtn
+local shortenBtn, historyBtn, copyBtn, search, noMatch
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
 local function MacroRange(scope)
@@ -282,33 +282,61 @@ local function Row(i)
     return r
 end
 
+-- Search: a macro matches by its name or its text, in any case.
+local function Query() return strtrim(search:GetText() or ""):lower() end
+
+local function Matches(q, name, body)
+    return q == "" or name:lower():find(q, 1, true) ~= nil or (body or ""):lower():find(q, 1, true) ~= nil
+end
+
+local function CountMatches(scope, q)
+    local first, last = MacroRange(scope)
+    local n = 0
+    for index = first, last do
+        local name, _, body = GetMacroInfo(index)
+        if name and Matches(q, name, body) then n = n + 1 end
+    end
+    return n
+end
+
 function Window.RefreshList()
     if not frame then return end
+    local q = Query()
     local first, last = MacroRange(state.scope)
     local n = 0
     for index = first, last do
-        n = n + 1
-        rows[n] = rows[n] or Row(n)
-        local r, name, icon, body = rows[n], GetMacroInfo(index)
-        r.index, r.selected = index, index == state.index
-        r.icon:SetTexture(ns.IconTexture(icon))
-        r.text:SetText(name)
-        -- Marks follow the saved text: the one being edited shows its issues in the editor.
-        r.severity, r.issues = MacroIssues(body)
-        local alert = r.severity == "error"
-        r.alert:SetShown(alert)
-        r.text:SetPoint("RIGHT", alert and r.alert or r, alert and "LEFT" or "RIGHT", alert and -4 or -6, 0)
-        r:Paint()
-        r.bg:SetShown(r.selected)
-        r.bg:SetAlpha(1)
-        r:Show()
+        local name, icon, body = GetMacroInfo(index)
+        if name and Matches(q, name, body) then
+            n = n + 1
+            rows[n] = rows[n] or Row(n)
+            local r = rows[n]
+            r.index, r.selected = index, index == state.index
+            r.icon:SetTexture(ns.IconTexture(icon))
+            r.text:SetText(name)
+            -- Marks follow the saved text: the one being edited shows its issues in the editor.
+            r.severity, r.issues = MacroIssues(body)
+            local alert = r.severity == "error"
+            r.alert:SetShown(alert)
+            r.text:SetPoint("RIGHT", alert and r.alert or r, alert and "LEFT" or "RIGHT", alert and -4 or -6, 0)
+            r:Paint()
+            r.bg:SetShown(r.selected)
+            r.bg:SetAlpha(1)
+            r:Show()
+        end
     end
     for i = n + 1, #rows do rows[i]:Hide() end
     list.child:SetHeight(math.max(n * ROW_H, 1))
+    noMatch:SetShown(n == 0 and q ~= "")
 
-    local general, character = GetNumMacros()
-    tabs.general.label:SetText(string.format("General  %d/%d", general, MAX_GENERAL))
-    tabs.character.label:SetText(string.format("Character  %d/%d", character, MAX_CHARACTER))
+    -- While searching, the tabs say how many match.
+    if q == "" then
+        local general, character = GetNumMacros()
+        tabs.general.label:SetText(string.format("General  %d/%d", general, MAX_GENERAL))
+        tabs.character.label:SetText(string.format("Character  %d/%d", character, MAX_CHARACTER))
+    else
+        tabs.general.label:SetText(string.format("General  (%d)", CountMatches("general", q)))
+        tabs.character.label:SetText(string.format("Character  (%d)", CountMatches("character", q)))
+    end
     for scope, tab in pairs(tabs) do tab.active = scope == state.scope; tab:Paint() end
 end
 
@@ -675,14 +703,45 @@ local function Build()
     end)
     copyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Search under the tabs: Enter opens the first match, Esc clears it.
+    search = ns.Input(side, 204, 40, "MacroSenseSearch")
+    search:SetPoint("TOPLEFT", 8, -32)
+    search:SetPoint("TOPRIGHT", -8, -32)
+    search:SetTextInsets(6, 24, 0, 0)
+    local placeholder = ns.Text(search, 12, "dim")
+    placeholder:SetPoint("LEFT", 6, 0)
+    placeholder:SetText("Search name or text")
+    local clear = ns.Button(search, "x", 18, function() search:SetText("") end)
+    clear:SetHeight(18)
+    clear:SetPoint("RIGHT", -3, 0)
+    clear:Hide()
+    search:SetScript("OnTextChanged", function(self)
+        local empty = self:GetText() == ""
+        placeholder:SetShown(empty)
+        clear:SetShown(not empty)
+        Window.RefreshList()
+    end)
+    search:SetScript("OnEscapePressed", function(self)
+        self:SetText("")
+        self:ClearFocus()
+    end)
+    search:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+        if rows[1] and rows[1]:IsShown() then Window.Select(rows[1].index) end
+    end)
+
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
-    list:SetPoint("TOPLEFT", 0, -30)
+    list:SetPoint("TOPLEFT", 0, -62)
     list:SetPoint("BOTTOMRIGHT", -13, 38)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)
     list:SetScrollChild(list.child)
     list:SetScript("OnSizeChanged", function(_, w) list.child:SetWidth(w) end)
+    noMatch = ns.Text(side, 12, "dim")
+    noMatch:SetPoint("TOP", list, "TOP", 0, -12)
+    noMatch:SetText("No macros match")
+    noMatch:Hide()
 
     -- Header: icon + name.
     local main = CreateFrame("Frame", nil, frame)
@@ -843,7 +902,13 @@ local function Build()
     code.edit:HookScript("OnTextChanged", UpdateStatus)
     code.edit:HookScript("OnCursorChanged", UpdateStatus)
     code.edit:HookScript("OnKeyDown", function(_, key)
-        if key == "S" and (IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())) then Window.Save() end
+        if not (IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())) then return end
+        if key == "S" then
+            Window.Save()
+        elseif key == "F" then
+            search:SetFocus()
+            search:HighlightText()
+        end
     end)
 
     -- Resize grip above the status bar (it used to hide the grip).
@@ -860,6 +925,7 @@ local function Build()
         ns.Popup:Hide()
         ns.IconPicker.Close()
         ns.CloseMenu()
+        search:SetText("") -- opened again, the list shows every macro
     end)
     -- The preview also follows the game: modifiers held, target, mouseover, pet, combat.
     local sincePreview = 0

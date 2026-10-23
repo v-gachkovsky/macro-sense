@@ -99,8 +99,8 @@ function ns.Check(parent, label, getValue, onChange)
 end
 
 -- Single-line input.
-function ns.Input(parent, width, maxLetters)
-    local e = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
+function ns.Input(parent, width, maxLetters, name)
+    local e = CreateFrame("EditBox", name, parent, "BackdropTemplate")
     e:SetSize(width, 24)
     e:SetAutoFocus(false)
     e:SetTextInsets(6, 6, 0, 0)
