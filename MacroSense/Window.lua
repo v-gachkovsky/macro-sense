@@ -14,7 +14,7 @@ ns.Window = Window
 -- What is being edited: scope "general" | "character", index (nil = new macro), name/body/savedIcon as saved,
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
-local frame, list, nameBox, iconTex, code, status, dirtyDot, counter, saveBtn, revertBtn, deleteBtn, tabs
+local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, deleteBtn, tabs
 
 local function MacroRange(scope)
     local general, character = GetNumMacros()
@@ -37,7 +37,7 @@ end
 -- Status bar
 ------------------------------------------------------------------------
 local function UpdateStatus()
-    if not saveBtn or not ns.scheme then return end
+    if not warning or not ns.scheme then return end
     local raw = code:GetRaw()
     local cursor = code.edit:HasFocus() and code:GetRawCursor() or 0
     local before = raw:sub(1, cursor)
@@ -51,6 +51,14 @@ local function UpdateStatus()
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
     revertBtn:SetEnabled(dirty and state.index ~= nil)
     deleteBtn:SetEnabled(state.index ~= nil)
+    -- Mac: [mod:cmd] on a key macOS uses with Cmd (the macro's keys are the saved macro's).
+    local message
+    if ns.Shortcuts.Enabled() and state.index then
+        local keys = ns.Shortcuts.KeysFor(state.index, state.name)
+        message = ns.Shortcuts.Message(ns.Shortcuts.Conflicts(raw, keys))
+    end
+    warning:SetText(message and ("|cff" .. s.warning .. message .. "|r") or "")
+
     -- The dot is a texture: not every font has a "●" glyph.
     dirtyDot:SetShown(dirty and letters <= MAX_BODY)
     dirtyDot:SetVertexColor(ns.RGB(s.accent))
@@ -204,6 +212,11 @@ function Window.Save()
     iconTex:SetTexture(ns.IconTexture(state.icon))
     Window.RefreshList()
     UpdateStatus()
+end
+
+-- Bindings or action bars changed.
+function Window.RefreshStatus()
+    if frame and frame:IsShown() then UpdateStatus() end
 end
 
 function Window.Revert()
@@ -415,6 +428,9 @@ local function Build()
     dirtyDot:SetPoint("LEFT", counter, "RIGHT", 24, 0)
     status = ns.Text(bar, 11, "text")
     status:SetPoint("LEFT", dirtyDot, "RIGHT", 6, 0)
+    warning = ns.Text(bar, 11, "text")
+    warning:SetPoint("RIGHT", revertBtn, "LEFT", -12, 0)
+    warning:SetJustifyH("RIGHT")
 
     -- Editor.
     local editorBg = CreateFrame("Frame", nil, main, "BackdropTemplate")

@@ -133,6 +133,9 @@ C_Item = {
     GetItemCount = function() return 1 end,
 }
 function GetInventoryItemLink() return nil end
+local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 1 } }
+function GetBindingKey(command) return bindings[command] end
+function GetActionInfo(slot) if actions[slot] then return actions[slot][1], actions[slot][2] end end
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
 function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
 GameTooltip = New("GameTooltip")
@@ -435,6 +438,34 @@ do
     scroll.range = 0
     Fire(scroll, "OnScrollRangeChanged")
     check("scroll bar hidden without overflow", not b:IsShown())
+end
+
+-- Mac: [mod:cmd] on Q (the macro is on action button 1, bound to Q) warns in the status bar.
+do
+    local function warningText()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("macOS") then return o.text end
+        end
+        return ""
+    end
+    ns.Window.Select(1)
+    NextFrame()
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast [mod:cmd] Fireball")
+    Key("ESCAPE", "OnEscapePressed")
+    check("cmd+Q warning shown", warningText():find("Cmd%+Q is a macOS shortcut") ~= nil, warningText())
+    bindings.ACTIONBUTTON1 = "E"
+    Send("UPDATE_BINDINGS")
+    check("rebinding to E clears it", warningText() == "", warningText())
+    bindings.ACTIONBUTTON1 = "Q"
+    Send("UPDATE_BINDINGS")
+    check("back on Q warns again", warningText() ~= "")
+    IsMacClient = function() return false end
+    Send("UPDATE_BINDINGS")
+    check("no warning on Windows", warningText() == "", warningText())
+    IsMacClient = function() return true end
+    ns.Window.Revert()
 end
 
 -- Unknown commands and conditions are marked; known ones are not.

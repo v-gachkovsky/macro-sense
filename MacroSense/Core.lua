@@ -28,7 +28,7 @@ end
 
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
-    "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS" }) do
+    "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED" }) do
     f:RegisterEvent(e)
 end
 f:SetScript("OnEvent", function(_, event, name)
@@ -52,7 +52,11 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then
+        ns.Shortcuts.Invalidate()
         ns.Window.OnMacrosChanged()
+    elseif event == "UPDATE_BINDINGS" or event == "ACTIONBAR_SLOT_CHANGED" then
+        ns.Shortcuts.Invalidate()
+        ns.Window.RefreshStatus()
     end
 end)
 
