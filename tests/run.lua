@@ -126,6 +126,36 @@ check("nomod: with a value, still the modifiers", names("/cast [nomod:|"):find("
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
 
+-- Names of several words: their first letters find them ("da" -> Demon Armor), the best fits first.
+do
+    local spells = ns.sources.spells
+    ns.sources.spells = function()
+        local out = {}
+        for _, name in ipairs({ "Dark Pact", "Demon Armor", "Demon Skin", "Curse of Agony", "Shadow Word: Pain",
+            "Fear", "Fel Armor", "Soul Fire", "Anti-Magic Shell", "Дбайливість", "Демонічна броня" }) do
+            out[#out + 1] = { name = name, ranks = {} }
+        end
+        return out
+    end
+    check("initials first, then names that start with them", names("/cast da|") == "Demon Armor,Dark Pact",
+        names("/cast da|"))
+    check("initials in any case", names("/cast DA|") == "Demon Armor,Dark Pact", names("/cast DA|"))
+    check("initials with the small words", names("/cast coa|") == "Curse of Agony", names("/cast coa|"))
+    check("small words left out", names("/cast ca|") == "Curse of Agony", names("/cast ca|"))
+    check("first letters of each word", names("/cast shwp|") == "Shadow Word: Pain", names("/cast shwp|"))
+    check("words after a colon and a hyphen", names("/cast swp|") == "Shadow Word: Pain"
+        and names("/cast ams|") == "Anti-Magic Shell", names("/cast swp|"))
+    check("spaces typed between them", names("/cast sh wo|") == "Shadow Word: Pain", names("/cast sh wo|"))
+    check("the start of a later word", names("/cast fi|") == "Soul Fire", names("/cast fi|"))
+    check("names that start with it before the rest", names("/cast fe|") == "Fear,Fel Armor", names("/cast fe|"))
+    check("a name typed in full: no other fits", names("/cast Fear|") == "", names("/cast Fear|"))
+    check("letters of other alphabets, whole", names("/cast Дб|") == "Демонічна броня,Дбайливість",
+        names("/cast Дб|"))
+    check("letters inside a word still match last", names("/cast rmo|") == "Demon Armor,Fel Armor",
+        names("/cast rmo|"))
+    ns.sources.spells = spells
+end
+
 -- Items: /equip wants gear, /use puts items first, /cast puts spells first.
 check("equip items", names("/equip F|") == "Fire Ring", names("/equip F|"))
 check("equipslot skips slot", names("/equipslot 13 F|") == "Fire Ring", names("/equipslot 13 F|"))
