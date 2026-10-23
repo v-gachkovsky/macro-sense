@@ -20,6 +20,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Marks in the macro list**: a macro with errors has a red name and the warning sign, one with only
   warnings a yellow name, and hovering it lists the issues line by line.
 
+### Changed
+- The **MacroSense** button sits in the title bar of the Blizzard macro window, next to its close button,
+  instead of outside the window.
+
 ### Fixed
 - Secure commands the game keeps out of addons' reach (`/petmoveto`, `/petaggressive`, `/targetparty`,
   `/worldmarker`, ...) were marked as unknown commands and missing from the suggestions after `/`. The

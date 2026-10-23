@@ -37,13 +37,21 @@ end
 
 local IsLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
 
--- "MacroSense" button next to the Blizzard macro window.
+-- "MacroSense" button in the title bar of the Blizzard macro window, left of its close button.
 local function AddMacroFrameButton()
     if not MacroFrame or ns.macroFrameButton then return end
     local b = CreateFrame("Button", nil, MacroFrame, "UIPanelButtonTemplate")
-    b:SetSize(100, 22)
+    b:SetSize(80, 18) -- the title bar is about 18 px high
     b:SetText("MacroSense")
-    b:SetPoint("TOPLEFT", MacroFrame, "TOPRIGHT", 2, -30)
+    b:SetNormalFontObject(GameFontNormalSmall)
+    b:SetHighlightFontObject(GameFontHighlightSmall)
+    local close = MacroFrame.CloseButton or MacroFrameCloseButton
+    if close then
+        b:SetPoint("RIGHT", close, "LEFT", 2, 0)
+        b:SetFrameLevel(close:GetFrameLevel())
+    else
+        b:SetPoint("TOPRIGHT", MacroFrame, "TOPRIGHT", -26, -3)
+    end
     b:SetScript("OnClick", function() ns.Window.Toggle() end)
     ns.macroFrameButton = b
 end

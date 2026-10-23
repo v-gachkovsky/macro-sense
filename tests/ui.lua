@@ -274,6 +274,16 @@ check("welcome note only once per version", #printed == count, #printed - count)
 SlashCmdList.MACROSENSE("bug")
 check("/ms bug prints versions", printedWith("MacroSense dev, WoW 12.1.5 (120105), Mac"))
 
+-- The MacroSense button sits in the title bar of the Blizzard macro window, left of its close button.
+MacroFrame = New("Frame", "MacroFrame")
+MacroFrame.CloseButton = New("Button")
+Send("ADDON_LOADED", "Blizzard_MacroUI")
+do
+    local b = ns.macroFrameButton
+    check("macro window button in its title bar", b and b.point[1] == "RIGHT" and b.point[2] == MacroFrame.CloseButton
+        and b.point[3] == "LEFT", b and b.point and table.concat({ tostring(b.point[1]), tostring(b.point[3]) }, " "))
+end
+
 CreateMacro("Nuke", 1, "#showtooltip\n/cast Fireball", false)
 ns.Window.Toggle()
 -- Find the CodeBox edit: the multi-line EditBox with an OnTextChanged that strips colors.

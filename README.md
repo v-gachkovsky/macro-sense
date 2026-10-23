@@ -22,8 +22,8 @@ commands, conditions, units, spells and items as you type, colors the syntax, un
 shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
 addons see every change.
 
-Open it with `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button next to the Blizzard macro
-window. Drag the title bar to move it and the dotted corner to resize it (780 x 460 at least).
+Open it with `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button in the title bar of the
+Blizzard macro window. Drag the title bar to move it and the dotted corner to resize it (780 x 460 at least).
 
 **Clients:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever
 (`## Interface: 120105, 50504, 20506, 11509, 16001`).
