@@ -18,6 +18,30 @@ Open it from the **minimap button** (drag it along the edge to move it), with `/
 
 ---
 
+## Quick guide
+
+**A macro from the wizard**
+
+1. **New (Wizard)** under the macro list.
+2. **Cast**: a few letters of the spell (or the first letters of its words).
+3. **On**: Mouseover, then As usual. **Only**: Enemies, set from the spell.
+4. **With a key held**: Alt casts Immolate on the same units.
+5. **Create macro**: it is saved and opens in the editor.
+
+![The macro wizard](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/guide-wizard.gif)
+
+**A macro by hand**
+
+1. A name and an icon (or the question mark: with `#showtooltip` the macro shows its spell's).
+2. Type: `#` offers `#showtooltip`, `/` the commands, `[` the conditions, `@` the units, `mod:` the keys, then
+   your spells. Tab or Enter takes one.
+3. Mistakes are underlined as you type; the column on the right says what each line would do right now.
+4. **Save**, then drag the icon onto an action bar.
+
+![Writing a macro](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/guide-editor.gif)
+
+---
+
 ## Macro wizard
 
 Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** opens a form where you pick it all:
