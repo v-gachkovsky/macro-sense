@@ -47,7 +47,8 @@ CurseForge once it is published. For development, symlink the folder from this r
   1-3, At the cursor. When one is not there, the next one is tried.
 - **Only**: friends, enemies or anyone there, and **Alive only**. It follows the spell you pick, when the game
   knows what it is for.
-- **With a key held**: Shift, Ctrl and Alt can cast another spell, or the same one on someone else.
+- **With a key held**: Shift, Ctrl and Alt can cast another spell, or the same one on someone else, with a
+  fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
 - **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), start auto attack, your
   pet attacks your target.
 - **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.

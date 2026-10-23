@@ -1811,6 +1811,11 @@ do
     check("wizard: Ctrl casts the same one on yourself", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead] "
         .. "Polymorph; [mod:ctrl,@player][@mouseover,harm,nodead][] Frostbolt", shown())
     Fire(C("ctrl"), "OnClick")
+    check("wizard: the list under a narrow box is wide enough for long names", C("shiftCast").list.width == 260
+        and C("cast").list.width == 330, C("shiftCast").list.width)
+    pick(C("shiftThen"), "Your target")
+    check("wizard: a key falls back too", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead]"
+        .. "[mod:shift,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Frostbolt", shown())
     check("wizard: the trinkets by what is in the slot", C("trinket1").label.text == "Use trinket 1: Lucky Charm"
         and C("trinket2").label.text == "Use trinket 2: empty", C("trinket1").label.text)
     -- A long name is cut to stay in the window.
@@ -1855,7 +1860,8 @@ do
     -- Fresh each time; a name that is taken gets a number; the tab chosen.
     Fire(wizardBtn, "OnClick")
     check("wizard: a fresh form", C("cast").text == "" and not C("shift").fill:IsShown()
-        and C("on2").label.text == "As usual" and shown():find("Pick a spell", 1, true) ~= nil)
+        and C("on2").label.text == "As usual" and C("shiftThen").label.text == "-"
+        and shown():find("Pick a spell", 1, true) ~= nil)
     TypeIn(C("cast"), "frost")
     Fire(C("cast"), "OnEnterPressed")
     C("name"):SetText("Burst")

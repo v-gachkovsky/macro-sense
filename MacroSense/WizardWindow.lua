@@ -9,6 +9,7 @@ ns.WizardWindow = WizardWindow
 local W = ns.Wizard
 local WIDTH, HEIGHT, PAD, LABEL = 560, 576, 14, 70
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
+local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt" }
 
@@ -70,11 +71,11 @@ local function Candidates()
     return out
 end
 
-local function MatchList(box)
+local function MatchList(box, width)
     local list = CreateFrame("Frame", nil, box, "BackdropTemplate")
     list:SetFrameStrata("FULLSCREEN_DIALOG") -- over the rows under the box
     list:SetPoint("TOPLEFT", box, "BOTTOMLEFT", 0, -2)
-    list:SetPoint("TOPRIGHT", box, "BOTTOMRIGHT", 0, -2)
+    list:SetWidth(math.max(width, LIST_W))
     ns.Backdrop(list, "panel", "border")
     list:Hide()
     list.rows, list.items, list.offset, list.selected = {}, {}, 0, 1
@@ -151,7 +152,7 @@ end
 -- another spec, say), nil when it is empty.
 local function SpellBox(width, hint, get, set)
     local box = ns.Input(frame, width, 60)
-    box.list = MatchList(box)
+    box.list = MatchList(box, width)
     local placeholder = ns.Text(box, 12, "dim")
     placeholder:SetPoint("LEFT", 6, 0)
     placeholder:SetText(hint)
@@ -333,20 +334,22 @@ local function Build()
     Check("alive", "Alive only", function() return spec.alive end, function(on) spec.alive = on end)
         :SetPoint("TOPLEFT", x + 136, -153)
 
-    -- Keys held.
+    -- Keys held: another spell or the same one, on units of their own, in the On row's columns.
     Text("With a key held", PAD, -195, "dim")
+    Text("on", x + 158, -195, "dim")
     for i, key in ipairs(W.KEYS) do
         local y = -217 - (i - 1) * 32
-        local c = Check(key, KEY_NAMES[key], function() return spec.keys[key].on end,
-            function(on) spec.keys[key].on = on end)
-        c:SetPoint("TOPLEFT", PAD, y - 1)
-        local box = SpellBox(240, "same spell", function() return spec.keys[key].action end,
+        Check(key, KEY_NAMES[key], function() return spec.keys[key].active end,
+            function(on) spec.keys[key].active = on end):SetPoint("TOPLEFT", PAD, y - 1)
+        local box = SpellBox(150, "same spell", function() return spec.keys[key].action end,
             function(action) spec.keys[key].action = action end)
         box:SetPoint("TOPLEFT", x, y)
         controls[key .. "Cast"] = box
-        Text("on", x + 250, y - 5, "dim")
-        Choice(key .. "On", 130, W.units, function() return spec.keys[key].unit end,
-            function(unit) spec.keys[key].unit = unit end):SetPoint("TOPLEFT", x + 274, y - 1)
+        for j, suffix in ipairs({ "On", "Then" }) do
+            Choice(key .. suffix, 120, j == 1 and W.units or none, function() return spec.keys[key].on[j] end,
+                function(unit) spec.keys[key].on[j] = unit end):SetPoint("TOPLEFT", x + j * 158, y - 1)
+        end
+        Text("then", x + 284, y - 5, "dim")
     end
 
     -- Also.
@@ -427,6 +430,6 @@ function WizardWindow.Toggle(tab)
     WizardWindow.Open(tab)
 end
 
--- A control of the form by name: "cast", "on1", "shift", "shiftCast", "shiftOn", "trinket1", "create", ...
+-- A control of the form by name: "cast", "on1", "shift", "shiftCast", "shiftOn", "shiftThen", "trinket1", ...
 -- (the tests fill the form through it).
 function WizardWindow.Control(name) return controls[name] end

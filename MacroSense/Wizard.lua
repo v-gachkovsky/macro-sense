@@ -32,10 +32,11 @@ for _, u in ipairs(Wizard.units) do filtered[u.key] = u.filters end
 -- After these nothing is asked: they always hold.
 local ALWAYS = { default = true, player = true, cursor = true }
 
--- A fresh form: Mouseover, then as usual (the macro players make most); no keys, nothing else.
+-- A fresh form: Mouseover, then as usual (the macro players make most); no keys held, nothing else. A key held
+-- has its own units in order, two of them.
 function Wizard.Fresh()
     local spec = { on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {} }
-    for _, key in ipairs(Wizard.KEYS) do spec.keys[key] = { on = false, unit = "default" } end
+    for _, key in ipairs(Wizard.KEYS) do spec.keys[key] = { active = false, on = { "default", "none" } } end
     return spec
 end
 
@@ -61,8 +62,20 @@ local function Command(clauses)
     return "/use"
 end
 
--- The cast line's clauses: one per key held, then the units in order, those casting the same next to each other
--- as one ("[mod:alt,@party4][@party1] Flash Heal").
+-- Units in order, "none" left out, up to the first one that always holds: nothing after it is ever tried.
+local function Chain(units)
+    local out = {}
+    for _, unit in ipairs(units) do
+        if unit ~= "none" then
+            out[#out + 1] = unit
+            if ALWAYS[unit] then break end
+        end
+    end
+    return out
+end
+
+-- The cast line's clauses: the keys held with their units, then the units in order, those casting the same next
+-- to each other as one ("[mod:alt,@party4][@party1] Flash Heal").
 local function Clauses(spec)
     local out = {}
     local function add(group, action)
@@ -75,16 +88,13 @@ local function Clauses(spec)
     end
     for _, key in ipairs(Wizard.KEYS) do
         local k = spec.keys[key]
-        local action = k.on and (k.action or spec.action)
-        if action then add(Group(spec, k.unit, key), action) end
+        local action = k.active and (k.action or spec.action)
+        if action then
+            for _, unit in ipairs(Chain(k.on)) do add(Group(spec, unit, key), action) end
+        end
     end
     if spec.action then
-        for _, unit in ipairs(spec.on) do
-            if unit ~= "none" then
-                add(Group(spec, unit), spec.action)
-                if ALWAYS[unit] then break end
-            end
-        end
+        for _, unit in ipairs(Chain(spec.on)) do add(Group(spec, unit), spec.action) end
     end
     return out
 end
@@ -119,7 +129,7 @@ function Wizard.Name(spec)
     if spec.action then return spec.action.name end
     for _, key in ipairs(Wizard.KEYS) do
         local k = spec.keys[key]
-        if k.on and k.action then return k.action.name end
+        if k.active and k.action then return k.action.name end
     end
     if spec.trinket1 or spec.trinket2 then return "Trinkets" end
 end

@@ -726,12 +726,14 @@ end
 do
     local W = ns.Wizard
     local made = {}
-    -- A fresh form with `set` filled in; set.keys = { shift = { unit, action } } holds keys down.
+    -- A fresh form with `set` filled in; set.keys = { shift = { action, on = units, or unit = one } } holds keys.
     local function form(set)
         local spec = W.Fresh()
         for k, v in pairs(set) do
             if k == "keys" then
-                for key, row in pairs(v) do spec.keys[key] = { on = true, unit = row.unit or "default", action = row.action } end
+                for key, row in pairs(v) do
+                    spec.keys[key] = { active = true, on = row.on or { row.unit or "default", "none" }, action = row.action }
+                end
             else
                 spec[k] = v
             end
@@ -777,6 +779,15 @@ do
         .. "[mod:ctrl,@party3,help,nodead][mod:alt,@party4,help,nodead][@party1,help,nodead] Flash Heal")
     expectText("keys: Shift on yourself", text({ action = heal, only = "friends", keys = { shift = { unit = "player" } } }),
         "#showtooltip\n/cast [mod:shift,@player][@mouseover,help,nodead][] Flash Heal")
+    local fire = { name = "Fireball" }
+    expectText("keys: a fallback of their own", text({ action = fire, only = "enemies", on = { "mouseover", "target", "none" },
+        keys = { alt = { action = bolt, on = { "mouseover", "target" } } } }), "#showtooltip\n/cast "
+        .. "[mod:alt,@mouseover,harm,nodead][mod:alt,harm,nodead] Frostbolt; [@mouseover,harm,nodead][harm,nodead] Fireball")
+    expectText("keys: then as usual", text({ action = fire, only = "enemies", keys = { alt = { action = bolt,
+        on = { "mouseover", "default" } } } }), "#showtooltip\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] Frostbolt; "
+        .. "[@mouseover,harm,nodead][] Fireball")
+    expectText("keys: nothing after one that always holds", text({ action = heal, on = usual,
+        keys = { shift = { on = { "player", "target" } } } }), "#showtooltip\n/cast [mod:shift,@player][] Flash Heal")
     expectText("keys: a key alone", text({ keys = { ctrl = { action = sheep } } }), "#showtooltip\n/cast [mod:ctrl] Polymorph")
     expectText("keys: items only say /use", text({ action = stone, on = usual,
         keys = { shift = { action = { name = "Major Healing Potion", item = true } } } }),
@@ -812,6 +823,13 @@ do
     expectPreview("wizard: Ctrl, member 3", byKey, { mods = { ctrl = true }, units = party },
         "icon: Flash Heal | Flash Heal @party3")
     expectPreview("wizard: no key, member 1", byKey, { units = party }, "icon: Flash Heal | Flash Heal @party1")
+    local altBolt = text({ action = fire, only = "enemies", on = { "mouseover", "target", "none" },
+        keys = { alt = { action = bolt, on = { "mouseover", "target" } } } })
+    expectPreview("wizard: Alt, nobody under the mouse: the target", altBolt,
+        { mods = { alt = true }, units = { target = harmful } }, "icon: Frostbolt | Frostbolt")
+    expectPreview("wizard: Alt on an enemy under the mouse", altBolt,
+        { mods = { alt = true }, units = { mouseover = harmful, target = harmful } }, "icon: Frostbolt | Frostbolt @mouseover")
+    expectPreview("wizard: no key: the other spell", altBolt, { units = { target = harmful } }, "icon: Fireball | Fireball")
     expectPreview("wizard: Shift with nobody there", byKey, { mods = { shift = true }, units = { party1 = {} } },
         "icon: Flash Heal | Flash Heal @party1")
 end
