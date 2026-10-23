@@ -40,6 +40,8 @@ repository instead.
 
 ## Macro wizard
 
+<p align="center"><img src="docs/guide-wizard.gif" width="720" alt="The macro wizard"></p>
+
 **New (Wizard)**, over New / Copy / Delete, opens a window with a form for a new macro:
 
 - **Command**: `/cast` or `/use` for one spell or item (it follows what you pick: an item sets `/use`),
@@ -81,6 +83,8 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Autocomplete
+
+<p align="center"><img src="docs/guide-editor.gif" width="720" alt="Writing a macro"></p>
 
 | You type | You get |
 |---|---|

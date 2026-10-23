@@ -39,6 +39,8 @@ MacroSense є ще й у меню аддонів біля мінімапи.
 
 ## Майстер макросів
 
+<p align="center"><img src="docs/guide-wizard.gif" width="720" alt="Майстер макросів"></p>
+
 **New (Wizard)** над кнопками New / Copy / Delete відкриває вікно з формою для нового макросу:
 
 - **Command**: `/cast` чи `/use` для одного спела або предмета (команда йде за вибраним: предмет ставить
@@ -80,6 +82,8 @@ MacroSense є ще й у меню аддонів біля мінімапи.
 | Frostbolt як зазвичай; Shift: Polymorph на Focus; трінкет 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Автодоповнення
+
+<p align="center"><img src="docs/guide-editor.gif" width="720" alt="Набір макросу"></p>
 
 | Набираєте | Отримуєте |
 |---|---|
