@@ -21,6 +21,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   (`Fear 2`), so key bindings stay with one macro.
 - **Search** above the macro list (Ctrl+F from the editor): it keeps the macros whose name or text has what
   you type, and the tabs say how many match in each. Enter opens the first match, Esc clears it.
+- **`reset=` in `/castsequence`**: `target`, `combat`, `shift`, `ctrl`, `alt` and seconds are suggested after
+  `reset=` and after each `/` (the ones not used yet), and a wrong value is an error (`reset=tagret`,
+  `reset=1.5`, an empty `reset=`), like `reset=` in a command other than `/castsequence`.
 
 ### Changed
 - **Live preview** moved to the title bar, next to the font and the scheme, to make room in the header.

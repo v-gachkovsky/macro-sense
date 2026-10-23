@@ -34,8 +34,9 @@ end
 
 -- Context of the word being typed at `cursor` (bytes before the cursor, as EditBox:GetCursorPosition()).
 -- Returns nil or a table:
---   kind    = "command" | "meta" | "condition" | "unit" | "modifier" | "conditionValue" | "action"
---             ("action" = a spell or item name, "rank" = inside "Spell(" -> `spell`)
+--   kind    = "command" | "meta" | "condition" | "unit" | "modifier" | "conditionValue" | "action" | "reset"
+--             ("action" = a spell or item name, "rank" = inside "Spell(" -> `spell`, "reset" = a value after
+--             "/castsequence reset=", with `used` = the values before it)
 --   prefix  = text typed so far for that word
 --   start   = 1-based index in `text` where the word begins (replace text[start .. cursor])
 --   command = the slash command of the line (lowercase, without "/"), when there is one
@@ -114,8 +115,16 @@ function Parser.GetContext(text, cursor)
     end
 
     if Parser.actionCommands[cmd] then
+        -- "/castsequence reset=10/ta": the reset values, "/" between them.
+        local values = token:match("^reset=(%S*)$")
+        if values then
+            if Parser.actionCommands[cmd] ~= "castsequence" then return nil end
+            local last = values:match("([^/]*)$")
+            local used = {}
+            for v in values:sub(1, #values - #last):gmatch("[^/]+") do used[v:lower()] = true end
+            return { kind = "reset", prefix = last, start = tokenAbs + #token - #last, command = cmd, used = used }
+        end
         -- "/castsequence reset=10 Spell": skip the reset option.
-        if token:find("^reset=%S*$") then return nil end
         local reset = token:match("^reset=%S+%s+")
         if reset then token, tokenAbs = token:sub(#reset + 1), tokenAbs + #reset end
         -- "/equipslot 13 Trinket": skip the slot number.

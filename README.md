@@ -47,6 +47,7 @@ CurseForge once it is published. For development, symlink the folder from this r
 | a spell with several learned ranks (Classic) | its ranks, highest first: Tab inserts `Fireball(Rank 2)`, Esc keeps `Fireball` |
 | `/use ` | usable items from bags and gear, then spells |
 | `/equip ` / `/equipslot 13 ` | gear from bags |
+| `/castsequence reset=` | `target`, `combat`, `shift`, `ctrl`, `alt` or seconds (`10`); after `/` the ones not used yet |
 | `#` | `#showtooltip`, `#show` |
 
 Keys: **Tab** / **Enter** accept, **Up / Down** move, **PageUp / PageDown** jump 10, **Esc** closes the list.
@@ -69,7 +70,8 @@ an empty `[]` removes both.
 - Syntax errors are underlined, the status bar names the first one with its line (all of them on hover) and
   Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty
   condition (`[harm,,dead]`), `@` or `target=` without a unit, `mod:` without a value, a wrong value
-  (`btn:7`, `group:arena`, `mod:shfit`), a value for a condition that takes none (`combat:1`). Spaces after
+  (`btn:7`, `group:arena`, `mod:shfit`), a value for a condition that takes none (`combat:1`), a wrong
+  `reset=` value (`reset=tagret`, `reset=1.5`), `reset=` outside `/castsequence`. Spaces after
   commas are fine. A word you are typing that may still become valid (`comb` on its way to `combat`) is
   marked only after a short pause or on Save; a typo that can't (`mousovr`, `btn:7`) is marked at once.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
