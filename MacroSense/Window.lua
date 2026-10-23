@@ -514,30 +514,8 @@ local function Build()
         if key == "S" and (IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())) then Window.Save() end
     end)
 
-    -- Resize grip: dots in the corner, above the status bar (it used to hide the grip).
-    local grip = CreateFrame("Button", "MacroSenseResizeGrip", frame)
-    grip:SetSize(16, 16)
-    grip:SetPoint("BOTTOMRIGHT", -2, 2)
-    grip:SetFrameLevel(frame:GetFrameLevel() + 20)
-    local dots = {}
-    for row = 0, 2 do
-        for col = 0, 2 - row do
-            local d = grip:CreateTexture(nil, "OVERLAY")
-            d:SetSize(2, 2)
-            d:SetPoint("BOTTOMRIGHT", -2 - col * 4, 2 + row * 4)
-            dots[#dots + 1] = d
-        end
-    end
-    local function paintGrip(hover)
-        local s = ns.scheme
-        if not s then return end
-        for _, d in ipairs(dots) do d:SetColorTexture(ns.RGB(hover and s.accent or s.dim)) end
-    end
-    ns.OnStyle(function() paintGrip(false) end)
-    grip:SetScript("OnEnter", function() paintGrip(true) end)
-    grip:SetScript("OnLeave", function() paintGrip(false) end)
-    grip:SetScript("OnMouseDown", function() frame:StartSizing("BOTTOMRIGHT") end)
-    grip:SetScript("OnMouseUp", function() frame:StopMovingOrSizing(); SavePosition() end)
+    -- Resize grip above the status bar (it used to hide the grip).
+    ns.ResizeGrip(frame, SavePosition)
 
     frame:SetScript("OnShow", function()
         fontDrop:Refresh()

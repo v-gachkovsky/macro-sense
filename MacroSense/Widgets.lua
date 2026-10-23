@@ -267,3 +267,38 @@ function ns.AttachScrollBar(scroll, wheelStep)
     end)
     return bar
 end
+
+-- Dotted corner to resize `frame` (made resizable by the caller); onDone() runs when the mouse is released.
+function ns.ResizeGrip(frame, onDone)
+    local grip = CreateFrame("Button", nil, frame)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", -2, 2)
+    grip:SetFrameLevel(frame:GetFrameLevel() + 20)
+    local dots = {}
+    for row = 0, 2 do
+        for col = 0, 2 - row do
+            local d = grip:CreateTexture(nil, "OVERLAY")
+            d:SetSize(2, 2)
+            d:SetPoint("BOTTOMRIGHT", -2 - col * 4, 2 + row * 4)
+            dots[#dots + 1] = d
+        end
+    end
+    local function paint(hover)
+        local s = ns.scheme
+        if not s then return end
+        for _, d in ipairs(dots) do d:SetColorTexture(ns.RGB(hover and s.accent or s.dim)) end
+    end
+    ns.OnStyle(function() paint(false) end)
+    grip:SetScript("OnEnter", function() paint(true) end)
+    grip:SetScript("OnLeave", function() paint(false) end)
+    grip:SetScript("OnMouseDown", function() frame:StartSizing("BOTTOMRIGHT") end)
+    grip:SetScript("OnMouseUp", function()
+        frame:StopMovingOrSizing()
+        if onDone then onDone() end
+    end)
+    return grip
+end
+
+function ns.SetMinSize(frame, w, h)
+    if frame.SetResizeBounds then frame:SetResizeBounds(w, h) else frame:SetMinResize(w, h) end
+end

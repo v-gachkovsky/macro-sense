@@ -10,6 +10,7 @@ Open it with `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button n
 Drag a macro from the list, or its icon from the header, onto an action bar.
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),
 then icons of your spells and items, then every macro icon of the game. Search matches spell and item names.
+Drag its dotted corner to show more icons at once.
 
 ## Autocomplete
 
