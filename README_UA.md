@@ -31,8 +31,10 @@ MacroSense є ще й у меню аддонів біля мінімапи.
 
 ## Встановлення
 
-Скопіюйте папку `MacroSense` у `World of Warcraft/<клієнт>/Interface/AddOns/` або встановіть з CurseForge,
-коли аддон там з'явиться. Для розробки краще зробити симлінк на папку з цього репозиторію.
+Встановіть з [CurseForge](https://www.curseforge.com/wow/addons/macro-sense) або завантажте zip з
+[Releases](https://github.com/v-gachkovsky/macro-sense/releases) і розпакуйте його в
+`World of Warcraft/<клієнт>/Interface/AddOns/`. Для розробки краще зробити симлінк на папку `MacroSense` з цього
+репозиторію.
 
 ## Автодоповнення
 
