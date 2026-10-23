@@ -229,14 +229,16 @@ function CodeBox:DrawUnderlines()
             return m and { x = m.x + offX, y = m.y + offY, h = m.h }
         end
         Debug("underlines: %d errors, %s", #errors, origin and "cursor positions" or "text widths")
-        for i, e in ipairs(errors) do
+        local n = 0 -- textures used; no holes, so all of them get hidden next time
+        for _, e in ipairs(errors) do
             local a, b = measure(e.from - 1), measure(e.to)
             if a then
-                local tex = self.underlines[i]
+                n = n + 1
+                local tex = self.underlines[n]
                 if not tex then
                     tex = self.edit:CreateTexture(nil, "OVERLAY")
                     tex.isUnderline = true
-                    self.underlines[i] = tex
+                    self.underlines[n] = tex
                 end
                 -- A word wrapped onto the next line: underline its start only.
                 local width = (b and math.abs(b.y - a.y) < 1) and (b.x - a.x) or 8
@@ -245,6 +247,10 @@ function CodeBox:DrawUnderlines()
                 tex:ClearAllPoints()
                 tex:SetPoint("TOPLEFT", self.edit, "TOPLEFT", a.x, a.y - a.h + 1)
                 tex:Show()
+                Debug("  line %d %q: x=%.1f y=%.1f w=%.1f%s", e.line, self:GetRaw():sub(e.from, e.to),
+                    a.x, a.y, width, b and "" or " (end not measured)")
+            else
+                Debug("  line %d: start not measured", e.line)
             end
         end
         if probed then -- put the cursor back where the player left it
