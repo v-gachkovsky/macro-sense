@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.0-beta2] - 2026-10-23
 
 ### Added
 - **Condition values** are suggested after the colon: your forms for `form:` / `stance:` (with their names),
