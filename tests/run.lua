@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -207,6 +207,27 @@ check("slot 61 bottom left", S.slotCommand(61) == "MULTIACTIONBAR1BUTTON1")
 check("slot 80 form bar", S.slotCommand(80) == "ACTIONBUTTON8")
 check("slot 150 bar 5", S.slotCommand(150) == "MULTIACTIONBAR5BUTTON6")
 check("slot 130 none", S.slotCommand(130) == nil)
+
+-- Auto-closing brackets. "|" marks the cursor in `after`.
+local function keystroke(before, after)
+    local cur = after:find("|", 1, true) - 1
+    local new = after:sub(1, cur) .. after:sub(cur + 2)
+    local text, c = ns.Editing.AutoPair(before, new, cur)
+    return text:sub(1, c) .. "|" .. text:sub(c + 1)
+end
+local function expectKey(before, after, want)
+    local got = keystroke(before, after)
+    check("autopair " .. before .. " -> " .. after, got == want, got)
+end
+expectKey("/cast ", "/cast [|", "/cast [|]")
+expectKey("/cast  X", "/cast [| X", "/cast [|] X")
+expectKey("/cast A;", "/cast A[|;", "/cast A[|];")
+expectKey("/cast X", "/cast [|X", "/cast [|X")              -- a word follows: no pair
+expectKey("/cast [mod]", "/cast [mod]|]", "/cast [mod]|")   -- typing "]" before "]" steps over
+expectKey("/cast [mod", "/cast [mod]|", "/cast [mod]|")      -- no "]" ahead: inserted normally
+expectKey("/cast []", "/cast |]", "/cast |")                -- backspace in "[]" removes both
+expectKey("/cast [x]", "/cast |x]", "/cast |x]")            -- not empty: only "["
+expectKey("/cast ", "/cast a|", "/cast a|")
 
 -- Every scheme colors every role and UI part.
 for _, scheme in ipairs(ns.schemes) do

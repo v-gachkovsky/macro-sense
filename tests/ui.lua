@@ -304,7 +304,7 @@ check("spells offered after /cast", ns.Popup:IsShown() and ns.Popup.items[1].nam
 Type("[mo")
 check("conditions offered", ns.Popup:IsShown() and ns.Popup.items[1].name == "mod", ns.Popup.items[1] and ns.Popup.items[1].name)
 Key("TAB", "OnTabPressed")
-check("mod: inserted", raw():find("%[mod:$") ~= nil, raw())
+check("mod: inserted", raw():find("%[mod:%]$") ~= nil, raw())
 check("modifiers offered", ns.Popup:IsShown() and ns.Popup.items[1].name == "shift")
 check("mac adds cmd", ns.Popup.items[4] and ns.Popup.items[4].name == "cmd", ns.Popup.items[4] and ns.Popup.items[4].name)
 Key("TAB", "OnTabPressed")
@@ -339,12 +339,27 @@ Type("\n/equip F")
 check("equip suggests gear", ns.Popup:IsShown() and ns.Popup.items[1].name == "Fire Ring" and #ns.Popup.items == 1,
     ns.Popup.items[1] and ns.Popup.items[1].name)
 
+-- Typing "[" adds "]" and opens conditions inside; "]" then steps over it.
+edit:SetCursorPosition(#edit.text)
+Type("\n/cast [")
+check("bracket closed", raw():sub(-8) == "/cast []", raw():sub(-8))
+check("cursor inside brackets", rawCursor() == #raw() - 1, rawCursor())
+check("conditions offered inside", ns.Popup:IsShown() and ns.Popup.items[1].name == "combat",
+    ns.Popup.items[1] and ns.Popup.items[1].name)
+Type("harm")
+Key("ESCAPE", "OnEscapePressed")
+Type("]")
+check("] steps over", raw():sub(-12) == "/cast [harm]" and rawCursor() == #raw(), raw():sub(-12))
+Type(" ")
+check("spells after ]", ns.Popup:IsShown())
+Key("ESCAPE", "OnEscapePressed")
+
 -- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").
 edit:SetCursorPosition(#edit.text)
 Type("\n/cast [@mouse")
 check("units offered", ns.Popup:IsShown() and ns.Popup.items[1].name == "mouseover")
 Key("TAB", "OnTabPressed")
-check("mouseover inserted", raw():find("%[@mouseover$") ~= nil, raw():sub(-20))
+check("mouseover inserted", raw():find("%[@mouseover%]$") ~= nil, raw():sub(-20))
 check("no list after a finished word", not ns.Popup:IsShown(), ns.Popup.items[1] and ns.Popup.items[1].name)
 Type("t")
 check("typing on shows longer words", ns.Popup:IsShown() and ns.Popup.items[1].name == "mouseovertarget")

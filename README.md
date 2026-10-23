@@ -26,6 +26,8 @@ then icons of your spells and items, then every macro icon of the game. Search m
 
 Keys: **Tab** / **Enter** accept, **Up / Down** move, **Esc** closes the list.
 Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo.
+Typing `[` adds the closing `]` with the cursor inside; typing `]` before it steps over it,
+and Backspace in an empty `[]` removes both.
 
 ## Look
 
@@ -54,6 +56,7 @@ Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo.
+- `MacroSense/Editing.lua`: auto-closing brackets. Pure Lua.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 
