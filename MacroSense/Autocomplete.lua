@@ -6,7 +6,7 @@ local Popup = ns.Popup
 -- Attach to a CodeBox. Suggestions are built from a snapshot (text, cursor, context) so that
 -- accepting one never depends on what the key that accepted it did to the text.
 function ns.AttachAutocomplete(box)
-    local snap, pending, guard
+    local snap, pending, guard, accepted
 
     local function Update()
         pending = false
@@ -14,7 +14,15 @@ function ns.AttachAutocomplete(box)
         local raw, cursor = box:GetRaw(), box:GetRawCursor()
         local ctx = ns.Parser.GetContext(raw, cursor)
         snap = { raw = raw, cursor = cursor, ctx = ctx }
-        Popup:Open(box.edit, ns.Completion.Get(ctx), box.caretX or 0, box.caretY or 0, box.caretH or 14)
+        local items = ns.Completion.Get(ctx)
+        -- Right after a suggestion went in, open the list only for a next step ("cast " -> spells,
+        -- "mod:" -> modifiers, a spell -> its ranks), not for longer words: "mouseover" -> "mouseovertarget".
+        if accepted then
+            local done = accepted
+            accepted = nil
+            if ctx and ctx.prefix:lower() == done:lower() and not (items[1] and items[1].rank) then items = {} end
+        end
+        Popup:Open(box.edit, items, box.caretX or 0, box.caretY or 0, box.caretH or 14)
         if not Popup:IsShown() then box:LockCursor(false) end
     end
 
@@ -33,11 +41,13 @@ function ns.AttachAutocomplete(box)
         box:SetFocus()
         -- Enter / Tab may still put a newline or tab into the text this frame: drop it.
         guard = { raw = raw, cursor = cursor, time = GetTime() }
+        accepted = item.name
         Schedule() -- "/cast " opens spells, "mod:" opens modifiers
     end
 
     box.onChange = function(raw, userInput)
         if not userInput then return end
+        accepted = nil
         if guard and guard.time == GetTime() and raw ~= guard.raw then
             local g = guard
             guard = nil

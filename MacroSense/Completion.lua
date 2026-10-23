@@ -80,7 +80,7 @@ local function rankItems(spell, withName, prefix)
         local rank = spell.ranks[i]
         if not prefix or rank:lower():find(prefix, 1, true) then
             out[#out + 1] = {
-                name = rank, hint = i == #spell.ranks and "highest" or nil, icon = spell.icon,
+                name = rank, hint = i == #spell.ranks and "highest" or nil, icon = spell.icon, rank = true,
                 insert = (withName and spell.name .. "(" or "") .. rank .. ")",
             }
         end

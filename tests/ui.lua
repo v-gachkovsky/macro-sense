@@ -332,6 +332,17 @@ Type("\n/equip F")
 check("equip suggests gear", ns.Popup:IsShown() and ns.Popup.items[1].name == "Fire Ring" and #ns.Popup.items == 1,
     ns.Popup.items[1] and ns.Popup.items[1].name)
 
+-- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").
+edit:SetCursorPosition(#edit.text)
+Type("\n/cast [@mouse")
+check("units offered", ns.Popup:IsShown() and ns.Popup.items[1].name == "mouseover")
+Key("TAB", "OnTabPressed")
+check("mouseover inserted", raw():find("%[@mouseover$") ~= nil, raw():sub(-20))
+check("no list after a finished word", not ns.Popup:IsShown(), ns.Popup.items[1] and ns.Popup.items[1].name)
+Type("t")
+check("typing on shows longer words", ns.Popup:IsShown() and ns.Popup.items[1].name == "mouseovertarget")
+Key("ESCAPE", "OnEscapePressed")
+
 -- Ranks: "/" -> cast -> Fireball -> ranks. Tab takes a rank, Esc keeps the plain spell.
 local function Pick(name)
     for i, item in ipairs(ns.Popup.items) do
