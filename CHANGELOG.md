@@ -29,6 +29,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   then gear. Slot numbers, `0 1` and `item:6948` are colored as values instead of spell names; a slot that
   doesn't exist (`/use 23`), `/equipslot` without the slot or the item, and `item:` without a number are
   errors. The live preview names the slot: `/use 13` shows `Trinket 1`.
+- **`/click`**: the list offers the buttons there are now, with what is on them (the game's bars,
+  Bartender4, ElvUI and Dominos, the extra action button, popups), then the mouse buttons, then `true` for a
+  click on key press. A name no button has now and a frame that is not a button are warnings, a misspelled
+  mouse button gets a fix, and `down` as the last word is a warning: the game reads it as no.
 
 ### Changed
 - **Live preview** moved to the title bar, next to the font and the scheme, to make room in the header.

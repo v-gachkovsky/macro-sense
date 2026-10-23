@@ -31,6 +31,7 @@ addons see every change.
 | `/castsequence reset=` | `target`, `combat`, `shift`, `ctrl`, `alt` or seconds |
 | `/use 1` / `/equipslot ` | equipment slots with what is in them: `13` Trinket 1 |
 | `/use 0 ` | what that bag holds, slot by slot |
+| `/click ` | the buttons there are now (the game's bars, Bartender4, ElvUI, Dominos), with what is on them |
 | a spell with several learned ranks (Classic) | its ranks, highest first: `Fireball(Rank 4)` |
 | `#` | `#showtooltip`, `#show` |
 
@@ -50,6 +51,8 @@ the status bar names them (hover for the full list), and the Save button shows a
 - `@` or `target=` without a unit, `mod:` without a value
 - a wrong value: `btn:7`, `group:arena`, `mod:shfit`, `reset=tagret`, or a value where none belongs: `combat:1`
 - a slot that doesn't exist (`/use 23`), `/equipslot` without the slot or the item
+- `/click` on a button that isn't there, or with `down` at the end: the game reads that as no, `true` clicks
+  on key press
 - unknown units like `@mousover` are a yellow **warning**: they may be a player's name
 - **typos in spell and item names**: `Shadwo Bolt` gets `did you mean "Shadow Bolt"?`, and a click fixes it.
   Your pets' spells are remembered from every pet you summon, so a Succubus macro stays fine while the

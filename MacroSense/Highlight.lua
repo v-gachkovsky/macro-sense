@@ -11,6 +11,9 @@ Highlight.isCommand = nil
 -- Set by Sources: function(name, command) -> nil, or { message, short, fix } when a spell / item name
 -- looks like a typo of a known one ("Shadwo Bolt" -> "Shadow Bolt"). command: "cast", "use", "equip", ...
 Highlight.checkAction = nil
+-- Set by Sources: function(name) -> nil, or what is wrong with the button "/click name" would click (message,
+-- short form).
+Highlight.checkClick = nil
 
 local UNIT_ARGS = { target = true, tar = true, focus = true, assist = true, a = true }
 local LUA_KEYWORDS = {}
@@ -183,6 +186,32 @@ local function equipslotSpans(word, from, add)
     if not itemRefSpans(item, at, add) then actionSpan(item, at, add, "equipslot") end
 end
 
+-- "/click Name RightButton true": the button, the mouse button that clicks it, and yes / no for a click on key
+-- press. The game reads that last word by its first letter (1-9, y, t: yes; 0, n, f: no), anything else as no.
+local MOUSE_BUTTONS = { "LeftButton", "RightButton", "MiddleButton", "Button4", "Button5" }
+local function clickSpans(word, from, add)
+    local name, gap, mouse, gap2, down = word:match("^(%S+)(%s*)(%S*)(%s*)(.*)$")
+    local problem, short
+    if Highlight.checkClick then problem, short = Highlight.checkClick(name) end
+    add(from, from + #name - 1, "action", problem, "warning", short and { short = short })
+    if mouse == "" then return end
+    local at = from + #name + #gap
+    -- Any word is passed on to the button, so only a near miss of a mouse button is marked.
+    local guess = not mouse:find("^[Bb]utton%d+$") and ns.Spelling and ns.Spelling.Suggest(mouse, MOUSE_BUTTONS)
+    if guess and guess ~= mouse then
+        add(at, at + #mouse - 1, "value", string.format('unknown mouse button "%s", did you mean "%s"?', mouse, guess),
+            "warning", { short = string.format('did you mean "%s"?', guess), fix = guess })
+    else
+        add(at, at + #mouse - 1, "value")
+    end
+    if down == "" then return end
+    at = at + #mouse + #gap2
+    local first, lower = down:sub(1, 1):lower(), down:lower()
+    local said = first:find("[1-9yt0nf]") or lower == "on" or lower == "off" or lower == "enabled" or lower == "disabled"
+    if said then return add(at, at + #down - 1, "value") end
+    add(at, at + #down - 1, "value", string.format('the game reads "%s" as no: true clicks on key press', down), "warning")
+end
+
 -- "reset=10/target" in front of a /castsequence list: seconds or what starts the sequence over, "/" between.
 local function resetSpans(reset, from, add, sequence)
     if not sequence then
@@ -264,7 +293,9 @@ local function argSpans(s, base, add, argKind, sequence, command)
                     i, word = i + 1, word:sub(2)
                 end
                 local item = argKind == "action" and command ~= "cancelaura"
-                if item and command == "equipslot" and word ~= "" then
+                if argKind == "click" then
+                    if word ~= "" then clickSpans(word, base + i, add) end
+                elseif item and command == "equipslot" and word ~= "" then
                     equipslotSpans(word, base + i, add)
                 elseif not (item and itemRefSpans(word, base + i, add)) then
                     -- "Fireball(Rank 3)": the rank is a value.
@@ -308,7 +339,7 @@ local function lineSpans(line, base, add)
     if P.chatCommands[name] then return end
     if P.luaCommands[name] then return luaSpans(rest, cmdTo, add) end
     local action = P.actionCommands[name]
-    local argKind = UNIT_ARGS[name] and "unit" or (action and "action") or "option"
+    local argKind = UNIT_ARGS[name] and "unit" or (action and "action") or (P.clickCommands[name] and "click") or "option"
     argSpans(rest, cmdTo, add, argKind, action == "castsequence", action)
 end
 

@@ -86,6 +86,13 @@ expect("/equipslot |", "slot", "")
 expect("/equipslot 13 Fire|", "action", "Fire")
 expect("/equipslot 13 0 |", "bagSlot", "", { bag = 0 })
 expect("/cancelaura 1|", "action", "1")
+-- /click: the button, the mouse button, then yes / no for a click on key press.
+expect("/click |", "clickButton", "")
+expect("/click Act|", "clickButton", "Act")
+expect("/click [mod] ActionButton1 |", "clickMouse", "")
+expect("/click ActionButton1 Ri|", "clickMouse", "Ri")
+expect("/click ActionButton1 LeftButton t|", "clickDown", "t")
+expectNil("/click A B true x|")
 expectNil("/say hel|")
 expectNil("just text|")
 
@@ -162,6 +169,8 @@ expectKinds("/castsequence reset=10 A, B", "/castsequence=command reset=option =
 expectKinds("/castsequence reset=10/target A", "/castsequence=command reset=option ==operator 10=value /=operator"
     .. " target=value A=action")
 expectKinds("/use 13; 0 1", "/use=command 13=value ;=operator 0=value 1=value")
+expectKinds("/click [mod] ActionButton1 RightButton true", "/click=command [=bracket mod=condition ]=bracket"
+    .. " ActionButton1=action RightButton=value true=value")
 expectKinds("/use item:6948", "/use=command item:=option 6948=value")
 expectKinds("/equipslot 13 Fire Ring", "/equipslot=command 13=value Fire Ring=action")
 expectKinds("/target [@mouseover] party1", "/target=command [=bracket @=operator mouseover=unit ]=bracket party1=unit")
@@ -324,6 +333,15 @@ check("reset: not the ones used", names("/castsequence reset=target/|") == "comb
 check("reset: one number", names("/castsequence reset=15/|") == "target,combat,shift,ctrl,alt",
     names("/castsequence reset=15/|"))
 check("reset: by prefix", names("/castsequence reset=c|") == "combat,ctrl", names("/castsequence reset=c|"))
+do
+    ns.sources.clickButtons = function() return { { name = "ActionButton1", hint = "Fireball" }, { name = "BT4Button1" } } end
+    check("click: the buttons there are", names("/click |") == "ActionButton1,BT4Button1", names("/click |"))
+    check("click: by name", names("/click bt|") == "BT4Button1", names("/click bt|"))
+    ns.sources.clickButtons = nil
+end
+check("click: mouse buttons", names("/click X |") == "LeftButton,RightButton,MiddleButton,Button4,Button5",
+    names("/click X |"))
+check("click: then true", names("/click X LeftButton |") == "true", names("/click X LeftButton |"))
 check("slots after a digit", names("/use 1|") == "1,10,11,12,13,14,15,16,17,18,19", names("/use 1|"))
 do
     local items = ns.Completion.Get(ctx("/equipslot |"))
@@ -361,6 +379,20 @@ check("equipslot: the slot first", issues("/equipslot Fire Ring") == "error:Fire
 check("equipslot: then the item", issues("/equipslot 13") == "error:13", issues("/equipslot 13"))
 check("equipslot: a real slot", issues("/equipslot 20 Fire Ring") == "error:20", issues("/equipslot 20 Fire Ring"))
 check("equipslot: an item from a bag", issues("/equipslot 16 0 3") == "", issues("/equipslot 16 0 3"))
+check("click: down reads as no", issues("/click X LeftButton down") == "warning:down", issues("/click X LeftButton down"))
+check("click: yes and no the game reads", issues("/click X LeftButton true\n/click X LeftButton 1\n/click X LeftButton false") == "")
+check("click: a mouse button misspelled", issues("/click X RigthButton") == "warning:RigthButton",
+    issues("/click X RigthButton"))
+do
+    local typo = H.Errors("/click X RigthButton")[1]
+    check("click: with its fix", typo and typo.fix == "RightButton", typo and typo.fix)
+end
+check("click: other words go to the button as they are", issues("/click X Keybind\n/click X Button7\n/click X leftbutton") == "warning:leftbutton",
+    issues("/click X Keybind\n/click X Button7\n/click X leftbutton"))
+H.checkClick = function(name) return name == "Nope" and "no button" or nil end
+check("click: a button that isn't there", issues("/click [mod] Nope; ActionButton1") == "warning:Nope",
+    issues("/click [mod] Nope; ActionButton1"))
+H.checkClick = nil
 check("good values pass", issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X") == "",
     issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X"))
 

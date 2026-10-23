@@ -34,6 +34,7 @@ function ns.RegisterActionCommands()
         for _, name in ipairs(aliases(key)) do ns.Parser.actionCommands[name] = base end
     end
     for _, name in ipairs(aliases("STOPMACRO")) do ns.Parser.stopCommands[name] = true end
+    for _, name in ipairs(aliases("CLICK")) do ns.Parser.clickCommands[name] = true end
 end
 
 -- The game's own condition check for the live preview: SecureCmdOptionParse is what macros run with.
@@ -314,6 +315,89 @@ function ns.sources.pets()
         if family then out[#out + 1] = { name = family, hint = "pet family" } end
     end
     return out
+end
+
+------------------------------------------------------------------------
+-- /click: the buttons there are now, with what is on them
+------------------------------------------------------------------------
+-- Names of bar buttons: the game's bars, then those of Bartender4 and Dominos (ElvUI below).
+local CLICK_BARS = {
+    { "ActionButton%d", 12 }, { "MultiBarBottomLeftButton%d", 12 }, { "MultiBarBottomRightButton%d", 12 },
+    { "MultiBarRightButton%d", 12 }, { "MultiBarLeftButton%d", 12 }, { "MultiBar5Button%d", 12 },
+    { "MultiBar6Button%d", 12 }, { "MultiBar7Button%d", 12 }, { "PetActionButton%d", 10 }, { "StanceButton%d", 10 },
+    { "BT4Button%d", 180 }, { "DominosActionButton%d", 180 },
+}
+local CLICK_OTHERS = {
+    { "ExtraActionButton1", "extra action" }, { "MainMenuBarVehicleLeaveButton", "leave the vehicle" },
+    { "StaticPopup1Button1", "popup: first button" }, { "StaticPopup1Button2", "popup: second button" },
+}
+local ItemNameByID = C_Item and C_Item.GetItemNameByID or function(id) return GetItemInfo and (GetItemInfo(id)) end
+
+-- A button /click can click (the game checks the same). pcall: _G holds all kinds of things.
+local function clickable(frame)
+    if type(frame) ~= "table" then return false end
+    local ok, yes = pcall(function()
+        return frame:IsObjectType("Button") and not (frame.IsForbidden and frame:IsForbidden())
+    end)
+    return ok and yes and true or false
+end
+
+-- What a bar button does now: the spell, item or macro on its action slot.
+local function onButton(button)
+    local slot = button.action or button._state_action -- the game's bars; LibActionButton (Bartender4, ElvUI)
+    if type(slot) ~= "number" and button.GetAttribute then slot = button:GetAttribute("action") end
+    if type(slot) ~= "number" then return nil end
+    local kind, id = GetActionInfo(slot)
+    if kind == "spell" then return SpellName(id) end
+    if kind == "item" then return ItemNameByID(id) end
+    if kind == "macro" then return (GetMacroInfo(id)) end
+end
+
+local function buttonHint(pattern, i, button)
+    if pattern == "PetActionButton%d" then
+        local name, _, isToken = GetPetActionInfo(i)
+        return isToken and _G[name] or name -- "PET_ACTION_ATTACK" -> "Attack"
+    elseif pattern == "StanceButton%d" then
+        local _, a = GetShapeshiftFormInfo(i)
+        if type(a) == "string" then return a end -- Classic: the name
+        local spellID = select(4, GetShapeshiftFormInfo(i))
+        return spellID and SpellName(spellID)
+    end
+    return onButton(button)
+end
+
+function ns.sources.clickButtons()
+    local out = {}
+    local function add(name, hint)
+        if clickable(_G[name]) then out[#out + 1] = { name = name, hint = hint } end
+    end
+    for _, bar in ipairs(CLICK_BARS) do
+        for i = 1, bar[2] do
+            local name = bar[1]:format(i)
+            local button = _G[name]
+            if clickable(button) then out[#out + 1] = { name = name, hint = buttonHint(bar[1], i, button) } end
+        end
+    end
+    for bar = 1, 15 do
+        for i = 1, 12 do
+            local name = string.format("ElvUI_Bar%dButton%d", bar, i)
+            if clickable(_G[name]) then out[#out + 1] = { name = name, hint = onButton(_G[name]) } end
+        end
+    end
+    for _, other in ipairs(CLICK_OTHERS) do add(other[1], other[2]) end
+    return out
+end
+
+-- "/click Name": a warning when no button has that name now (an addon may still make it, so not an error).
+function ns.Highlight.checkClick(name)
+    if name:find("[%.:]") then return nil end -- not a plain global name: left to the game
+    local frame = _G[name]
+    if frame == nil then
+        return string.format('no button "%s" now (an addon may make it later)', name), "no such button now"
+    end
+    if not clickable(frame) then
+        return string.format('"%s" is not a button /click can click', name), "not a button /click can click"
+    end
 end
 
 ------------------------------------------------------------------------
