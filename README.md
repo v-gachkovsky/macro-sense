@@ -39,8 +39,10 @@ CurseForge once it is published. For development, symlink the folder from this r
 |---|---|
 | `/` | slash commands, emotes, chat commands (Blizzard and addons) |
 | `/cast [` | macro conditions |
-| `[@` / `[target=` | unit ids |
-| `[mod:` | `shift`, `ctrl`, `alt`, and `cmd` on Mac |
+| `[@` / `[target=` | unit ids, then `...target` / `...pet` after one (`party1target`) |
+| `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys (`lshift`, ...) |
+| `[form:` / `[stance:` | your forms with their names (`1` Bear Form, ...) |
+| `[spec:` / `[equipped:` / `[group:` / `[bar:` / `[btn:` / `[pet:` | specializations, weapon and armor types, `party` / `raid`, bar pages, buttons, your pet |
 | `/cast ` or after `]` / `;` | spells, then usable items from bags |
 | a spell with several learned ranks (Classic) | its ranks, highest first: Tab inserts `Fireball(Rank 2)`, Esc keeps `Fireball` |
 | `/use ` | usable items from bags and gear, then spells |
@@ -61,8 +63,11 @@ an empty `[]` removes both.
   ...), and a scheme colors roles, so new schemes are easy to add in `Themes.lua`.
 - Syntax errors are underlined, the status bar names the first one with its line (all of them on hover) and
   Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty
-  condition (`[harm,,dead]`), `@` or `target=` without a unit, `mod:` without a value. Spaces after commas
-  are fine. The word being typed is not marked until you move on.
+  condition (`[harm,,dead]`), `@` or `target=` without a unit, `mod:` without a value, a wrong value
+  (`btn:7`, `group:arena`, `mod:shfit`), a value for a condition that takes none (`combat:1`). Spaces after
+  commas are fine. The word being typed is not marked until you move on.
+- Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
+  name, which macros allow.
 - Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game, Cmd+W,
   Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns. Keys are found from a direct `MACRO name` binding
   and the standard action bars; bars of addons (Bartender, ElvUI) are not checked.
@@ -93,6 +98,7 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/Completion.lua`: ranks suggestions. Pure Lua.
 - `MacroSense/Editing.lua`: auto-closing brackets. Pure Lua.
 - `MacroSense/Data.lua`, `MacroSense/Themes.lua`: static commands, conditions, units; fonts, schemes.
+- `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo and error underlines.

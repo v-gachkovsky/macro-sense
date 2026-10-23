@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Condition values** are suggested after the colon: your forms for `form:` / `stance:` (with their names),
+  specializations for `spec:`, weapon and armor types for `equipped:` / `worn:`, `party` / `raid` for
+  `group:`, bar pages for `bar:`, button names for `btn:`, your pet for `pet:`, and left / right keys
+  (`lshift`, `rctrl`, ...) for `mod:`. Also after `/` for the next value.
+- **Longer units**: after a unit id the list offers `...target` and `...pet` (`party1target`,
+  `focustargettarget`), and `npc`, `anyenemy`, `softenemy` and the other Retail units are listed.
+- **Checks for values**: a wrong value is an error (`btn:7`, `group:arena`, `mod:shfit`, `bar:9`,
+  `form:x`), and so is a value for a condition that takes none (`combat:1`).
+- **Unknown units** (`@mousover`) are underlined as a **warning** in yellow: they may be a player's name,
+  which macros allow.
+
+### Changed
+- The status bar shows errors first, then the Mac Cmd shortcut warning, then other warnings; the Save
+  alert icon is for errors only. The tooltip lists everything, errors in red and warnings in yellow.
+- A word typed in full no longer lists other words that only contain it (`shift` no longer shows
+  `lshift`); longer words that start with it still show.
+
 ## [0.1.0-beta1] - 2026-10-23
 
 First public version. The addon is in early development: please report anything that looks wrong.

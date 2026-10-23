@@ -68,6 +68,16 @@ local function luaSpans(s, base, add)
     end
 end
 
+-- A unit after "@" / "target=". Not a unit id: may still be a player's name, so only a warning.
+local function unitSpan(unit, from, add)
+    local to = from + #unit - 1
+    if ns.Conditions and not ns.Conditions.IsUnit(unit) then
+        add(from, to, "unit", string.format('unknown unit "%s" (fine if it is a player\'s name)', unit), "warning")
+    else
+        add(from, to, "unit")
+    end
+end
+
 -- One condition inside brackets, e.g. "nomod:shift/ctrl", "@focus", "target=pet".
 local function conditionSpans(s, base, add)
     local lead = #s:match("^%s*")
@@ -78,14 +88,14 @@ local function conditionSpans(s, base, add)
     if unit then
         if unit == "" then return add(at + 1, at + 1, "error", "@ needs a unit") end
         add(at + 1, at + 1, "operator")
-        add(at + 2, at + #body, "unit")
+        unitSpan(unit, at + 2, add)
         return
     end
     unit = body:match("^target=(.*)$")
     if unit then
         if unit == "" then return add(at + 1, at + 7, "error", "target= needs a unit") end
         add(at + 1, at + 7, "operator")
-        add(at + 8, at + #body, "unit")
+        unitSpan(unit, at + 8, add)
         return
     end
     local name, values = body:match("^([^:]*):(.*)$")
@@ -95,13 +105,21 @@ local function conditionSpans(s, base, add)
     else
         add(at + 1, at + #name, "error", string.format('unknown condition "%s"', name))
     end
+    local C = ns.Conditions
     if values == "" then
         add(at + #name + 1, at + #name + 1, "error", name .. ": needs a value")
+    elseif values and isCondition(name) and C and not C.TakesValue(name) then
+        add(at + #name + 1, at + #body, "error", name:lower() .. " takes no value")
     elseif values then
         local pos = at + #name + 1
         add(pos, pos, "operator")
         for part, slash in values:gmatch("([^/]*)(/?)") do
-            if part ~= "" then add(pos + 1, pos + #part, "value") end
+            local problem = part ~= "" and C and C.CheckValue(name, part)
+            if problem then
+                add(pos + 1, pos + #part, "error", problem)
+            elseif part ~= "" then
+                add(pos + 1, pos + #part, "value")
+            end
             pos = pos + #part
             if slash ~= "" then
                 add(pos + 1, pos + 1, "operator")
@@ -126,7 +144,7 @@ local function argSpans(s, base, add, argKind, sequence)
                 close = #s + 1
                 -- One error is enough: the rest of the line still gets colors, not more errors.
                 addCond = function(from, to, kind, message)
-                    if not message then add(from, to, kind) end
+                    if not message or kind ~= "error" then add(from, to, kind) end
                 end
             end
             -- Split on "," by hand: gmatch with an empty-matching pattern behaves differently in Lua 5.1.
@@ -210,8 +228,8 @@ end
 
 function Highlight.Spans(raw)
     local spans = {}
-    local function add(from, to, kind, message)
-        if to >= from then spans[#spans + 1] = { from, to, kind, message } end
+    local function add(from, to, kind, message, severity)
+        if to >= from then spans[#spans + 1] = { from, to, kind, message, message and (severity or "error") } end
     end
     local pos = 0
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
@@ -222,13 +240,13 @@ function Highlight.Spans(raw)
     return spans
 end
 
--- Syntax errors: { from, to, message, line } (raw positions, 1-based, inclusive).
+-- Syntax problems: { from, to, message, line, severity = "error" | "warning" } (raw positions, 1-based, inclusive).
 function Highlight.Errors(raw)
     local out = {}
     for _, span in ipairs(Highlight.Spans(raw)) do
         if span[4] then
             local line = select(2, raw:sub(1, span[1]):gsub("\n", "")) + 1
-            out[#out + 1] = { from = span[1], to = span[2], message = span[4], line = line }
+            out[#out + 1] = { from = span[1], to = span[2], message = span[4], line = line, severity = span[5] }
         end
     end
     return out

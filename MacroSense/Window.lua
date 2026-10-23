@@ -58,19 +58,31 @@ local function UpdateStatus()
         local keys = ns.Shortcuts.KeysFor(state.index, state.name)
         message = ns.Shortcuts.Message(ns.Shortcuts.Conflicts(raw, keys))
     end
-    -- Syntax errors come first; Save shows an alert icon too (saving is still allowed).
-    local errors = code.errors or {}
-    saveBtn.alert:SetShown(#errors > 0)
-    if #errors > 0 then
-        -- Short form here ("unknown command" without the name); the full list is in the tooltip.
-        local e = errors[1]
-        local more = #errors > 1 and string.format(" (+%d more)", #errors - 1) or ""
-        local short = e.message:gsub('%s*".-"$', "")
-        warning:SetText(string.format("|cff%sLine %d: %s%s|r", s.invalid, e.line, short, more))
-    else
-        warning:SetText(message and ("|cff" .. s.warning .. message .. "|r") or "")
+    -- Errors first, then the macOS shortcut (it can quit the game), then other warnings.
+    -- Save shows an alert icon for errors (saving is still allowed).
+    local issues, errors, warnings = code.errors or {}, {}, {}
+    for _, e in ipairs(issues) do
+        table.insert(e.severity == "warning" and warnings or errors, e)
     end
-    warning.errors, warning.message = errors, message
+    saveBtn.alert:SetShown(#errors > 0)
+    -- Short form here ("unknown unit" without the name and notes); the full list is in the tooltip.
+    local function line(e, color, total)
+        local short = e.message:gsub('%s*%b""', ""):gsub("%s*%b()", "")
+        local more = total > 1 and string.format(" (+%d more)", total - 1) or ""
+        return string.format("|cff%sLine %d: %s%s|r", color, e.line, short, more)
+    end
+    local total = #issues + (message and 1 or 0)
+    if #errors > 0 then
+        warning:SetText(line(errors[1], s.invalid, total))
+    elseif message then
+        local more = total > 1 and string.format(" (+%d more)", total - 1) or ""
+        warning:SetText("|cff" .. s.warning .. message .. more .. "|r")
+    elseif #warnings > 0 then
+        warning:SetText(line(warnings[1], s.warning, total))
+    else
+        warning:SetText("")
+    end
+    warning.errors, warning.message = issues, message
 
     -- The dot is a texture: not every font has a "●" glyph.
     dirtyDot:SetShown(dirty and letters <= MAX_BODY)
@@ -490,7 +502,9 @@ local function Build()
         if #errors == 0 and not message then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         for _, e in ipairs(errors) do
-            GameTooltip:AddLine(string.format("Line %d: %s", e.line, e.message), 1, 0.35, 0.35)
+            local r, g, b = 1, 0.35, 0.35
+            if e.severity == "warning" then r, g, b = 1, 0.82, 0 end
+            GameTooltip:AddLine(string.format("Line %d: %s", e.line, e.message), r, g, b)
         end
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
         GameTooltip:Show()
