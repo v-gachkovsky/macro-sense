@@ -13,6 +13,26 @@ ns.IconPicker = Picker
 local frame, search, slider, buttons, info
 local all, shown = nil, {}
 local offset, current, onPick = 0, nil, nil
+local anchor -- the editor window the picker docks to
+local SNAP = 24 -- px: this close to the editor's right edge, the picker docks back
+
+-- Saved: size, and whether it is docked to the editor or free (with its position).
+local function Saved()
+    ns.db.picker = ns.db.picker or { docked = true }
+    return ns.db.picker
+end
+
+local function Dock()
+    frame:ClearAllPoints()
+    frame:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 4, 0)
+    Saved().docked = true
+end
+
+-- Left edge near the editor's right edge, tops roughly level.
+local function NearEditor()
+    local l, t, r, top = frame:GetLeft(), frame:GetTop(), anchor and anchor:GetRight(), anchor and anchor:GetTop()
+    return l and t and r and top and math.abs(l - (r + 4)) <= SNAP and math.abs(t - top) <= SNAP * 3
+end
 
 -- Older flavors return texture names instead of file IDs.
 local function Texture(icon)
@@ -164,7 +184,33 @@ local function Create()
     end
     Layout()
     frame:SetScript("OnSizeChanged", Layout)
-    ns.ResizeGrip(frame, function() ns.db.picker = { w = frame:GetWidth(), h = frame:GetHeight() } end)
+    -- Resizing frees a frame from its anchor: a docked picker docks again.
+    ns.ResizeGrip(frame, function()
+        local saved = Saved()
+        saved.w, saved.h = frame:GetWidth(), frame:GetHeight()
+        if saved.docked then Dock() end
+    end)
+
+    -- Drag by any empty spot to move it; let go next to the editor to dock it again.
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    local function border(snap)
+        local s = ns.scheme
+        if s then frame:SetBackdropBorderColor(ns.RGB(snap and s.accent or s.border)) end
+    end
+    frame:SetScript("OnDragStart", function()
+        frame:StartMoving()
+        frame:SetScript("OnUpdate", function() border(NearEditor()) end)
+    end)
+    frame:SetScript("OnDragStop", function()
+        frame:StopMovingOrSizing()
+        frame:SetScript("OnUpdate", nil)
+        border(false)
+        if NearEditor() then return Dock() end
+        local saved = Saved()
+        local point, _, relPoint, x, y = frame:GetPoint()
+        saved.docked, saved.point, saved.relPoint, saved.x, saved.y = false, point, relPoint, x, y
+    end)
 
     slider = ns.ScrollBar(frame, SetOffset, 1)
     slider:SetPoint("TOPRIGHT", -PAD, -TOP)
@@ -178,14 +224,20 @@ local function Create()
 end
 
 -- anchor: frame to sit next to; icon: the macro's icon now; pick(icon) runs on every click.
-function Picker.Open(anchor, icon, pick)
+function Picker.Open(editor, icon, pick)
+    anchor = editor
     if not frame then Create() end
     current, onPick = icon, pick
     all = Build()
     search:SetText("")
     Filter()
-    frame:ClearAllPoints()
-    frame:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 4, 0)
+    local saved = Saved()
+    if saved.docked or not saved.point then
+        Dock()
+    else
+        frame:ClearAllPoints()
+        frame:SetPoint(saved.point, UIParent, saved.relPoint, saved.x, saved.y)
+    end
     frame:Show()
 end
 

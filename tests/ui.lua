@@ -94,6 +94,9 @@ function Frame:GetNumLines() return 1 end
 function Frame:GetStringHeight() return 14 end
 function Frame:GetFont() return "font", 14, "" end
 function Frame:SetPoint(...) self.point = { ... } end
+function Frame:GetLeft() return self.left end
+function Frame:GetTop() return self.top end
+function Frame:GetRight() return self.right end
 
 function CreateFrame(kind, name) return New(kind, name) end
 UIParent = New("Frame")
@@ -582,6 +585,28 @@ do
         end
     end
     check("picker size remembered", ns.db.picker and ns.db.picker.w == 600 and ns.db.picker.h == 500)
+    -- Docking: docked by default; dragged away it stays free (also when reopened); dragged back it docks.
+    local picker, editor = MacroSenseIconPicker, MacroSenseFrame
+    check("picker docked to the editor", picker.point[2] == editor)
+    editor.right, editor.top = 800, 600
+    picker.left, picker.top = 1200, 700
+    Fire(picker, "OnDragStart")
+    Fire(picker, "OnDragStop")
+    check("dragged away: free", ns.db.picker.docked == false)
+    picker:Hide()
+    Fire(MacroSenseIconButton, "OnClick")
+    check("reopened free, not on the editor", picker:IsShown() and picker.point[2] ~= editor)
+    picker.left, picker.top = 815, 590
+    Fire(picker, "OnDragStart")
+    Fire(picker, "OnDragStop")
+    check("dragged next to the editor: docked", ns.db.picker.docked == true and picker.point[2] == editor)
+    picker.point = { "TOPLEFT", UIParent, "TOPLEFT", 1, 1 } -- what resizing does to the anchor
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.scripts.OnMouseUp and o.scripts.OnMouseDown and not o.scripts.OnClick then
+            Fire(o, "OnMouseUp")
+        end
+    end
+    check("docked picker stays docked after resizing", picker.point[2] == editor)
     MacroSenseIconPicker:Hide()
     check("picker closes", not MacroSenseIconPicker:IsShown())
 end
