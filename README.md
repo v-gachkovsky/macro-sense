@@ -14,8 +14,8 @@
 ---
 
 > **Early development.** MacroSense is young and still growing. If something looks wrong or you miss a
-> feature, please report it: I read every report and try to fix things fast. `/ms bug` in game prints the
-> details to include.
+> feature, please [open an issue](https://github.com/v-gachkovsky/macro-sense/issues): I read every report and try to fix things fast. `/ms bug` in game
+> prints the details to include.
 
 ## Overview
 

@@ -4,8 +4,8 @@ _G.MacroSense = ns
 local L_PREFIX = "|cff569cd6MacroSense|r: "
 function ns.Print(...) print(L_PREFIX .. string.format(...)) end
 
--- Where players report bugs. Set it once the project has a public page (GitHub / CurseForge issues).
-ns.ISSUES_URL = nil
+-- Where players report bugs.
+ns.ISSUES_URL = "https://github.com/v-gachkovsky/macro-sense/issues"
 
 local Metadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
 local function Version()
