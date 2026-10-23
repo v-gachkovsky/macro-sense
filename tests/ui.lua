@@ -204,6 +204,14 @@ function GetActionInfo(slot) if actions[slot] then return actions[slot][1], acti
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
 function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
 GameTooltip = New("GameTooltip")
+-- A round minimap 140 px wide, its center at 1000, 600 on the screen; the mouse moves in tests.
+Minimap = New("Frame", "Minimap")
+function Minimap:GetWidth() return 140 end
+function Minimap:GetHeight() return 140 end
+function Minimap:GetCenter() return 1000, 600 end
+function Minimap:GetEffectiveScale() return 1 end
+local cursorX, cursorY = 0, 0
+function GetCursorPosition() return cursorX, cursorY end
 -- The game's condition check, for a state the tests change: modifiers held, units, pet, combat.
 local game = { mods = {}, units = {} }
 SecureCmdOptionParse = dofile("tests/fakeparse.lua")(game)
@@ -1589,6 +1597,65 @@ do
     check("click: a name no button has", statusText():find("no such button now", 1, true) ~= nil, statusText())
     ns.Window.Select(1)
     NextFrame()
+end
+
+-- The minimap button: where it was left on the edge; a click opens and closes the editor, a drag moves it
+-- along the edge (along the sides of a square minimap), /ms minimap hides it until it is asked back.
+do
+    local b, r = MacroSenseMinimapButton, 140 / 2 + 5
+    local function at() return string.format("%.1f,%.1f", b.point[4], b.point[5]) end
+    local function drag(x, y)
+        Fire(b, "OnDragStart")
+        cursorX, cursorY = x, y
+        NextFrame()
+        Fire(b, "OnDragStop")
+    end
+    check("minimap: the button is on the minimap", b and b:IsShown() and b.point[2] == Minimap)
+    check("minimap: where it was left", at() == string.format("%.1f,%.1f", r * math.cos(math.rad(250)),
+        r * math.sin(math.rad(250))), at())
+    local open = MacroSenseFrame:IsShown()
+    Fire(b, "OnClick", "LeftButton")
+    check("minimap: a click closes the editor", MacroSenseFrame:IsShown() == not open)
+    Fire(b, "OnClick", "LeftButton")
+    check("minimap: and opens it", MacroSenseFrame:IsShown() == open)
+    drag(1000 - 300, 600)
+    check("minimap: a drag moves it along the edge", at() == "-75.0,0.0" and math.abs(ns.db.minimapAngle - 180) < 1e-6,
+        at())
+    cursorX = 1000 + 300
+    NextFrame()
+    check("minimap: it stays when let go", at() == "-75.0,0.0", at())
+    GetMinimapShape = function() return "SQUARE" end
+    drag(1000 + 100, 600 + 50)
+    check("minimap: on the side of a square minimap", at() == "75.0,37.5", at())
+    GetMinimapShape = nil
+    -- An addon makes the minimap bigger: the button keeps to its edge.
+    Minimap.GetWidth, Minimap.GetHeight = function() return 200 end, function() return 200 end
+    Fire(Minimap, "OnSizeChanged", 200, 200)
+    local a = math.rad(ns.db.minimapAngle)
+    check("minimap: on the edge of a bigger minimap",
+        at() == string.format("%.1f,%.1f", 105 * math.cos(a), 105 * math.sin(a)), at())
+    Minimap.GetWidth, Minimap.GetHeight = function() return 140 end, function() return 140 end
+    Fire(Minimap, "OnSizeChanged", 140, 140)
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(b, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("minimap: the tooltip says what it does", table.concat(tip, "\n"):find("Drag: move the button", 1, true)
+        and table.concat(tip, "\n"):find("/ms minimap hides it", 1, true), table.concat(tip, " / "))
+    SlashCmdList.MACROSENSE("minimap")
+    check("minimap: /ms minimap hides it", not b:IsShown() and ns.db.minimapButton == false
+        and printedWith("minimap button |cffff0000off"))
+    Send("PLAYER_LOGIN")
+    check("minimap: still hidden after the next login", not b:IsShown())
+    SlashCmdList.MACROSENSE("minimap")
+    check("minimap: /ms minimap brings it back", b:IsShown() and ns.db.minimapButton == true)
+    -- Retail: the addon menu by the minimap calls the function the TOC names.
+    local fn
+    for line in io.lines("MacroSense/MacroSense.toc") do fn = fn or line:match("^## AddonCompartmentFunc: (%S+)") end
+    check("compartment: the TOC names a function", fn and type(_G[fn]) == "function", fn)
+    _G[fn]("MacroSense", "LeftButton")
+    check("compartment: it opens or closes the editor", MacroSenseFrame:IsShown() == not open)
+    _G[fn]("MacroSense", "LeftButton")
 end
 
 -- Theme switch recolors without touching the text.

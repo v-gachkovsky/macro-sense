@@ -21,6 +21,8 @@ ns.defaults = {
     scheme = ns.DEFAULT_SCHEME,
     scope = "general",
     preview = true, -- the live preview column
+    minimapButton = true,
+    minimapAngle = 250, -- where on the minimap's edge, in degrees (0 = right, 90 = up)
     welcomeSeen = nil, -- version the early-development note was shown for
 }
 
@@ -82,6 +84,7 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "PLAYER_LOGIN" then
         ns.RegisterActionCommands()
         ns.History.Scan()
+        ns.MinimapButton.Update()
         Welcome()
     elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player") then
         ns.InvalidateSources("spells")
@@ -110,6 +113,8 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.db.enabled = not ns.db.enabled
         ns.Print("autocomplete %s", OnOff(ns.db.enabled))
         if not ns.db.enabled then ns.Popup:Hide() end
+    elseif msg == "minimap" then
+        ns.Print("minimap button %s", OnOff(ns.MinimapButton.Toggle()))
     elseif msg == "bug" then
         -- Everything a bug report needs, ready to copy.
         local build, _, _, toc = GetBuildInfo()
@@ -122,6 +127,7 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.db.debug = not ns.db.debug
         ns.Print("debug %s", OnOff(ns.db.debug))
     else
-        ns.Print("/ms - open the editor; /ms bug - details for a bug report; /ms autocomplete | debug - toggle")
+        ns.Print("/ms - open the editor; /ms minimap - hide or show the minimap button; /ms bug - details for a "
+            .. "bug report; /ms autocomplete | debug - toggle")
     end
 end

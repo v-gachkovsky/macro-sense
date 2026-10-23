@@ -22,8 +22,10 @@ commands, conditions, units, spells and items as you type, colors the syntax, un
 shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
 addons see every change.
 
-Open it with `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button in the title bar of the
-Blizzard macro window. Drag the title bar to move it and the dotted corner to resize it (780 x 460 at least).
+Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button in
+the title bar of the Blizzard macro window. Drag the title bar to move it and the dotted corner to resize it
+(780 x 460 at least). Drag the minimap button to move it along the edge; `/ms minimap` hides it. On Retail,
+MacroSense is in the addon menu by the minimap too.
 
 **Clients:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever
 (`## Interface: 120105, 50504, 20506, 11509, 16001`).
@@ -155,6 +157,7 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 ## Commands
 
 - `/ms` - open / close the editor
+- `/ms minimap` - hide / show the minimap button
 - `/ms bug` - print the versions to include in a bug report
 - `/ms autocomplete` - toggle autocomplete
 - `/ms debug` - print the editor's key events and underline positions
@@ -183,11 +186,12 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/IconPicker.lua`: icon grid.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
+- `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, schemes, shortcuts
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, schemes, shortcuts, minimap
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 

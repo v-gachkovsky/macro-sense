@@ -33,6 +33,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   Bartender4, ElvUI and Dominos, the extra action button, popups), then the mouse buttons, then `true` for a
   click on key press. A name no button has now and a frame that is not a button are warnings, a misspelled
   mouse button gets a fix, and `down` as the last word is a warning: the game reads it as no.
+- **Minimap button**: a click opens or closes the editor, a drag moves it along the edge (square minimaps
+  too), and `/ms minimap` hides it. On Retail, MacroSense is in the addon menu by the minimap too.
 
 ### Changed
 - **Live preview** moved to the title bar, next to the font and the scheme, to make room in the header.
