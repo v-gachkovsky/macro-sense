@@ -24,6 +24,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **`reset=` in `/castsequence`**: `target`, `combat`, `shift`, `ctrl`, `alt` and seconds are suggested after
   `reset=` and after each `/` (the ones not used yet), and a wrong value is an error (`reset=tagret`,
   `reset=1.5`, an empty `reset=`), like `reset=` in a command other than `/castsequence`.
+- **Items by slot**: after `/use 1` the list offers equipment slots with what is in them (`13` Trinket 1:
+  ...), after `/use 0 ` the slots of that bag that hold something, and `/equipslot ` first offers the slots,
+  then gear. Slot numbers, `0 1` and `item:6948` are colored as values instead of spell names; a slot that
+  doesn't exist (`/use 23`), `/equipslot` without the slot or the item, and `item:` without a number are
+  errors. The live preview names the slot: `/use 13` shows `Trinket 1`.
 
 ### Changed
 - **Live preview** moved to the title bar, next to the font and the scheme, to make room in the header.

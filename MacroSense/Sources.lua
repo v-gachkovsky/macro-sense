@@ -231,6 +231,26 @@ function ns.sources.items()
     return out
 end
 
+-- Equipment slots with what is in them now: "13" -> "Trinket 1: Healthstone".
+function ns.sources.slots()
+    local out = {}
+    for _, s in ipairs(ns.data.slots) do
+        local item = linkName(GetInventoryItemLink("player", tonumber(s.name)))
+        out[#out + 1] = { name = s.name, hint = item and (s.hint .. ": " .. item) or s.hint }
+    end
+    return out
+end
+
+-- The slots of a bag that hold something, with its name: "/use 0 1".
+function ns.sources.bagSlots(bag)
+    local out = {}
+    for slot = 1, NumSlots(bag) or 0 do
+        local item = linkName(ItemLink(bag, slot))
+        if item then out[#out + 1] = { name = tostring(slot), hint = item } end
+    end
+    return out
+end
+
 ------------------------------------------------------------------------
 -- Condition values: forms, specializations, item types, pet
 ------------------------------------------------------------------------

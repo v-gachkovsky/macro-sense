@@ -77,6 +77,15 @@ expect("/castsequence reset=|", "reset", "")
 expect("/castsequence reset=1|", "reset", "1")
 expect("/castsequence [mod] reset=10/ta|", "reset", "ta")
 expectNil("/cast reset=|")
+-- Items by where they are: an equipment slot, a bag and its slot; /equipslot takes the slot first.
+expect("/use 1|", "slot", "1")
+expect("/use 0 |", "bagSlot", "", { bag = 0 })
+expect("/use [mod] 2 1|", "bagSlot", "1", { bag = 2 })
+expect("/castsequence reset=10 13, 1|", "slot", "1")
+expect("/equipslot |", "slot", "")
+expect("/equipslot 13 Fire|", "action", "Fire")
+expect("/equipslot 13 0 |", "bagSlot", "", { bag = 0 })
+expect("/cancelaura 1|", "action", "1")
 expectNil("/say hel|")
 expectNil("just text|")
 
@@ -152,6 +161,9 @@ expectKinds("/cast [nocombat, bogus] !Fire Ball", "/cast=command [=bracket nocom
 expectKinds("/castsequence reset=10 A, B", "/castsequence=command reset=option ==operator 10=value A=action ,=operator B=action")
 expectKinds("/castsequence reset=10/target A", "/castsequence=command reset=option ==operator 10=value /=operator"
     .. " target=value A=action")
+expectKinds("/use 13; 0 1", "/use=command 13=value ;=operator 0=value 1=value")
+expectKinds("/use item:6948", "/use=command item:=option 6948=value")
+expectKinds("/equipslot 13 Fire Ring", "/equipslot=command 13=value Fire Ring=action")
 expectKinds("/target [@mouseover] party1", "/target=command [=bracket @=operator mouseover=unit ]=bracket party1=unit")
 expectKinds("/cast [mod:shift/ctrl] X", "/cast=command [=bracket mod=condition :=operator shift=value"
     .. " /=operator ctrl=value ]=bracket X=action")
@@ -312,6 +324,12 @@ check("reset: not the ones used", names("/castsequence reset=target/|") == "comb
 check("reset: one number", names("/castsequence reset=15/|") == "target,combat,shift,ctrl,alt",
     names("/castsequence reset=15/|"))
 check("reset: by prefix", names("/castsequence reset=c|") == "combat,ctrl", names("/castsequence reset=c|"))
+check("slots after a digit", names("/use 1|") == "1,10,11,12,13,14,15,16,17,18,19", names("/use 1|"))
+do
+    local items = ns.Completion.Get(ctx("/equipslot |"))
+    check("equipslot: every slot, with its name", #items == 19 and items[13].name == "13" and items[13].hint == "Trinket 1",
+        items[13] and items[13].hint)
+end
 
 -- Issues with severity.
 local function issues(raw)
@@ -332,6 +350,17 @@ check("reset: no fraction of a second", issues("/castsequence reset=1.5 A, B") =
 check("reset: a value is needed", issues("/castsequence reset= A, B") == "error:=", issues("/castsequence reset= A, B"))
 check("reset: only in /castsequence", issues("/cast reset=10 Fireball") == "error:reset=10",
     issues("/cast reset=10 Fireball"))
+check("slots: one that doesn't exist", issues("/use 23") == "error:23" and issues("/use [mod] 20; 13") == "error:20",
+    issues("/use 23"))
+check("slots: 0 is fine for /use (Classic's ammo, or a bag on its way)", issues("/use 0") == "")
+check("slots: not for /equipslot", issues("/equipslot 0 Fire Ring") == "error:0", issues("/equipslot 0 Fire Ring"))
+check("slots: fine ones", issues("/use 13\n/use 0 1\n/castsequence 13, 14\n#showtooltip 14\n/use item:6948") == "",
+    issues("/use 13\n/use 0 1\n/castsequence 13, 14\n#showtooltip 14\n/use item:6948"))
+check("item: needs a number", issues("/use item:abc") == "error:item:abc", issues("/use item:abc"))
+check("equipslot: the slot first", issues("/equipslot Fire Ring") == "error:Fire Ring", issues("/equipslot Fire Ring"))
+check("equipslot: then the item", issues("/equipslot 13") == "error:13", issues("/equipslot 13"))
+check("equipslot: a real slot", issues("/equipslot 20 Fire Ring") == "error:20", issues("/equipslot 20 Fire Ring"))
+check("equipslot: an item from a bag", issues("/equipslot 16 0 3") == "", issues("/equipslot 16 0 3"))
 check("good values pass", issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X") == "",
     issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X"))
 
@@ -478,7 +507,7 @@ expectPreview("showtooltip names the icon", tip, {}, "icon: Corruption | Shadow 
 expectPreview("showtooltip with alt", tip, { mods = { alt = true } }, "icon: Fear | Shadow Bolt")
 expectPreview("showtooltip no clause: question mark", "#showtooltip [mod:alt] Fear\n/cast Shadow Bolt", {},
     "icon: ? | Shadow Bolt")
-expectPreview("#show", "#show\n/use [combat] Healthstone; 13", {}, "icon: slot 13 | slot 13")
+expectPreview("#show", "#show\n/use [combat] Healthstone; 13", {}, "icon: Trinket 1 | Trinket 1")
 -- Other commands.
 expectPreview("sequence: the list", "#showtooltip\n/castsequence reset=10 Corruption, !Immolate", {},
     "icon: Corruption | Corruption, Immolate")
@@ -488,6 +517,7 @@ expectPreview("sequence: the next step from the game", "#showtooltip\n/castseque
     { parse = fakeParse({}), sequenceStep = function(s) return s == "reset=10 Corruption, !Immolate" and 2, nil, "immolate" end })
 expectPreview("random", "/castrandom Fear, Howl of Terror", {}, "Fear, Howl of Terror")
 expectPreview("equip", "/equip Fire Ring\n/equipslot 13 Healthstone", {}, "equip Fire Ring | equip Healthstone")
+expectPreview("an item by its slot", "/use 13\n/use 0 1\n/use 23", {}, "Trinket 1 | bag 0, slot 1 | slot 23")
 expectPreview("cancelaura", "/cancelaura [combat] Demon Armor; Fel Armor", {}, "cancel Fel Armor")
 expectPreview("an empty clause casts nothing", "/cast [mod:alt]; Fear", { mods = { alt = true } }, "nothing")
 expectPreview("target with a unit", "/target party1\n/focus [@mouseover,exists]", { units = { mouseover = {} } },
