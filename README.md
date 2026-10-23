@@ -36,7 +36,10 @@ and Backspace in an empty `[]` removes both.
 - Schemes: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the
   built-in themes of VS Code and JetBrains IDEs). Each macro token has a semantic role (keyword, property, string, ...),
   and a scheme colors roles, so new schemes are easy to add in `Themes.lua`.
-- Unknown commands and conditions are shown in the error color.
+- Syntax errors are underlined, and the status bar names the first one with its line:
+  unknown command or condition, `[` without `]`, `]` without `[`, an empty condition (`[harm,,dead]`),
+  `@` or `target=` without a unit, `mod:` without a value. Spaces after commas are fine.
+  The word being typed is not marked until you move on.
 - Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game,
   Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns. Keys are found from a direct
   `MACRO name` binding and the standard action bars; bars of addons (Bartender, ElvUI) are not checked.

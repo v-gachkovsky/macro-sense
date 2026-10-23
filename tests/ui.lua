@@ -354,6 +354,37 @@ Type(" ")
 check("spells after ]", ns.Popup:IsShown())
 Key("ESCAPE", "OnEscapePressed")
 
+-- Syntax errors: underlined and named in the status bar, but not the word being typed.
+do
+    local function underlines()
+        local n, tex = 0, nil
+        for _, o in ipairs(created) do
+            if o.isUnderline and o:IsShown() then n, tex = n + 1, o end
+        end
+        return n, tex
+    end
+    local function statusError()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("Line %d+:") then return o.text end
+        end
+        return ""
+    end
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast [harmm")
+    NextFrame()
+    check("no error while typing the word", underlines() == 0 and statusError() == "", statusError())
+    Key("ESCAPE", "OnEscapePressed")
+    Type("] X")
+    NextFrame()
+    local n = underlines()
+    check("error underlined", n == 1, n)
+    check("error in status", statusError():find('unknown condition "harmm"') ~= nil, statusError())
+    check("cursor kept after measuring", rawCursor() == #raw(), rawCursor())
+    ns.Window.Revert()
+    NextFrame()
+    check("no errors after revert", underlines() == 0 and statusError() == "", statusError())
+end
+
 -- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").
 edit:SetCursorPosition(#edit.text)
 Type("\n/cast [@mouse")

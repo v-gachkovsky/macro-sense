@@ -76,20 +76,28 @@ local function conditionSpans(s, base, add)
     local at = base + lead
     local unit = body:match("^@(.*)$")
     if unit then
+        if unit == "" then return add(at + 1, at + 1, "error", "@ needs a unit") end
         add(at + 1, at + 1, "operator")
-        if unit ~= "" then add(at + 2, at + #body, "unit") end
+        add(at + 2, at + #body, "unit")
         return
     end
     unit = body:match("^target=(.*)$")
     if unit then
+        if unit == "" then return add(at + 1, at + 7, "error", "target= needs a unit") end
         add(at + 1, at + 7, "operator")
-        if unit ~= "" then add(at + 8, at + #body, "unit") end
+        add(at + 8, at + #body, "unit")
         return
     end
     local name, values = body:match("^([^:]*):(.*)$")
     name = name or body
-    add(at + 1, at + #name, isCondition(name) and "condition" or "error")
-    if values then
+    if isCondition(name) then
+        add(at + 1, at + #name, "condition")
+    else
+        add(at + 1, at + #name, "error", string.format('unknown condition "%s"', name))
+    end
+    if values == "" then
+        add(at + #name + 1, at + #name + 1, "error", name .. ": needs a value")
+    elseif values then
         local pos = at + #name + 1
         add(pos, pos, "operator")
         for part, slash in values:gmatch("([^/]*)(/?)") do
@@ -109,26 +117,47 @@ local function argSpans(s, base, add, argKind, sequence)
     while i <= #s do
         local c = s:sub(i, i)
         if c == "[" then
-            add(base + i, base + i, "bracket")
-            local close = s:find("]", i + 1, true) or (#s + 1)
-            local inner, pos = s:sub(i + 1, close - 1), base + i
-            for part, comma in inner:gmatch("([^,]*)(,?)") do
-                conditionSpans(part, pos, add)
-                pos = pos + #part
-                if comma ~= "" then
-                    add(pos + 1, pos + 1, "operator")
-                    pos = pos + 1
+            local close = s:find("]", i + 1, true)
+            local addCond = add
+            if close then
+                add(base + i, base + i, "bracket")
+            else
+                add(base + i, base + i, "error", "[ is not closed with ]")
+                close = #s + 1
+                -- One error is enough: the rest of the line still gets colors, not more errors.
+                addCond = function(from, to, kind, message)
+                    if not message then add(from, to, kind) end
                 end
+            end
+            -- Split on "," by hand: gmatch with an empty-matching pattern behaves differently in Lua 5.1.
+            local inner, from = s:sub(i + 1, close - 1), 1
+            local split = inner:find(",", 1, true) ~= nil
+            while true do
+                local comma = inner:find(",", from, true)
+                local part = inner:sub(from, (comma or #inner + 1) - 1)
+                local pos = base + i + from - 1
+                if split and not part:find("%S") then
+                    local at = base + i + (comma or from - 1) -- the comma next to the gap
+                    addCond(at, at, "error", "empty condition")
+                else
+                    conditionSpans(part, pos, addCond)
+                end
+                if not comma then break end
+                addCond(base + i + comma, base + i + comma, "operator")
+                from = comma + 1
             end
             if close <= #s then add(base + close, base + close, "bracket") end
             i = close + 1
+        elseif c == "]" then
+            add(base + i, base + i, "error", "] without [")
+            i = i + 1
         elseif c == ";" or (sequence and c == ",") then
             add(base + i, base + i, "operator")
             i = i + 1
         elseif c:find("%s") then
             i = i + 1
         else
-            local stop = (s:find(sequence and "[;,%[]" or "[;%[]", i) or (#s + 1)) - 1
+            local stop = (s:find(sequence and "[;,%[%]]" or "[;%[%]]", i) or (#s + 1)) - 1
             local word = s:sub(i, stop):match("^(.-)%s*$")
             local reset = word:match("^reset=%S+")
             if reset then
@@ -165,7 +194,11 @@ local function lineSpans(line, base, add)
     local cmdFrom, cmdTo = base + #lead + 1, base + #lead + 1 + #cmd
     local name = cmd:lower()
     local known = name == "" or not Highlight.isCommand or Highlight.isCommand(name)
-    add(cmdFrom, cmdTo, known and "command" or "error")
+    if known then
+        add(cmdFrom, cmdTo, "command")
+    else
+        add(cmdFrom, cmdTo, "error", string.format('unknown command "/%s"', cmd))
+    end
     local restBase = cmdTo - base
     local rest = line:sub(restBase + 1)
     if CHAT[name] then return end
@@ -177,8 +210,8 @@ end
 
 function Highlight.Spans(raw)
     local spans = {}
-    local function add(from, to, kind)
-        if to >= from then spans[#spans + 1] = { from, to, kind } end
+    local function add(from, to, kind, message)
+        if to >= from then spans[#spans + 1] = { from, to, kind, message } end
     end
     local pos = 0
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
@@ -187,6 +220,18 @@ function Highlight.Spans(raw)
     end
     table.sort(spans, function(a, b) return a[1] < b[1] end)
     return spans
+end
+
+-- Syntax errors: { from, to, message, line } (raw positions, 1-based, inclusive).
+function Highlight.Errors(raw)
+    local out = {}
+    for _, span in ipairs(Highlight.Spans(raw)) do
+        if span[4] then
+            local line = select(2, raw:sub(1, span[1]):gsub("\n", "")) + 1
+            out[#out + 1] = { from = span[1], to = span[2], message = span[4], line = line }
+        end
+    end
+    return out
 end
 
 ------------------------------------------------------------------------
