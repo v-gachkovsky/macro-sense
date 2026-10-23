@@ -13,6 +13,17 @@ Parser.actionCommands = {
     showtooltip = "cast",
 }
 
+-- Chat commands: the rest of the line is said as it is, conditions included.
+Parser.chatCommands = {
+    say = true, s = true, yell = true, y = true, party = true, p = true, raid = true, ra = true, rw = true,
+    guild = true, g = true, officer = true, o = true, instance = true, i = true, emote = true, e = true,
+    me = true, whisper = true, w = true, tell = true, t = true, reply = true, r = true, bg = true,
+}
+-- Commands that run Lua.
+Parser.luaCommands = { run = true, script = true, dump = true }
+-- "/stopmacro"; Sources adds localized aliases.
+Parser.stopCommands = { stopmacro = true }
+
 -- Conditions whose value is a modifier key list (mod:shift/ctrl).
 local MODIFIER_CONDS = { mod = true, modifier = true, nomod = true, nomodifier = true }
 

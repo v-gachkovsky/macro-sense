@@ -20,6 +20,7 @@ ns.defaults = {
     fontSize = 13,
     scheme = ns.DEFAULT_SCHEME,
     scope = "general",
+    preview = true, -- the live preview column
     welcomeSeen = nil, -- version the early-development note was shown for
 }
 

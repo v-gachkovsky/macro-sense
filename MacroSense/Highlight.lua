@@ -12,12 +12,6 @@ Highlight.isCommand = nil
 -- looks like a typo of a known one ("Shadwo Bolt" -> "Shadow Bolt"). command: "cast", "use", "equip", ...
 Highlight.checkAction = nil
 
-local CHAT = {
-    say = true, s = true, yell = true, y = true, party = true, p = true, raid = true, ra = true, rw = true,
-    guild = true, g = true, officer = true, o = true, instance = true, i = true, emote = true, e = true,
-    me = true, whisper = true, w = true, tell = true, t = true, reply = true, r = true, bg = true,
-}
-local LUA = { run = true, script = true, dump = true }
 local UNIT_ARGS = { target = true, tar = true, focus = true, assist = true, a = true }
 local LUA_KEYWORDS = {}
 for w in ("and break do else elseif end false for function if in local nil not or repeat return then true until while")
@@ -236,9 +230,10 @@ local function lineSpans(line, base, add)
     end
     local restBase = cmdTo - base
     local rest = line:sub(restBase + 1)
-    if CHAT[name] then return end
-    if LUA[name] then return luaSpans(rest, cmdTo, add) end
-    local action = ns.Parser and ns.Parser.actionCommands[name]
+    local P = ns.Parser
+    if P.chatCommands[name] then return end
+    if P.luaCommands[name] then return luaSpans(rest, cmdTo, add) end
+    local action = P.actionCommands[name]
     local argKind = UNIT_ARGS[name] and "unit" or (action and "action") or "option"
     argSpans(rest, cmdTo, add, argKind, action == "castsequence", action)
 end

@@ -184,6 +184,9 @@ function GetActionInfo(slot) if actions[slot] then return actions[slot][1], acti
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
 function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
 GameTooltip = New("GameTooltip")
+-- The game's condition check, for a state the tests change: modifiers held, units, pet, combat.
+local game = { mods = {}, units = {} }
+SecureCmdOptionParse = dofile("tests/fakeparse.lua")(game)
 
 local macros = {} -- index -> { name, icon, body }
 local function sorted(perChar)
@@ -305,6 +308,12 @@ local function Key(key, script)
     Fire(edit, "OnKeyDown", key)
     if script then Fire(edit, script) end
     NextFrame()
+end
+-- The "Live preview" checkbox in the header.
+local function PreviewBox()
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Live preview" then return o end
+    end
 end
 
 -- Put the cursor at the end and add a new line.
@@ -884,7 +893,9 @@ do
     check("other line numbers are dim", color(n[2]) == dim, color(n[2]))
     edit:SetCursorPosition(#edit.text)
     check("number follows the cursor", color(n[lines]) == bright and color(n[1]) == dim)
-    -- A wrapped line takes two rows: the next number moves down two rows.
+    -- A wrapped line takes two rows: the next number moves down two rows. The preview is off here: the
+    -- text has the whole width, 260 of the 300 px.
+    Fire(PreviewBox(), "OnClick")
     wrapLines = true
     Type("\n/cast " .. string.rep("Fireball ", 6) .. "\n/cast X")
     NextFrame()
@@ -892,6 +903,14 @@ do
     n = numbers()
     local long, nextLine = n[lines + 1], n[lines + 2]
     check("wrapped line: next number two rows lower", long and nextLine and long.point[5] - nextLine.point[5] == 28,
+        long and nextLine and (long.point[5] - nextLine.point[5]))
+    -- The preview column takes 140 px: 120 px of text are left, the line takes four rows.
+    Fire(PreviewBox(), "OnClick")
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    long, nextLine = n[lines + 1], n[lines + 2]
+    check("preview column narrows the text", long and nextLine and long.point[5] - nextLine.point[5] == 56,
         long and nextLine and (long.point[5] - nextLine.point[5]))
     wrapLines = false
     -- 100 lines: three digits, wider gutter.
@@ -995,6 +1014,95 @@ do
     check("other pet's spells still known", set["seduction"] and set["spell lock"])
     check("pet spells saved per character", ns.char.petSpells["Lash of Pain"] == true)
     petBook = {}
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- Live preview: next to each line, what it would do now. It follows modifiers and combat by itself.
+do
+    local function notes()
+        local shown = {}
+        for _, o in ipairs(created) do
+            if o.isNote and o:IsShown() then shown[#shown + 1] = o end
+        end
+        table.sort(shown, function(a, b) return a.point[5] > b.point[5] end)
+        local texts = {}
+        for i, o in ipairs(shown) do texts[i] = ns.Highlight.Strip(o.text) end
+        return table.concat(texts, " | "), shown
+    end
+    local function lineNumber(i)
+        for _, o in ipairs(created) do
+            if o.isLineNumber and o:IsShown() and tonumber(o.text) == i then return o end
+        end
+    end
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("#showtooltip\n/cast [mod:alt] Polymorph; Fireball\n/stopmacro [nocombat]\n/cast Frostbolt")
+    Key("ESCAPE", "OnEscapePressed")
+    NextFrame()
+    NextFrame()
+    check("preview: a note per line", notes() == "icon: Fireball | Fireball | stops here | not reached", notes())
+    local _, shown = notes()
+    check("preview: a note sits on its line", shown[2] and lineNumber(2) and shown[2].point[5] == lineNumber(2).point[5],
+        shown[2] and shown[2].point[5])
+    check("preview: notes in the column on the right", shown[1] and shown[1].point[1] == "TOPRIGHT"
+        and shown[1].width == 140 - 12, shown[1] and shown[1].width)
+    check("preview: a smaller font", shown[1] and shown[1].fontSize == 11, shown[1] and shown[1].fontSize)
+    check("preview: the spell in its color", shown[2] and shown[2].text:find(
+        "|cff" .. ns.TokenColors(ns.scheme).action .. "Fireball|r", 1, true) ~= nil, shown[2] and shown[2].text)
+    game.mods.alt = true
+    Wait(0.2)
+    check("preview follows a held modifier", notes() == "icon: Polymorph | Polymorph | stops here | not reached", notes())
+    game.mods.alt, game.combat = nil, true
+    Wait(0.2)
+    check("preview follows combat", notes() == "icon: Fireball | Fireball | no match | Frostbolt", notes())
+    game.combat = nil
+    Type("\n/cast [harmm] Fear")
+    Key("ESCAPE", "OnEscapePressed")
+    NextFrame()
+    NextFrame()
+    check("preview: no note for a line with an error", notes() == "icon: Fireball | Fireball | stops here | not reached",
+        notes())
+    -- Off: the notes go, and the setting is kept.
+    local box = PreviewBox()
+    Fire(box, "OnClick")
+    NextFrame()
+    NextFrame()
+    check("preview off: no notes", notes() == "" and ns.db.preview == false, notes())
+    check("preview off: the box is empty", not box.fill:IsShown())
+    Fire(box, "OnClick")
+    NextFrame()
+    NextFrame()
+    check("preview on again", notes() ~= "" and ns.db.preview == true and box.fill:IsShown(), notes())
+    -- The author's macro with the pet out: the pet's spell, on the mouseover enemy.
+    ns.Window.New()
+    NextFrame()
+    local fixtures = dofile("tests/fixtures/macros.lua")
+    Type(fixtures.petCC)
+    Key("ESCAPE", "OnEscapePressed")
+    game.pet, game.units.mouseover = "Succubus", { harm = true }
+    Wait(0.2)
+    check("preview: a pet macro", notes() == "icon: Seduction | Seduction @mouseover", notes())
+    game.pet, game.units.mouseover = nil, nil
+    Wait(0.2)
+    check("preview: no pet, no match", notes() == "icon: ? | no match", notes())
+    -- A note on line 150 only (no line that far had one before); a shorter macro leaves it no trace.
+    ns.Window.New()
+    NextFrame()
+    Type(string.rep("\n", 149) .. "/cast Fireball")
+    Key("ESCAPE", "OnEscapePressed")
+    NextFrame()
+    check("preview: a note on line 150 only", notes() == "Fireball", notes())
+    ns.Window.New()
+    -- The preview may update before the text is laid out again: the game runs timers and OnUpdate in any order.
+    Fire(MacroSenseFrame, "OnUpdate", 1)
+    NextFrame()
+    Type("/cast Frostbolt")
+    Key("ESCAPE", "OnEscapePressed")
+    NextFrame()
+    check("preview: no notes left from a longer macro", notes() == "Frostbolt", notes())
+    ns.Window.Revert()
     ns.Window.Select(1)
     NextFrame()
 end

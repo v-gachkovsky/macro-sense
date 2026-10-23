@@ -2,7 +2,7 @@
 
 <p align="center">
   A macro editor for <b>World of Warcraft</b> that knows macros<br>
-  autocomplete · syntax highlighting · error checks · icon picker
+  autocomplete · syntax highlighting · error checks · live preview · icon picker
 </p>
 
 <p align="center">
@@ -18,8 +18,8 @@
 ## Overview
 
 The Blizzard macro window is a plain text box. MacroSense opens your macros in a real editor: it suggests
-commands, conditions, units, spells and items as you type, colors the syntax and underlines mistakes.
-The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
+commands, conditions, units, spells and items as you type, colors the syntax, underlines mistakes and
+shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
 addons see every change.
 
 Open it with `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button next to the Blizzard macro
@@ -81,6 +81,22 @@ an empty `[]` removes both.
   Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns. Keys are found from a direct `MACRO name` binding
   and the standard action bars; bars of addons (Bartender, ElvUI) are not checked.
 
+## Live preview
+
+Next to each line, a note says what it would do if you pressed the macro right now:
+
+- the spell or item it casts, and on whom: `Fear @mouseover`
+- `no match` when none of its conditions hold, so the line does nothing
+- `runs` for other commands (`/petattack`, `/stopcasting`, emotes); `stops here` for a `/stopmacro` that
+  fires, and `not reached` for the lines after it
+- for `#showtooltip`, the icon the macro shows (`?` when nothing would be cast)
+
+The notes follow the game several times a second: hold Shift, Ctrl, Alt (Cmd on Mac), change your target,
+summon another pet or enter combat, and they change with it. While the mouse is on the editor there is no
+mouseover unit: point at a unit in the world or at a unit frame to see the `@mouseover` branch. The game
+itself checks the conditions (`SecureCmdOptionParse`, what macros run with). Lines with syntax errors get
+no note. **Live preview** in the header turns it off; the text then takes the whole width.
+
 ## Icons and action bars
 
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),
@@ -105,12 +121,16 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/Highlight.lua`: tokenizer, colorizer, syntax errors, cursor mapping between raw and colored
   text. Pure Lua.
 - `MacroSense/Completion.lua`: ranks suggestions. Pure Lua.
+- `MacroSense/Spelling.lua`: the closest known name to a typo. Pure Lua.
+- `MacroSense/Preview.lua`: what each line does now, for the live preview. Pure Lua; the game's condition
+  check comes in from `Sources.lua` (`tests/fakeparse.lua` stands in for it in tests).
 - `MacroSense/Editing.lua`: auto-closing brackets. Pure Lua.
 - `MacroSense/Data.lua`, `MacroSense/Themes.lua`: static commands, conditions, units; fonts, schemes.
 - `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
-- `MacroSense/CodeBox.lua`: the highlighted EditBox with undo and error underlines.
+- `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
+  notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/IconPicker.lua`: icon grid.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
@@ -118,7 +138,7 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, schemes, shortcuts
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, schemes, shortcuts
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 
