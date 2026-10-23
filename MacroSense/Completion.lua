@@ -51,6 +51,8 @@ local function list(kind, ctx)
     if kind == "action" then return actions(ctx.base) end
     if kind == "conditionValue" then return ns.Conditions.Values(ctx.condition) end
     if kind == "reset" then return ns.Conditions.ResetItems(ctx.used) end
+    if kind == "slot" then return ns.sources.slots and ns.sources.slots() or d.slots end
+    if kind == "bagSlot" then return ns.sources.bagSlots and ns.sources.bagSlots(ctx.bag) or {} end
     return {}
 end
 

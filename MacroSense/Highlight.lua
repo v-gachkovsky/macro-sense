@@ -137,6 +137,52 @@ local function actionSpan(name, from, add, command)
     end
 end
 
+-- An equipment slot number: 1 (head) to 19 (tabard). `min` 0: also the ammo slot of Classic, and "0" may still
+-- become "0 1" (bag 0) as it is typed.
+local function slotSpan(slot, from, add, min)
+    local n = tonumber(slot)
+    if n >= min and n <= 19 then return add(from, from + #slot - 1, "value") end
+    add(from, from + #slot - 1, "error", string.format("no equipment slot %s (1-19)", slot))
+end
+
+-- An item by where it is or by number: "13" (equipment slot), "0 1" (bag 0, slot 1), "item:6948".
+-- Returns true when `word` is one of them.
+local function itemRefSpans(word, from, add)
+    if word:find("^%d+$") then
+        slotSpan(word, from, add, 0)
+        return true
+    end
+    local bag, gap = word:match("^(%d+)(%s+)%d+$")
+    if bag then
+        add(from, from + #bag - 1, "value")
+        add(from + #bag + #gap, from + #word - 1, "value")
+        return true
+    end
+    if word:sub(1, 5):lower() == "item:" then
+        if word:find("^%d+[%d:%-]*$", 6) then
+            add(from, from + 4, "option")
+            add(from + 5, from + #word - 1, "value")
+        else
+            add(from, from + #word - 1, "error", "item: needs an item number, like item:6948")
+        end
+        return true
+    end
+    return false
+end
+
+-- "/equipslot 13 Name": the slot to put the item in, then the item (a name or as above).
+local function equipslotSpans(word, from, add)
+    local slot, gap, item = word:match("^(%d+)(%s+)(.+)$")
+    if not slot then
+        local message = word:find("^%d+$") and "the item is missing after the slot"
+            or "/equipslot needs the slot first, like /equipslot 13 Name"
+        return add(from, from + #word - 1, "error", message)
+    end
+    slotSpan(slot, from, add, 1)
+    local at = from + #slot + #gap
+    if not itemRefSpans(item, at, add) then actionSpan(item, at, add, "equipslot") end
+end
+
 -- "reset=10/target" in front of a /castsequence list: seconds or what starts the sequence over, "/" between.
 local function resetSpans(reset, from, add, sequence)
     if not sequence then
@@ -217,17 +263,22 @@ local function argSpans(s, base, add, argKind, sequence, command)
                     add(base + i, base + i, "operator")
                     i, word = i + 1, word:sub(2)
                 end
-                -- "Fireball(Rank 3)": the rank is a value.
-                local name, rank = word:match("^(.-)(%(.*%))$")
-                local nameOnly = (name and name ~= "") and name or word
-                if nameOnly ~= "" then
-                    if argKind == "action" then
-                        actionSpan(nameOnly, base + i, add, command)
-                    else
-                        add(base + i, base + i + #nameOnly - 1, argKind)
+                local item = argKind == "action" and command ~= "cancelaura"
+                if item and command == "equipslot" and word ~= "" then
+                    equipslotSpans(word, base + i, add)
+                elseif not (item and itemRefSpans(word, base + i, add)) then
+                    -- "Fireball(Rank 3)": the rank is a value.
+                    local name = word:match("^(.-)%(.*%)$")
+                    local nameOnly = (name and name ~= "") and name or word
+                    if nameOnly ~= "" then
+                        if argKind == "action" then
+                            actionSpan(nameOnly, base + i, add, command)
+                        else
+                            add(base + i, base + i + #nameOnly - 1, argKind)
+                        end
                     end
+                    if name and name ~= "" then add(base + i + #name, base + i + #word - 1, "value") end
                 end
-                if name and name ~= "" then add(base + i + #name, base + i + #word - 1, "value") end
                 i = stop + 1
             end
         end

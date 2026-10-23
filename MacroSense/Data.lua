@@ -125,6 +125,17 @@ ns.data = {
         { name = "5", hint = "seconds idle" }, { name = "10", hint = "seconds idle" }, { name = "30", hint = "seconds idle" },
     },
 
+    -- Equipment slots for "/use 13", "/equipslot 13 Name" (Sources adds what is in them).
+    slots = {
+        { name = "1", hint = "Head" }, { name = "2", hint = "Neck" }, { name = "3", hint = "Shoulder" },
+        { name = "4", hint = "Shirt" }, { name = "5", hint = "Chest" }, { name = "6", hint = "Waist" },
+        { name = "7", hint = "Legs" }, { name = "8", hint = "Feet" }, { name = "9", hint = "Wrist" },
+        { name = "10", hint = "Hands" }, { name = "11", hint = "Finger 1" }, { name = "12", hint = "Finger 2" },
+        { name = "13", hint = "Trinket 1" }, { name = "14", hint = "Trinket 2" }, { name = "15", hint = "Back" },
+        { name = "16", hint = "Main Hand" }, { name = "17", hint = "Off Hand" }, { name = "18", hint = "Ranged" },
+        { name = "19", hint = "Tabard" },
+    },
+
     groups = { { name = "party" }, { name = "raid" } },
     bars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" }, { name = "6" } },
     bonusbars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" } },

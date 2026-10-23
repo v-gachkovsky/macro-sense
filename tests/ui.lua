@@ -193,7 +193,8 @@ C_Item = {
     GetItemIconByID = function(id) return id end,
     GetItemCount = function() return 1 end,
 }
-function GetInventoryItemLink() return nil end
+-- Gear: a trinket in slot 13 (no use effect, can't be equipped from the bags).
+function GetInventoryItemLink(_, slot) if slot == 13 then return "|cffa335ee|Hitem:777::|h[Lucky Charm]|h|r" end end
 local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 1 } }
 function GetBindingKey(command) return bindings[command] end
 local picked
@@ -1504,6 +1505,49 @@ do
     Key("ESCAPE", "OnEscapePressed")
     Wait(1)
     check("reset: a wrong value is marked", underlines() == 1, underlines())
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- Items by where they are: "/use 1" offers the equipment slots with what is in them, "/use 0 " the slots of
+-- that bag that hold something; /equipslot takes the slot first, then gear. A slot that doesn't exist is marked.
+do
+    local function statusError()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("Line %d+:") then return o.text end
+        end
+        return ""
+    end
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/use 1")
+    local items, trinket = ns.Popup.items, nil
+    for _, it in ipairs(items) do if it.name == "13" then trinket = it end end
+    check("slots: offered after a digit", ns.Popup:IsShown() and items[1].name == "1" and items[1].hint == "Head",
+        items[1] and items[1].hint)
+    check("slots: with what is in them", trinket and trinket.hint == "Trinket 1: Lucky Charm", trinket and trinket.hint)
+    Key("ESCAPE", "OnEscapePressed")
+    Type("\n/use 0 ")
+    items = ns.Popup.items
+    check("bag slots: what that bag holds", ns.Popup:IsShown() and #items == 2 and items[1].name == "1"
+        and items[1].hint == "Healthstone" and items[2].hint == "Fire Ring", #items)
+    Key("ESCAPE", "OnEscapePressed")
+    Type("\n/equipslot ")
+    check("equipslot: the slots first", ns.Popup:IsShown() and ns.Popup.items[1].name == "1",
+        ns.Popup.items[1] and ns.Popup.items[1].name)
+    Type("13 ")
+    check("equipslot: then gear", ns.Popup:IsShown() and ns.Popup.items[1].name == "Fire Ring",
+        ns.Popup.items[1] and ns.Popup.items[1].name)
+    Key("ESCAPE", "OnEscapePressed")
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/use 23")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(1)
+    check("slots: one that doesn't exist is marked", statusError():find("no equipment slot 23", 1, true) ~= nil,
+        statusError())
     ns.Window.Select(1)
     NextFrame()
 end

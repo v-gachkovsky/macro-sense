@@ -35,8 +35,10 @@ end
 -- Context of the word being typed at `cursor` (bytes before the cursor, as EditBox:GetCursorPosition()).
 -- Returns nil or a table:
 --   kind    = "command" | "meta" | "condition" | "unit" | "modifier" | "conditionValue" | "action" | "reset"
+--             | "slot" | "bagSlot"
 --             ("action" = a spell or item name, "rank" = inside "Spell(" -> `spell`, "reset" = a value after
---             "/castsequence reset=", with `used` = the values before it)
+--             "/castsequence reset=", with `used` = the values before it, "slot" = an equipment slot number,
+--             "bagSlot" = the slot after a bag number: "/use 0 1" -> `bag` 0)
 --   prefix  = text typed so far for that word
 --   start   = 1-based index in `text` where the word begins (replace text[start .. cursor])
 --   command = the slash command of the line (lowercase, without "/"), when there is one
@@ -114,11 +116,12 @@ function Parser.GetContext(text, cursor)
         return { kind = "condition", prefix = token, start = tokenAbs, command = cmd }
     end
 
-    if Parser.actionCommands[cmd] then
+    local base = Parser.actionCommands[cmd]
+    if base then
         -- "/castsequence reset=10/ta": the reset values, "/" between them.
         local values = token:match("^reset=(%S*)$")
         if values then
-            if Parser.actionCommands[cmd] ~= "castsequence" then return nil end
+            if base ~= "castsequence" then return nil end
             local last = values:match("([^/]*)$")
             local used = {}
             for v in values:sub(1, #values - #last):gmatch("[^/]+") do used[v:lower()] = true end
@@ -127,22 +130,35 @@ function Parser.GetContext(text, cursor)
         -- "/castsequence reset=10 Spell": skip the reset option.
         local reset = token:match("^reset=%S+%s+")
         if reset then token, tokenAbs = token:sub(#reset + 1), tokenAbs + #reset end
-        -- "/equipslot 13 Trinket": skip the slot number.
-        local slot = token:match("^%d+%s+")
-        if slot then token, tokenAbs = token:sub(#slot + 1), tokenAbs + #slot end
+        if base == "equipslot" then
+            -- "/equipslot 13 Trinket": the slot to put it in, then the item.
+            if token:find("^%d*$") then
+                return { kind = "slot", prefix = token, start = tokenAbs, command = cmd, base = base }
+            end
+            local slot = token:match("^%d+%s+")
+            if slot then token, tokenAbs = token:sub(#slot + 1), tokenAbs + #slot end
+        end
+        -- An item by where it is: "13" (an equipment slot), "0 1" (bag 0, slot 1).
+        if base ~= "cancelaura" then
+            local bag, n = token:match("^(%d+)%s+(%d*)$")
+            if bag then
+                return { kind = "bagSlot", bag = tonumber(bag), prefix = n, start = tokenAbs + #token - #n,
+                    command = cmd, base = base }
+            end
+            if token:find("^%d+$") then
+                return { kind = "slot", prefix = token, start = tokenAbs, command = cmd, base = base }
+            end
+        end
         -- "/cast !Spell": the "!" toggles, it is not part of the name.
         local bang = token:match("^!") and 1 or 0
         local word, wordAbs = token:sub(1 + bang), tokenAbs + bang
         -- "Fireball(Ra": typing a rank. "Fireball(Rank 3)" is complete.
         local spell, rank = word:match("^(.-)%(([^%)]*)$")
         if spell then
-            return {
-                kind = "rank", prefix = rank, start = wordAbs + #spell + 1, spell = spell,
-                command = cmd, base = Parser.actionCommands[cmd],
-            }
+            return { kind = "rank", prefix = rank, start = wordAbs + #spell + 1, spell = spell, command = cmd, base = base }
         end
         if word:find("%(.*%)") then return nil end
-        return { kind = "action", prefix = word, start = wordAbs, command = cmd, base = Parser.actionCommands[cmd] }
+        return { kind = "action", prefix = word, start = wordAbs, command = cmd, base = base }
     end
     return nil
 end

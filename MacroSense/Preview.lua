@@ -9,10 +9,13 @@ ns.Preview = Preview
 local function trim(s) return s:match("^%s*(.-)%s*$") end
 
 -- A spell or item the way a note shows it: "!Shoot" -> "Shoot", "Summon Imp(Summon)" -> "Summon Imp",
--- "13" -> "slot 13", "0 1" -> "bag 0, slot 1".
+-- "13" -> "Trinket 1" (the equipment slot), "0 1" -> "bag 0, slot 1".
 local function displayName(action)
     local s = trim(action):gsub("^!", "")
-    if s:find("^%d+$") then return "slot " .. s end
+    if s:find("^%d+$") then
+        local slot = ns.data and ns.data.slots[tonumber(s)]
+        return slot and slot.hint or "slot " .. s
+    end
     local bag, slot = s:match("^(%d+)%s+(%d+)$")
     if bag then return string.format("bag %s, slot %s", bag, slot) end
     return trim((s:gsub("%b()$", "")))
