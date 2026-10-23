@@ -6,6 +6,7 @@
 ## SavedVariables: MacroSenseDB
 ## SavedVariablesPerCharacter: MacroSenseCharDB
 ## IconTexture: Interface\AddOns\MacroSense\Media\logo
+## AddonCompartmentFunc: MacroSense_OnAddonCompartmentClick
 
 Parser.lua
 Data.lua
@@ -26,4 +27,5 @@ CodeBox.lua
 Autocomplete.lua
 IconPicker.lua
 Window.lua
+MinimapButton.lua
 Core.lua

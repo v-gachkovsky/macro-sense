@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -697,6 +697,28 @@ for _, scheme in ipairs(ns.schemes) do
     end
     check("scheme " .. scheme.key, #missing == 0, table.concat(missing, ","))
 end
+-- Minimap button: its center on the round edge, or on the side where a square minimap has its corner.
+do
+    local function at(angle, shape)
+        local x, y = ns.MinimapButton.Offset(angle, 140, 140, shape)
+        return string.format("%.1f,%.1f", x, y)
+    end
+    check("minimap: right", at(0) == "75.0,0.0", at(0))
+    check("minimap: up", at(90) == "0.0,75.0", at(90))
+    check("minimap: round corner", at(45) == "53.0,53.0", at(45))
+    check("minimap: square corner", at(45, "SQUARE") == "75.0,75.0", at(45, "SQUARE"))
+    check("minimap: square side", at(30, "SQUARE") == "75.0,43.3", at(30, "SQUARE"))
+    check("minimap: the one round corner", at(135, "CORNER-TOPLEFT") == "-53.0,53.0", at(135, "CORNER-TOPLEFT"))
+    check("minimap: the other corners", at(45, "CORNER-TOPLEFT") == "75.0,75.0", at(45, "CORNER-TOPLEFT"))
+    check("minimap: round side", at(225, "SIDE-LEFT") == "-53.0,-53.0", at(225, "SIDE-LEFT"))
+    check("minimap: square side of SIDE-LEFT", at(315, "SIDE-LEFT") == "75.0,-75.0", at(315, "SIDE-LEFT"))
+    check("minimap: round top of SIDE-TOP", at(45, "SIDE-TOP") == "53.0,53.0", at(45, "SIDE-TOP"))
+    check("minimap: tricorner, round", at(45, "TRICORNER-TOPLEFT") == "53.0,53.0", at(45, "TRICORNER-TOPLEFT"))
+    check("minimap: tricorner, the square one", at(315, "TRICORNER-TOPLEFT") == "75.0,-75.0",
+        at(315, "TRICORNER-TOPLEFT"))
+    check("minimap: a shape it doesn't know is round", at(45, "HEXAGON") == "53.0,53.0", at(45, "HEXAGON"))
+end
+
 check("default scheme exists", ns.FindByKey(ns.schemes, ns.DEFAULT_SCHEME) ~= nil)
 check("default font exists", ns.FindByKey(ns.fonts, ns.DEFAULT_FONT) ~= nil)
 for _, f in ipairs(ns.fonts) do

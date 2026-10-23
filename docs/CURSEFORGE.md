@@ -11,6 +11,9 @@ commands, conditions, units, spells and items as you type, colors the syntax, an
 you find them in combat. The macros stay the game's own, so the Blizzard window, your action bars and other
 addons see every change.
 
+Open it from the **minimap button** (drag it along the edge to move it), with `/ms`, or with the
+**MacroSense** button in the game's macro window. On Retail it's in the addon menu by the minimap too.
+
 **Works on every client:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever.
 
 ---
@@ -115,6 +118,7 @@ Every change you save, here, in the game's macro window or with another addon, k
 | Command | Action |
 |---------|--------|
 | `/ms` | Open or close the editor (also `/macrosense`, `/msense`) |
+| `/ms minimap` | Hide or show the minimap button |
 | `/ms bug` | Print the versions to include in a bug report |
 | `/ms autocomplete` | Turn autocomplete on or off |
 | `/ms debug` | Print the editor's key events (helps me with key bugs) |
