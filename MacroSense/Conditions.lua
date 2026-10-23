@@ -92,7 +92,7 @@ local RULES = {
     group = { check = function(v) return names(ns.data.groups)[v:lower()] end, expect = "party or raid" },
     bar = { check = inRange(1, 6), expect = "a bar page 1-6" },
     bonusbar = { check = inRange(1, 5), expect = "1-5" },
-    form = { check = inRange(0, 10), expect = "a form number (0 = no form)" },
+    form = { check = inRange(0, 10), expect = "a form number, 0 = no form" },
     spec = { check = inRange(1, 5), expect = "a specialization number" },
 }
 

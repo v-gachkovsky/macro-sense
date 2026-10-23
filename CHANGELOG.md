@@ -21,6 +21,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 - The status bar shows errors first, then the Mac Cmd shortcut warning, then other warnings; the Save
   alert icon is for errors only. The tooltip lists everything, errors in red and warnings in yellow.
+- Mistakes in the word being typed are no longer hidden until the cursor moves on, which let a macro be
+  saved without seeing them: a word that can't become valid (`@mousovr`, `btn:7`) is marked at once, one
+  that still may (`comb`) after a short pause in typing, and Save always checks everything.
 - A word typed in full no longer lists other words that only contain it (`shift` no longer shows
   `lshift`); longer words that start with it still show.
 

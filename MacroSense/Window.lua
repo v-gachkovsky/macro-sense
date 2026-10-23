@@ -218,6 +218,8 @@ function Window.New()
 end
 
 function Window.Save()
+    -- A mistake in the word just typed shows now, not only after the typing pause.
+    code:CheckNow()
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local name = strtrim(nameBox:GetText())
     local body = code:GetRaw()
