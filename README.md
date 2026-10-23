@@ -65,7 +65,8 @@ an empty `[]` removes both.
   Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty
   condition (`[harm,,dead]`), `@` or `target=` without a unit, `mod:` without a value, a wrong value
   (`btn:7`, `group:arena`, `mod:shfit`), a value for a condition that takes none (`combat:1`). Spaces after
-  commas are fine. The word being typed is not marked until you move on.
+  commas are fine. A word you are typing that may still become valid (`comb` on its way to `combat`) is
+  marked only after a short pause or on Save; a typo that can't (`mousovr`, `btn:7`) is marked at once.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
   name, which macros allow.
 - Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game, Cmd+W,

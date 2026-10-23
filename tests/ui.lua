@@ -1,12 +1,13 @@
 -- Loads the whole addon against a tiny fake WoW API and drives the editor like a player would.
 -- `lua tests/ui.lua` from the repo root. It catches load errors and logic bugs, not layout.
-local now, timers = 0, {}
+local now, timers = 0, {} -- timers: { at = time, fn = function }
 local created = {} -- every frame, so tests can find anonymous ones (Core's event frame, the editor)
 local function NextFrame()
     now = now + 0.016
-    local run = timers
-    timers = {}
-    for _, fn in ipairs(run) do fn() end
+    local due, later = {}, {}
+    for _, t in ipairs(timers) do table.insert(t.at <= now and due or later, t) end
+    timers = later
+    for _, t in ipairs(due) do t.fn() end
     for _, o in ipairs(created) do
         if o.scripts.OnUpdate and o.shown then o.scripts.OnUpdate(o, 0.016) end
     end
@@ -82,7 +83,7 @@ function Frame:SetCursorPosition(pos)
     self.cursor = pos
     local line = select(2, self.text:sub(1, pos):gsub("\n", ""))
     if cursorEventsLate then
-        timers[#timers + 1] = function() Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14) end
+        timers[#timers + 1] = { at = now, fn = function() Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14) end }
     else
         Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14)
     end
@@ -111,7 +112,11 @@ function GetTime() return now end
 function IsMacClient() return true end
 C_AddOns = { IsAddOnLoaded = function() return false end, GetAddOnMetadata = function() return "@project-version@" end }
 function GetBuildInfo() return "12.1.5", "60000", "Oct 1 2026", 120105 end
-C_Timer = { After = function(_, fn) timers[#timers + 1] = fn end }
+C_Timer = { After = function(delay, fn) timers[#timers + 1] = { at = now + delay, fn = fn } end }
+local function Wait(seconds)
+    local stop = now + seconds
+    while now < stop do NextFrame() end
+end
 function IsControlKeyDown() return false end
 function IsShiftKeyDown() return false end
 function IsMouseButtonDown() return false end
@@ -400,9 +405,20 @@ do
         return ""
     end
     edit:SetCursorPosition(#edit.text)
+    -- A word that may still become valid is not marked while typing, only after a pause.
+    Type("\n/cast [comb")
+    NextFrame()
+    check("no mark while typing an unfinished word", underlines() == 0 and statusError() == "", statusError())
+    Wait(1)
+    check("marked after a typing pause", underlines() == 1 and statusError():find("unknown condition") ~= nil,
+        statusError())
+    ns.Window.Revert()
+    NextFrame()
+    -- A typo that can't become a condition is marked at once.
+    edit:SetCursorPosition(#edit.text)
     Type("\n/cast [harmm")
     NextFrame()
-    check("no error while typing the word", underlines() == 0 and statusError() == "", statusError())
+    check("a hopeless word is marked at once", underlines() == 1, underlines())
     Key("ESCAPE", "OnEscapePressed")
     Type("] X")
     NextFrame()
@@ -520,6 +536,31 @@ do
     check("warning underline is yellow", yellow)
     ns.Window.Revert()
     NextFrame()
+end
+
+-- Editing a unit and saving at once: the warning shows on Save, not only after the pause.
+do
+    local function warned()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("unknown unit") then return true end
+        end
+        return false
+    end
+    ns.Window.Revert()
+    NextFrame()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast [@mouse")
+    NextFrame()
+    check("unfinished unit: no warning yet", not warned())
+    ns.Window.Save()
+    check("Save checks the word being typed", warned())
+    -- Typing on hides it again until the word is done or typing pauses.
+    Type("o")
+    NextFrame()
+    check("typing on: unfinished again", not warned())
+    Type("vr")
+    NextFrame()
+    check("mouseovr can't become a unit: marked at once", warned())
 end
 
 -- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").

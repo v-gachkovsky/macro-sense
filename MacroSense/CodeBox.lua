@@ -5,6 +5,7 @@ local H = ns.Highlight
 local UNDO_LIMIT = 200
 local INSET_L, INSET_T = 6, 4
 local UNDO_GROUP = 0.8 -- keystrokes closer than this (seconds) undo together
+local TYPING_PAUSE = 0.8 -- seconds after the last key: then the word being typed is checked too
 
 local CodeBox = {}
 CodeBox.__index = CodeBox
@@ -60,6 +61,7 @@ function ns.CreateCodeBox(parent, name)
             raw, cursor = ns.Editing.AutoPair(old, raw, cursor)
             self:PushUndo()
             self:Render(raw, cursor)
+            self:Typed()
         end
         self.raw = raw
         if self.onChange then self.onChange(raw, userInput) end
@@ -209,12 +211,45 @@ function CodeBox:MeasureByLayout(pos)
     return { x = INSET_L + width(prefix), y = -INSET_T - above * h, h = h }
 end
 
--- Syntax errors, except the word being typed right now.
+-- The word ending at the cursor may still become valid: a suggestion starts with it and is longer
+-- ("comb" -> "combat", "mouse" -> "mouseover"). "mousovr" or "btn:7" can't.
+local function Unfinished(raw, cursor)
+    local ctx = ns.Parser.GetContext(raw, cursor)
+    if not ctx then return false end
+    local prefix = ctx.prefix:lower()
+    for _, item in ipairs(ns.Completion.Get(ctx)) do
+        local name = item.name:lower()
+        if #name > #prefix and name:sub(1, #prefix) == prefix then return true end
+    end
+    return false
+end
+
+-- While a key was pressed less than TYPING_PAUSE ago, an unfinished word at the cursor is not marked;
+-- then (or on Save, see CheckNow) it is.
+function CodeBox:Typed()
+    self.typing = true
+    self.typingToken = (self.typingToken or 0) + 1
+    local token = self.typingToken
+    C_Timer.After(TYPING_PAUSE, function()
+        if self.typingToken ~= token then return end
+        self.typing = false
+        self:ScheduleUnderlines()
+    end)
+end
+
+-- Check everything right now, the word being typed included.
+function CodeBox:CheckNow()
+    self.typing = false
+    self:DrawUnderlines()
+end
+
+-- Syntax issues, except an unfinished word being typed right now.
 function CodeBox:Errors()
-    local cursor = self.edit:HasFocus() and self:GetRawCursor()
+    local raw = self:GetRaw()
+    local cursor = self.typing and self.edit:HasFocus() and self:GetRawCursor()
     local out = {}
-    for _, e in ipairs(H.Errors(self:GetRaw())) do
-        if e.to ~= cursor then out[#out + 1] = e end
+    for _, e in ipairs(H.Errors(raw)) do
+        if not (cursor and e.to == cursor and Unfinished(raw, cursor)) then out[#out + 1] = e end
     end
     return out
 end
