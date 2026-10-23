@@ -137,6 +137,29 @@ local function actionSpan(name, from, add, command)
     end
 end
 
+-- "reset=10/target" in front of a /castsequence list: seconds or what starts the sequence over, "/" between.
+local function resetSpans(reset, from, add, sequence)
+    if not sequence then
+        return add(from, from + #reset - 1, "error", "reset= works only in /castsequence")
+    end
+    add(from, from + 4, "option")
+    add(from + 5, from + 5, "operator")
+    local values = reset:sub(7)
+    if values == "" then return add(from + 5, from + 5, "error", "reset= needs a value") end
+    local at, start = from + 5, 1 -- values[k] is at `at + k`
+    while true do
+        local slash = values:find("/", start, true)
+        local part = values:sub(start, (slash or #values + 1) - 1)
+        if part ~= "" then
+            local problem = ns.Conditions and ns.Conditions.CheckReset(part)
+            add(at + start, at + start + #part - 1, problem and "error" or "value", problem or nil)
+        end
+        if not slash then break end
+        add(at + slash, at + slash, "operator")
+        start = slash + 1
+    end
+end
+
 -- Arguments of a secure command: "[cond] arg; [cond] arg". command: the action command ("cast", ...), if any.
 local function argSpans(s, base, add, argKind, sequence, command)
     local i = 1
@@ -185,9 +208,9 @@ local function argSpans(s, base, add, argKind, sequence, command)
         else
             local stop = (s:find(sequence and "[;,%[%]]" or "[;%[%]]", i) or (#s + 1)) - 1
             local word = s:sub(i, stop):match("^(.-)%s*$")
-            local reset = word:match("^reset=%S+")
+            local reset = argKind == "action" and word:match("^reset=%S*")
             if reset then
-                add(base + i, base + i + #reset - 1, "option")
+                resetSpans(reset, base + i, add, sequence)
                 i = i + #reset
             else
                 if word:sub(1, 1) == "!" then

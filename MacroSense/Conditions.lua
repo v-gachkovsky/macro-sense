@@ -124,6 +124,32 @@ function Conditions.Values(name)
     return {}
 end
 
+------------------------------------------------------------------------
+-- reset= in /castsequence
+------------------------------------------------------------------------
+-- The game looks for these words after "reset=" and takes the first number as seconds without a press.
+local RESETS = { target = true, combat = true, shift = true, ctrl = true, alt = true }
+
+-- nil when fine, or the error message for reset value `v`.
+function Conditions.CheckReset(v)
+    if RESETS[v:lower()] or v:find("^%d+$") then return nil end
+    return string.format('invalid reset value "%s" (expected seconds, target, combat, shift, ctrl or alt)', v)
+end
+
+-- Suggestions after "reset=" and each "/": the ones not used yet (one number at most: only the first counts).
+function Conditions.ResetItems(used)
+    local number = false
+    for v in pairs(used or {}) do
+        if v:find("^%d+$") then number = true end
+    end
+    local out = {}
+    for _, item in ipairs(ns.data.resets) do
+        local isNumber = item.name:find("^%d") ~= nil
+        if not (used and used[item.name]) and not (isNumber and number) then out[#out + 1] = item end
+    end
+    return out
+end
+
 -- Unit suggestions: the list, plus "...target" / "...pet" after a unit id ("party1" -> "party1target").
 function Conditions.UnitItems(prefix)
     local out = {}

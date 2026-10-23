@@ -72,7 +72,11 @@ expect("/target [@|", "unit", "")
 expect("/cast Fireball(Ra|", "rank", "Ra", { spell = "Fireball" })
 expect("/cast [mod] !Fireball(|", "rank", "", { spell = "Fireball" })
 expectNil("/cast Fireball(Rank 3)|")
-expectNil("/castsequence reset=1|")
+-- reset= values: after "=" and each "/"; only /castsequence has them.
+expect("/castsequence reset=|", "reset", "")
+expect("/castsequence reset=1|", "reset", "1")
+expect("/castsequence [mod] reset=10/ta|", "reset", "ta")
+expectNil("/cast reset=|")
 expectNil("/say hel|")
 expectNil("just text|")
 
@@ -145,7 +149,9 @@ expectKinds("#showtooltip Fireball", "#showtooltip=meta Fireball=action")
 expectKinds("/cast Fireball(Rank 3); X", "/cast=command Fireball=action (Rank 3)=value ;=operator X=action")
 expectKinds("/cast [nocombat, bogus] !Fire Ball", "/cast=command [=bracket nocombat=condition ,=operator"
     .. " bogus=error ]=bracket !=operator Fire Ball=action")
-expectKinds("/castsequence reset=10 A, B", "/castsequence=command reset=10=option A=action ,=operator B=action")
+expectKinds("/castsequence reset=10 A, B", "/castsequence=command reset=option ==operator 10=value A=action ,=operator B=action")
+expectKinds("/castsequence reset=10/target A", "/castsequence=command reset=option ==operator 10=value /=operator"
+    .. " target=value A=action")
 expectKinds("/target [@mouseover] party1", "/target=command [=bracket @=operator mouseover=unit ]=bracket party1=unit")
 expectKinds("/cast [mod:shift/ctrl] X", "/cast=command [=bracket mod=condition :=operator shift=value"
     .. " /=operator ctrl=value ]=bracket X=action")
@@ -299,6 +305,13 @@ check("unit suffixes", names("/cast [@party1|"):find("party1target") ~= nil, nam
 check("unit suffix filtered", names("/cast [@party1t|") == "party1target", names("/cast [@party1t|"))
 check("chained suffix", names("/cast [@focustarget|"):find("focustargettarget") ~= nil, names("/cast [@focustarget|"))
 check("exact word hides inner matches", names("/cast [mod:shift|") == "")
+check("reset values", names("/castsequence reset=|") == "target,combat,shift,ctrl,alt,5,10,30",
+    names("/castsequence reset=|"))
+check("reset: not the ones used", names("/castsequence reset=target/|") == "combat,shift,ctrl,alt,5,10,30",
+    names("/castsequence reset=target/|"))
+check("reset: one number", names("/castsequence reset=15/|") == "target,combat,shift,ctrl,alt",
+    names("/castsequence reset=15/|"))
+check("reset: by prefix", names("/castsequence reset=c|") == "combat,ctrl", names("/castsequence reset=c|"))
 
 -- Issues with severity.
 local function issues(raw)
@@ -311,6 +324,14 @@ check("player name is only a warning", issues("/cast [target=Thrall] X") == "war
 check("bad value is an error", issues("/cast [btn:7] X") == "error:7", issues("/cast [btn:7] X"))
 check("second bad value", issues("/cast [mod:shift/shfit] X") == "error:shfit", issues("/cast [mod:shift/shfit] X"))
 check("value for a no-value condition", issues("/cast [combat:1] X") == "error::1", issues("/cast [combat:1] X"))
+check("reset: a bad value", issues("/castsequence reset=10/tagret A, B") == "error:tagret",
+    issues("/castsequence reset=10/tagret A, B"))
+check("reset: good values in any case", issues("/castsequence [mod] reset=Target/COMBAT/5/shift A, B") == "",
+    issues("/castsequence [mod] reset=Target/COMBAT/5/shift A, B"))
+check("reset: no fraction of a second", issues("/castsequence reset=1.5 A, B") == "error:1.5")
+check("reset: a value is needed", issues("/castsequence reset= A, B") == "error:=", issues("/castsequence reset= A, B"))
+check("reset: only in /castsequence", issues("/cast reset=10 Fireball") == "error:reset=10",
+    issues("/cast reset=10 Fireball"))
 check("good values pass", issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X") == "",
     issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X"))
 

@@ -118,6 +118,13 @@ ns.data = {
         { name = "Button4" }, { name = "Button5" },
     },
 
+    -- Values for "reset=" in /castsequence: what starts the sequence over. Any whole number is seconds.
+    resets = {
+        { name = "target", hint = "new target" }, { name = "combat", hint = "combat ends" },
+        { name = "shift", hint = "with Shift" }, { name = "ctrl", hint = "with Ctrl" }, { name = "alt", hint = "with Alt" },
+        { name = "5", hint = "seconds idle" }, { name = "10", hint = "seconds idle" }, { name = "30", hint = "seconds idle" },
+    },
+
     groups = { { name = "party" }, { name = "raid" } },
     bars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" }, { name = "6" } },
     bonusbars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" } },

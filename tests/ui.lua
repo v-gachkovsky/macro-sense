@@ -1479,6 +1479,35 @@ do
     NextFrame()
 end
 
+-- /castsequence reset=: values offered after "=" and each "/", a word on its way is not marked, a wrong one is.
+do
+    local function underlines()
+        local n = 0
+        for _, o in ipairs(created) do if o.isUnderline and o:IsShown() then n = n + 1 end end
+        return n
+    end
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/castsequence reset=")
+    check("reset: values offered", ns.Popup:IsShown() and ns.Popup.items[1].name == "target",
+        ns.Popup.items[1] and ns.Popup.items[1].name)
+    Type("ta")
+    NextFrame()
+    check("reset: a value on its way is not marked", underlines() == 0, underlines())
+    Key("TAB", "OnTabPressed")
+    check("reset: Tab takes it", raw() == "/castsequence reset=target", raw())
+    Type("/")
+    check("reset: after / the others", ns.Popup:IsShown() and ns.Popup.items[1].name == "combat",
+        ns.Popup.items[1] and ns.Popup.items[1].name)
+    Type("tagret")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(1)
+    check("reset: a wrong value is marked", underlines() == 1, underlines())
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"

@@ -50,6 +50,7 @@ local function list(kind, ctx)
     if kind == "modifier" then return d.modifiers end
     if kind == "action" then return actions(ctx.base) end
     if kind == "conditionValue" then return ns.Conditions.Values(ctx.condition) end
+    if kind == "reset" then return ns.Conditions.ResetItems(ctx.used) end
     return {}
 end
 
