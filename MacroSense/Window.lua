@@ -2,8 +2,7 @@
 -- (CreateMacro / EditMacro), so everything stays in sync with the Blizzard macro UI.
 local _, ns = ...
 
-local MAX_GENERAL = MAX_ACCOUNT_MACROS or 120
-local MAX_CHARACTER = MAX_CHARACTER_MACROS or 18
+local MAX_GENERAL, MAX_CHARACTER = ns.MAX_GENERAL, ns.MAX_CHARACTER
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local MAX_NAME = 16 -- letters, as in the Blizzard macro window
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon

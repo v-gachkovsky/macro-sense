@@ -719,6 +719,23 @@ do
     check("minimap: a shape it doesn't know is round", at(45, "HEXAGON") == "53.0,53.0", at(45, "HEXAGON"))
 end
 
+-- Macro slots per tab: Forever and Retail keep them in Constants.MacroConsts, the Classic clients in globals.
+do
+    local function slots(constants, general, character)
+        Constants, MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = constants, general, character
+        local t = {}
+        assert(loadfile("MacroSense/Data.lua"))("MacroSense", t)
+        Constants, MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = nil, nil, nil
+        return t.MAX_GENERAL .. "/" .. t.MAX_CHARACTER
+    end
+    local retail = { MacroConsts = { MAX_ACCOUNT_MACROS = 120, MAX_CHARACTER_MACROS = 30 } }
+    check("macro slots: Retail", slots(retail) == "120/30", slots(retail))
+    check("macro slots: what the client says", slots({ MacroConsts = { MAX_ACCOUNT_MACROS = 150,
+        MAX_CHARACTER_MACROS = 40 } }) == "150/40")
+    check("macro slots: Classic globals", slots(nil, 36, 18) == "36/18", slots(nil, 36, 18))
+    check("macro slots: neither", slots(nil) == "120/30", slots(nil))
+end
+
 check("default scheme exists", ns.FindByKey(ns.schemes, ns.DEFAULT_SCHEME) ~= nil)
 check("default font exists", ns.FindByKey(ns.fonts, ns.DEFAULT_FONT) ~= nil)
 for _, f in ipairs(ns.fonts) do

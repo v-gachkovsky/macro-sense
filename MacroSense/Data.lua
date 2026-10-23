@@ -165,4 +165,10 @@ for _, u in ipairs({ { "party", 4 }, { "partypet", 4 }, { "arena", 5 }, { "boss"
     end
 end
 
+-- Macro slots per tab. Forever and Retail keep them in Constants.MacroConsts, the Classic clients in globals;
+-- character macros are numbered after all the general slots.
+local slots = Constants and Constants.MacroConsts or {}
+ns.MAX_GENERAL = slots.MAX_ACCOUNT_MACROS or MAX_ACCOUNT_MACROS or 120
+ns.MAX_CHARACTER = slots.MAX_CHARACTER_MACROS or MAX_CHARACTER_MACROS or 30
+
 return ns.data

@@ -151,7 +151,9 @@ function geterrorhandler() return function(e) reported[#reported + 1] = e end en
 UISpecialFrames, StaticPopupDialogs = {}, {}
 function StaticPopup_Show(which, _, _, data) StaticPopupDialogs[which].OnAccept(nil, data) end
 YES, NO, CANCEL, DELETE = "Yes", "No", "Cancel", "Delete"
-MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = 120, 18
+-- Macro slots, where Retail keeps them (the Classic clients have them as globals).
+Constants = { MacroConsts = { MAX_ACCOUNT_MACROS = 120, MAX_CHARACTER_MACROS = 30 } }
+local SLOTS = Constants.MacroConsts
 
 -- Like the game: the list of secure commands is hidden from addons, IsSecureCmd("/cast") tells.
 SlashCmdList, ChatTypeInfo = {}, { SAY = true }
@@ -226,12 +228,12 @@ local function sorted(perChar)
     return out
 end
 local function byIndex(index)
-    if index > MAX_ACCOUNT_MACROS then return sorted(true)[index - MAX_ACCOUNT_MACROS] end
+    if index > SLOTS.MAX_ACCOUNT_MACROS then return sorted(true)[index - SLOTS.MAX_ACCOUNT_MACROS] end
     return sorted(false)[index]
 end
 local function indexOf(m)
     local list = sorted(m.perChar)
-    for i, x in ipairs(list) do if x == m then return m.perChar and i + MAX_ACCOUNT_MACROS or i end end
+    for i, x in ipairs(list) do if x == m then return m.perChar and i + SLOTS.MAX_ACCOUNT_MACROS or i end end
 end
 function GetNumMacros() return #sorted(false), #sorted(true) end
 function GetMacroInfo(index)
@@ -311,6 +313,13 @@ end
 check("editor exists", edit ~= nil)
 check("macro loaded", ns.Highlight.Strip(edit:GetText()) == "#showtooltip\n/cast Fireball", edit:GetText())
 check("text is colored", edit:GetText():find("|cff") ~= nil)
+do
+    local label
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and tostring(o.label.text):find("^Character") then label = o.label.text end
+    end
+    check("the Character tab counts the client's slots", label == "Character  0/30", label)
+end
 do
     local visible = 0
     for _, o in ipairs(created) do if o.kind == "Slider" and o.SetRange and o:IsShown() then visible = visible + 1 end end
@@ -1421,13 +1430,13 @@ do
     Fire(menuItem("Copy to Character"), "OnClick")
     NextFrame()
     local index = GetMacroIndexByName("Zap 3")
-    check("copy: to the other tab, the next free name", index > MAX_ACCOUNT_MACROS and ns.db.scope == "character"
+    check("copy: to the other tab, the next free name", index > SLOTS.MAX_ACCOUNT_MACROS and ns.db.scope == "character"
         and nameText() == "Zap 3", index)
     Fire(copy, "OnClick")
     check("copy: from Character, the other tab is General", menuItem("Copy to General") ~= nil)
     Fire(copy, "OnClick")
     -- A full tab can't take one.
-    local fillers = MAX_CHARACTER_MACROS - select(2, GetNumMacros())
+    local fillers = SLOTS.MAX_CHARACTER_MACROS - select(2, GetNumMacros())
     for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", true) end
     Send("UPDATE_MACROS")
     ns.Window.SetScope("general")
