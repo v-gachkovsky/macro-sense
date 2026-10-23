@@ -1,23 +1,30 @@
--- The macro wizard: a window with a form. Pick what to cast, on whom and in what order, what Shift, Ctrl or Alt
--- cast instead, and what else the macro does; the macro shows under the form as you choose, and Create macro
--- saves it and opens it in the editor. The text comes from Wizard.lua.
+-- The macro wizard: a window with a form. Pick the command, what it casts or uses, on whom and in what order,
+-- what Shift, Ctrl, Alt (Cmd on a Mac) do instead, and what else the macro does; the macro shows under the form
+-- as you choose, and Create macro saves it and opens it in the editor. The text comes from Wizard.lua.
 local _, ns = ...
 
 local WizardWindow = {}
 ns.WizardWindow = WizardWindow
 
 local W = ns.Wizard
-local WIDTH, HEIGHT, PAD, LABEL = 560, 576, 14, 70
+local WIDTH, PAD, LABEL, ROW = 600, 14, 70, 32
+local X = PAD + LABEL -- where the controls of a row start
+local TOP = 84 -- the title bar and the command row
+local BOTTOM = 276 -- Also, the macro and the buttons, at the bottom whatever the command
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
 local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
+local RESET_NAMES = { target = "New target", combat = "Combat ends", shift = "Shift", ctrl = "Ctrl", alt = "Alt" }
+local LIST_TITLES = { castsequence = "In turn, one per press", castrandom = "One of these at random" }
 
 local frame, preview, counter, createBtn
+local blocks = {} -- parts of the form, one under another: what (one / list), on whom, the rest (keys / reset)
 local controls = {} -- by name: what the tests drive and what starts over with each new form
 local spec -- the answers so far
 local scope -- the tab the macro goes into
 local suggested -- the name the form put in the name box, until someone types another
+local Arrange
 
 local function Letters(s)
     return select(2, s:gsub("[^\128-\191]", ""))
@@ -59,14 +66,32 @@ end
 ------------------------------------------------------------------------
 -- A spell or item box: type a name, or pick one of yours from the list under it
 ------------------------------------------------------------------------
--- Your spells, then the items you can use.
+-- What a box offers: your spells and the items you can use. /use offers the items first, with the equipment
+-- slots whose item has a use effect ("13", Trinket 1).
 local function Candidates()
-    local out = {}
+    local spells, items = {}, {}
     for _, spell in ipairs(ns.sources.spells()) do
-        out[#out + 1] = { name = spell.name, icon = spell.icon, hint = "spell" }
+        spells[#spells + 1] = { name = spell.name, icon = spell.icon, hint = "spell" }
     end
     for _, item in ipairs(ns.sources.items()) do
-        if item.usable then out[#out + 1] = { name = item.name, icon = item.icon, hint = item.hint, item = true } end
+        if item.usable then items[#items + 1] = { name = item.name, icon = item.icon, hint = item.hint, item = true } end
+    end
+    local out = {}
+    local function add(list)
+        for _, c in ipairs(list) do out[#out + 1] = c end
+    end
+    if spec.command == "use" then
+        add(items)
+        for _, slot in ipairs(ns.data.slots) do
+            local name, usable = ns.sources.equipped(tonumber(slot.name))
+            if usable then
+                out[#out + 1] = { name = slot.name, hint = slot.hint .. ": " .. name, item = true, label = name }
+            end
+        end
+        add(spells)
+    else
+        add(spells)
+        add(items)
     end
     return out
 end
@@ -121,7 +146,7 @@ local function MatchList(box, width)
     end
 
     function list:Open(items)
-        self.items, self.offset, self.selected = items, 0, 1
+        self.items, self.offset, self.selected, self.moved = items, 0, 1, false
         if #items == 0 then return self:Hide() end
         self:Refresh()
         self:Show()
@@ -131,6 +156,7 @@ local function MatchList(box, width)
     function list:Move(delta)
         local n = #self.items
         if n == 0 then return end
+        self.moved = true
         self.selected = (self.selected - 1 + delta) % n + 1
         if self.selected <= self.offset then
             self.offset = self.selected - 1
@@ -150,8 +176,8 @@ end
 
 -- set(action) takes what the box says: one of yours under its own name, any other name as a spell (one of
 -- another spec, say), nil when it is empty.
-local function SpellBox(width, hint, get, set)
-    local box = ns.Input(frame, width, 60)
+local function SpellBox(parent, width, hint, get, set)
+    local box = ns.Input(parent, width, 60)
     box.list = MatchList(box, width)
     local placeholder = ns.Text(box, 12, "dim")
     placeholder:SetPoint("LEFT", 6, 0)
@@ -164,7 +190,7 @@ local function SpellBox(width, hint, get, set)
         if typed ~= "" then
             for _, c in ipairs(Candidates()) do
                 if c.name:lower() == typed:lower() then
-                    action = { name = c.name, item = c.item }
+                    action = { name = c.name, item = c.item, label = c.label }
                     break
                 end
             end
@@ -204,13 +230,18 @@ local function SpellBox(width, hint, get, set)
     box:HookScript("OnEditFocusLost", function(self)
         if self.list:IsShown() and self.list:IsMouseOver() then return end -- a click on a name picks it
         self.list:Hide()
-        if frame:IsShown() then self:Commit() end
+        if frame:IsShown() and parent:IsShown() then self:Commit() end
     end)
     box:SetScript("OnArrowPressed", function(self, key)
         if key == "UP" then self.list:Move(-1) elseif key == "DOWN" then self.list:Move(1) end
     end)
+    -- Enter takes the name picked in the list; in an empty box only one picked with the arrows (the list there
+    -- is all there is to choose from, and Enter leaves the box empty).
     local function accept(self)
-        if self.list:IsShown() then return self:Pick(self.list.items[self.list.selected]) end
+        local list = self.list
+        if list:IsShown() and (strtrim(self:GetText()) ~= "" or list.moved) then
+            return self:Pick(list.items[list.selected])
+        end
         self:ClearFocus()
     end
     box:SetScript("OnEnterPressed", accept)
@@ -225,16 +256,16 @@ end
 ------------------------------------------------------------------------
 -- The form
 ------------------------------------------------------------------------
-local function Text(text, x, y, colorKey)
-    local fs = ns.Text(frame, 12, colorKey)
+local function Text(parent, text, x, y, colorKey)
+    local fs = ns.Text(parent, 12, colorKey)
     fs:SetPoint("TOPLEFT", x, y)
     fs:SetText(text)
     return fs
 end
 
--- A list to choose from: `items` { { key, name } }, the answer at spec[...] through get / set.
-local function Choice(name, width, items, get, set)
-    local d = ns.Dropdown(frame, width, function() return items end, get, function(key)
+-- A list to choose from: `items` { { key, name } }, the answer through get / set.
+local function Choice(parent, name, width, items, get, set)
+    local d = ns.Dropdown(parent, width, function() return items end, get, function(key)
         set(key)
         Update()
     end)
@@ -242,13 +273,28 @@ local function Choice(name, width, items, get, set)
     return d
 end
 
-local function Check(name, label, get, set)
-    local c = ns.Check(frame, label, get, function(on)
+local function Check(parent, name, label, get, set)
+    local c = ns.Check(parent, label, get, function(on)
         set(on)
         Update()
     end)
     controls[name] = c
     return c
+end
+
+-- A part of the form: as wide as the window, `height` tall, placed by Arrange.
+local function Block(height)
+    local b = CreateFrame("Frame", nil, frame)
+    b:SetSize(WIDTH, height)
+    b.height = height
+    b:Hide()
+    return b
+end
+
+local function FirstOf(list)
+    for i = 1, W.LIST do
+        if list[i] then return list[i] end
+    end
 end
 
 -- The main spell picked: friends or enemies, when the game says which it is for.
@@ -260,13 +306,61 @@ local function FollowReaction(action)
     end
 end
 
+-- And /cast or /use as it is a spell or an item (you can still choose the other).
+local function FollowKind(action)
+    local command = action and (action.item and "use" or "cast")
+    if command and command ~= spec.command then
+        spec.command = command
+        controls.command:Refresh()
+        Arrange()
+    end
+end
+
+-- Another command: what was picked comes along, the spell of /cast starting a list and the first of a list
+-- becoming the spell.
+local function SwitchTo(command)
+    local wasList = W.IsList(spec.command)
+    spec.command = command
+    if W.IsList(command) and not wasList and spec.action and not FirstOf(spec.list) then
+        spec.list[1] = spec.action
+    elseif not W.IsList(command) and wasList and not spec.action then
+        spec.action = FirstOf(spec.list)
+    end
+    for _, control in pairs(controls) do
+        if control.Refresh then control:Refresh() end
+    end
+    Arrange()
+end
+
+-- The parts the command asks for, one under another, and the window as tall as they are.
+function Arrange()
+    local list = W.IsList(spec.command)
+    local parts = { list and blocks.list or blocks.one, blocks.on }
+    if spec.command == "castsequence" then parts[#parts + 1] = blocks.reset end
+    if not list then parts[#parts + 1] = blocks.keys end
+    local shown = {}
+    for _, b in ipairs(parts) do shown[b] = true end
+    for _, b in pairs(blocks) do
+        if not shown[b] then b:Hide() end
+    end
+    local y = -TOP
+    for _, b in ipairs(parts) do
+        b:ClearAllPoints()
+        b:SetPoint("TOPLEFT", 0, y)
+        b:Show()
+        y = y - b.height
+    end
+    frame:SetHeight(-y + BOTTOM)
+    controls.castLabel:SetText(spec.command == "use" and "Use" or "Cast")
+    controls.listTitle:SetText(LIST_TITLES[spec.command] or "")
+end
+
 local function Build()
-    -- Cmd is a key only on a Mac: its row there pushes the rest of the form down.
+    -- Cmd is a key only on a Mac.
     local keys = {}
     for _, key in ipairs(W.KEYS) do
         if key ~= "cmd" or (IsMacClient and IsMacClient()) then keys[#keys + 1] = key end
     end
-    local below = (#keys - 3) * 32
 
     frame = CreateFrame("Frame", "MacroSenseWizard", UIParent, "BackdropTemplate")
     table.insert(UISpecialFrames, "MacroSenseWizard") -- Esc closes it
@@ -275,10 +369,11 @@ local function Build()
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
     frame:EnableMouse(true)
-    frame:SetSize(WIDTH, HEIGHT + below)
+    frame:SetWidth(WIDTH)
+    -- Held by its top: another command makes it taller or shorter below.
     local pos = ns.db.wizard
-    frame:SetPoint(pos and pos.point or "CENTER", UIParent, pos and pos.relPoint or "CENTER", pos and pos.x or 0,
-        pos and pos.y or 20)
+    frame:SetPoint(pos and pos.point or "TOP", UIParent, pos and pos.relPoint or "TOP", pos and pos.x or 0,
+        pos and pos.y or -120)
     ns.Backdrop(frame, "bg", "border")
     frame:Hide()
 
@@ -302,86 +397,134 @@ local function Build()
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
 
-    local x = PAD + LABEL
-    -- Name and tab.
-    Text("Name", PAD, -55)
-    controls.name = ns.Input(frame, 200, 16)
-    controls.name:SetPoint("TOPLEFT", x, -50)
-    Text("Tab", x + 230, -55)
-    Choice("tab", 130, { { key = "general", name = "General" }, { key = "character", name = "Character" } },
-        function() return scope end, function(key) scope = key end):SetPoint("TOPLEFT", x + 262, -51)
+    -- The command, the name, the tab.
+    Text(frame, "Command", PAD, -55)
+    Choice(frame, "command", 130, W.commands, function() return spec.command end, SwitchTo)
+        :SetPoint("TOPLEFT", X, -51)
+    Text(frame, "Name", X + 144, -55)
+    controls.name = ns.Input(frame, 160, 16)
+    controls.name:SetPoint("TOPLEFT", X + 186, -50)
+    Text(frame, "Tab", X + 358, -55)
+    Choice(frame, "tab", 110, { { key = "general", name = "General" }, { key = "character", name = "Character" } },
+        function() return scope end, function(key) scope = key end):SetPoint("TOPLEFT", X + 392, -51)
 
-    -- What, on whom, who.
-    Text("Cast", PAD, -89)
-    controls.cast = SpellBox(330, "type a spell or item", function() return spec.action end, function(action)
-        spec.action = action
-        FollowReaction(action)
-    end)
-    controls.cast:SetPoint("TOPLEFT", x, -84)
+    -- One spell or item: /cast, /use.
+    blocks.one = Block(34)
+    controls.castLabel = Text(blocks.one, "Cast", PAD, -5)
+    controls.cast = SpellBox(blocks.one, 330, "type a spell or item", function() return spec.action end,
+        function(action)
+            spec.action = action
+            FollowReaction(action)
+            FollowKind(action)
+        end)
+    controls.cast:SetPoint("TOPLEFT", X, 0)
 
-    Text("On", PAD, -123)
+    -- A list: /castsequence, /castrandom. Two columns, read across.
+    blocks.list = Block(22 + 3 * ROW + 2)
+    controls.listTitle = Text(blocks.list, "", PAD, 0, "dim")
+    for i = 1, W.LIST do
+        local x, y = X + (i - 1) % 2 * 252, -22 - math.floor((i - 1) / 2) * ROW
+        Text(blocks.list, tostring(i), x - 16, y - 5, "dim")
+        local box = SpellBox(blocks.list, 236, "spell or item", function() return spec.list[i] end, function(action)
+            spec.list[i] = action
+            if i == 1 then FollowReaction(action) end
+        end)
+        box:SetPoint("TOPLEFT", x, y)
+        controls["list" .. i] = box
+    end
+
+    -- On whom, and who: for every command.
+    blocks.on = Block(2 * 34)
+    Text(blocks.on, "On", PAD, -5)
     local none = { { key = "none", name = "-" } }
     for _, u in ipairs(W.units) do none[#none + 1] = u end
     for i = 1, 3 do
-        local d = Choice("on" .. i, 120, i == 1 and W.units or none, function() return spec.on[i] end,
+        local d = Choice(blocks.on, "on" .. i, 120, i == 1 and W.units or none, function() return spec.on[i] end,
             function(key) spec.on[i] = key end)
-        d:SetPoint("TOPLEFT", x + (i - 1) * 158, -119)
-        if i > 1 then Text("then", x + (i - 1) * 158 - 32, -123, "dim") end
+        d:SetPoint("TOPLEFT", X + (i - 1) * 158, -1)
+        if i > 1 then Text(blocks.on, "then", X + (i - 1) * 158 - 32, -5, "dim") end
         Tip(d, i == 1 and "On" or "Then", i == 1 and "Who the macro casts on. As usual: your target, or you when "
             .. "the game casts on you by itself (Auto Self Cast)." or "When the one before is not there, or not "
             .. "the one asked for: this one.")
     end
-
-    Text("Only", PAD, -157)
-    local only = Choice("only", 120, { { key = "any", name = "Anyone there" }, { key = "friends", name = "Friends" },
-        { key = "enemies", name = "Enemies" } }, function() return spec.only end, function(key) spec.only = key end)
-    only:SetPoint("TOPLEFT", x, -153)
+    Text(blocks.on, "Only", PAD, -39)
+    local only = Choice(blocks.on, "only", 120, { { key = "any", name = "Anyone there" },
+        { key = "friends", name = "Friends" }, { key = "enemies", name = "Enemies" } },
+        function() return spec.only end, function(key) spec.only = key end)
+    only:SetPoint("TOPLEFT", X, -35)
     Tip(only, "Only", "What the units above must be: friends, enemies or anyone there. Yourself, As usual and At "
         .. "the cursor need no check. It follows the spell you pick, when the game knows what it is for.")
-    Check("alive", "Alive only", function() return spec.alive end, function(on) spec.alive = on end)
-        :SetPoint("TOPLEFT", x + 136, -153)
+    Check(blocks.on, "alive", "Alive only", function() return spec.alive end, function(on) spec.alive = on end)
+        :SetPoint("TOPLEFT", X + 136, -35)
 
-    -- Keys held: another spell or the same one, on units of their own, in the On row's columns.
-    Text("With a key held", PAD, -195, "dim")
-    Text("on", x + 158, -195, "dim")
+    -- Keys held (/cast, /use): another spell or the same one, on units of their own, in the On row's columns.
+    blocks.keys = Block(8 + 22 + #keys * ROW)
+    Text(blocks.keys, "With a key held", PAD, -8, "dim")
+    Text(blocks.keys, "on", X + 158, -8, "dim")
     for i, key in ipairs(keys) do
-        local y = -217 - (i - 1) * 32
-        Check(key, KEY_NAMES[key], function() return spec.keys[key].active end,
+        local y = -30 - (i - 1) * ROW
+        Check(blocks.keys, key, KEY_NAMES[key], function() return spec.keys[key].active end,
             function(on) spec.keys[key].active = on end):SetPoint("TOPLEFT", PAD, y - 1)
-        local box = SpellBox(150, "same spell", function() return spec.keys[key].action end,
+        local box = SpellBox(blocks.keys, 150, "same spell", function() return spec.keys[key].action end,
             function(action) spec.keys[key].action = action end)
-        box:SetPoint("TOPLEFT", x, y)
+        box:SetPoint("TOPLEFT", X, y)
         controls[key .. "Cast"] = box
         for j, suffix in ipairs({ "On", "Then" }) do
-            Choice(key .. suffix, 120, j == 1 and W.units or none, function() return spec.keys[key].on[j] end,
-                function(unit) spec.keys[key].on[j] = unit end):SetPoint("TOPLEFT", x + j * 158, y - 1)
+            Choice(blocks.keys, key .. suffix, 120, j == 1 and W.units or none,
+                function() return spec.keys[key].on[j] end, function(unit) spec.keys[key].on[j] = unit end)
+                :SetPoint("TOPLEFT", X + j * 158, y - 1)
         end
-        Text("then", x + 284, y - 5, "dim")
+        Text(blocks.keys, "then", X + 284, y - 5, "dim")
     end
     if controls.cmd then
         Tip(controls.cmd, "Cmd", "On a key macOS uses with Cmd itself (Q quits the game, W, H, Tab, Space...) "
             .. "macOS comes first: the editor warns when the macro sits on one.")
     end
 
-    -- Also.
-    Text("Also", PAD, -317 - below, "dim")
-    Check("stopcasting", "Stop your cast first", function() return spec.stopcasting end,
-        function(on) spec.stopcasting = on end):SetPoint("TOPLEFT", PAD, -337 - below)
-    Check("startattack", "Start auto attack", function() return spec.startattack end,
-        function(on) spec.startattack = on end):SetPoint("TOPLEFT", PAD, -361 - below)
-    Check("petattack", "Your pet attacks your target", function() return spec.petattack end,
-        function(on) spec.petattack = on end):SetPoint("TOPLEFT", PAD, -385 - below)
-    Check("trinket1", "Use trinket 1", function() return spec.trinket1 end,
-        function(on) spec.trinket1 = on end):SetPoint("TOPLEFT", PAD + 260, -337 - below)
-    Check("trinket2", "Use trinket 2", function() return spec.trinket2 end,
-        function(on) spec.trinket2 = on end):SetPoint("TOPLEFT", PAD + 260, -361 - below)
+    -- What starts a sequence over (/castsequence).
+    blocks.reset = Block(8 + 22 + 2 * 26)
+    Text(blocks.reset, "Start over", PAD, -8, "dim")
+    local x = PAD
+    for _, what in ipairs(W.RESETS) do
+        local c = Check(blocks.reset, "reset" .. what:gsub("^%l", string.upper), RESET_NAMES[what],
+            function() return spec.reset[what] end, function(on) spec.reset[what] = on end)
+        c:SetPoint("TOPLEFT", x, -30)
+        Tip(c, "Start over", "What makes the sequence begin again from its first spell: a new target, the end of "
+            .. "combat, a press with Shift, Ctrl or Alt held, or some seconds without a press.")
+        x = x + c:GetWidth() + 18
+    end
+    local timed = Check(blocks.reset, "resetTimed", "After", function() return spec.reset.timed end,
+        function(on) spec.reset.timed = on end)
+    timed:SetPoint("TOPLEFT", PAD, -56)
+    local seconds = ns.Stepper(blocks.reset, 1, 60, function() return spec.reset.seconds end, function(v)
+        spec.reset.seconds = v
+        Update()
+    end)
+    seconds:SetPoint("LEFT", timed, "RIGHT", 8, 0)
+    controls.resetSeconds = seconds
+    local secondsText = ns.Text(blocks.reset, 12, "dim")
+    secondsText:SetPoint("LEFT", seconds, "RIGHT", 8, 0)
+    secondsText:SetText("seconds without a press")
+
+    -- Also, the macro, the buttons: at the bottom, from the bottom up.
+    local function Low(region, x, y) region:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", x, y) end
+    Low(Text(frame, "Also", 0, 0, "dim"), PAD, 268)
+    Low(Check(frame, "stopcasting", "Stop your cast first", function() return spec.stopcasting end,
+        function(on) spec.stopcasting = on end), PAD, 246)
+    Low(Check(frame, "startattack", "Start auto attack", function() return spec.startattack end,
+        function(on) spec.startattack = on end), PAD, 222)
+    Low(Check(frame, "petattack", "Your pet attacks your target", function() return spec.petattack end,
+        function(on) spec.petattack = on end), PAD, 198)
+    Low(Check(frame, "trinket1", "Use trinket 1", function() return spec.trinket1 end,
+        function(on) spec.trinket1 = on end), PAD + 280, 246)
+    Low(Check(frame, "trinket2", "Use trinket 2", function() return spec.trinket2 end,
+        function(on) spec.trinket2 = on end), PAD + 280, 222)
     Tip(controls.stopcasting, "Stop your cast first",
         "For an interrupt or a save: it goes off at once, even in the middle of another cast.")
 
-    -- The macro.
     local box = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    box:SetPoint("TOPLEFT", PAD, -419 - below)
-    box:SetPoint("TOPRIGHT", -PAD, -419 - below)
+    box:SetPoint("BOTTOMLEFT", PAD, 50)
+    box:SetPoint("BOTTOMRIGHT", -PAD, 50)
     box:SetHeight(100)
     ns.Backdrop(box, "bg", "border")
     preview = box:CreateFontString(nil, "OVERLAY")
@@ -425,6 +568,7 @@ function WizardWindow.Open(tab)
     for _, control in pairs(controls) do
         if control.Refresh then control:Refresh() end
     end
+    Arrange()
     Update()
     frame:Show()
     frame:Raise()
@@ -441,6 +585,6 @@ function WizardWindow.Toggle(tab)
     WizardWindow.Open(tab)
 end
 
--- A control of the form by name: "cast", "on1", "shift", "shiftCast", "shiftOn", "shiftThen", "trinket1", ...
--- (the tests fill the form through it).
+-- A control of the form by name: "command", "cast", "list1", "on1", "shift", "shiftCast", "shiftOn", "shiftThen",
+-- "resetTarget", "resetTimed", "resetSeconds", "trinket1", "create", ... (the tests fill the form through it).
 function WizardWindow.Control(name) return controls[name] end

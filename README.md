@@ -40,7 +40,12 @@ CurseForge once it is published. For development, symlink the folder from this r
 
 **New (Wizard)**, over New / Copy / Delete, opens a window with a form for a new macro:
 
-- **Cast**: the spell or item. Type a few letters, or the first letters of its words, and your spells and
+- **Command**: `/cast` or `/use` for one spell or item (it follows what you pick: an item sets `/use`),
+  `/castsequence` for spells in turn, `/castrandom` for one of several at random. The form changes with it:
+  a sequence asks what starts it over (a new target, the end of combat, Shift / Ctrl / Alt, some seconds
+  without a press). `/use` offers your items first, then the equipment slots whose item has a use effect
+  (`13`, `14`).
+- **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words, and your spells and
   usable items come up; any other name works too.
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
   itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
@@ -63,6 +68,7 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | Counterspell on Focus, then As usual; enemies; stop your cast first | `/stopcasting`, then `/cast [@focus,harm,nodead][] Counterspell` |
 | Flash Heal on Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/cast [mod:shift,@party2,help,nodead]...[@party1,help,nodead] Flash Heal` |
 | Blizzard At the cursor | `/cast [@cursor] Blizzard` |
+| /castsequence Corruption, Immolate; start over on a new target | `/castsequence reset=target Corruption, Immolate` |
 | Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Autocomplete

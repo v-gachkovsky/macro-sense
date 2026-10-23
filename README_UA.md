@@ -39,7 +39,12 @@ MacroSense є ще й у меню аддонів біля мінімапи.
 
 **New (Wizard)** над кнопками New / Copy / Delete відкриває вікно з формою для нового макросу:
 
-- **Cast**: спел чи предмет. Наберіть кілька літер або перші літери його слів, і з'являться ваші спели й
+- **Command**: `/cast` чи `/use` для одного спела або предмета (команда йде за вибраним: предмет ставить
+  `/use`), `/castsequence` для спелів по черзі, `/castrandom` для одного з кількох навмання. Форма змінюється
+  разом із командою: для послідовності вона питає, що починає її спочатку (нова ціль, кінець бою,
+  Shift / Ctrl / Alt, кілька секунд без натискання). `/use` спершу пропонує ваші предмети, потім слоти
+  екіпіровки, чий предмет має ефект використання (`13`, `14`).
+- **Cast** / **Use**: спел чи предмет. Наберіть кілька літер або перші літери його слів, і з'являться ваші спели й
   предмети, які можна використати; підійде й будь-яка інша назва.
 - **On**: на кого, по черзі, до трьох: As usual (ваша ціль, або ви, коли гра кастує на вас сама), Your target,
   Mouseover, Focus, Yourself, Your pet, Party member 1–4, Target's target, Arena enemy 1–3, At the cursor.
@@ -62,6 +67,7 @@ MacroSense є ще й у меню аддонів біля мінімапи.
 | Counterspell на Focus, потім As usual; вороги; спершу перервати каст | `/stopcasting`, далі `/cast [@focus,harm,nodead][] Counterspell` |
 | Flash Heal на Party member 1; Shift на 2, Ctrl на 3, Alt на 4 | `/cast [mod:shift,@party2,help,nodead]...[@party1,help,nodead] Flash Heal` |
 | Blizzard At the cursor | `/cast [@cursor] Blizzard` |
+| /castsequence Corruption, Immolate; спочатку при новій цілі | `/castsequence reset=target Corruption, Immolate` |
 | Frostbolt як зазвичай; Shift: Polymorph на Focus; трінкет 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Автодоповнення

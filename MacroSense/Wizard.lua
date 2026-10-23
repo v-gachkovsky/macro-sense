@@ -1,10 +1,23 @@
--- The macro wizard's form as macro text: what to cast, on whom (in order), what Shift, Ctrl or Alt cast
--- instead, and what else the macro does. Pure Lua; the window with the form is WizardWindow.lua.
+-- The macro wizard's form as macro text: the command, what it casts or uses, on whom (in order), what Shift, Ctrl,
+-- Alt or Cmd do instead, and what else the macro does. Pure Lua; the window with the form is WizardWindow.lua.
 local _, ns = ...
 ns = ns or {}
 
 local Wizard = {}
 ns.Wizard = Wizard
+
+-- The commands the form makes. /cast and /use take one spell or item, with keys; the others a list of them.
+-- (/userandom is the same command as /castrandom in the game.)
+Wizard.commands = {
+    { key = "cast", name = "/cast" },
+    { key = "use", name = "/use" },
+    { key = "castsequence", name = "/castsequence" },
+    { key = "castrandom", name = "/castrandom" },
+}
+Wizard.LIST = 6 -- names a list takes in the form
+Wizard.RESETS = { "target", "combat", "shift", "ctrl", "alt" } -- what starts a sequence over, besides seconds
+
+function Wizard.IsList(command) return command == "castsequence" or command == "castrandom" end
 
 -- Where a cast can go, as the form lists them. "default" is the game's own choice: your target, or you when
 -- the game casts on you by itself (Auto Self Cast). `filters`: friends / enemies / alive only apply to it.
@@ -32,10 +45,11 @@ for _, u in ipairs(Wizard.units) do filtered[u.key] = u.filters end
 -- After these nothing is asked: they always hold.
 local ALWAYS = { default = true, player = true, cursor = true }
 
--- A fresh form: Mouseover, then as usual (the macro players make most); no keys held, nothing else. A key held
--- has its own units in order, two of them.
+-- A fresh form: /cast on Mouseover, then as usual (the macro players make most); no keys held, nothing else. A
+-- key held has its own units in order, two of them. A sequence starts over after 10 seconds once that is asked.
 function Wizard.Fresh()
-    local spec = { on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {} }
+    local spec = { command = "cast", on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {},
+        list = {}, reset = { seconds = 10 } }
     for _, key in ipairs(Wizard.KEYS) do spec.keys[key] = { active = false, on = { "default", "none" } } end
     return spec
 end
@@ -53,15 +67,6 @@ local function Group(spec, unit, key)
     return "[" .. table.concat(conds, ",") .. "]"
 end
 
--- An action is { name = "Flash Heal" } or { name = "Healthstone", item = true }. A line of items says /use,
--- one with a spell /cast: the game takes either for both, /cast looks for a spell first and /use for an item.
-local function Command(clauses)
-    for _, c in ipairs(clauses) do
-        if not c.action.item then return "/cast" end
-    end
-    return "/use"
-end
-
 -- Units in order, "none" left out, up to the first one that always holds: nothing after it is ever tried.
 local function Chain(units)
     local out = {}
@@ -74,8 +79,12 @@ local function Chain(units)
     return out
 end
 
--- The cast line's clauses: the keys held with their units, then the units in order, those casting the same next
--- to each other as one ("[mod:alt,@party4][@party1] Flash Heal").
+-- An action is { name = "Flash Heal" }, { name = "Healthstone", item = true } or a slot { name = "13", item = true,
+-- label = what is in it }. The game takes spells and items for /cast and /use both: /cast looks for a spell
+-- first, /use for an item.
+
+-- The clauses of a /cast or /use line: the keys held with their units, then the units in order, those casting the
+-- same next to each other as one ("[mod:alt,@party4][@party1] Flash Heal").
 local function Clauses(spec)
     local out = {}
     local function add(group, action)
@@ -99,38 +108,82 @@ local function Clauses(spec)
     return out
 end
 
+local function CastLine(spec)
+    local clauses = Clauses(spec)
+    if #clauses == 0 then return nil end
+    local parts = {}
+    for i, c in ipairs(clauses) do
+        -- A last clause that always holds needs no brackets: "; Frostbolt".
+        local groups = (i == #clauses and c.groups == "[]") and "" or (c.groups .. " ")
+        parts[i] = groups .. c.action.name
+    end
+    return "/" .. spec.command .. " " .. table.concat(parts, "; ")
+end
+
+-- The names of a list in order, the rows left empty skipped.
+local function Names(spec)
+    local out = {}
+    for i = 1, Wizard.LIST do
+        if spec.list[i] then out[#out + 1] = spec.list[i] end
+    end
+    return out
+end
+
+-- "reset=10/target/combat " for what starts a sequence over, "" for nothing.
+local function Reset(reset)
+    local parts = {}
+    if reset.timed then parts[#parts + 1] = tostring(reset.seconds) end
+    for _, what in ipairs(Wizard.RESETS) do
+        if reset[what] then parts[#parts + 1] = what end
+    end
+    return #parts > 0 and ("reset=" .. table.concat(parts, "/") .. " ") or ""
+end
+
+-- "/castsequence [@mouseover,harm,nodead][] reset=target Corruption, Immolate": the units hold for the whole list.
+local function ListLine(spec)
+    local names = {}
+    for i, action in ipairs(Names(spec)) do names[i] = action.name end
+    if #names == 0 then return nil end
+    local groups = ""
+    for _, unit in ipairs(Chain(spec.on)) do groups = groups .. Group(spec, unit) end
+    if groups == "[]" then groups = "" end -- as usual alone: no brackets
+    local reset = spec.command == "castsequence" and Reset(spec.reset) or ""
+    return "/" .. spec.command .. " " .. (groups ~= "" and groups .. " " or "") .. reset .. table.concat(names, ", ")
+end
+
+-- What the macro is named after and shows with trinkets first: the spell or item, a key's, the list's first.
+local function First(spec)
+    if Wizard.IsList(spec.command) then return Names(spec)[1] end
+    if spec.action then return spec.action end
+    for _, key in ipairs(Wizard.KEYS) do
+        local k = spec.keys[key]
+        if k.active and k.action then return k.action end
+    end
+end
+
 -- The macro, or nil while there is nothing to cast or use.
 function Wizard.Text(spec)
-    local clauses = Clauses(spec)
+    local line
+    if Wizard.IsList(spec.command) then line = ListLine(spec) else line = CastLine(spec) end
     local uses = {}
     if spec.trinket1 then uses[#uses + 1] = "/use 13" end
     if spec.trinket2 then uses[#uses + 1] = "/use 14" end
-    if #clauses == 0 and #uses == 0 then return nil end
+    if not line and #uses == 0 then return nil end
     -- With trinkets first, a bare #showtooltip would show the first trinket: it names the spell.
-    local lines = { #uses > 0 and spec.action and ("#showtooltip " .. spec.action.name) or "#showtooltip" }
+    local first = First(spec)
+    local lines = { #uses > 0 and first and ("#showtooltip " .. first.name) or "#showtooltip" }
     if spec.stopcasting then lines[#lines + 1] = "/stopcasting" end
-    for _, line in ipairs(uses) do lines[#lines + 1] = line end
-    if #clauses > 0 then
-        local parts = {}
-        for i, c in ipairs(clauses) do
-            -- A last clause that always holds needs no brackets: "; Frostbolt".
-            local groups = (i == #clauses and c.groups == "[]") and "" or (c.groups .. " ")
-            parts[i] = groups .. c.action.name
-        end
-        lines[#lines + 1] = Command(clauses) .. " " .. table.concat(parts, "; ")
-    end
+    for _, use in ipairs(uses) do lines[#lines + 1] = use end
+    if line then lines[#lines + 1] = line end
     if spec.startattack then lines[#lines + 1] = "/startattack" end
     if spec.petattack then lines[#lines + 1] = "/petattack" end
     return table.concat(lines, "\n")
 end
 
--- A name for the macro: what it casts.
+-- A name for the macro: what it casts (the item in a slot, not the slot's number).
 function Wizard.Name(spec)
-    if spec.action then return spec.action.name end
-    for _, key in ipairs(Wizard.KEYS) do
-        local k = spec.keys[key]
-        if k.active and k.action then return k.action.name end
-    end
+    local first = First(spec)
+    if first then return first.label or first.name end
     if spec.trinket1 or spec.trinket2 then return "Trinkets" end
 end
 

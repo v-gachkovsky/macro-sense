@@ -97,6 +97,7 @@ end
 -- FontString measuring: 8 px per character, 14 px high; one row unless wrapLines is on.
 local wrapLines = false
 function Frame:SetWidth(w) self.width = w end
+function Frame:SetHeight(h) self.height = h end
 function Frame:GetUnboundedStringWidth() return #tostring(self.text) * charWidth(self) end
 function Frame:GetStringWidth() return #tostring(self.text) * charWidth(self) end
 function Frame:GetNumLines()
@@ -1883,6 +1884,73 @@ do
     check("wizard: into the tab chosen", index > SLOTS.MAX_ACCOUNT_MACROS and ns.db.scope == "character", index)
     Fire(wizardBtn, "OnClick")
     check("wizard: the tab open now first", C("tab").label.text == "Character", C("tab").label.text)
+
+    -- Commands: /use offers the items first and the slots with a use effect; /castsequence and /castrandom take a
+    -- list; the window is as tall as the command's form.
+    local function last(label)
+        local found
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == label then found = o end
+        end
+        return found
+    end
+    local gear = GetInventoryItemLink
+    GetInventoryItemLink = function(unit, slot)
+        if slot == 14 then return "|cffa335ee|Hitem:5512::|h[Burning Talisman]|h|r" end
+        return gear(unit, slot)
+    end
+    local tall = MacroSenseWizard.height
+    pick(C("command"), "/use")
+    check("wizard: /use", C("castLabel").text == "Use" and MacroSenseWizard.height == tall, C("castLabel").text)
+    TypeIn(C("cast"), "")
+    check("wizard: /use offers the items first, then the slots", offered(C("cast")):find("^Healthstone, 14, Fire") ~= nil,
+        offered(C("cast")))
+    TypeIn(C("cast"), "1")
+    check("wizard: /use offers the slots with a use effect", offered(C("cast")) == "14", offered(C("cast")))
+    Fire(C("cast"), "OnEnterPressed")
+    check("wizard: a slot, named after what is in it", shown() == "#showtooltip\n/use [@mouseover,exists,nodead][] 14"
+        and C("name").text == "Burning Talisman", shown())
+    GetInventoryItemLink = gear
+    TypeIn(C("cast"), "fire")
+    Fire(C("cast"), "OnArrowPressed", "DOWN")
+    Fire(C("cast"), "OnEnterPressed")
+    check("wizard: a spell picked: /cast again", C("command").label.text == "/cast" and C("castLabel").text == "Cast"
+        and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", C("command").label.text)
+    pick(C("command"), "/castsequence")
+    check("wizard: /castsequence takes a list, the spell first", C("list1").text == "Fireball"
+        and C("listTitle").text == "In turn, one per press" and MacroSenseWizard.height == tall + 10,
+        MacroSenseWizard.height)
+    TypeIn(C("list2"), "frost")
+    Fire(C("list2"), "OnEnterPressed")
+    Fire(C("resetTarget"), "OnClick")
+    Fire(C("resetTimed"), "OnClick")
+    Fire(last("+"), "OnClick")
+    check("wizard: in turn, and what starts it over", shown()
+        == "#showtooltip\n/castsequence [@mouseover,harm,nodead][] reset=11/target Fireball, Frostbolt", shown())
+    pick(C("command"), "/castrandom")
+    check("wizard: /castrandom: one of them, nothing starts it over", shown()
+        == "#showtooltip\n/castrandom [@mouseover,harm,nodead][] Fireball, Frostbolt"
+        and C("listTitle").text == "One of these at random" and MacroSenseWizard.height == tall - 72, shown())
+    pick(C("command"), "/cast")
+    check("wizard: back to /cast, its spell kept", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball"
+        and MacroSenseWizard.height == tall, shown())
+    TypeIn(C("cast"), "")
+    Fire(C("cast"), "OnEnterPressed")
+    pick(C("command"), "/castsequence")
+    TypeIn(C("list1"), "frost")
+    Fire(C("list1"), "OnEnterPressed")
+    pick(C("command"), "/cast")
+    check("wizard: a /cast with no spell takes the list's first", C("cast").text == "Frostbolt"
+        and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    pick(C("command"), "/castrandom")
+    TypeIn(C("list3"), "")
+    Fire(C("list3"), "OnEnterPressed")
+    check("wizard: Enter in an empty box leaves it empty", C("list3").text == "", C("list3").text)
+    TypeIn(C("list3"), "")
+    Fire(C("list3"), "OnArrowPressed", "DOWN")
+    Fire(C("list3"), "OnEnterPressed")
+    check("wizard: or takes the name picked with the arrows", C("list3").text == "Fireball", C("list3").text)
+    pick(C("command"), "/cast")
 
     -- Not in combat, not into a full tab: the form stays.
     TypeIn(C("cast"), "frost")

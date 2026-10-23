@@ -792,10 +792,10 @@ do
         keys = { shift = { action = sheep }, cmd = { action = kick, on = { "focus", "default" } } } }),
         "#showtooltip\n/cast [mod:shift] Polymorph; [mod:cmd,@focus,harm,nodead][mod:cmd] Counterspell; Frostbolt")
     expectText("keys: a key alone", text({ keys = { ctrl = { action = sheep } } }), "#showtooltip\n/cast [mod:ctrl] Polymorph")
-    expectText("keys: items only say /use", text({ action = stone, on = usual,
+    expectText("keys: items with /use", text({ command = "use", action = stone, on = usual,
         keys = { shift = { action = { name = "Major Healing Potion", item = true } } } }),
         "#showtooltip\n/use [mod:shift] Major Healing Potion; Healthstone")
-    expectText("keys: a spell among them says /cast", text({ action = bolt, on = usual, keys = { shift = { action = stone } } }),
+    expectText("keys: the command as chosen", text({ action = bolt, on = usual, keys = { shift = { action = stone } } }),
         "#showtooltip\n/cast [mod:shift] Healthstone; Frostbolt")
     expectText("trinkets, then the spell", text({ action = bolt, on = usual, trinket1 = true, trinket2 = true }),
         "#showtooltip Frostbolt\n/use 13\n/use 14\n/cast Frostbolt")
@@ -803,11 +803,34 @@ do
     expectText("stop the cast, attack, the pet too", text({ action = bolt, only = "enemies", stopcasting = true,
         startattack = true, petattack = true }),
         "#showtooltip\n/stopcasting\n/cast [@mouseover,harm,nodead][] Frostbolt\n/startattack\n/petattack")
-    expectText("an item", text({ action = { name = "Wool Bandage", item = true }, only = "friends",
+    expectText("an item", text({ command = "use", action = { name = "Wool Bandage", item = true }, only = "friends",
         on = { "mouseover", "player", "none" } }), "#showtooltip\n/use [@mouseover,help,nodead][@player] Wool Bandage")
+    -- Other commands: a slot for /use; a list for /castsequence (with what starts it over) and /castrandom.
+    local slot = { name = "14", item = true, label = "Burning Talisman" }
+    expectText("use: a slot", text({ command = "use", action = slot, on = usual }), "#showtooltip\n/use 14")
+    local corruption, immolate = { name = "Corruption" }, { name = "Immolate" }
+    expectText("castsequence", text({ command = "castsequence", list = { corruption, immolate }, on = usual }),
+        "#showtooltip\n/castsequence Corruption, Immolate")
+    expectText("castsequence: units for the whole list, what starts it over", text({ command = "castsequence",
+        only = "enemies", list = { corruption, nil, immolate }, reset = { timed = true, seconds = 12, target = true,
+        combat = true, shift = true } }), "#showtooltip\n/castsequence [@mouseover,harm,nodead][] "
+        .. "reset=12/target/combat/shift Corruption, Immolate")
+    expectText("castsequence: seconds only when asked", text({ command = "castsequence", list = { corruption, immolate },
+        on = usual, reset = { seconds = 30, alt = true } }), "#showtooltip\n/castsequence reset=alt Corruption, Immolate")
+    expectText("castrandom: no starting over", text({ command = "castrandom", list = { corruption, immolate },
+        on = { "focus", "none", "none" }, only = "enemies", reset = { target = true } }),
+        "#showtooltip\n/castrandom [@focus,harm,nodead] Corruption, Immolate")
+    expectText("a list with trinkets first", text({ command = "castsequence", list = { corruption, immolate },
+        on = usual, trinket1 = true }), "#showtooltip Corruption\n/use 13\n/castsequence Corruption, Immolate")
+    check("wizard: a list empty, no macro", W.Text(form({ command = "castsequence", action = bolt })) == nil)
+    check("wizard: the spell of /cast is not in a list", W.Text(form({ command = "castrandom", action = bolt,
+        list = { corruption } })) == "#showtooltip\n/castrandom [@mouseover,exists,nodead][] Corruption")
     for label, body in pairs(made) do
         check("wizard " .. label .. ": no issues", body and issues(body) == "", body and issues(body))
     end
+    check("wizard name: a slot by what is in it", W.Name(form({ command = "use", action = slot })) == "Burning Talisman")
+    check("wizard name: the first of a list", W.Name(form({ command = "castsequence", list = { nil, immolate } }))
+        == "Immolate")
     check("wizard name: what it casts", W.Name(form({ action = heal })) == "Flash Heal")
     check("wizard name: a key's spell", W.Name(form({ keys = { ctrl = { action = sheep } } })) == "Polymorph")
     check("wizard name: trinkets alone", W.Name(form({ trinket1 = true })) == "Trinkets")

@@ -22,6 +22,7 @@ Open it from the **minimap button** (drag it along the edge to move it), with `/
 
 Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** opens a form where you pick it all:
 
+- **the command**: `/cast`, `/use`, `/castsequence` (with what starts it over) or `/castrandom`
 - **what to cast**: a spell or item, found by a few letters or the first letters of its words
 - **on whom, in order**: mouseover, focus, your target, yourself, your pet, party members 1-4, target's
   target, arena enemies 1-3, the cursor, or as usual
