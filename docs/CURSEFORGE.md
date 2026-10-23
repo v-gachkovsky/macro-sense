@@ -38,6 +38,9 @@ Open it from the **minimap button** (drag it along the edge to move it), with `/
 | a spell with several learned ranks (Classic) | its ranks, highest first: `Fireball(Rank 4)` |
 | `#` | `#showtooltip`, `#show` |
 
+Spell names of several words come up by their first letters too: `da` finds **Demon Armor**, `swp`
+**Shadow Word: Pain**, `ca` **Curse of Agony**.
+
 **Tab** or **Enter** accepts, **Up / Down** move through the list, **PageUp / PageDown** jump 10, **Esc** closes
 it (after a spell, Esc keeps the plain name without a rank). Long lists scroll, also with the mouse wheel.
 Typing `[` adds the `]` for you.

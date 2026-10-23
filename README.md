@@ -57,6 +57,10 @@ repository instead.
 | `/castsequence reset=` | `target`, `combat`, `shift`, `ctrl`, `alt` or seconds (`10`); after `/` the ones not used yet |
 | `#` | `#showtooltip`, `#show` |
 
+Names of several words are found by their first letters too: `da` finds Demon Armor, `swp` Shadow Word: Pain,
+`ca` Curse of Agony (small words may be left out), `shwp` takes more of a word. The list puts the names you
+typed the first letters of first, then the names that start with what you typed, then the rest.
+
 Keys: **Tab** / **Enter** accept, **Up / Down** move, **PageUp / PageDown** jump 10, **Esc** closes the list.
 The list shows 10 rows and scrolls (also with the mouse wheel) through the rest. Deleting never opens the list.
 Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo, **Ctrl+F** search the macros

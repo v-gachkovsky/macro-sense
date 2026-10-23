@@ -90,9 +90,74 @@ local function rankItems(spell, withName, prefix)
     return out
 end
 
--- Prefix matches first, then substring matches; both keep the source order.
--- Returns nothing when the word is already complete (the only match is the word itself),
--- except for a spell with several learned ranks: then its ranks (Esc keeps the plain name).
+------------------------------------------------------------------------
+-- What was typed against a name
+------------------------------------------------------------------------
+local SEPARATOR = "[%s%-:/(),]"
+
+-- Where the words of `name` start: its first letter, and each one after a space or - : / ( ) ,
+local function WordStarts(name)
+    local out = {}
+    for i = 1, #name do
+        if not name:sub(i, i):find(SEPARATOR) and (i == 1 or name:sub(i - 1, i - 1):find(SEPARATOR)) then
+            out[#out + 1] = i
+        end
+    end
+    return out
+end
+
+-- The first letter of each word, whole: "curse of agony" -> "coa".
+local function Initials(name)
+    local out = {}
+    for _, i in ipairs(WordStarts(name)) do out[#out + 1] = name:match("^[^\128-\191][\128-\191]*", i) end
+    return table.concat(out)
+end
+
+-- Whether `q` is made of beginnings of words of `name`, in order: each word used gives its first letters, and
+-- words may be left out. "da" -> "demon armor", "shwp" -> "shadow word: pain", "ca" -> "curse of agony".
+local function ByWords(name, q)
+    local starts = WordStarts(name)
+    local function from(i, w)
+        if i > #q then return true end
+        for k = w, #starts do
+            local at, n = starts[k], 0
+            while i + n <= #q and name:byte(at + n) == q:byte(i + n) do
+                n = n + 1
+                if from(i + n, k + 1) then return true end
+            end
+        end
+        return false
+    end
+    return from(1, 1)
+end
+
+-- The items whose names fit what was typed, best first, each group in the list's order: those it is the
+-- initials of ("da" -> Demon Armor), those that start with it, those whose words it begins ("ca" -> Curse of
+-- Agony), those that have it inside. Case doesn't count, spaces typed between words neither. A name typed in
+-- full keeps only the names that start with it.
+function Completion.Match(items, typed)
+    local q = typed:lower()
+    local bare = q:gsub("%s+", "")
+    local groups, full = { {}, {}, {}, {} }, false
+    for _, item in ipairs(items) do
+        local name = item.name:lower()
+        local at = q == "" and 1 or name:find(q, 1, true)
+        full = full or name == q
+        local group = (#bare >= 2 and Initials(name) == bare and 1) or (at == 1 and 2)
+            or (bare ~= "" and ByWords(name, bare) and 3) or (at and 4)
+        if group then table.insert(groups[group], item) end
+    end
+    local out = {}
+    for _, group in ipairs(groups) do
+        for _, item in ipairs(group) do
+            if not full or item.name:lower():find(q, 1, true) == 1 then out[#out + 1] = item end
+        end
+    end
+    return out
+end
+
+-- The best fits first (see Match). Returns nothing when the word is already complete (the only match is the
+-- word itself), except for a spell with several learned ranks: then its ranks (Esc keeps the plain name).
 function Completion.Get(ctx)
     if not ctx then return {} end
     local prefix = ctx.prefix:lower()
@@ -106,25 +171,10 @@ function Completion.Get(ctx)
         end
         if ctx.kind == "rank" then return {} end
     end
-    local starts, contains = {}, {}
-    for _, item in ipairs(list(ctx.kind, ctx)) do
-        local at = prefix == "" and 1 or item.name:lower():find(prefix, 1, true)
-        if at == 1 then
-            starts[#starts + 1] = item
-        elseif at then
-            contains[#contains + 1] = item
-        end
-    end
-    -- A word typed in full: longer words that start with it still help, matches inside other words not.
-    for _, item in ipairs(starts) do
-        if item.name:lower() == prefix then contains = {} break end
-    end
     local out = {}
-    for _, group in ipairs({ starts, contains }) do
-        for _, item in ipairs(group) do
-            if #out >= Completion.limit then return out end
-            out[#out + 1] = { name = item.name, hint = item.hint, icon = item.icon, insert = insertText(ctx.kind, item) }
-        end
+    for _, item in ipairs(Completion.Match(list(ctx.kind, ctx), ctx.prefix)) do
+        if #out >= Completion.limit then return out end
+        out[#out + 1] = { name = item.name, hint = item.hint, icon = item.icon, insert = insertText(ctx.kind, item) }
     end
     if #out == 1 and out[1].name:lower() == prefix then return {} end
     return out
