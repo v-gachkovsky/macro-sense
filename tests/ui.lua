@@ -135,6 +135,8 @@ C_Item = {
 function GetInventoryItemLink() return nil end
 local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 1 } }
 function GetBindingKey(command) return bindings[command] end
+local picked
+function PickupMacro(index) picked = index end
 function GetActionInfo(slot) if actions[slot] then return actions[slot][1], actions[slot][2] end end
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
 function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
@@ -485,6 +487,28 @@ do
     check("no warning on Windows", warningText() == "", warningText())
     IsMacClient = function() return true end
     ns.Window.Revert()
+end
+
+-- Drag to an action bar: list rows and the header icon put the macro on the cursor.
+do
+    local row
+    for _, o in ipairs(created) do if o.kind == "Button" and o.index == 1 and o.scripts.OnDragStart then row = o end end
+    Fire(row, "OnDragStart")
+    check("dragging a row picks up its macro", picked == 1, picked)
+    picked = nil
+    ns.Window.Select(1)
+    Fire(MacroSenseIconButton, "OnDragStart")
+    check("dragging the icon picks up the macro", picked == 1, picked)
+    picked = nil
+    InCombatLockdown = function() return true end
+    Fire(MacroSenseIconButton, "OnDragStart")
+    check("no pickup in combat", picked == nil)
+    InCombatLockdown = function() return false end
+    ns.Window.New()
+    Fire(MacroSenseIconButton, "OnDragStart")
+    check("a new macro must be saved first", picked == nil and printed[#printed]:find("save the macro first") ~= nil,
+        printed[#printed])
+    ns.Window.Select(1)
 end
 
 -- Unknown commands and conditions are marked; known ones are not.
