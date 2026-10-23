@@ -148,13 +148,55 @@ function CodeBox:ScheduleUnderlines()
     end)
 end
 
--- Where the cursor would be at raw position `pos`: { x, y, h } or nil.
-function CodeBox:Measure(pos)
+-- Where the cursor would be at raw position `pos`, asking the game: { x, y, h } or nil when the game
+-- does not report it right away.
+function CodeBox:MeasureByCursor(pos)
     self.measured = nil
     self.measuring = true
     self.edit:SetCursorPosition(H.ToColored(self.edit:GetText(), pos))
     self.measuring = false
     return self.measured
+end
+
+-- The same from text widths: a hidden FontString in the editor's font. Positions inside a wrapped
+-- part of a line are not known this way (nil).
+function CodeBox:MeasureByLayout(pos)
+    local fs = self.measurer
+    if not fs then
+        fs = self.edit:CreateFontString(nil, "BACKGROUND")
+        fs:SetAlpha(0)
+        fs:SetWordWrap(true)
+        self.measurer = fs
+    end
+    fs:SetFont(self.edit:GetFont())
+    local wrapWidth = self.edit:GetWidth() - INSET_L - 6
+    local function rows(text)
+        fs:SetWidth(wrapWidth)
+        fs:SetText(text ~= "" and text or " ")
+        return math.max(1, fs.GetNumLines and fs:GetNumLines() or 1)
+    end
+    -- Trailing spaces do not count in a string's width: measure with a letter after them.
+    local function width(text)
+        fs:SetWidth(0)
+        local function w(t)
+            fs:SetText(t)
+            return fs.GetUnboundedStringWidth and fs:GetUnboundedStringWidth() or fs:GetStringWidth()
+        end
+        return w(text .. "x") - w("x")
+    end
+    local raw = self:GetRaw()
+    local before = raw:sub(1, pos)
+    local prefix = before:match("[^\n]*$")
+    local line = prefix .. raw:sub(pos + 1):match("^[^\n]*")
+    local above = 0
+    for l in before:sub(1, #before - #prefix):gmatch("([^\n]*)\n") do above = above + rows(l) end
+    if rows(line) > 1 and rows(prefix) > 1 then return nil end
+    local h = self.caretH
+    if not h then
+        fs:SetText("Ag")
+        h = fs:GetStringHeight()
+    end
+    return { x = INSET_L + width(prefix), y = -INSET_T - above * h, h = h }
 end
 
 -- Syntax errors, except the word being typed right now.
@@ -173,12 +215,22 @@ function CodeBox:DrawUnderlines()
     for _, tex in ipairs(self.underlines) do tex:Hide() end
     if #errors > 0 and self.edit:IsVisible() then
         local saved = self.edit:GetCursorPosition()
+        -- Ask the game where the text is; when it does not answer at once, measure the text instead.
         -- The game may report positions with or without the text insets: position 0 tells which.
-        local origin = self:Measure(0)
+        -- Once the game did not answer, stop moving the cursor: its late events would scroll the text.
+        local probed = not self.layoutOnly
+        local origin = probed and self:MeasureByCursor(0)
+        if not origin then self.layoutOnly = true end
         local offX = origin and origin.x < 1 and INSET_L or 0
         local offY = origin and origin.y > -1 and -INSET_T or 0
+        local function measure(pos)
+            if not origin then return self:MeasureByLayout(pos) end
+            local m = self:MeasureByCursor(pos)
+            return m and { x = m.x + offX, y = m.y + offY, h = m.h }
+        end
+        Debug("underlines: %d errors, %s", #errors, origin and "cursor positions" or "text widths")
         for i, e in ipairs(errors) do
-            local a, b = self:Measure(e.from - 1), self:Measure(e.to)
+            local a, b = measure(e.from - 1), measure(e.to)
             if a then
                 local tex = self.underlines[i]
                 if not tex then
@@ -191,13 +243,15 @@ function CodeBox:DrawUnderlines()
                 tex:SetColorTexture(ns.RGB(self.errorColor or "f14c4c"))
                 tex:SetSize(math.max(width, 6), 2)
                 tex:ClearAllPoints()
-                tex:SetPoint("TOPLEFT", self.edit, "TOPLEFT", a.x + offX, a.y + offY - a.h + 1)
+                tex:SetPoint("TOPLEFT", self.edit, "TOPLEFT", a.x, a.y - a.h + 1)
                 tex:Show()
             end
         end
-        self.measuring = true
-        self.edit:SetCursorPosition(saved)
-        self.measuring = false
+        if probed then -- put the cursor back where the player left it
+            self.measuring = true
+            self.edit:SetCursorPosition(saved)
+            self.measuring = false
+        end
     end
     if self.onErrors then self.onErrors(errors) end
 end
