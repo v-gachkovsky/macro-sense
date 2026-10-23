@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -95,7 +95,7 @@ end
 
 check("spells by prefix", names("/cast Fi|") == "Fireball,Fire Blast", names("/cast Fi|"))
 check("spells substring after prefix", names("/cast bol|") == "Frostbolt", names("/cast bol|"))
-check("modifiers", names("/cast [mod:|") == "shift,ctrl,alt", names("/cast [mod:|"))
+check("modifiers", names("/cast [mod:|"):find("^shift,ctrl,alt,lshift") ~= nil, names("/cast [mod:|"))
 check("complete word hides list", names("/cast [mod:shift|") == "", names("/cast [mod:shift|"))
 check("commands first", names("/cas|"):find("^cast,castsequence,castrandom") ~= nil, names("/cas|"))
 local modItem = ns.Completion.Get(ctx("/cast [mo|"))[1]
@@ -255,6 +255,64 @@ expectKey("/cast [mod", "/cast [mod]|", "/cast [mod]|")      -- no "]" ahead: in
 expectKey("/cast []", "/cast |]", "/cast |")                -- backspace in "[]" removes both
 expectKey("/cast [x]", "/cast |x]", "/cast |x]")            -- not empty: only "["
 expectKey("/cast ", "/cast a|", "/cast a|")
+
+-- Condition values and units.
+local C = ns.Conditions
+for _, u in ipairs({ "player", "target", "focus", "mouseover", "party1", "party4", "raid40", "arena5", "boss8",
+    "partypet2", "targettarget", "focustargettarget", "party1target", "arena1pet", "pettarget", "Mouseover",
+    "nameplate12", "none", "cursor", "softenemy" }) do
+    check("unit " .. u, C.IsUnit(u))
+end
+for _, u in ipairs({ "mousover", "party5", "party0", "raid41", "raid01", "Thrall", "targettarg", "boss", "party" }) do
+    check("not a unit " .. u, not C.IsUnit(u))
+end
+check("base noform", C.Base("noform") == "form")
+check("base stance", C.Base("stance") == "form")
+check("base nomodifier", C.Base("nomodifier") == "mod")
+check("combat takes no value", not C.TakesValue("combat"))
+check("nopet takes a value", C.TakesValue("nopet"))
+for _, ok in ipairs({ { "mod", "shift" }, { "mod", "LSHIFT" }, { "mod", "SELFCAST" }, { "btn", "2" },
+    { "btn", "RightButton" }, { "group", "raid" }, { "bar", "6" }, { "form", "0" }, { "stance", "3" }, { "spec", "2" },
+    { "equipped", "Shields" }, { "pet", "Fluffy" } }) do
+    check("valid " .. ok[1] .. ":" .. ok[2], C.CheckValue(ok[1], ok[2]) == nil, C.CheckValue(ok[1], ok[2]))
+end
+for _, bad in ipairs({ { "mod", "shfit" }, { "btn", "7" }, { "button", "Left" }, { "group", "arena" },
+    { "bar", "7" }, { "bar", "x" }, { "form", "1.5" }, { "spec", "0" } }) do
+    check("invalid " .. bad[1] .. ":" .. bad[2], C.CheckValue(bad[1], bad[2]) ~= nil)
+end
+check("invalid message", C.CheckValue("btn", "7") == 'invalid btn value "7" (expected 1-5 or a button name)',
+    C.CheckValue("btn", "7"))
+
+ns.sources.forms = function() return { { name = "0", hint = "no form" }, { name = "1", hint = "Bear Form" } } end
+ns.sources.specs = function() return { { name = "1", hint = "Affliction" }, { name = "2", hint = "Demonology" } } end
+ns.sources.itemTypes = function() return { { name = "Shields" }, { name = "Daggers" } } end
+check("form values", names("/cast [form:|") == "0,1", names("/cast [form:|"))
+check("noform values", names("/cast [noform:|") == "0,1", names("/cast [noform:|"))
+check("stance values", names("/cast [stance:|") == "0,1")
+check("spec values", names("/cast [spec:|") == "1,2")
+check("equipped values", names("/cast [equipped:Sh|") == "Shields")
+check("group values", names("/cast [group:|") == "party,raid")
+check("bar values", names("/cast [bar:|") == "1,2,3,4,5,6")
+check("btn names", names("/cast [btn:Ri|") == "RightButton", names("/cast [btn:Ri|"))
+check("second value after /", names("/cast [btn:1/|"):find("^1,2,3") ~= nil)
+check("unit suffixes", names("/cast [@party1|"):find("party1target") ~= nil, names("/cast [@party1|"))
+check("unit suffix filtered", names("/cast [@party1t|") == "party1target", names("/cast [@party1t|"))
+check("chained suffix", names("/cast [@focustarget|"):find("focustargettarget") ~= nil, names("/cast [@focustarget|"))
+check("exact word hides inner matches", names("/cast [mod:shift|") == "")
+
+-- Issues with severity.
+local function issues(raw)
+    local out = {}
+    for _, e in ipairs(H.Errors(raw)) do out[#out + 1] = e.severity .. ":" .. raw:sub(e.from, e.to) end
+    return table.concat(out, " ")
+end
+check("unknown unit is a warning", issues("/cast [@mousover] X") == "warning:mousover", issues("/cast [@mousover] X"))
+check("player name is only a warning", issues("/cast [target=Thrall] X") == "warning:Thrall")
+check("bad value is an error", issues("/cast [btn:7] X") == "error:7", issues("/cast [btn:7] X"))
+check("second bad value", issues("/cast [mod:shift/shfit] X") == "error:shfit", issues("/cast [mod:shift/shfit] X"))
+check("value for a no-value condition", issues("/cast [combat:1] X") == "error::1", issues("/cast [combat:1] X"))
+check("good values pass", issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X") == "",
+    issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X"))
 
 -- Every scheme colors every role and UI part.
 for _, scheme in ipairs(ns.schemes) do

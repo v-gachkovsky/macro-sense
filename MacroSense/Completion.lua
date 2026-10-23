@@ -46,14 +46,10 @@ local function list(kind, ctx)
     if kind == "command" then return ns.sources.commands and ns.sources.commands() or d.commands end
     if kind == "meta" then return d.meta end
     if kind == "condition" then return d.conditions end
-    if kind == "unit" then return d.units end
+    if kind == "unit" then return ns.Conditions.UnitItems(ctx.prefix) end
     if kind == "modifier" then return d.modifiers end
     if kind == "action" then return actions(ctx.base) end
-    if kind == "conditionValue" then
-        local c = ctx.condition
-        if c == "btn" or c == "button" then return d.buttons end
-        if c == "known" or c == "channeling" then return source("spells") end
-    end
+    if kind == "conditionValue" then return ns.Conditions.Values(ctx.condition) end
     return {}
 end
 
@@ -112,6 +108,10 @@ function Completion.Get(ctx)
         elseif at then
             contains[#contains + 1] = item
         end
+    end
+    -- A word typed in full: longer words that start with it still help, matches inside other words not.
+    for _, item in ipairs(starts) do
+        if item.name:lower() == prefix then contains = {} break end
     end
     local out = {}
     for _, group in ipairs({ starts, contains }) do

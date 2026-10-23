@@ -252,7 +252,8 @@ function CodeBox:DrawUnderlines()
                 end
                 -- A word wrapped onto the next line: underline its start only.
                 local width = (b and math.abs(b.y - a.y) < 1) and (b.x - a.x) or 8
-                tex:SetColorTexture(ns.RGB(self.errorColor or "f14c4c"))
+                local color = e.severity == "warning" and self.warningColor or self.errorColor
+                tex:SetColorTexture(ns.RGB(color or "f14c4c"))
                 tex:SetSize(math.max(width, 6), 2)
                 tex:ClearAllPoints()
                 tex:SetPoint("TOPLEFT", self.edit, "TOPLEFT", a.x, a.y - a.h + 1)
@@ -331,7 +332,7 @@ function CodeBox:SetScheme(scheme)
     self.edit:SetTextColor(ns.RGB(scheme.text))
     local r, g, b = ns.RGB(scheme.selection)
     self.edit:SetHighlightColor(r, g, b, 0.6)
-    self.errorColor = scheme.invalid
+    self.errorColor, self.warningColor = scheme.invalid, scheme.warning
     self:Render(self:GetRaw(), self.edit:HasFocus() and self:GetRawCursor() or nil)
 end
 

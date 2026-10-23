@@ -95,6 +95,9 @@ function Frame:GetStringHeight() return 14 end
 function Frame:GetFont() return "font", 14, "" end
 function Frame:SetPoint(...) self.point = { ... } end
 function Frame:GetLeft() return self.left end
+function Frame:SetColorTexture(r, g, b)
+    self.color = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
+end
 function Frame:GetTop() return self.top end
 function Frame:GetRight() return self.right end
 
@@ -488,6 +491,36 @@ check("an open list follows deletes", ns.Popup:IsShown() and raw():sub(-3) == "F
 Key("ESCAPE", "OnEscapePressed")
 ns.Window.Revert()
 NextFrame()
+
+-- Warnings (an unknown unit may be a player's name): yellow, short in the status bar, no alert on Save.
+do
+    local function statusText()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("Line %d+:") then return o.text end
+        end
+        return ""
+    end
+    local function saveAlert()
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == "Save" then return o.alert:IsShown() end
+        end
+    end
+    ns.Window.Revert()
+    NextFrame()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast [@mousover] X")
+    NextFrame()
+    local warn = ns.scheme.warning
+    check("warning in status, short", statusText():find("|cff" .. warn .. "Line %d+: unknown unit|r") ~= nil, statusText())
+    check("no Save alert for a warning", saveAlert() == false)
+    local yellow = false
+    for _, o in ipairs(created) do
+        if o.isUnderline and o:IsShown() and o.color == warn then yellow = true end
+    end
+    check("warning underline is yellow", yellow)
+    ns.Window.Revert()
+    NextFrame()
+end
 
 -- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").
 edit:SetCursorPosition(#edit.text)

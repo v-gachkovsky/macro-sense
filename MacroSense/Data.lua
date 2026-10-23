@@ -101,21 +101,35 @@ ns.data = {
         { name = "cursor",           hint = "holding something on cursor" },
     },
 
+    -- Values for "mod:". Sources adds "cmd" on the Mac client (4th place). ALL-CAPS values are the
+    -- game's modified-click actions ([mod:SELFCAST]) and are accepted as they are.
     modifiers = {
         { name = "shift" }, { name = "ctrl" }, { name = "alt" },
+        { name = "lshift", hint = "left" }, { name = "rshift", hint = "right" },
+        { name = "lctrl", hint = "left" }, { name = "rctrl", hint = "right" },
+        { name = "lalt", hint = "left" }, { name = "ralt", hint = "right" },
     },
 
     -- Values for "btn:" / "button:".
     buttons = {
         { name = "1", hint = "left" }, { name = "2", hint = "right" }, { name = "3", hint = "middle" },
         { name = "4" }, { name = "5" },
+        { name = "LeftButton" }, { name = "RightButton" }, { name = "MiddleButton" },
+        { name = "Button4" }, { name = "Button5" },
     },
+
+    groups = { { name = "party" }, { name = "raid" } },
+    bars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" }, { name = "6" } },
+    bonusbars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" } },
 
     units = {
         { name = "player" }, { name = "target" }, { name = "focus" }, { name = "mouseover" },
         { name = "cursor", hint = "ground at cursor" }, { name = "pet" }, { name = "none", hint = "no target" },
         { name = "targettarget" }, { name = "focustarget" }, { name = "pettarget" }, { name = "mouseovertarget" },
-        { name = "vehicle" },
+        { name = "vehicle" }, { name = "npc", hint = "NPC you talk to" },
+        { name = "anyenemy", hint = "Retail" }, { name = "anyfriend", hint = "Retail" },
+        { name = "anyinteract", hint = "Retail" }, { name = "softenemy", hint = "Retail" },
+        { name = "softfriend", hint = "Retail" }, { name = "softinteract", hint = "Retail" },
     },
 }
 

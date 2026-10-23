@@ -8,6 +8,7 @@
 
 Parser.lua
 Data.lua
+Conditions.lua
 Themes.lua
 Highlight.lua
 Editing.lua

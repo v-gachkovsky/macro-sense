@@ -21,8 +21,10 @@ addons see every change.
 |----------|---------|
 | `/` | slash commands, emotes, chat commands, commands of your other addons |
 | `/cast [` | macro conditions: `combat`, `harm`, `mod`, `stance`, ... |
-| `[@` or `[target=` | units: `mouseover`, `focus`, `party1`, `arena2`, ... |
-| `[mod:` | `shift`, `ctrl`, `alt`, and `cmd` on Mac |
+| `[@` or `[target=` | units: `mouseover`, `focus`, `party1`, `arena2`, ... and `party1target` style chains |
+| `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys |
+| `[form:` / `[stance:` | your forms with their names |
+| `[spec:`, `[equipped:`, `[group:`, `[bar:`, `[btn:`, `[pet:` | specs, weapon and armor types, party / raid, bar pages, buttons, your pet |
 | `/cast ` or after `]` / `;` | your spells, then usable items |
 | `/use ` | items with a use effect (bags and gear), then spells |
 | `/equip ` / `/equipslot 13 ` | gear from your bags |
@@ -41,6 +43,8 @@ the status bar names them (hover for the full list), and the Save button shows a
 - a `[` without `]`, or a `]` without `[`
 - an empty condition: `[harm,,dead]`
 - `@` or `target=` without a unit, `mod:` without a value
+- a wrong value: `btn:7`, `group:arena`, `mod:shfit`, or a value where none belongs: `combat:1`
+- unknown units like `@mousover` are a yellow **warning**: they may be a player's name
 
 Saving is still allowed: the editor warns, it doesn't block you.
 

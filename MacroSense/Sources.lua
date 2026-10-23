@@ -5,7 +5,7 @@ local commandCache, spellCache, itemCache
 
 -- The Mac client also knows the Command key.
 if IsMacClient and IsMacClient() then
-    table.insert(ns.data.modifiers, { name = "cmd", hint = "Mac" })
+    table.insert(ns.data.modifiers, 4, { name = "cmd", hint = "Mac" })
 end
 
 ------------------------------------------------------------------------
@@ -174,6 +174,71 @@ function ns.sources.items()
     end
     table.sort(out, function(a, b) return a.name < b.name end)
     itemCache = out
+    return out
+end
+
+------------------------------------------------------------------------
+-- Condition values: forms, specializations, item types, pet
+------------------------------------------------------------------------
+local SpellName = C_Spell and C_Spell.GetSpellName or function(id) return GetSpellInfo and (GetSpellInfo(id)) end
+
+-- "form:1" -> Bear Form ... (whatever the class has; Classic returns the name directly).
+function ns.sources.forms()
+    local out = { { name = "0", hint = "no form" } }
+    for i = 1, GetNumShapeshiftForms and GetNumShapeshiftForms() or 0 do
+        local icon, a, _, _, e = GetShapeshiftFormInfo(i)
+        local name = type(a) == "string" and a or nil
+        local spellID = type(a) == "string" and e or select(4, GetShapeshiftFormInfo(i))
+        out[#out + 1] = { name = tostring(i), hint = name or (spellID and SpellName(spellID)), icon = icon }
+    end
+    return out
+end
+
+function ns.sources.specs()
+    local out = {}
+    if GetNumSpecializations and GetSpecializationInfo then
+        for i = 1, GetNumSpecializations() do
+            local _, name, _, icon = GetSpecializationInfo(i)
+            out[#out + 1] = { name = tostring(i), hint = name, icon = icon }
+        end
+    end
+    if #out == 0 then -- Classic: dual talent specs
+        out = { { name = "1", hint = "primary" }, { name = "2", hint = "secondary" } }
+    end
+    return out
+end
+
+-- Weapon and armor types for "equipped:", in the client's language.
+local itemTypeCache
+local SubClassInfo = C_Item and C_Item.GetItemSubClassInfo or GetItemSubClassInfo
+local ClassInfo = C_Item and C_Item.GetItemClassInfo or GetItemClassInfo
+function ns.sources.itemTypes()
+    if itemTypeCache then return itemTypeCache end
+    local out, seen = {}, {}
+    local function add(name, hint)
+        if name and name ~= "" and not seen[name] then
+            seen[name] = true
+            out[#out + 1] = { name = name, hint = hint }
+        end
+    end
+    for _, class in ipairs({ { 2, 20 }, { 4, 11 } }) do
+        local className = ClassInfo and ClassInfo(class[1])
+        add(className)
+        for sub = 0, class[2] do add(SubClassInfo and SubClassInfo(class[1], sub), className) end
+    end
+    itemTypeCache = out
+    return out
+end
+
+-- "pet:" takes your pet's name or family.
+function ns.sources.pets()
+    local out = {}
+    if UnitExists and UnitExists("pet") then
+        local name = UnitName("pet")
+        if name then out[#out + 1] = { name = name, hint = "your pet" } end
+        local family = UnitCreatureFamily("pet")
+        if family then out[#out + 1] = { name = family, hint = "pet family" } end
+    end
     return out
 end
 
