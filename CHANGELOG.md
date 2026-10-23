@@ -17,6 +17,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   `stops here` / `not reached` around a `/stopmacro`, and the icon `#showtooltip` shows. It follows held
   modifiers, your target, mouseover, pet and combat; the game itself checks the conditions. **Live
   preview** in the header turns it off.
+- **Marks in the macro list**: a macro with errors has a red name and the warning sign, one with only
+  warnings a yellow name, and hovering it lists the issues line by line.
 
 ### Fixed
 - Secure commands the game keeps out of addons' reach (`/petmoveto`, `/petaggressive`, `/targetparty`,

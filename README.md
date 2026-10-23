@@ -73,6 +73,8 @@ an empty `[]` removes both.
   marked only after a short pause or on Save; a typo that can't (`mousovr`, `btn:7`) is marked at once.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
   name, which macros allow.
+- In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
+  yellow name; hover it to see the issues. The marks follow the saved text.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,
   `did you mean "Shadow Bolt"?`; click it in the status bar to fix the name. Known names: your spells,
   your pets' spells (remembered from every pet you summon), items in your bags and seen before, Retail

@@ -1150,6 +1150,52 @@ do
     NextFrame()
 end
 
+-- The macro list marks macros with issues: a red name and the alert sign for errors, a yellow name for
+-- warnings only. Hovering lists the issues.
+do
+    CreateMacro("Zap broken", 1, "/cast [harmm] Fireball", false)
+    CreateMacro("Zap clean", 1, "#showtooltip\n/petmoveto [nomod]\n/cast Fireball", false)
+    CreateMacro("Zap typo", 1, "/cast Firebal", false)
+    Send("UPDATE_MACROS")
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
+        end
+    end
+    local s = ns.scheme
+    local broken, clean, typo = row("Zap broken"), row("Zap clean"), row("Zap typo")
+    check("list: an error makes the name red", broken and broken.text.textColor == s.invalid, broken and broken.text.textColor)
+    check("list: and shows the alert sign", broken and broken.alert:IsShown())
+    check("list: the name makes room for the sign", broken and broken.text.point[2] == broken.alert, broken and broken.text.point[2])
+    check("list: a warning makes it yellow, no sign", typo and typo.text.textColor == s.warning and not typo.alert:IsShown(),
+        typo and typo.text.textColor)
+    check("list: a clean macro stays plain", clean and clean.text.textColor == s.text and not clean.alert:IsShown()
+        and clean.text.point[2] == clean, clean and clean.text.textColor)
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(broken, "OnEnter")
+    Fire(clean, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("list: hover lists the issues", table.concat(tip, "\n") == 'Zap broken\nLine 1: unknown condition "harmm"',
+        table.concat(tip, " / "))
+    -- Fixed elsewhere (the Blizzard window): the mark goes.
+    EditMacro(broken.index, "Zap broken", 1, "/cast [harm] Fireball")
+    Send("UPDATE_MACROS")
+    broken = row("Zap broken")
+    check("list: fixed, the mark goes", broken and broken.text.textColor == s.text and not broken.alert:IsShown(),
+        broken and broken.text.textColor)
+    -- Another scheme keeps the marks.
+    ns.db.scheme = "monokai"
+    ns.Window.ApplyLook()
+    local m = ns.FindByKey(ns.schemes, "monokai")
+    check("list: marks follow the scheme", typo.text.textColor == m.warning and clean.text.textColor == m.text,
+        typo.text.textColor)
+    ns.db.scheme = ns.DEFAULT_SCHEME
+    ns.Window.ApplyLook()
+    for _, name in ipairs({ "Zap broken", "Zap clean", "Zap typo" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"
