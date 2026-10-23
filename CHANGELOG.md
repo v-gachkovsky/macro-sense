@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Typos in spell and item names**: a name that is not known but close to a known one gets a yellow
+  warning, `did you mean "Shadow Bolt"?`, and a click on it in the status bar fixes the name. Names
+  nothing is close to stay unmarked (spells of another spec or pet, items not in the bags). Known names
+  are your spells, your pets' spells (remembered from every pet you summon), items in your bags (and
+  every item seen before) and, on Retail, your mounts.
+
 ## [0.1.0-beta2] - 2026-10-23
 
 ### Added

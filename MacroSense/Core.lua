@@ -49,7 +49,8 @@ end
 
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
-    "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED" }) do
+    "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED", "UNIT_PET",
+    "PET_BAR_UPDATE" }) do
     f:RegisterEvent(e)
 end
 f:SetScript("OnEvent", function(_, event, name)
@@ -60,6 +61,9 @@ f:SetScript("OnEvent", function(_, event, name)
                 if MacroSenseDB[k] == nil then MacroSenseDB[k] = v end
             end
             ns.db = MacroSenseDB
+            MacroSenseCharDB = MacroSenseCharDB or {}
+            MacroSenseCharDB.petSpells = MacroSenseCharDB.petSpells or {}
+            ns.char = MacroSenseCharDB
             if IsLoaded("Blizzard_MacroUI") then AddMacroFrameButton() end
         elseif name == "Blizzard_MacroUI" then
             AddMacroFrameButton()
@@ -69,7 +73,7 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "PLAYER_LOGIN" then
         ns.RegisterActionCommands()
         Welcome()
-    elseif event == "SPELLS_CHANGED" then
+    elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player") then
         ns.InvalidateSources("spells")
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")

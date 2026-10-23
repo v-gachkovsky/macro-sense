@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -313,6 +313,62 @@ check("second bad value", issues("/cast [mod:shift/shfit] X") == "error:shfit", 
 check("value for a no-value condition", issues("/cast [combat:1] X") == "error::1", issues("/cast [combat:1] X"))
 check("good values pass", issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X") == "",
     issues("/cast [@party1target,mod:SELFCAST,form:1,group:raid,btn:RightButton] X"))
+
+-- Spelling: typos of known names.
+local S2 = ns.Spelling
+check("swap is one typo", S2.Distance("Shadwo Bolt", "Shadow Bolt", 3) == 1)
+check("missing letter", S2.Distance("Firebal", "Fireball", 3) == 1)
+check("case does not count", S2.Distance("fear", "Fear", 1) == 0)
+check("gives up over the limit", S2.Distance("Drain Mana", "Drain Life", 2) == 3)
+check("suggest typo", S2.Suggest("Shadwo Bolt", { "Searing Pain", "Shadow Bolt" }) == "Shadow Bolt")
+check("suggest picks the closest", S2.Suggest("Curse of Agny", { "Curse of Agony", "Curse of Doom" }) == "Curse of Agony")
+check("short names get no guess", S2.Suggest("Feat", { "Fear" }) == nil)
+check("not close enough", S2.Suggest("Drain Mana", { "Drain Life", "Drain Soul" }) == nil)
+check("nothing close", S2.Suggest("Seduction", { "Spell Lock", "Fear" }) == nil)
+
+-- The typo check on real macros: no false alarms, and a typo gets its fix.
+local known = { "Bane of Agony", "Corruption", "Summon Voidwalker", "Summon Imp", "Summon Succubus", "Drain Life",
+    "Drain Soul", "Drain Mana", "Fear", "Lesser Healthstone", "Create Healthstone", "Create Soulstone",
+    "Health Funnel", "Immolate", "Curse of the Elements", "Spell Lock", "Seduction", "Sacrifice",
+    "Consume Shadows", "Fire Shield", "Lash of Pain", "Devour Magic", "Curse of Tongues", "Curse of Exhaustion",
+    "Minor Soulstone", "Curse of Recklessness", "Curse of Weakness", "Wool Bandage", "Cannibalize", "Shoot" }
+local function useKnown(list)
+    local set = {}
+    for _, n in ipairs(list) do set[n:lower()] = true end
+    H.checkAction = function(name)
+        if set[name:lower()] then return nil end
+        local guess = S2.Suggest(name, list)
+        return guess and { message = "unknown name", short = 'did you mean "' .. guess .. '"?', fix = guess } or nil
+    end
+end
+useKnown(known)
+local fixtures = dofile("tests/fixtures/macros.lua")
+for name, body in pairs(fixtures) do
+    local found = {}
+    for _, e in ipairs(H.Errors(body)) do found[#found + 1] = e.severity .. ":" .. body:sub(e.from, e.to) end
+    check("no false alarms in macro " .. name, #found == 0, table.concat(found, ", "))
+end
+do
+    local typo = "/cast [@mouseover,harm,nodead] Bane of Agny; Bane of Agony"
+    local e = H.Errors(typo)[1]
+    check("typo found", e and typo:sub(e.from, e.to) == "Bane of Agny" and e.severity == "warning")
+    check("typo fix", e and e.fix == "Bane of Agony" and e.short == 'did you mean "Bane of Agony"?', e and e.short)
+    local ranked = H.Errors("/cast [nomod] Summon Voidwalkr(Summon)")[1]
+    check("typo before a rank", ranked and ranked.fix == "Summon Voidwalker", ranked and ranked.fix)
+    local bang = H.Errors("/cast !Shoto")[1]
+    check("typo after !", bang and bang.fix == "Shoot" and bang.from == #"/cast !" + 1, bang and bang.fix)
+    check("no guess for a short name", #H.Errors("/cast Fera") == 0)
+    local seq = H.Errors("/castsequence reset=10 Corruption, Imolate")[1]
+    check("typo in a sequence", seq and seq.fix == "Immolate", seq and seq.fix)
+    local tip = H.Errors("#showtooltip Corrupton")[1]
+    check("typo in #showtooltip", tip and tip.fix == "Corruption", tip and tip.fix)
+end
+-- A spell of a pet that is not out (not known now) and close to nothing: no warning.
+local withoutSeduction = {}
+for _, n in ipairs(known) do if n ~= "Seduction" then withoutSeduction[#withoutSeduction + 1] = n end end
+useKnown(withoutSeduction)
+check("pet spell not known now: quiet", #H.Errors(fixtures.petCC) == 0)
+H.checkAction = nil
 
 -- Every scheme colors every role and UI part.
 for _, scheme in ipairs(ns.schemes) do

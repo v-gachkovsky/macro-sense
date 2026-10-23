@@ -73,6 +73,10 @@ an empty `[]` removes both.
   marked only after a short pause or on Save; a typo that can't (`mousovr`, `btn:7`) is marked at once.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
   name, which macros allow.
+- Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,
+  `did you mean "Shadow Bolt"?`; click it in the status bar to fix the name. Known names: your spells,
+  your pets' spells (remembered from every pet you summon), items in your bags and seen before, Retail
+  mounts. A name nothing is close to stays unmarked.
 - Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game, Cmd+W,
   Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns. Keys are found from a direct `MACRO name` binding
   and the standard action bars; bars of addons (Bartender, ElvUI) are not checked.

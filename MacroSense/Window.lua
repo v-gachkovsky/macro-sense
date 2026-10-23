@@ -65,24 +65,28 @@ local function UpdateStatus()
         table.insert(e.severity == "warning" and warnings or errors, e)
     end
     saveBtn.alert:SetShown(#errors > 0)
-    -- Short form here ("unknown unit" without the name and notes); the full list is in the tooltip.
+    -- Short form here: the issue's own short text ("did you mean ...?") or the message without the
+    -- quoted name and notes ("unknown unit"); the full list is in the tooltip.
     local function line(e, color, total)
-        local short = e.message:gsub('%s*%b""', ""):gsub("%s*%b()", "")
+        local short = e.short or e.message:gsub('%s*%b""', ""):gsub("%s*%b()", "")
         local more = total > 1 and string.format(" (+%d more)", total - 1) or ""
         return string.format("|cff%sLine %d: %s%s|r", color, e.line, short, more)
     end
     local total = #issues + (message and 1 or 0)
+    local shown -- the issue in the status bar; a click applies its fix
     if #errors > 0 then
-        warning:SetText(line(errors[1], s.invalid, total))
+        shown = errors[1]
+        warning:SetText(line(shown, s.invalid, total))
     elseif message then
         local more = total > 1 and string.format(" (+%d more)", total - 1) or ""
         warning:SetText("|cff" .. s.warning .. message .. more .. "|r")
     elseif #warnings > 0 then
-        warning:SetText(line(warnings[1], s.warning, total))
+        shown = warnings[1]
+        warning:SetText(line(shown, s.warning, total))
     else
         warning:SetText("")
     end
-    warning.errors, warning.message = issues, message
+    warning.errors, warning.message, warning.shown = issues, message, shown
 
     -- The dot is a texture: not every font has a "●" glyph.
     dirtyDot:SetShown(dirty and letters <= MAX_BODY)
@@ -509,9 +513,21 @@ local function Build()
             GameTooltip:AddLine(string.format("Line %d: %s", e.line, e.message), r, g, b)
         end
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
+        if warning.shown and warning.shown.fix then
+            GameTooltip:AddLine(string.format('Click to use "%s"', warning.shown.fix), 0.4, 1, 0.4)
+        end
         GameTooltip:Show()
     end)
     warningHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- Click: replace the misspelled name with the suggestion.
+    warningHover:SetScript("OnMouseUp", function()
+        local e = warning.shown
+        if not (e and e.fix) then return end
+        local raw = code:GetRaw()
+        code:SetRaw(raw:sub(1, e.from - 1) .. e.fix .. raw:sub(e.to + 1), e.from - 1 + #e.fix, true)
+        code:CheckNow()
+        GameTooltip:Hide()
+    end)
 
     -- Editor.
     local editorBg = CreateFrame("Frame", nil, main, "BackdropTemplate")

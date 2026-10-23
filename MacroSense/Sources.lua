@@ -173,6 +173,11 @@ function ns.sources.items()
         for slot = 1, NumSlots(bag) or 0 do add(ItemLink(bag, slot), "bag") end
     end
     table.sort(out, function(a, b) return a.name < b.name end)
+    -- Remember every item seen, so macros for items not in the bags right now still count as known.
+    if ns.db then
+        ns.db.itemNames = ns.db.itemNames or {}
+        for _, item in ipairs(out) do ns.db.itemNames[item.name] = true end
+    end
     itemCache = out
     return out
 end
@@ -242,8 +247,91 @@ function ns.sources.pets()
     return out
 end
 
+------------------------------------------------------------------------
+-- Known names for the typo check: your spells, your pets' spells, items, mounts
+------------------------------------------------------------------------
+local PetBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet
+
+-- Spells of the pet that is out now (any flavor).
+local function petSpellNames()
+    local out = {}
+    if C_SpellBook and C_SpellBook.HasPetSpells and PetBank then
+        for i = 1, C_SpellBook.HasPetSpells() or 0 do
+            local name = C_SpellBook.GetSpellBookItemName(i, PetBank)
+            if name then out[#out + 1] = name end
+        end
+    elseif HasPetSpells and GetSpellBookItemName then
+        for i = 1, HasPetSpells() or 0 do
+            local name = GetSpellBookItemName(i, BOOKTYPE_PET or "pet")
+            if name then out[#out + 1] = name end
+        end
+    end
+    return out
+end
+
+-- Collected mounts (Retail); older flavors have mounts as spells or items.
+local function mountNames()
+    local out = {}
+    if C_MountJournal and C_MountJournal.GetMountIDs then
+        for _, id in ipairs(C_MountJournal.GetMountIDs()) do
+            local name, _, _, _, _, _, _, _, _, _, collected = C_MountJournal.GetMountInfoByID(id)
+            if name and collected then out[#out + 1] = name end
+        end
+    end
+    return out
+end
+
+local knownCache, guesses
+-- { set = { lowercase name = true }, list = { names }, items = { item names } }
+function ns.KnownActions()
+    if knownCache then return knownCache end
+    local set, list, items = {}, {}, {}
+    local function add(name, isItem)
+        if not name or name == "" then return end
+        local key = name:lower()
+        if not set[key] then
+            set[key] = true
+            list[#list + 1] = name
+        end
+        if isItem then items[#items + 1] = name end
+    end
+    for _, spell in ipairs(ns.sources.spells()) do add(spell.name) end
+    -- A pet's spells are only in its spellbook while it is out: remember those of every pet seen.
+    local petSpells = ns.char and ns.char.petSpells or {}
+    for _, name in ipairs(petSpellNames()) do petSpells[name] = true end
+    for name in pairs(petSpells) do add(name) end
+    for _, item in ipairs(ns.sources.items()) do add(item.name, true) end
+    for name in pairs(ns.db and ns.db.itemNames or {}) do add(name, true) end
+    for _, name in ipairs(mountNames()) do add(name) end
+    table.sort(list)
+    table.sort(items)
+    knownCache, guesses = { set = set, list = list, items = items }, {}
+    return knownCache
+end
+
+-- A name that is not known but close to a known one is likely a typo. Names nothing is close to stay
+-- unmarked: they may be spells of another spec or pet, items not in the bags, toys...
+function ns.Highlight.checkAction(name, command)
+    if name:find("^%d") or name:find("^item:") then return nil end -- slots, item links
+    local known = ns.KnownActions()
+    if known.set[name:lower()] then return nil end
+    local key = command .. "\1" .. name
+    if guesses[key] == nil then
+        local pool = (command == "equip" or command == "equipslot") and known.items or known.list
+        guesses[key] = ns.Spelling.Suggest(name, pool) or false
+    end
+    local guess = guesses[key]
+    if not guess then return nil end
+    return {
+        message = string.format('unknown name "%s", did you mean "%s"?', name, guess),
+        short = string.format('did you mean "%s"?', guess),
+        fix = guess,
+    }
+end
+
 function ns.InvalidateSources(what)
     if not what or what == "commands" then commandCache = nil end
     if not what or what == "spells" then spellCache = nil end
     if not what or what == "items" then itemCache = nil end
+    if what ~= "commands" then knownCache = nil end
 end
