@@ -52,7 +52,7 @@ end
 ------------------------------------------------------------------------
 -- Watching the macros (game API)
 ------------------------------------------------------------------------
-local MAX_GENERAL = MAX_ACCOUNT_MACROS or 120
+local MAX_GENERAL = ns.MAX_GENERAL
 local known -- { general = { [name] = body }, character = { ... } }: the texts as of the last look
 
 -- General macros are the account's, character macros this character's.
