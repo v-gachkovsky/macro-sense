@@ -1,6 +1,4 @@
-<p align="center"><img src="docs/logo-curseforge.png" width="128" alt="MacroSense"></p>
-
-<h1 align="center">MacroSense</h1>
+<p align="center"><img src="docs/banner.png" width="560" alt="MacroSense"></p>
 
 <p align="center">
   A macro editor for <b>World of Warcraft</b> that knows macros<br>
