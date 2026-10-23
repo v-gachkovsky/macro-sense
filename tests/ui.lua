@@ -146,6 +146,8 @@ function InCombatLockdown() return false end
 function strtrim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 local printed = {}
 function print(s) printed[#printed + 1] = s end
+local reported = {} -- errors the addon hands to the game's error handler
+function geterrorhandler() return function(e) reported[#reported + 1] = e end end
 UISpecialFrames, StaticPopupDialogs = {}, {}
 function StaticPopup_Show(which, _, _, data) StaticPopupDialogs[which].OnAccept(nil, data) end
 YES, NO, CANCEL, DELETE = "Yes", "No", "Cancel", "Delete"
@@ -1052,6 +1054,45 @@ do
     check("other pet's spells still known", set["seduction"] and set["spell lock"])
     check("pet spells saved per character", ns.char.petSpells["Lash of Pain"] == true)
     petBook = {}
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- The Classic clients have C_SpellBook with HasPetSpells but not the rest: the pet's spells come from the old
+-- functions. And a source that fails anyway (a game function a client lacks) costs the typo check, not the editor.
+do
+    local retail = C_SpellBook
+    C_SpellBook = { HasPetSpells = retail.HasPetSpells }
+    GetNumSpellTabs, HasPetSpells = function() return 0 end, retail.HasPetSpells
+    GetSpellBookItemName = function(i, bookType) if bookType == "pet" then return petBook[i] end end
+    petBook = { "Torment" }
+    Send("UNIT_PET", "player")
+    local ok, known = pcall(ns.KnownActions)
+    check("classic: the pet's spells from the old functions", ok and known.set["torment"] == true,
+        not ok and known or nil)
+    C_SpellBook, GetNumSpellTabs, HasPetSpells, GetSpellBookItemName = retail, nil, nil, nil
+    petBook = {}
+    Send("UNIT_PET", "player")
+
+    local journal = C_MountJournal
+    C_MountJournal = { GetMountIDs = function() error("no such function") end }
+    Send("BAG_UPDATE_DELAYED")
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/cast Fierball")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(1)
+    check("a failing source: the text goes in, colored", raw() == "/cast Fierball" and edit:GetText():find("|cff") ~= nil,
+        raw())
+    check("a failing source: reported", #reported == 1 and reported[1]:find("no such function", 1, true) ~= nil,
+        reported[1])
+    Send("BAG_UPDATE_DELAYED")
+    Type("\n/cast Frostblot")
+    Wait(1)
+    check("a failing source: reported once", #reported == 1, #reported)
+    C_MountJournal = journal
+    Send("BAG_UPDATE_DELAYED")
     ns.Window.Select(1)
     NextFrame()
 end
