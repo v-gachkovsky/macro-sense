@@ -592,11 +592,26 @@ do
     Arrow("UP")
     check("Up wraps to the end and shows it", P.selected == n and P.offset == n - 10, P.selected .. "/" .. P.offset)
     check("cursor kept while scrolling", raw():sub(-2) == "\n/" and rawCursor() == #raw(), rawCursor())
+    -- A click like in the game: pressing the mouse on the list takes the focus from the text first.
     local want = P.items[P.offset + 2].name
+    P.IsMouseOver = function() return true end
+    edit:ClearFocus()
+    check("list stays open when the focus goes to it", P:IsShown())
+    NextFrame()
+    check("focus comes back to the text", edit:HasFocus())
     Fire(P.rows[2], "OnClick")
+    P.IsMouseOver = nil
     NextFrame()
     check("click takes the item shown in that row", raw():sub(-(#want + 2)) == "/" .. want .. " ", raw():sub(-20))
+    check("text keeps the focus after a click", edit:HasFocus())
     Key("ESCAPE", "OnEscapePressed")
+    -- Clicking somewhere else closes the list.
+    Type("\n/ca")
+    check("list open again", P:IsShown())
+    edit:ClearFocus()
+    NextFrame()
+    check("a click elsewhere closes the list", not P:IsShown() and not edit:HasFocus())
+    edit:SetFocus()
     -- A short list: no scroll bar.
     ns.Window.Revert()
     NextFrame()

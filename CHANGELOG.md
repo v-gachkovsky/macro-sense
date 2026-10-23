@@ -31,6 +31,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A word typed in full no longer lists other words that only contain it (`shift` no longer shows
   `lshift`); longer words that start with it still show.
 
+### Fixed
+- Clicking a suggestion with the mouse closed the list without inserting it: pressing the mouse on the
+  list took the focus from the text, and the list closed before the click. It now stays open, the focus
+  returns to the text and the clicked item goes in. Dragging the list's scroll bar works the same way.
+
 ## [0.1.0-beta1] - 2026-10-23
 
 First public version. The addon is in early development: please report anything that looks wrong.
