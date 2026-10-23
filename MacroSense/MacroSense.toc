@@ -21,6 +21,7 @@ Completion.lua
 Sources.lua
 Shortcuts.lua
 History.lua
+Wizard.lua
 Widgets.lua
 Popup.lua
 CodeBox.lua
