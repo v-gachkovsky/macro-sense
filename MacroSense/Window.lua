@@ -62,12 +62,15 @@ local function UpdateStatus()
     local errors = code.errors or {}
     saveBtn.alert:SetShown(#errors > 0)
     if #errors > 0 then
+        -- Short form here ("unknown command" without the name); the full list is in the tooltip.
         local e = errors[1]
         local more = #errors > 1 and string.format(" (+%d more)", #errors - 1) or ""
-        warning:SetText(string.format("|cff%sLine %d: %s%s|r", s.invalid, e.line, e.message, more))
+        local short = e.message:gsub('%s*".-"$', "")
+        warning:SetText(string.format("|cff%sLine %d: %s%s|r", s.invalid, e.line, short, more))
     else
         warning:SetText(message and ("|cff" .. s.warning .. message .. "|r") or "")
     end
+    warning.errors, warning.message = errors, message
 
     -- The dot is a texture: not every font has a "●" glyph.
     dirtyDot:SetShown(dirty and letters <= MAX_BODY)
@@ -478,6 +481,21 @@ local function Build()
     warning:SetPoint("RIGHT", revertBtn, "LEFT", -12, 0)
     warning:SetJustifyH("RIGHT")
     warning:SetWordWrap(false)
+    -- Hover: every error in full, and the macOS warning.
+    local warningHover = CreateFrame("Frame", nil, bar)
+    warningHover:SetAllPoints(warning)
+    warningHover:EnableMouse(true)
+    warningHover:SetScript("OnEnter", function(self)
+        local errors, message = warning.errors or {}, warning.message
+        if #errors == 0 and not message then return end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        for _, e in ipairs(errors) do
+            GameTooltip:AddLine(string.format("Line %d: %s", e.line, e.message), 1, 0.35, 0.35)
+        end
+        if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
+        GameTooltip:Show()
+    end)
+    warningHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Editor.
     local editorBg = CreateFrame("Frame", nil, main, "BackdropTemplate")

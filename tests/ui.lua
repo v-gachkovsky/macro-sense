@@ -390,7 +390,16 @@ do
     NextFrame()
     local n = underlines()
     check("error underlined", n == 1, n)
-    check("error in status", statusError():find('unknown condition "harmm"') ~= nil, statusError())
+    check("short error in status", statusError():find("Line %d+: unknown condition|r") ~= nil, statusError())
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    for _, o in ipairs(created) do
+        if o.kind == "Frame" and o.scripts.OnEnter and o.scripts.OnLeave and not o.scripts.OnClick then
+            Fire(o, "OnEnter")
+        end
+    end
+    GameTooltip.AddLine = nil
+    check("full error in tooltip", table.concat(tip, "\n"):find('unknown condition "harmm"') ~= nil, table.concat(tip, " / "))
     local function saveAlert()
         for _, o in ipairs(created) do
             if o.kind == "Button" and o.label and o.label.text == "Save" then return o.alert:IsShown() end
@@ -417,6 +426,17 @@ do
     check("late events: x from text width", tex and tex.point[4] == 6 + 6 * 8, tex and tex.point[4])
     check("late events: y from rows above", tex and tex.point[5] == -4 - line * 14 - 14 + 1, tex and tex.point[5])
     check("late events: cursor stays", rawCursor() == #raw(), rawCursor())
+    -- Two errors on two lines (like "/castiв" above "/cast [fsfs]"): both underlined, each on its line.
+    Type("\n/cast [fsfs] Bane of Agony")
+    NextFrame()
+    NextFrame()
+    local shown = {}
+    for _, o in ipairs(created) do if o.isUnderline and o:IsShown() then shown[#shown + 1] = o end end
+    table.sort(shown, function(p, q) return p.point[5] > q.point[5] end)
+    check("two errors: two underlines", #shown == 2, #shown)
+    check("second underline under fsfs", shown[2] and shown[2].point[4] == 6 + 7 * 8, shown[2] and shown[2].point[4])
+    check("second underline one row lower", shown[2] and shown[1].point[5] - shown[2].point[5] == 14,
+        shown[2] and (shown[1].point[5] - shown[2].point[5]))
     cursorEventsLate = false
     ns.Window.Revert()
     NextFrame()
