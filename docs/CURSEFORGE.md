@@ -37,7 +37,8 @@ Typing `[` adds the `]` for you.
 
 ## Highlighting and error checks
 
-Commands, conditions, units, values and spell names each get their own color. Mistakes are **underlined**,
+Line numbers sit in a gutter on the left, so "Line 3" in a message is easy to find. Commands, conditions,
+units, values and spell names each get their own color. Mistakes are **underlined**,
 the status bar names them (hover for the full list), and the Save button shows a warning sign:
 
 - unknown commands and conditions (a typo like `harmm` or `/cats`)

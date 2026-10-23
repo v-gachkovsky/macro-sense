@@ -57,7 +57,11 @@ function Frame:GetHeight() return 200 end
 function Frame:GetFrameLevel() return 1 end
 function Frame:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
 function Frame:IsMouseOver() return false end
-function Frame:SetFont() return true end
+-- Fonts: a character is 0.6 of the size wide, a row is size + 1 high (size 13: 8 x 14 px).
+function Frame:SetFont(_, size) self.fontSize = size; return true end
+function Frame:GetFont() return "font", self.fontSize or 13, "" end
+local function charWidth(fs) return math.floor((fs.fontSize or 13) * 0.6 + 0.5) end
+local function rowHeight(fs) return (fs.fontSize or 13) + 1 end
 function Frame:GetMaxLetters() return 0 end
 function Frame:IsEnabled() return self.enabled end
 function Frame:SetEnabled(v) self.enabled = v and true or false end
@@ -82,20 +86,32 @@ local cursorEventsLate = false -- like the real game seems to: OnCursorChanged c
 function Frame:SetCursorPosition(pos)
     self.cursor = pos
     local line = select(2, self.text:sub(1, pos):gsub("\n", ""))
+    local h = rowHeight(self)
     if cursorEventsLate then
-        timers[#timers + 1] = { at = now, fn = function() Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14) end }
+        timers[#timers + 1] = { at = now, fn = function() Fire(self, "OnCursorChanged", 0, -line * h, 2, h) end }
     else
-        Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14)
+        Fire(self, "OnCursorChanged", 0, -line * h, 2, h)
     end
 end
--- FontString measuring: 8 px per character, one row, 14 px high.
-function Frame:GetUnboundedStringWidth() return #self.text * 8 end
-function Frame:GetStringWidth() return #self.text * 8 end
-function Frame:GetNumLines() return 1 end
-function Frame:GetStringHeight() return 14 end
-function Frame:GetFont() return "font", 14, "" end
+-- FontString measuring: 8 px per character, 14 px high; one row unless wrapLines is on.
+local wrapLines = false
+function Frame:SetWidth(w) self.width = w end
+function Frame:GetUnboundedStringWidth() return #tostring(self.text) * charWidth(self) end
+function Frame:GetStringWidth() return #tostring(self.text) * charWidth(self) end
+function Frame:GetNumLines()
+    if wrapLines and self.width and self.width > 0 then
+        return math.max(1, math.ceil(#self.text * charWidth(self) / self.width))
+    end
+    return 1
+end
+function Frame:GetStringHeight()
+    return (select(2, tostring(self.text):gsub("\n", "")) + 1) * rowHeight(self)
+end
 function Frame:SetPoint(...) self.point = { ... } end
 function Frame:GetLeft() return self.left end
+function Frame:SetTextColor(r, g, b)
+    self.textColor = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
+end
 function Frame:SetColorTexture(r, g, b)
     self.color = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
 end
@@ -256,6 +272,8 @@ do
 end
 
 local function raw() return ns.Highlight.Strip(edit:GetText()) end
+-- Left text inset with the line number gutter: "00" is 16 px here, gutter = 16 + 2 * 6, text = gutter + 6.
+local TEXT_INSET = 16 + 2 * 6 + 6
 local function rawCursor() return ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition()) end
 
 -- Type like the EditBox does: insert at the cursor, move it, then report the change.
@@ -456,8 +474,8 @@ do
     local count, tex = underlines()
     check("late events: underline drawn", count == 1, count)
     local line = select(2, raw():gsub("\n", ""))
-    -- "bogus" starts after 6 characters of its line: x = inset 6 + 6 chars * 8; y = inset 4 + rows above * 14.
-    check("late events: x from text width", tex and tex.point[4] == 6 + 6 * 8, tex and tex.point[4])
+    -- "bogus" starts after 6 characters of its line: x = text inset + 6 chars * 8; y = inset 4 + rows above * 14.
+    check("late events: x from text width", tex and tex.point[4] == TEXT_INSET + 6 * 8, tex and tex.point[4])
     check("late events: y from rows above", tex and tex.point[5] == -4 - line * 14 - 14 + 1, tex and tex.point[5])
     check("late events: cursor stays", rawCursor() == #raw(), rawCursor())
     -- Two errors on two lines (like "/castiв" above "/cast [fsfs]"): both underlined, each on its line.
@@ -468,7 +486,8 @@ do
     for _, o in ipairs(created) do if o.isUnderline and o:IsShown() then shown[#shown + 1] = o end end
     table.sort(shown, function(p, q) return p.point[5] > q.point[5] end)
     check("two errors: two underlines", #shown == 2, #shown)
-    check("second underline under fsfs", shown[2] and shown[2].point[4] == 6 + 7 * 8, shown[2] and shown[2].point[4])
+    check("second underline under fsfs", shown[2] and shown[2].point[4] == TEXT_INSET + 7 * 8,
+        shown[2] and shown[2].point[4])
     check("second underline one row lower", shown[2] and shown[1].point[5] - shown[2].point[5] == 14,
         shown[2] and (shown[1].point[5] - shown[2].point[5]))
     cursorEventsLate = false
@@ -832,6 +851,107 @@ do
     check("a new macro must be saved first", picked == nil and printed[#printed]:find("save the macro first") ~= nil,
         printed[#printed])
     ns.Window.Select(1)
+end
+
+-- Line numbers: one per line, on its first row; the cursor's line is bright; the gutter grows past 99.
+do
+    local function numbers()
+        local out = {}
+        for _, o in ipairs(created) do
+            if o.isLineNumber and o:IsShown() then out[tonumber(o.text)] = o end
+        end
+        return out
+    end
+    ns.Window.Revert()
+    NextFrame()
+    NextFrame()
+    local lines = select(2, raw():gsub("\n", "")) + 1
+    local n = numbers()
+    local count = 0
+    for _ in pairs(n) do count = count + 1 end
+    check("a number per line", count == lines, count .. " numbers, " .. lines .. " lines")
+    check("line 1 at the top", n[1] and n[1].point[5] == -4, n[1] and n[1].point[5])
+    check("line 2 one row lower", n[2] and n[2].point[5] == -4 - 14, n[2] and n[2].point[5])
+    -- The cursor's line is bright.
+    edit:SetFocus()
+    edit:SetCursorPosition(0)
+    local bright, dim = ns.scheme.text, ns.scheme.dim
+    local function color(fs) return fs.textColor end
+    check("current line number uses the text color", color(n[1]) == bright, color(n[1]))
+    check("other line numbers are dim", color(n[2]) == dim, color(n[2]))
+    edit:SetCursorPosition(#edit.text)
+    check("number follows the cursor", color(n[lines]) == bright and color(n[1]) == dim)
+    -- A wrapped line takes two rows: the next number moves down two rows.
+    wrapLines = true
+    Type("\n/cast " .. string.rep("Fireball ", 6) .. "\n/cast X")
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    local long, nextLine = n[lines + 1], n[lines + 2]
+    check("wrapped line: next number two rows lower", long and nextLine and long.point[5] - nextLine.point[5] == 28,
+        long and nextLine and (long.point[5] - nextLine.point[5]))
+    wrapLines = false
+    -- 100 lines: three digits, wider gutter.
+    Type(string.rep("\n", 100))
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    check("line 100 numbered", n[100] ~= nil)
+    check("gutter grows for three digits", n[1].width == 24 + 2 * 6 - 6, n[1].width)
+    ns.Window.Revert()
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    check("back to two digits after revert", n[1].width == 16 + 2 * 6 - 6, n[1].width)
+
+    -- A bigger font: rows, gutter and underlines follow it (size 20: 12 px characters, 21 px rows).
+    -- The text is not focused here, like after clicking "+" next to the size.
+    edit:ClearFocus()
+    ns.db.fontSize = 20
+    ns.Window.ApplyLook()
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    check("font size: row height follows", n[2] and n[2].point[5] == -4 - 21, n[2] and n[2].point[5])
+    check("font size: gutter follows", n[1].width == 24 + 2 * 6 - 6, n[1].width)
+    check("font size: numbers use the editor font", n[1].fontSize == 20, n[1].fontSize)
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast [harmm] X")
+    NextFrame()
+    NextFrame()
+    local tex
+    for _, o in ipairs(created) do if o.isUnderline and o:IsShown() then tex = o end end
+    local lastLine = select(2, raw():gsub("\n", ""))
+    check("font size: underline x follows", tex and tex.point[4] == (24 + 2 * 6 + 6) + 7 * 12, tex and tex.point[4])
+    check("font size: underline y follows", tex and tex.point[5] == -4 - lastLine * 21 - 21 + 1, tex and tex.point[5])
+    ns.Window.Revert()
+    ns.db.fontSize = 13
+    ns.Window.ApplyLook()
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    check("font size back", n[2] and n[2].point[5] == -4 - 14, n[2] and n[2].point[5])
+
+    -- The same when the game reports the cursor a frame late (as it does): rows come from the font first.
+    cursorEventsLate = true
+    edit:ClearFocus()
+    ns.db.fontSize = 20
+    ns.Window.ApplyLook()
+    NextFrame()
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    check("late events: row height follows the font", n[2] and n[2].point[5] == -4 - 21, n[2] and n[2].point[5])
+    ns.db.fontSize = 13
+    ns.Window.ApplyLook()
+    NextFrame()
+    NextFrame()
+    NextFrame()
+    n = numbers()
+    check("late events: and back", n[2] and n[2].point[5] == -4 - 14, n[2] and n[2].point[5])
+    cursorEventsLate = false
+    edit:SetFocus()
 end
 
 -- Unknown commands and conditions are marked; known ones are not.
