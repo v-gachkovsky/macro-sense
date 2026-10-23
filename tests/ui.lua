@@ -117,6 +117,7 @@ function Frame:SetColorTexture(r, g, b)
     self.color = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
 end
 function Frame:GetTop() return self.top end
+function Frame:IsObjectType(kind) return self.kind == kind end
 function Frame:GetRight() return self.right end
 
 function CreateFrame(kind, name) return New(kind, name) end
@@ -1548,6 +1549,44 @@ do
     Wait(1)
     check("slots: one that doesn't exist is marked", statusError():find("no equipment slot 23", 1, true) ~= nil,
         statusError())
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- /click: the buttons there are now, with what is on them; a name no button has is a warning.
+do
+    local function statusText()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("Line %d+:") then return o.text end
+        end
+        return ""
+    end
+    ActionButton1 = New("Button", "ActionButton1")
+    ActionButton1.action = 1 -- the slot with macro 1 on it
+    BT4Button3 = New("Frame", "BT4Button3") -- not a button: not offered
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/click Act")
+    local items = ns.Popup.items
+    check("click: the bar's buttons, with what is on them", ns.Popup:IsShown() and #items == 1
+        and items[1].name == "ActionButton1" and items[1].hint == GetMacroInfo(1), items[1] and items[1].hint)
+    Key("TAB", "OnTabPressed")
+    Type(" ")
+    check("click: then the mouse buttons", ns.Popup:IsShown() and ns.Popup.items[1].name == "LeftButton",
+        ns.Popup.items[1] and ns.Popup.items[1].name)
+    Key("ESCAPE", "OnEscapePressed")
+    Type("\n/click BT4Button3")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(1)
+    check("click: a frame that is not a button", statusText():find("not a button", 1, true) ~= nil, statusText())
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/click Nope")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(1)
+    check("click: a name no button has", statusText():find("no such button now", 1, true) ~= nil, statusText())
     ns.Window.Select(1)
     NextFrame()
 end

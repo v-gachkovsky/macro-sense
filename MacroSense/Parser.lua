@@ -23,6 +23,8 @@ Parser.chatCommands = {
 Parser.luaCommands = { run = true, script = true, dump = true }
 -- "/stopmacro"; Sources adds localized aliases.
 Parser.stopCommands = { stopmacro = true }
+-- "/click Name [mouse button] [down]"; Sources adds localized aliases.
+Parser.clickCommands = { click = true }
 
 -- Conditions whose value is a modifier key list (mod:shift/ctrl).
 local MODIFIER_CONDS = { mod = true, modifier = true, nomod = true, nomodifier = true }
@@ -35,10 +37,10 @@ end
 -- Context of the word being typed at `cursor` (bytes before the cursor, as EditBox:GetCursorPosition()).
 -- Returns nil or a table:
 --   kind    = "command" | "meta" | "condition" | "unit" | "modifier" | "conditionValue" | "action" | "reset"
---             | "slot" | "bagSlot"
+--             | "slot" | "bagSlot" | "clickButton" | "clickMouse" | "clickDown"
 --             ("action" = a spell or item name, "rank" = inside "Spell(" -> `spell`, "reset" = a value after
 --             "/castsequence reset=", with `used` = the values before it, "slot" = an equipment slot number,
---             "bagSlot" = the slot after a bag number: "/use 0 1" -> `bag` 0)
+--             "bagSlot" = the slot after a bag number: "/use 0 1" -> `bag` 0, "click..." = the words of /click)
 --   prefix  = text typed so far for that word
 --   start   = 1-based index in `text` where the word begins (replace text[start .. cursor])
 --   command = the slash command of the line (lowercase, without "/"), when there is one
@@ -159,6 +161,16 @@ function Parser.GetContext(text, cursor)
         end
         if word:find("%(.*%)") then return nil end
         return { kind = "action", prefix = word, start = wordAbs, command = cmd, base = base }
+    end
+    -- "/click ActionButton1 RightButton true": the button, the mouse button, then a click on key press.
+    if Parser.clickCommands[cmd] then
+        local words = {}
+        for w in token:gmatch("%S+") do words[#words + 1] = w end
+        if token:find("%s$") or token == "" then words[#words + 1] = "" end
+        local kind = ({ "clickButton", "clickMouse", "clickDown" })[#words]
+        if not kind then return nil end
+        local last = words[#words]
+        return { kind = kind, prefix = last, start = tokenAbs + #token - #last, command = cmd }
     end
     return nil
 end

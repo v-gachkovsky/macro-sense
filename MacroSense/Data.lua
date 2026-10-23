@@ -118,6 +118,13 @@ ns.data = {
         { name = "Button4" }, { name = "Button5" },
     },
 
+    -- After "/click Name": the mouse button that clicks it, then whether the click comes on key press.
+    mouseButtons = {
+        { name = "LeftButton" }, { name = "RightButton" }, { name = "MiddleButton" },
+        { name = "Button4" }, { name = "Button5" },
+    },
+    clickDown = { { name = "true", hint = "on key press" } },
+
     -- Values for "reset=" in /castsequence: what starts the sequence over. Any whole number is seconds.
     resets = {
         { name = "target", hint = "new target" }, { name = "combat", hint = "combat ends" },

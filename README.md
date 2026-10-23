@@ -49,6 +49,7 @@ CurseForge once it is published. For development, symlink the folder from this r
 | `/equip ` / `/equipslot 13 ` | gear from bags |
 | `/use 1` / `/equipslot ` | equipment slots by number, with what is in them (`13` Trinket 1: ...) |
 | `/use 0 ` | the slots of that bag that hold something, with the item (`/use 0 1`) |
+| `/click ` | the buttons there are now, with what is on them: the game's bars, Bartender4, ElvUI, Dominos; then `LeftButton` ..., then `true` (a click on key press) |
 | `/castsequence reset=` | `target`, `combat`, `shift`, `ctrl`, `alt` or seconds (`10`); after `/` the ones not used yet |
 | `#` | `#showtooltip`, `#show` |
 
@@ -79,6 +80,9 @@ an empty `[]` removes both.
   marked only after a short pause or on Save; a typo that can't (`mousovr`, `btn:7`) is marked at once.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
   name, which macros allow.
+- `/click`: a name no button has now is a warning (an addon may make it later), and so is a frame that is
+  not a button; a misspelled mouse button (`RigthButton`) gets a fix; `down` as the last word is a warning,
+  since the game reads it as no (`true` clicks on key press).
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
   yellow name; hover it to see the issues. The marks follow the saved text.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,
