@@ -1951,6 +1951,41 @@ do
     Fire(C("list3"), "OnEnterPressed")
     check("wizard: or takes the name picked with the arrows", C("list3").text == "Fireball", C("list3").text)
     pick(C("command"), "/cast")
+    Fire(C("nearest"), "OnClick")
+    check("wizard: the nearest enemy first", shown()
+        == "#showtooltip\n/targetenemy [noharm][dead]\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    Fire(C("nearest"), "OnClick")
+
+    -- /target, /focus, /assist: units only (As usual becomes your target); a key may clear; /target by name.
+    pick(C("command"), "/focus")
+    check("wizard: /focus on units, no icon line", shown() == "/focus [@mouseover,harm,nodead][@target,harm,nodead]"
+        and C("on2").label.text == "Your target" and MacroSenseWizard.height == tall - 34, shown())
+    check("wizard: a key's units where the spell was", not C("shiftCast"):IsShown() and C("shiftOn").point[2] == 84,
+        C("shiftOn").point[2])
+    Fire(C("shift"), "OnClick")
+    pick(C("shiftOn"), "Clear focus")
+    check("wizard: Shift clears the focus", shown() == "/clearfocus [mod:shift]\n/stopmacro [mod:shift]\n"
+        .. "/focus [@mouseover,harm,nodead][@target,harm,nodead]" and C("name").text == "Focus", shown())
+    pick(C("command"), "/target")
+    check("wizard: /target, not on your target", shown() == "/cleartarget [mod:shift]\n/stopmacro [mod:shift]\n"
+        .. "/target [@mouseover,harm,nodead]" and C("on2").label.text == "-" and MacroSenseWizard.height == tall, shown())
+    TypeIn(C("byName"), "Hogger")
+    check("wizard: /target by name", shown() == "/cleartarget [mod:shift]\n/stopmacro [mod:shift]\n"
+        .. "/target [@mouseover,harm,nodead][] Hogger" and C("name").text == "Hogger", shown())
+    TypeIn(C("byName"), "")
+    pick(C("only"), "Friends")
+    pick(C("on1"), "Party member 1")
+    pick(C("shiftOn"), "Party member 2")
+    check("wizard: party members by key", shown() == "/target [mod:shift,@party2,help,nodead][@party1,help,nodead]",
+        shown())
+    pick(C("command"), "/assist")
+    check("wizard: /assist", shown() == "/assist [mod:shift,@party2,help,nodead][@party1,help,nodead]"
+        and MacroSenseWizard.height == tall - 34, shown())
+    pick(C("command"), "/cast")
+    check("wizard: back to /cast: the spell, the keys in their places", shown()
+        == "#showtooltip\n/cast [mod:shift,@party2,help,nodead][@party1,help,nodead] Frostbolt"
+        and C("shiftCast"):IsShown() and C("shiftOn").point[2] == 242, shown())
+    Fire(C("shift"), "OnClick")
 
     -- Not in combat, not into a full tab: the form stays.
     TypeIn(C("cast"), "frost")

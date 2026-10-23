@@ -19,7 +19,8 @@ local RESET_NAMES = { target = "New target", combat = "Combat ends", shift = "Sh
 local LIST_TITLES = { castsequence = "In turn, one per press", castrandom = "One of these at random" }
 
 local frame, preview, counter, createBtn
-local blocks = {} -- parts of the form, one under another: what (one / list), on whom, the rest (keys / reset)
+local blocks = {} -- parts of the form, one under another: what (one / list / name), on whom, the rest (keys / reset)
+local keyRows = {} -- per key: its spell box and unit lists, placed by Arrange (no spell box for /target)
 local controls = {} -- by name: what the tests drive and what starts over with each new form
 local spec -- the answers so far
 local scope -- the tab the macro goes into
@@ -263,9 +264,10 @@ local function Text(parent, text, x, y, colorKey)
     return fs
 end
 
--- A list to choose from: `items` { { key, name } }, the answer through get / set.
+-- A list to choose from: `items` { { key, name } }, or a function giving them; the answer through get / set.
 local function Choice(parent, name, width, items, get, set)
-    local d = ns.Dropdown(parent, width, function() return items end, get, function(key)
+    local list = type(items) == "function" and items or function() return items end
+    local d = ns.Dropdown(parent, width, list, get, function(key)
         set(key)
         Update()
     end)
@@ -326,6 +328,7 @@ local function SwitchTo(command)
     elseif not W.IsList(command) and wasList and not spec.action then
         spec.action = FirstOf(spec.list)
     end
+    W.Fit(spec) -- units the command doesn't take become ones it does
     for _, control in pairs(controls) do
         if control.Refresh then control:Refresh() end
     end
@@ -334,10 +337,28 @@ end
 
 -- The parts the command asks for, one under another, and the window as tall as they are.
 function Arrange()
-    local list = W.IsList(spec.command)
-    local parts = { list and blocks.list or blocks.one, blocks.on }
+    local list, target = W.IsList(spec.command), W.IsTarget(spec.command)
+    local parts = {}
+    if list then
+        parts[1] = blocks.list
+    elseif not target then
+        parts[1] = blocks.one
+    elseif spec.command == "target" then
+        parts[1] = blocks.name
+    end
+    parts[#parts + 1] = blocks.on
     if spec.command == "castsequence" then parts[#parts + 1] = blocks.reset end
     if not list then parts[#parts + 1] = blocks.keys end
+    -- A key casts something in the On row's last columns; for /target, /focus and /assist it only has units, in
+    -- the first ones.
+    for _, row in pairs(keyRows) do
+        local x = target and X or X + 158
+        row.box:SetShown(not target)
+        row.on:SetPoint("TOPLEFT", x, row.y - 1)
+        row["then"]:SetPoint("TOPLEFT", x + 158, row.y - 1)
+        row.word:SetPoint("TOPLEFT", x + 126, row.y - 5)
+    end
+    blocks.keys.on:SetPoint("TOPLEFT", target and X or X + 158, -8)
     local shown = {}
     for _, b in ipairs(parts) do shown[b] = true end
     for _, b in pairs(blocks) do
@@ -433,14 +454,26 @@ local function Build()
         controls["list" .. i] = box
     end
 
-    -- On whom, and who: for every command.
+    -- /target by name: a rare, say.
+    blocks.name = Block(34)
+    Text(blocks.name, "By name", PAD, -5)
+    controls.byName = ns.Input(blocks.name, 240, 60)
+    controls.byName:SetPoint("TOPLEFT", X, 0)
+    controls.byName:SetScript("OnTextChanged", function(self, userInput)
+        if not userInput then return end
+        spec.byName = self:GetText()
+        Update()
+    end)
+    function controls.byName:Refresh() self:SetText(spec.byName or "") end
+    Tip(controls.byName, "By name", "Targets the nearest one with this name, when none of the units above is there. "
+        .. "Leave On empty (-) to target by name only.")
+
+    -- On whom, and who: for every command (the units a command takes, Wizard.Units).
     blocks.on = Block(2 * 34)
     Text(blocks.on, "On", PAD, -5)
-    local none = { { key = "none", name = "-" } }
-    for _, u in ipairs(W.units) do none[#none + 1] = u end
     for i = 1, 3 do
-        local d = Choice(blocks.on, "on" .. i, 120, i == 1 and W.units or none, function() return spec.on[i] end,
-            function(key) spec.on[i] = key end)
+        local d = Choice(blocks.on, "on" .. i, 120, function() return W.Units(spec.command, i == 1 and "first" or "then") end,
+            function() return spec.on[i] end, function(key) spec.on[i] = key end)
         d:SetPoint("TOPLEFT", X + (i - 1) * 158, -1)
         if i > 1 then Text(blocks.on, "then", X + (i - 1) * 158 - 32, -5, "dim") end
         Tip(d, i == 1 and "On" or "Then", i == 1 and "Who the macro casts on. As usual: your target, or you when "
@@ -460,7 +493,7 @@ local function Build()
     -- Keys held (/cast, /use): another spell or the same one, on units of their own, in the On row's columns.
     blocks.keys = Block(8 + 22 + #keys * ROW)
     Text(blocks.keys, "With a key held", PAD, -8, "dim")
-    Text(blocks.keys, "on", X + 158, -8, "dim")
+    blocks.keys.on = Text(blocks.keys, "on", X + 158, -8, "dim")
     for i, key in ipairs(keys) do
         local y = -30 - (i - 1) * ROW
         Check(blocks.keys, key, KEY_NAMES[key], function() return spec.keys[key].active end,
@@ -469,12 +502,13 @@ local function Build()
             function(action) spec.keys[key].action = action end)
         box:SetPoint("TOPLEFT", X, y)
         controls[key .. "Cast"] = box
+        local row = { y = y, box = box, word = Text(blocks.keys, "then", X + 284, y - 5, "dim") }
         for j, suffix in ipairs({ "On", "Then" }) do
-            Choice(blocks.keys, key .. suffix, 120, j == 1 and W.units or none,
+            row[j == 1 and "on" or "then"] = Choice(blocks.keys, key .. suffix, 120,
+                function() return W.Units(spec.command, j == 1 and "key" or "then") end,
                 function() return spec.keys[key].on[j] end, function(unit) spec.keys[key].on[j] = unit end)
-                :SetPoint("TOPLEFT", X + j * 158, y - 1)
         end
-        Text(blocks.keys, "then", X + 284, y - 5, "dim")
+        keyRows[key] = row
     end
     if controls.cmd then
         Tip(controls.cmd, "Cmd", "On a key macOS uses with Cmd itself (Q quits the game, W, H, Tab, Space...) "
@@ -519,6 +553,10 @@ local function Build()
         function(on) spec.trinket1 = on end), PAD + 280, 246)
     Low(Check(frame, "trinket2", "Use trinket 2", function() return spec.trinket2 end,
         function(on) spec.trinket2 = on end), PAD + 280, 222)
+    Low(Check(frame, "nearest", "The nearest enemy if none targeted", function() return spec.nearest end,
+        function(on) spec.nearest = on end), PAD + 280, 198)
+    Tip(controls.nearest, "The nearest enemy", "When your target is not an enemy, or is dead, the nearest enemy "
+        .. "becomes the target first (/targetenemy [noharm][dead]).")
     Tip(controls.stopcasting, "Stop your cast first",
         "For an interrupt or a save: it goes off at once, even in the middle of another cast.")
 
@@ -585,6 +623,6 @@ function WizardWindow.Toggle(tab)
     WizardWindow.Open(tab)
 end
 
--- A control of the form by name: "command", "cast", "list1", "on1", "shift", "shiftCast", "shiftOn", "shiftThen",
+-- A control of the form by name: "command", "cast", "list1", "byName", "on1", "shift", "shiftCast", "shiftOn", "shiftThen",
 -- "resetTarget", "resetTimed", "resetSeconds", "trinket1", "create", ... (the tests fill the form through it).
 function WizardWindow.Control(name) return controls[name] end

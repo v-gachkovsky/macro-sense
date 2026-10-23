@@ -43,7 +43,9 @@ MacroSense є ще й у меню аддонів біля мінімапи.
   `/use`), `/castsequence` для спелів по черзі, `/castrandom` для одного з кількох навмання. Форма змінюється
   разом із командою: для послідовності вона питає, що починає її спочатку (нова ціль, кінець бою,
   Shift / Ctrl / Alt, кілька секунд без натискання). `/use` спершу пропонує ваші предмети, потім слоти
-  екіпіровки, чий предмет має ефект використання (`13`, `14`).
+  екіпіровки, чий предмет має ефект використання (`13`, `14`). `/target`, `/focus` і `/assist` беруть лише
+  юнітів, серед них учасників групи: клавіша може взяти інших юнітів або зняти ціль / фокус, а `/target` ще й
+  бере за ім'ям (наприклад, рідкісного моба).
 - **Cast** / **Use**: спел чи предмет. Наберіть кілька літер або перші літери його слів, і з'являться ваші спели й
   предмети, які можна використати; підійде й будь-яка інша назва.
 - **On**: на кого, по черзі, до трьох: As usual (ваша ціль, або ви, коли гра кастує на вас сама), Your target,
@@ -54,7 +56,7 @@ MacroSense є ще й у меню аддонів біля мінімапи.
 - **With a key held**: Shift, Ctrl і Alt (на Mac ще Cmd) можуть кастувати інший спел або той самий на когось іншого, зі
   своїм запасним юнітом (Alt: Frostbolt на Mouseover, потім Your target).
 - **Also**: спершу перервати свій каст, використати трінкет 1 / 2 (з назвою того, що вдягнено), автоатака,
-  пет атакує вашу ціль.
+  пет атакує вашу ціль, найближчий ворог, якщо цілі немає.
 - **Name** і **Tab**: назва йде за спелом, доки ви не впишете свою; вкладка — та, що відкрита в редакторі.
 
 Макрос видно під формою, поки ви вибираєте, з підсвіткою й довжиною. **Create macro** зберігає його з
@@ -68,6 +70,8 @@ MacroSense є ще й у меню аддонів біля мінімапи.
 | Flash Heal на Party member 1; Shift на 2, Ctrl на 3, Alt на 4 | `/cast [mod:shift,@party2,help,nodead]...[@party1,help,nodead] Flash Heal` |
 | Blizzard At the cursor | `/cast [@cursor] Blizzard` |
 | /castsequence Corruption, Immolate; спочатку при новій цілі | `/castsequence reset=target Corruption, Immolate` |
+| /focus на Mouseover, потім Your target; Shift: Clear focus | `/clearfocus [mod:shift]`, `/stopmacro [mod:shift]`, `/focus [@mouseover,exists,nodead][@target,exists,nodead]` |
+| /target Party member 1; Shift на 2, Ctrl на 3, Alt на 4 | `/target [mod:shift,@party2,help,nodead]...[@party1,help,nodead]` |
 | Frostbolt як зазвичай; Shift: Polymorph на Focus; трінкет 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Автодоповнення

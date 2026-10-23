@@ -823,6 +823,57 @@ do
     expectText("a list with trinkets first", text({ command = "castsequence", list = { corruption, immolate },
         on = usual, trinket1 = true }), "#showtooltip Corruption\n/use 13\n/castsequence Corruption, Immolate")
     check("wizard: a list empty, no macro", W.Text(form({ command = "castsequence", action = bolt })) == nil)
+    -- /target, /focus, /assist: units only, keys too; a key may clear; /target by name; the nearest enemy.
+    expectText("focus: the mouseover, then your target", text({ command = "focus", on = { "mouseover", "target", "none" } }),
+        "/focus [@mouseover,exists,nodead][@target,exists,nodead]")
+    expectText("target: party members by key", text({ command = "target", only = "friends", alive = false,
+        on = { "party1", "none", "none" }, keys = { shift = { unit = "party2" }, ctrl = { unit = "party3" },
+        alt = { unit = "party4" } } }), "/target [mod:shift,@party2,help][mod:ctrl,@party3,help][mod:alt,@party4,help]"
+        .. "[@party1,help]")
+    expectText("focus: Shift clears it", text({ command = "focus", on = { "mouseover", "target", "none" },
+        keys = { shift = { unit = "clear" }, alt = { unit = "clear" } } }), "/clearfocus [mod:shift/alt]\n"
+        .. "/stopmacro [mod:shift/alt]\n/focus [@mouseover,exists,nodead][@target,exists,nodead]")
+    expectText("target: by name, after the mouseover", text({ command = "target", byName = " Hogger ", only = "enemies",
+        on = { "mouseover", "none", "none" } }), "/target [@mouseover,harm,nodead][] Hogger")
+    expectText("target: by name only", text({ command = "target", byName = "Hogger", on = { "none", "none", "none" } }),
+        "/target Hogger")
+    expectText("assist: the tank", text({ command = "assist", alive = false, on = { "party1", "none", "none" } }),
+        "/assist [@party1,exists]")
+    expectText("target: trinkets show their icon", text({ command = "target", only = "enemies", trinket1 = true,
+        on = { "mouseover", "none", "none" } }), "#showtooltip\n/use 13\n/target [@mouseover,harm,nodead]")
+    expectText("the nearest enemy when none is targeted", text({ action = bolt, only = "enemies", on = usual,
+        nearest = true }), "#showtooltip\n/targetenemy [noharm][dead]\n/cast Frostbolt")
+    check("wizard: /focus on nobody, no macro", W.Text(form({ command = "focus", on = { "none", "none", "none" } })) == nil)
+    check("wizard: a name only for /target", text({ command = "focus", byName = "Hogger", on = { "mouseover", "none",
+        "none" } }) == "/focus [@mouseover,exists,nodead]")
+    check("wizard name: what it targets", W.Name(form({ command = "focus" })) == "Focus"
+        and W.Name(form({ command = "target", byName = "Hogger" })) == "Hogger")
+    local function keys(list)
+        local out = {}
+        for i, u in ipairs(list) do out[i] = u.key end
+        return table.concat(out, ",")
+    end
+    check("wizard units: a cast goes anywhere", keys(W.Units("cast", "first")):find("^default,target,mouseover") ~= nil
+        and keys(W.Units("cast", "then")):find("^none,default,target") ~= nil, keys(W.Units("cast", "first")))
+    check("wizard units: /target, by name or units, not your target", keys(W.Units("target", "first"))
+        == "none,mouseover,focus,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
+        keys(W.Units("target", "first")))
+    check("wizard units: /focus keys clear it, no focus to focus", keys(W.Units("focus", "key"))
+        :find("^clear,target,mouseover,player,") ~= nil and W.Units("focus", "key")[1].name == "Clear focus",
+        keys(W.Units("focus", "key")))
+    local fitted = form({ command = "focus", on = { "mouseover", "default", "none" },
+        keys = { shift = { on = { "cursor", "default" } } } })
+    W.Fit(fitted)
+    check("wizard fit: As usual is your target for /focus", table.concat(fitted.on, ",") == "mouseover,target,none"
+        and table.concat(fitted.keys.shift.on, ",") == "none,target", table.concat(fitted.on, ","))
+    fitted.command = "target"
+    W.Fit(fitted)
+    check("wizard fit: /target takes not your target", table.concat(fitted.on, ",") == "mouseover,none,none",
+        table.concat(fitted.on, ","))
+    fitted.command, fitted.on[1], fitted.keys.shift.on[1] = "cast", "none", "clear"
+    W.Fit(fitted)
+    check("wizard fit: a cast goes somewhere again, Clear goes", fitted.on[1] == "default"
+        and fitted.keys.shift.on[1] == "default", fitted.keys.shift.on[1])
     check("wizard: the spell of /cast is not in a list", W.Text(form({ command = "castrandom", action = bolt,
         list = { corruption } })) == "#showtooltip\n/castrandom [@mouseover,exists,nodead][] Corruption")
     for label, body in pairs(made) do

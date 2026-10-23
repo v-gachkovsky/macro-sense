@@ -6,18 +6,23 @@ ns = ns or {}
 local Wizard = {}
 ns.Wizard = Wizard
 
--- The commands the form makes. /cast and /use take one spell or item, with keys; the others a list of them.
--- (/userandom is the same command as /castrandom in the game.)
+-- The commands the form makes. /cast and /use take one spell or item, with keys; /castsequence and /castrandom
+-- a list of them (/userandom is the same command as /castrandom in the game); /target, /focus and /assist only
+-- units, with keys too.
 Wizard.commands = {
     { key = "cast", name = "/cast" },
     { key = "use", name = "/use" },
     { key = "castsequence", name = "/castsequence" },
     { key = "castrandom", name = "/castrandom" },
+    { key = "target", name = "/target" },
+    { key = "focus", name = "/focus" },
+    { key = "assist", name = "/assist" },
 }
 Wizard.LIST = 6 -- names a list takes in the form
 Wizard.RESETS = { "target", "combat", "shift", "ctrl", "alt" } -- what starts a sequence over, besides seconds
 
 function Wizard.IsList(command) return command == "castsequence" or command == "castrandom" end
+function Wizard.IsTarget(command) return command == "target" or command == "focus" or command == "assist" end
 
 -- Where a cast can go, as the form lists them. "default" is the game's own choice: your target, or you when
 -- the game casts on you by itself (Auto Self Cast). `filters`: friends / enemies / alive only apply to it.
@@ -42,8 +47,57 @@ Wizard.KEYS = { "shift", "ctrl", "alt", "cmd" } -- the form shows Cmd on a Mac o
 
 local filtered = {}
 for _, u in ipairs(Wizard.units) do filtered[u.key] = u.filters end
+
+local function Trim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
+
+-- The name /target takes by name, "" for none.
+local function ByName(spec)
+    return spec.command == "target" and spec.byName and Trim(spec.byName) or ""
+end
 -- After these nothing is asked: they always hold.
 local ALWAYS = { default = true, player = true, cursor = true }
+
+-- Whether a command takes a unit: a cast any; /target, /focus and /assist neither As usual nor the cursor,
+-- /target not your target (the game would target nothing) and /focus not the focus.
+local function Takes(command, unit)
+    if not Wizard.IsTarget(command) then return true end
+    if unit == "default" or unit == "cursor" then return false end
+    return not (command == "target" and unit == "target" or command == "focus" and unit == "focus")
+end
+
+-- The units the form offers for a command. `place`: "first" of the On row (a cast goes somewhere; /target may
+-- go by name only), "then" (or nobody), "key" (the first of a key's: it may clear the target or the focus).
+function Wizard.Units(command, place)
+    local out = {}
+    local target = Wizard.IsTarget(command)
+    if place == "then" or (target and place == "first") then out[#out + 1] = { key = "none", name = "-" } end
+    if target and place == "key" then
+        out[#out + 1] = { key = "clear", name = command == "focus" and "Clear focus" or "Clear target" }
+    end
+    for _, u in ipairs(Wizard.units) do
+        if Takes(command, u.key) then out[#out + 1] = u end
+    end
+    return out
+end
+
+-- After another command, units it doesn't take become ones it does: As usual is your target for /focus and
+-- /assist; a cast goes somewhere again; Clear is for /target, /focus and /assist only.
+function Wizard.Fit(spec)
+    local target = Wizard.IsTarget(spec.command)
+    local function fit(unit, first, key)
+        if unit == "none" or unit == "clear" then
+            if target and (unit == "none" or (key and first)) then return unit end
+            return first and "default" or "none"
+        end
+        if Takes(spec.command, unit) then return unit end
+        if unit == "default" and Takes(spec.command, "target") then return "target" end
+        return "none"
+    end
+    for i, unit in ipairs(spec.on) do spec.on[i] = fit(unit, i == 1) end
+    for _, k in pairs(spec.keys) do
+        for i, unit in ipairs(k.on) do k.on[i] = fit(unit, i == 1, true) end
+    end
+end
 
 -- A fresh form: /cast on Mouseover, then as usual (the macro players make most); no keys held, nothing else. A
 -- key held has its own units in order, two of them. A sequence starts over after 10 seconds once that is asked.
@@ -55,11 +109,12 @@ function Wizard.Fresh()
 end
 
 -- "[mod:shift,@mouseover,help,nodead]": the unit, then what it must be. A unit that may not be there
--- without a check is asked for ([@focus,exists]), so the cast goes on to the next one.
-local function Group(spec, unit, key)
+-- without a check is asked for ([@focus,exists]), so the cast goes on to the next one. A cast needs no
+-- "@target" (it goes to the target anyway); /focus and /assist do (`named`).
+local function Group(spec, unit, key, named)
     local conds = {}
     if key then conds[#conds + 1] = "mod:" .. key end
-    if unit ~= "default" and unit ~= "target" then conds[#conds + 1] = "@" .. unit end
+    if unit ~= "default" and (named or unit ~= "target") then conds[#conds + 1] = "@" .. unit end
     if filtered[unit] then
         conds[#conds + 1] = spec.only == "friends" and "help" or spec.only == "enemies" and "harm" or "exists"
         if spec.alive then conds[#conds + 1] = "nodead" end
@@ -151,8 +206,33 @@ local function ListLine(spec)
     return "/" .. spec.command .. " " .. (groups ~= "" and groups .. " " or "") .. reset .. table.concat(names, ", ")
 end
 
+-- /target, /focus or /assist on the units in order, keys first; a key that clears goes before it all, with a
+-- /stopmacro so the rest doesn't take a unit again. /target may end with a name: "[] Hogger" when nobody else is.
+local CLEAR = { target = "/cleartarget", focus = "/clearfocus", assist = "/cleartarget" }
+local function TargetLines(spec)
+    local clears, groups = {}, ""
+    for _, key in ipairs(Wizard.KEYS) do
+        local k = spec.keys[key]
+        if k.active and k.on[1] == "clear" then
+            clears[#clears + 1] = key
+        elseif k.active then
+            for _, unit in ipairs(Chain(k.on)) do groups = groups .. Group(spec, unit, key, true) end
+        end
+    end
+    for _, unit in ipairs(Chain(spec.on)) do groups = groups .. Group(spec, unit, nil, true) end
+    local before = {}
+    if #clears > 0 then
+        local mods = "[mod:" .. table.concat(clears, "/") .. "]"
+        before = { CLEAR[spec.command] .. " " .. mods, "/stopmacro " .. mods }
+    end
+    local name = ByName(spec)
+    if name ~= "" then return before, "/target " .. (groups ~= "" and groups .. "[] " or "") .. name end
+    return before, groups ~= "" and ("/" .. spec.command .. " " .. groups) or nil
+end
+
 -- What the macro is named after and shows with trinkets first: the spell or item, a key's, the list's first.
 local function First(spec)
+    if Wizard.IsTarget(spec.command) then return nil end
     if Wizard.IsList(spec.command) then return Names(spec)[1] end
     if spec.action then return spec.action end
     for _, key in ipairs(Wizard.KEYS) do
@@ -161,18 +241,31 @@ local function First(spec)
     end
 end
 
--- The macro, or nil while there is nothing to cast or use.
+-- The macro, or nil while there is nothing to cast, use or target.
 function Wizard.Text(spec)
-    local line
-    if Wizard.IsList(spec.command) then line = ListLine(spec) else line = CastLine(spec) end
+    local target = Wizard.IsTarget(spec.command)
+    local before, line = {}, nil
+    if target then
+        before, line = TargetLines(spec)
+    elseif Wizard.IsList(spec.command) then
+        line = ListLine(spec)
+    else
+        line = CastLine(spec)
+    end
     local uses = {}
     if spec.trinket1 then uses[#uses + 1] = "/use 13" end
     if spec.trinket2 then uses[#uses + 1] = "/use 14" end
-    if not line and #uses == 0 then return nil end
-    -- With trinkets first, a bare #showtooltip would show the first trinket: it names the spell.
-    local first = First(spec)
-    local lines = { #uses > 0 and first and ("#showtooltip " .. first.name) or "#showtooltip" }
+    if not line and #before == 0 and #uses == 0 then return nil end
+    -- The icon and tooltip of the spell (a /target macro has none to show, but trinkets have). With trinkets
+    -- first, a bare #showtooltip would show the first trinket: it names the spell.
+    local lines = {}
+    if not target or #uses > 0 then
+        local first = First(spec)
+        lines[1] = #uses > 0 and first and ("#showtooltip " .. first.name) or "#showtooltip"
+    end
+    for _, l in ipairs(before) do lines[#lines + 1] = l end
     if spec.stopcasting then lines[#lines + 1] = "/stopcasting" end
+    if spec.nearest then lines[#lines + 1] = "/targetenemy [noharm][dead]" end
     for _, use in ipairs(uses) do lines[#lines + 1] = use end
     if line then lines[#lines + 1] = line end
     if spec.startattack then lines[#lines + 1] = "/startattack" end
@@ -180,8 +273,13 @@ function Wizard.Text(spec)
     return table.concat(lines, "\n")
 end
 
--- A name for the macro: what it casts (the item in a slot, not the slot's number).
+-- A name for the macro: what it casts (the item in a slot, not the slot's number), or what it targets.
+local TARGET_NAMES = { target = "Target", focus = "Focus", assist = "Assist" }
 function Wizard.Name(spec)
+    if Wizard.IsTarget(spec.command) then
+        local name = ByName(spec)
+        return name ~= "" and name or TARGET_NAMES[spec.command]
+    end
     local first = First(spec)
     if first then return first.label or first.name end
     if spec.trinket1 or spec.trinket2 then return "Trinkets" end
