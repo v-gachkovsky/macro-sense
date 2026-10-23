@@ -1,4 +1,4 @@
-![MacroSense](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/banner.png)
+![MacroSense](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/banner-v2.png)
 
 **A macro editor that knows macros: autocomplete, highlighting and error checks.**
 
