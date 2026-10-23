@@ -49,7 +49,8 @@ CurseForge once it is published. For development, symlink the folder from this r
 | `/equip ` / `/equipslot 13 ` | gear from bags |
 | `#` | `#showtooltip`, `#show` |
 
-Keys: **Tab** / **Enter** accept, **Up / Down** move, **Esc** closes the list. Deleting never opens the list.
+Keys: **Tab** / **Enter** accept, **Up / Down** move, **PageUp / PageDown** jump 10, **Esc** closes the list.
+The list shows 10 rows and scrolls (also with the mouse wheel) through the rest. Deleting never opens the list.
 Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo.
 Typing `[` adds the closing `]` with the cursor inside; typing `]` before it steps over it, and Backspace in
 an empty `[]` removes both.

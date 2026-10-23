@@ -6,7 +6,7 @@ local Completion = {}
 ns.Completion = Completion
 ns.sources = ns.sources or {} -- Sources fills: commands(), spells(), items()
 
-Completion.limit = 10
+Completion.limit = 500 -- the list shows 10 rows and scrolls through the rest
 
 local function source(name)
     return ns.sources[name] and ns.sources[name]() or {}

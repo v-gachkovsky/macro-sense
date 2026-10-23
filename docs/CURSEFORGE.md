@@ -31,8 +31,9 @@ addons see every change.
 | a spell with several learned ranks (Classic) | its ranks, highest first: `Fireball(Rank 4)` |
 | `#` | `#showtooltip`, `#show` |
 
-**Tab** or **Enter** accepts, **Up / Down** move through the list, **Esc** closes it (after a spell, Esc keeps
-the plain name without a rank). Typing `[` adds the `]` for you.
+**Tab** or **Enter** accepts, **Up / Down** move through the list, **PageUp / PageDown** jump 10, **Esc** closes
+it (after a spell, Esc keeps the plain name without a rank). Long lists scroll, also with the mouse wheel.
+Typing `[` adds the `]` for you.
 
 ## Highlighting and error checks
 

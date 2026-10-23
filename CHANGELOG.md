@@ -18,6 +18,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Unknown units** (`@mousover`) are underlined as a **warning** in yellow: they may be a player's name,
   which macros allow.
 
+- **Scrollable suggestions**: the list shows 10 rows and scrolls through all matches (it used to stop
+  at 10, so e.g. `Shields` was out of reach in `equipped:`): Up / Down follow the selection, PageUp /
+  PageDown jump 10, the mouse wheel scrolls, and a thin scroll bar shows where you are.
+
 ### Changed
 - The status bar shows errors first, then the Mac Cmd shortcut warning, then other warnings; the Save
   alert icon is for errors only. The tooltip lists everything, errors in red and warnings in yellow.
