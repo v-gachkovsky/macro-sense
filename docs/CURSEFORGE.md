@@ -20,18 +20,16 @@ Open it from the **minimap button** (drag it along the edge to move it), with `/
 
 ## Macro wizard
 
-Don't want to type `[@mouseover,help,nodead]` by hand? The **Macro wizard** builds the common macros from a
-few answers, right in the editor:
+Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** opens a form where you pick it all:
 
-- **Mouseover**: heal the friend under your mouse (then your target, then yourself), or hit the enemy there
-- **Focus**: interrupt or control your focus while you fight your target; Shift can set the focus
-- **Party member**: cast on party member 1-4 or yourself, or on all of them from one key with Shift, Ctrl, Alt
-- **At the cursor**: area spells land where your mouse points, with no circle to place
-- **One key, several spells**: something else with Shift, Ctrl or Alt held
-- **Trinkets with a spell**: your trinkets go off with a spell, whenever they are ready
+- **what to cast**: a spell or item, found by a few letters or the first letters of its words
+- **on whom, in order**: mouseover, focus, your target, yourself, your pet, party members 1-4, target's
+  target, arena enemies 1-3, the cursor, or as usual
+- **friends, enemies or anyone**, alive only: set from the spell for you
+- **Shift, Ctrl, Alt**: another spell, or the same one on someone else
+- **and also**: stop your cast first, your trinkets, auto attack, your pet
 
-Type a few letters to pick a spell or item, answer a couple of questions and watch the macro appear with its
-colors, checks and live preview. Save keeps it.
+The macro shows as you choose; **Create macro** saves it and opens it in the editor.
 
 ## Autocomplete
 

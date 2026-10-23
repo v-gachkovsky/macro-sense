@@ -27,7 +27,7 @@ Popup.lua
 CodeBox.lua
 Autocomplete.lua
 IconPicker.lua
-WizardPanel.lua
+WizardWindow.lua
 Window.lua
 MinimapButton.lua
 Core.lua

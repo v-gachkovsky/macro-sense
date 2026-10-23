@@ -7,14 +7,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **Macro wizard**: a button over New / Copy / Delete makes a new macro from a few answers, in a panel next
-  to the window. **Mouseover** (a friend, then your target, then you; or an enemy, then your target),
-  **Focus** (Shift can make your target the focus), **Party member** (1-4 or yourself, or all of them from
-  one key with Shift / Ctrl / Alt), **At the cursor** (Shift at your feet), **One key, several spells**
-  (Shift, Ctrl, Alt) and **Trinkets with a spell**. Type a few letters to pick one of your spells or usable
-  items; friends or enemies follow the spell; extras: stop your cast first, auto attack, your pet. Each
-  answer goes into the editor at once, with highlighting, checks and the live preview; Save keeps the
-  macro, Ctrl+Z takes a change back.
+- **Macro wizard**: **New (Wizard)** over New / Copy / Delete opens a form for a new macro: the spell or item
+  (by its name or the first letters of its words), on whom in order (mouseover, focus, your target, yourself,
+  your pet, party members 1-4, target's target, arena enemies 1-3, the cursor, or as usual), friends, enemies
+  or anyone and alive only (set from the spell), another spell or unit on Shift / Ctrl / Alt, and also: stop
+  your cast first, trinkets, auto attack, your pet. The macro shows as you choose; Create macro saves it under
+  a free name in the tab you pick and opens it in the editor.
 - **Search by first letters**: names of several words come up by the first letters of their words: `da`
   finds Demon Armor, `swp` Shadow Word: Pain, `ca` Curse of Agony (small words may be left out). Those come
   first in the list, then the names that start with what you typed, then the rest.

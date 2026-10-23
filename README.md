@@ -20,8 +20,8 @@
 The Blizzard macro window is a plain text box. MacroSense opens your macros in a real editor: it suggests
 commands, conditions, units, spells and items as you type, colors the syntax, underlines mistakes and
 shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
-addons see every change. The **Macro wizard** builds the common ones (mouseover, focus, party members, modifier
-keys, trinkets) from a few answers.
+addons see every change. **New (Wizard)** builds them from a form: mouseover, focus, party members, modifier
+keys, trinkets and more.
 
 Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button in
 the title bar of the Blizzard macro window. Drag the title bar to move it and the dotted corner to resize it
@@ -38,26 +38,31 @@ CurseForge once it is published. For development, symlink the folder from this r
 
 ## Macro wizard
 
-**Macro wizard**, over New / Copy / Delete, makes a new macro in the tab that is open from a few answers.
-Pick what it should do:
+**New (Wizard)**, over New / Copy / Delete, opens a window with a form for a new macro:
 
-| Pick | You get, for example |
-|------|----------------------|
-| **Mouseover** | `/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal`: the friend under the mouse, then your target, then you. For an enemy spell: the enemy under the mouse, then your target |
-| **Focus** | `/cast [@focus,harm,nodead][] Counterspell`; Shift can make your target the focus |
-| **Party member** | `/cast [@party2] Power Infusion`, on yourself, or members 1-4 from one key: no key, Shift, Ctrl, Alt |
-| **At the cursor** | `/cast [@cursor] Blizzard`: no circle to place; Shift can put it at your feet |
-| **One key, several spells** | `/cast [mod:shift] Polymorph; [mod:alt] Counterspell; Frostbolt` |
-| **Trinkets with a spell** | `/use 13`, `/use 14`, then the spell |
+- **Cast**: the spell or item. Type a few letters, or the first letters of its words, and your spells and
+  usable items come up; any other name works too.
+- **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
+  itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
+  1-3, At the cursor. When one is not there, the next one is tried.
+- **Only**: friends, enemies or anyone there, and **Alive only**. It follows the spell you pick, when the game
+  knows what it is for.
+- **With a key held**: Shift, Ctrl and Alt can cast another spell, or the same one on someone else.
+- **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), start auto attack, your
+  pet attacks your target.
+- **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.
 
-Then answer: the spell or item (type a few letters and your spells and usable items come up; any other name
-works too), friends or enemies (set from the spell when the game knows), and extras such as stopping your
-cast first, auto attack or your pet. Trinket slots show what is in them, and one with a use effect is
-checked. Each answer goes into the editor at once, with its colors, checks and live preview, as an unsaved
-change: **Save** keeps the macro, Ctrl+Z (Cmd+Z on Mac) takes a change back. The macro is named after what
-it casts (`Frostbolt 2` when a macro has that name) until you type a name of your own. If you change the
-text in the editor, the wizard leaves it alone; **Replace** puts its macro back. The panel opens left of the
-window (right of it near the screen's left edge); picking another macro or closing the window closes it.
+The macro shows under the form as you choose, with its colors and length. **Create macro** saves it under a
+free name (`Frostbolt 2` when a macro has that name) and opens it in the editor, with its live preview.
+
+| You choose | You get |
+|------------|---------|
+| Flash Heal on Mouseover, then As usual; friends | `/cast [@mouseover,help,nodead][] Flash Heal` |
+| ... then Your target, then Yourself | `/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal` |
+| Counterspell on Focus, then As usual; enemies; stop your cast first | `/stopcasting`, then `/cast [@focus,harm,nodead][] Counterspell` |
+| Flash Heal on Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/cast [mod:shift,@party2,help,nodead]...[@party1,help,nodead] Flash Heal` |
+| Blizzard At the cursor | `/cast [@cursor] Blizzard` |
+| Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Autocomplete
 
@@ -207,14 +212,14 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
-- `MacroSense/Wizard.lua`: the wizard's recipes, their questions and the macros they write. Pure Lua.
+- `MacroSense/Wizard.lua`: the wizard's form as macro text. Pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/IconPicker.lua`: icon grid.
-- `MacroSense/WizardPanel.lua`: the wizard's panel.
+- `MacroSense/WizardWindow.lua`: the wizard's window.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 

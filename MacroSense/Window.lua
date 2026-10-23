@@ -343,7 +343,6 @@ end
 -- Editing
 ------------------------------------------------------------------------
 local function Load(index)
-    ns.WizardPanel.Close() -- it writes into the macro it started with, not into another one
     if index then
         local name, icon, body = GetMacroInfo(index)
         state.index, state.name, state.icon, state.body = index, name, icon, body or ""
@@ -480,11 +479,11 @@ local function FirstLetters(s, n)
 end
 
 -- A name no macro has: "Fear" -> "Fear 2", "Fear 2" -> "Fear 3", cut to fit the name limit. Two macros with
--- one name would share a key binding ("MACRO Fear" runs the first one). The name of macro `own` counts as free.
-local function FreeName(name, own)
+-- one name would share a key binding ("MACRO Fear" runs the first one).
+local function FreeName(name)
     local function taken(n)
         local index = GetMacroIndexByName(n)
-        return index ~= nil and index > 0 and index ~= own
+        return index ~= nil and index > 0
     end
     if not taken(name) then return name end
     local base, n = name:match("^(.-) (%d+)$")
@@ -542,37 +541,25 @@ local function CopyItems()
 end
 
 ------------------------------------------------------------------------
--- Wizard: a new macro from a few answers, in a panel next to the window
+-- Wizard: a new macro from a form, in a window of its own
 ------------------------------------------------------------------------
-local wizard = {} -- what the wizard last put in the editor (text) and the name box (name)
+-- A name no macro has, cut to fit (see FreeName).
+function Window.FreeName(name) return FreeName(FirstLetters(name, MAX_NAME)) end
 
-function Window.StartWizard()
-    if ns.WizardPanel.IsShown() then return ns.WizardPanel.Close() end
+-- The wizard's macro: saved in the tab `scope` under a free name, then opened in the editor.
+function Window.CreateFromWizard(name, body, scope)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local first, last, max = MacroRange(scope)
+    if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     Guard(function()
-        if not Fresh() then return end
-        wizard = {}
-        ns.WizardPanel.Open(frame)
+        local index = CreateMacro(Window.FreeName(name), NEW_ICON, body, scope == "character")
+        if not index or index == 0 then return ns.Print("could not save the macro") end
+        ns.History.Scan()
+        state.scope, ns.db.scope = scope, scope
+        ns.WizardWindow.Close()
+        Load(index)
     end)
-end
-
--- The wizard's macro goes into the editor as an unsaved change (undo takes it back), and the name it suggests
--- into the name box while that is empty or has the name it gave before. Text changed in the editor meanwhile
--- stays, unless `force`: false then.
-function Window.WizardWrite(text, name, force)
-    local raw = code:GetRaw()
-    if not force and raw ~= "" and raw ~= wizard.text then return false end
-    if raw ~= text then
-        code:SetRaw(text, #text, true)
-        code:CheckNow()
-    end
-    wizard.text = text
-    local typed = strtrim(nameBox:GetText())
-    if name and (typed == "" or typed == wizard.name) then
-        wizard.name = FreeName(FirstLetters(name, MAX_NAME), state.index)
-        nameBox:SetText(wizard.name)
-    end
-    UpdateStatus()
-    return true
 end
 
 -- The macro list changed elsewhere (Blizzard UI, another addon): keep our selection by name.
@@ -748,15 +735,15 @@ local function Build()
     end)
     copyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- The wizard over them: a new macro from a few answers, in a panel next to the window.
-    local wizardBtn = ns.Button(side, "Macro wizard", 204, function() Window.StartWizard() end)
+    -- The wizard over them: a new macro from a form, in a window of its own.
+    local wizardBtn = ns.Button(side, "New (Wizard)", 204, function() ns.WizardWindow.Toggle(state.scope) end)
     wizardBtn:SetPoint("BOTTOMLEFT", newBtn, "TOPLEFT", 0, 6)
     wizardBtn:SetPoint("BOTTOMRIGHT", deleteBtn, "TOPRIGHT", 0, 6)
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Macro wizard", 1, 1, 1)
-        GameTooltip:AddLine("A new macro in this tab from a few answers: mouseover, focus, party members, spells "
-            .. "at the cursor, other spells on Shift, Ctrl or Alt, trinkets with a spell.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("New (Wizard)", 1, 1, 1)
+        GameTooltip:AddLine("A new macro from a form: what to cast and on whom (mouseover, focus, party members, "
+            .. "yourself, the cursor...), other spells on Shift, Ctrl or Alt, trinkets and more.", 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     wizardBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -982,7 +969,7 @@ local function Build()
     frame:SetScript("OnHide", function()
         ns.Popup:Hide()
         ns.IconPicker.Close()
-        ns.WizardPanel.Close()
+        ns.WizardWindow.Close()
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
     end)

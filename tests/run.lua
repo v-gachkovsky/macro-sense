@@ -722,95 +722,98 @@ do
     check("history: renaming a macro without versions changes nothing", bodies(store.New) == "a | b | c")
 end
 
--- Wizard: each recipe writes its macro from the answers; questions not asked now don't count.
+-- Wizard: the form as macro text.
 do
     local W = ns.Wizard
     local made = {}
-    local function text(key, answers)
-        local recipe = W.Find(key)
-        local c = W.Defaults(recipe)
-        for k, v in pairs(answers or {}) do c[k] = v end
-        return W.Text(recipe, c)
+    -- A fresh form with `set` filled in; set.keys = { shift = { unit, action } } holds keys down.
+    local function form(set)
+        local spec = W.Fresh()
+        for k, v in pairs(set) do
+            if k == "keys" then
+                for key, row in pairs(v) do spec.keys[key] = { on = true, unit = row.unit or "default", action = row.action } end
+            else
+                spec[k] = v
+            end
+        end
+        return spec
     end
+    local function text(set) return W.Text(form(set)) end
     local function expectText(label, got, want)
         made[label] = got
         check("wizard " .. label, got == want, "\n  got  " .. tostring(got) .. "\n  want " .. want)
     end
     local heal, bolt, stone = { name = "Flash Heal" }, { name = "Frostbolt" }, { name = "Healthstone", item = true }
-    local kick, sheep, blizzard = { name = "Counterspell" }, { name = "Polymorph" }, { name = "Blizzard" }
+    local kick, sheep = { name = "Counterspell" }, { name = "Polymorph" }
+    local usual = { "default", "none", "none" }
 
-    for _, recipe in ipairs(W.recipes) do
-        check("wizard " .. recipe.key .. ": no macro before it has a spell", W.Text(recipe, W.Defaults(recipe)) == nil)
-    end
-    expectText("mouseover: a friend, then your target, then you", text("mouseover", { action = heal }),
-        "#showtooltip\n/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal")
-    expectText("mouseover: not on yourself", text("mouseover", { action = heal, self = false }),
+    check("wizard: nothing to cast, no macro", W.Text(W.Fresh()) == nil)
+    expectText("mouseover, then as usual", text({ action = heal, only = "friends" }),
         "#showtooltip\n/cast [@mouseover,help,nodead][] Flash Heal")
-    expectText("mouseover: an enemy, then your target", text("mouseover", { action = bolt, on = "enemies" }),
+    expectText("a friend under the mouse, then your target, then you", text({ action = heal, only = "friends",
+        on = { "mouseover", "target", "player" } }),
+        "#showtooltip\n/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal")
+    expectText("an enemy", text({ action = bolt, only = "enemies" }),
         "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt")
-    expectText("mouseover: stop the cast, attack, the pet too", text("mouseover", { action = bolt, on = "enemies",
-        stopcasting = true, startattack = true, petattack = true }),
-        "#showtooltip\n/stopcasting\n/cast [@mouseover,harm,nodead][] Frostbolt\n/startattack\n/petattack")
-    expectText("mouseover: no attacking for a friend", text("mouseover", { action = heal, startattack = true,
-        petattack = true }), "#showtooltip\n/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal")
-    expectText("mouseover: an item", text("mouseover", { action = { name = "Wool Bandage", item = true } }),
-        "#showtooltip\n/use [@mouseover,help,nodead][help,nodead][@player] Wool Bandage")
-    expectText("focus: the focus, then your target", text("focus", { action = kick }),
-        "#showtooltip\n/cast [@focus,harm,nodead][] Counterspell")
-    expectText("focus: only the focus", text("focus", { action = sheep, fallback = false }),
-        "#showtooltip\n/cast [@focus,harm,nodead] Polymorph")
-    expectText("focus: Shift sets it", text("focus", { action = kick, setFocus = true, stopcasting = true }),
-        "#showtooltip\n/focus [mod:shift] target\n/stopmacro [mod:shift]\n/stopcasting\n"
-        .. "/cast [@focus,harm,nodead][] Counterspell")
-    expectText("focus: a friend", text("focus", { action = heal, on = "friends" }),
-        "#showtooltip\n/cast [@focus,help,nodead][] Flash Heal")
-    expectText("party: member 1 first", text("party", { action = heal }), "#showtooltip\n/cast [@party1] Flash Heal")
-    expectText("party: yourself", text("party", { action = heal, who = "player" }),
+    expectText("anyone, dead or alive: but someone", text({ action = bolt, alive = false }),
+        "#showtooltip\n/cast [@mouseover,exists][] Frostbolt")
+    expectText("as usual alone", text({ action = bolt, on = usual }), "#showtooltip\n/cast Frostbolt")
+    expectText("the focus, then as usual", text({ action = kick, only = "enemies", on = { "focus", "default", "none" },
+        stopcasting = true }), "#showtooltip\n/stopcasting\n/cast [@focus,harm,nodead][] Counterspell")
+    expectText("a party member, then you", text({ action = heal, only = "friends", on = { "party2", "player", "none" } }),
+        "#showtooltip\n/cast [@party2,help,nodead][@player] Flash Heal")
+    expectText("at the cursor", text({ action = { name = "Blizzard" }, on = { "cursor", "none", "none" } }),
+        "#showtooltip\n/cast [@cursor] Blizzard")
+    expectText("nothing after one that always holds", text({ action = heal, on = { "player", "mouseover", "target" } }),
         "#showtooltip\n/cast [@player] Flash Heal")
-    expectText("party: by key", text("party", { action = heal, who = "keys" }),
-        "#showtooltip\n/cast [mod:shift,@party2][mod:ctrl,@party3][mod:alt,@party4][@party1] Flash Heal")
-    expectText("cursor", text("cursor", { action = blizzard }), "#showtooltip\n/cast [@cursor] Blizzard")
-    expectText("cursor: Shift at your feet", text("cursor", { action = blizzard, feet = true }),
-        "#showtooltip\n/cast [mod:shift,@player][@cursor] Blizzard")
-    expectText("keys: one per key", text("keys", { action = bolt, shift = sheep, alt = kick }),
-        "#showtooltip\n/cast [mod:shift] Polymorph; [mod:alt] Counterspell; Frostbolt")
-    expectText("keys: nothing without a key", text("keys", { ctrl = sheep }),
-        "#showtooltip\n/cast [mod:ctrl] Polymorph")
-    expectText("keys: items say /use", text("keys", { action = stone,
-        shift = { name = "Major Healing Potion", item = true } }),
+    expectText("a gap in the order", text({ action = heal, only = "friends", on = { "mouseover", "none", "player" } }),
+        "#showtooltip\n/cast [@mouseover,help,nodead][@player] Flash Heal")
+    expectText("keys: other spells, on their own units", text({ action = bolt, only = "enemies", on = usual,
+        keys = { shift = { action = sheep, unit = "focus" }, alt = { action = kick } } }),
+        "#showtooltip\n/cast [mod:shift,@focus,harm,nodead] Polymorph; [mod:alt] Counterspell; Frostbolt")
+    expectText("keys: the same spell on other units", text({ action = heal, only = "friends",
+        on = { "party1", "none", "none" }, keys = { shift = { unit = "party2" }, ctrl = { unit = "party3" },
+        alt = { unit = "party4" } } }), "#showtooltip\n/cast [mod:shift,@party2,help,nodead]"
+        .. "[mod:ctrl,@party3,help,nodead][mod:alt,@party4,help,nodead][@party1,help,nodead] Flash Heal")
+    expectText("keys: Shift on yourself", text({ action = heal, only = "friends", keys = { shift = { unit = "player" } } }),
+        "#showtooltip\n/cast [mod:shift,@player][@mouseover,help,nodead][] Flash Heal")
+    expectText("keys: a key alone", text({ keys = { ctrl = { action = sheep } } }), "#showtooltip\n/cast [mod:ctrl] Polymorph")
+    expectText("keys: items only say /use", text({ action = stone, on = usual,
+        keys = { shift = { action = { name = "Major Healing Potion", item = true } } } }),
         "#showtooltip\n/use [mod:shift] Major Healing Potion; Healthstone")
-    expectText("keys: a spell among them says /cast", text("keys", { action = bolt, shift = stone }),
+    expectText("keys: a spell among them says /cast", text({ action = bolt, on = usual, keys = { shift = { action = stone } } }),
         "#showtooltip\n/cast [mod:shift] Healthstone; Frostbolt")
-    expectText("trinkets: both, then the spell", text("trinkets", { action = bolt, top = true, bottom = true }),
+    expectText("trinkets, then the spell", text({ action = bolt, on = usual, trinket1 = true, trinket2 = true }),
         "#showtooltip Frostbolt\n/use 13\n/use 14\n/cast Frostbolt")
-    expectText("trinkets: one, after stopping the cast", text("trinkets", { action = bolt, bottom = true,
-        stopcasting = true }), "#showtooltip Frostbolt\n/stopcasting\n/use 14\n/cast Frostbolt")
-    expectText("trinkets: without a spell", text("trinkets", { top = true, bottom = true }),
-        "#showtooltip\n/use 13\n/use 14")
+    expectText("a trinket alone", text({ trinket2 = true }), "#showtooltip\n/use 14")
+    expectText("stop the cast, attack, the pet too", text({ action = bolt, only = "enemies", stopcasting = true,
+        startattack = true, petattack = true }),
+        "#showtooltip\n/stopcasting\n/cast [@mouseover,harm,nodead][] Frostbolt\n/startattack\n/petattack")
+    expectText("an item", text({ action = { name = "Wool Bandage", item = true }, only = "friends",
+        on = { "mouseover", "player", "none" } }), "#showtooltip\n/use [@mouseover,help,nodead][@player] Wool Bandage")
     for label, body in pairs(made) do
         check("wizard " .. label .. ": no issues", body and issues(body) == "", body and issues(body))
     end
-    check("wizard name: what it casts", W.Name(W.Find("mouseover"), { action = heal }) == "Flash Heal")
-    check("wizard name: the first one with a key", W.Name(W.Find("keys"), { ctrl = sheep }) == "Polymorph")
-    check("wizard name: trinkets alone", W.Name(W.Find("trinkets"), { top = true }) == "Trinkets")
-    check("wizard name: nothing yet", W.Name(W.Find("focus"), {}) == nil)
+    check("wizard name: what it casts", W.Name(form({ action = heal })) == "Flash Heal")
+    check("wizard name: a key's spell", W.Name(form({ keys = { ctrl = { action = sheep } } })) == "Polymorph")
+    check("wizard name: trinkets alone", W.Name(form({ trinket1 = true })) == "Trinkets")
+    check("wizard name: nothing yet", W.Name(W.Fresh()) == nil)
 
     -- The game reads them as meant (the stand-in for its check decides).
-    local mouseover = text("mouseover", { action = heal })
-    expectPreview("wizard mouseover: a friend under the mouse", mouseover, { units = { mouseover = {} } },
+    local chain = text({ action = heal, only = "friends", on = { "mouseover", "target", "player" } })
+    expectPreview("wizard: a friend under the mouse", chain, { units = { mouseover = {} } },
         "icon: Flash Heal | Flash Heal @mouseover")
-    expectPreview("wizard mouseover: a dead one, a friend targeted", mouseover,
-        { units = { mouseover = { dead = true }, target = {} } }, "icon: Flash Heal | Flash Heal")
-    expectPreview("wizard mouseover: an enemy targeted", mouseover, { units = { target = harmful } },
-        "icon: Flash Heal | Flash Heal @player")
-    local byKey = text("party", { action = heal, who = "keys" })
-    expectPreview("wizard party: Ctrl", byKey, { mods = { ctrl = true } }, "icon: Flash Heal | Flash Heal @party3")
-    expectPreview("wizard party: no key", byKey, {}, "icon: Flash Heal | Flash Heal @party1")
-    local focus = text("focus", { action = kick, setFocus = true })
-    expectPreview("wizard focus: Shift sets the focus", focus, { mods = { shift = true } },
-        "icon: ? | runs target | stops here | not reached")
-    expectPreview("wizard focus: on the focus", focus, { units = { focus = harmful } },
-        "icon: Counterspell | no match | no match | Counterspell @focus")
+    expectPreview("wizard: a dead one, a friend targeted", chain, { units = { mouseover = { dead = true }, target = {} } },
+        "icon: Flash Heal | Flash Heal")
+    expectPreview("wizard: an enemy targeted", chain, { units = { target = harmful } }, "icon: Flash Heal | Flash Heal @player")
+    local byKey = text({ action = heal, only = "friends", on = { "party1", "none", "none" },
+        keys = { shift = { unit = "party2" }, ctrl = { unit = "party3" }, alt = { unit = "party4" } } })
+    local party = { party1 = {}, party2 = {}, party3 = {}, party4 = {} }
+    expectPreview("wizard: Ctrl, member 3", byKey, { mods = { ctrl = true }, units = party },
+        "icon: Flash Heal | Flash Heal @party3")
+    expectPreview("wizard: no key, member 1", byKey, { units = party }, "icon: Flash Heal | Flash Heal @party1")
+    expectPreview("wizard: Shift with nobody there", byKey, { mods = { shift = true }, units = { party1 = {} } },
+        "icon: Flash Heal | Flash Heal @party1")
 end
 
 -- Every scheme colors every role and UI part.
