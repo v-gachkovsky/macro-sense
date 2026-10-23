@@ -7,6 +7,7 @@ local MAX_CHARACTER = MAX_CHARACTER_MACROS or 18
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
 local ROW_H = 24
+local MIN_W, MIN_H = 780, 460 -- also the first size
 
 local Window = {}
 ns.Window = Window
@@ -329,9 +330,9 @@ local function Build()
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
     frame:SetResizable(true)
-    if frame.SetResizeBounds then frame:SetResizeBounds(660, 320) else frame:SetMinResize(660, 320) end
+    if frame.SetResizeBounds then frame:SetResizeBounds(MIN_W, MIN_H) else frame:SetMinResize(MIN_W, MIN_H) end
     local pos = ns.db.window
-    frame:SetSize(pos and pos.w or 780, pos and pos.h or 460)
+    frame:SetSize(math.max(pos and pos.w or 0, MIN_W), math.max(pos and pos.h or 0, MIN_H))
     frame:SetPoint(pos and pos.point or "CENTER", UIParent, pos and pos.relPoint or "CENTER", pos and pos.x or 0, pos and pos.y or 40)
     frame:EnableMouse(true)
     ns.Backdrop(frame, "bg", "border")
@@ -460,7 +461,7 @@ local function Build()
         GameTooltip:Show()
     end)
     saveBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    saveBtn:SetPoint("RIGHT", -8, 0)
+    saveBtn:SetPoint("RIGHT", -24, 0) -- room for the resize grip in the corner
     revertBtn = ns.Button(bar, "Revert", 90, Window.Revert)
     revertBtn:SetPoint("RIGHT", saveBtn, "LEFT", -6, 0)
     counter = ns.Text(bar, 11, "dim")
@@ -495,13 +496,28 @@ local function Build()
         if key == "S" and (IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())) then Window.Save() end
     end)
 
-    -- Resize grip.
-    local grip = CreateFrame("Button", nil, frame)
+    -- Resize grip: dots in the corner, above the status bar (it used to hide the grip).
+    local grip = CreateFrame("Button", "MacroSenseResizeGrip", frame)
     grip:SetSize(16, 16)
     grip:SetPoint("BOTTOMRIGHT", -2, 2)
-    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    grip:SetFrameLevel(frame:GetFrameLevel() + 20)
+    local dots = {}
+    for row = 0, 2 do
+        for col = 0, 2 - row do
+            local d = grip:CreateTexture(nil, "OVERLAY")
+            d:SetSize(2, 2)
+            d:SetPoint("BOTTOMRIGHT", -2 - col * 4, 2 + row * 4)
+            dots[#dots + 1] = d
+        end
+    end
+    local function paintGrip(hover)
+        local s = ns.scheme
+        if not s then return end
+        for _, d in ipairs(dots) do d:SetColorTexture(ns.RGB(hover and s.accent or s.dim)) end
+    end
+    ns.OnStyle(function() paintGrip(false) end)
+    grip:SetScript("OnEnter", function() paintGrip(true) end)
+    grip:SetScript("OnLeave", function() paintGrip(false) end)
     grip:SetScript("OnMouseDown", function() frame:StartSizing("BOTTOMRIGHT") end)
     grip:SetScript("OnMouseUp", function() frame:StopMovingOrSizing(); SavePosition() end)
 

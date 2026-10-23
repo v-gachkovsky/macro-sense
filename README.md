@@ -4,6 +4,7 @@ A macro editor for World of Warcraft: its own window with a monospace font, synt
 color schemes and context-aware autocomplete. Macros are the game's own (`CreateMacro` / `EditMacro`),
 so they stay in sync with the Blizzard macro UI.
 
+Drag the title bar to move the window and the dotted corner to resize it (780 x 460 at least).
 Open it with `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button next to the Blizzard macro window.
 
 Drag a macro from the list, or its icon from the header, onto an action bar.
