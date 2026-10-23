@@ -8,6 +8,7 @@ local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
 local ROW_H = 24
 local MIN_W, MIN_H = 780, 460 -- also the first size
+local PREVIEW_EVERY = 0.1 -- seconds: modifiers, target, mouseover and pet change any time
 
 local Window = {}
 ns.Window = Window
@@ -98,6 +99,24 @@ local function UpdateStatus()
     else
         status:SetText("")
     end
+end
+
+------------------------------------------------------------------------
+-- Live preview: next to each line, what it would do right now
+------------------------------------------------------------------------
+local noteColors -- from the scheme, see ApplyLook
+
+local function UpdatePreview()
+    if not frame or not ns.db.preview or not noteColors then return end
+    -- Lines with syntax errors get no note: they are underlined, and the game's reading of them is a guess.
+    local skip = {}
+    for _, e in ipairs(code.errors or {}) do
+        if e.severity == "error" then skip[e.line] = true end
+    end
+    local results = ns.Preview.Evaluate(code:GetRaw(), ns.previewEnv, skip)
+    local notes = {}
+    for i = 1, results.n do notes[i] = ns.Preview.Note(results[i], noteColors) end
+    code:SetLineNotes(notes)
 end
 
 ------------------------------------------------------------------------
@@ -311,6 +330,10 @@ function Window.ApplyLook()
     ns.ApplyScheme(scheme)
     code:SetScheme(scheme)
     ns.Popup:Style(scheme, font.path, ns.db.fontSize)
+    local tokens = ns.TokenColors(scheme)
+    noteColors = { action = tokens.action, unit = tokens.unit, text = scheme.text, dim = scheme.dim,
+        warning = scheme.warning }
+    UpdatePreview()
     if frame:IsShown() then UpdateStatus() end
 end
 
@@ -456,10 +479,29 @@ local function Build()
     nameBox = ns.Input(main, 220, 16)
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)
     nameBox:SetScript("OnTextChanged", function() UpdateStatus() end)
+
+    -- Live preview on / off, at the right end of the header.
+    local previewCheck = ns.Check(main, "Live preview", function() return ns.db.preview end, function(on)
+        ns.db.preview = on
+        code:ShowNotes(on)
+        UpdatePreview()
+    end)
+    previewCheck:SetPoint("RIGHT", main, "TOPRIGHT", -12, -29)
+    previewCheck:HookScript("OnEnter", function(self)
+        local keys = IsMacClient and IsMacClient() and "Shift, Ctrl, Alt or Cmd" or "Shift, Ctrl or Alt"
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip:AddLine("Live preview", 1, 1, 1)
+        GameTooltip:AddLine("Next to each line: what it would do if you pressed the macro now.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("Hold " .. keys .. ", change your target or point at a unit to see the other branches.",
+            0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     local nameHint = ns.Text(main, 11, "dim")
     nameHint:SetPoint("LEFT", nameBox, "RIGHT", 10, 0)
     nameHint:SetText("click or drag the icon")
-    nameHint:SetPoint("RIGHT", main, "RIGHT", -12, 0)
+    nameHint:SetPoint("RIGHT", previewCheck, "LEFT", -12, 0)
     nameHint:SetWordWrap(false)
 
     -- Status bar: position, length, Save / Revert.
@@ -538,7 +580,12 @@ local function Build()
     code.scroll:SetPoint("TOPLEFT", 4, -4)
     code.scroll:SetPoint("BOTTOMRIGHT", -15, 4)
     ns.AttachAutocomplete(code)
-    code.onErrors = function() UpdateStatus() end
+    code:ShowNotes(ns.db.preview)
+    -- Issues are found a frame after each change: the status bar and the preview follow them.
+    code.onErrors = function()
+        UpdateStatus()
+        UpdatePreview()
+    end
     -- Our own status bar follows text and cursor changes (Autocomplete owns onChange / onCaret).
     code.edit:HookScript("OnTextChanged", UpdateStatus)
     code.edit:HookScript("OnCursorChanged", UpdateStatus)
@@ -559,6 +606,14 @@ local function Build()
     frame:SetScript("OnHide", function()
         ns.Popup:Hide()
         ns.IconPicker.Close()
+    end)
+    -- The preview also follows the game: modifiers held, target, mouseover, pet, combat.
+    local sincePreview = 0
+    frame:SetScript("OnUpdate", function(_, elapsed)
+        sincePreview = sincePreview + elapsed
+        if sincePreview < PREVIEW_EVERY then return end
+        sincePreview = 0
+        UpdatePreview()
     end)
 
     Window.ApplyLook()

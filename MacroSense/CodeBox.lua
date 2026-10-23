@@ -4,7 +4,9 @@ local _, ns = ...
 local H = ns.Highlight
 local UNDO_LIMIT = 200
 local INSET_T = 4    -- text inset at the top; the left one follows the line number gutter (self.insetL)
+local INSET_R = 6    -- text inset on the right, plus the notes column when it is shown (self.insetR)
 local GUTTER_PAD = 6 -- space around the line numbers
+local NOTE_PAD = 6   -- space around the notes
 local UNDO_GROUP = 0.8 -- keystrokes closer than this (seconds) undo together
 local TYPING_PAUSE = 0.8 -- seconds after the last key: then the word being typed is checked too
 
@@ -28,9 +30,9 @@ function ns.CreateCodeBox(parent, name)
     self.edit = edit
     edit:SetMultiLine(true)
     edit:SetAutoFocus(false)
-    self.insetL = GUTTER_PAD
-    edit:SetTextInsets(self.insetL, 6, INSET_T, 4)
-    self.underlines, self.numbers = {}, {}
+    self.insetL, self.insetR = GUTTER_PAD, INSET_R
+    edit:SetTextInsets(self.insetL, self.insetR, INSET_T, 4)
+    self.underlines, self.numbers, self.notes, self.lineTops = {}, {}, {}, {}
     edit:HookScript("OnSizeChanged", function() self:ScheduleUnderlines() end)
     edit:SetFont(ns.fonts[1].path, 13, "")
     scroll:SetScrollChild(edit)
@@ -43,6 +45,16 @@ function ns.CreateCodeBox(parent, name)
     self.gutterLine:SetWidth(1)
     self.gutterLine:SetPoint("TOPLEFT", self.gutterBg, "TOPRIGHT")
     self.gutterLine:SetPoint("BOTTOMLEFT", self.gutterBg, "BOTTOMRIGHT")
+    -- Notes column on the right (the live preview), the same way: the strip stays, the notes scroll.
+    self.notesBg = scroll:CreateTexture(nil, "BACKGROUND")
+    self.notesBg:SetPoint("TOPRIGHT", 0, 3)
+    self.notesBg:SetPoint("BOTTOMRIGHT", 0, -3)
+    self.notesBg:Hide()
+    self.notesLine = scroll:CreateTexture(nil, "BORDER")
+    self.notesLine:SetWidth(1)
+    self.notesLine:SetPoint("TOPRIGHT", self.notesBg, "TOPLEFT")
+    self.notesLine:SetPoint("BOTTOMRIGHT", self.notesBg, "BOTTOMLEFT")
+    self.notesLine:Hide()
     scroll:SetScript("OnSizeChanged", function(_, w) edit:SetWidth(w) end)
 
     -- Clicks below the last line still focus the text.
@@ -169,7 +181,7 @@ function CodeBox:ScheduleUnderlines()
     self.underlinePending = true
     C_Timer.After(0, function()
         self.underlinePending = false
-        -- A wider gutter moves and re-wraps the text: measure again on the next frame.
+        -- A wider gutter or notes column moves and re-wraps the text: measure again on the next frame.
         if self:DrawLineNumbers() then return self:ScheduleUnderlines() end
         self:DrawUnderlines()
     end)
@@ -191,7 +203,7 @@ end
 -- Rows a line takes once wrapped to the text width.
 function CodeBox:Rows(text)
     local fs = self:Measurer()
-    fs:SetWidth(self.edit:GetWidth() - self.insetL - 6)
+    fs:SetWidth(self.edit:GetWidth() - self.insetL - self.insetR)
     fs:SetText(text ~= "" and text or " ")
     return math.max(1, fs.GetNumLines and fs:GetNumLines() or 1)
 end
@@ -221,19 +233,29 @@ end
 ------------------------------------------------------------------------
 -- Line numbers: one per line of the macro, on the first row of a wrapped line.
 ------------------------------------------------------------------------
--- Returns true when the gutter changed width (the text then moves: measure again).
+-- Width of the notes column: 30% of the editor, 140 to 240 px.
+local function NotesWidth(editWidth)
+    return math.floor(math.max(140, math.min(240, editWidth * 0.3)))
+end
+
+-- Returns true when the gutter or the notes column changed width (the text then moves: measure again).
 function CodeBox:DrawLineNumbers()
     local lines = {}
     for l in (self:GetRaw() .. "\n"):gmatch("([^\n]*)\n") do lines[#lines + 1] = l end
     local digits = math.max(2, #tostring(#lines))
     local gutter = math.ceil(self:TextWidth(string.rep("0", digits))) + 2 * GUTTER_PAD
-    if gutter ~= self.gutterWidth then
+    local notes = self.notesShown and NotesWidth(self.edit:GetWidth()) or 0
+    if gutter ~= self.gutterWidth or notes ~= self.notesWidth then
         self.gutterWidth, self.insetL = gutter, gutter + GUTTER_PAD
-        self.edit:SetTextInsets(self.insetL, 6, INSET_T, 4)
+        self.notesWidth, self.insetR = notes, INSET_R + notes
+        self.edit:SetTextInsets(self.insetL, self.insetR, INSET_T, 4)
         self.gutterBg:SetWidth(gutter + 3)
+        self.notesBg:SetWidth(math.max(notes, 1))
+        self.notesBg:SetShown(notes > 0)
+        self.notesLine:SetShown(notes > 0)
         return true
     end
-    local h, above = self:LineHeight(), 0
+    local h, above, tops = self:LineHeight(), 0, {}
     for i, line in ipairs(lines) do
         local fs = self.numbers[i]
         if not fs then
@@ -245,15 +267,69 @@ function CodeBox:DrawLineNumbers()
         fs:SetFont(self.edit:GetFont())
         fs:SetWidth(gutter - GUTTER_PAD)
         fs:ClearAllPoints()
-        fs:SetPoint("TOPLEFT", self.edit, "TOPLEFT", 0, -INSET_T - above * h)
+        tops[i] = -INSET_T - above * h
+        fs:SetPoint("TOPLEFT", self.edit, "TOPLEFT", 0, tops[i])
         fs:SetText(i)
         fs:Show()
         above = above + self:Rows(line)
     end
     for i = #lines + 1, #self.numbers do self.numbers[i]:Hide() end
-    self.lineCount = #lines
+    self.lineCount, self.lineTops, self.rowHeight = #lines, tops, h
     self:HighlightLineNumber()
+    self:DrawNotes()
     return false
+end
+
+------------------------------------------------------------------------
+-- Notes: a short text per line in a column on the right (the live preview), on the line's first row.
+------------------------------------------------------------------------
+-- Show or hide the column; hidden, the text gets its room back.
+function CodeBox:ShowNotes(on)
+    self.notesShown = on and true or false
+    self:DrawNotes()
+    self:ScheduleUnderlines()
+end
+
+-- notes: one string per line, with color codes; "" for none.
+function CodeBox:SetLineNotes(notes)
+    local old = self.lineNotes
+    if old and #old == #notes then
+        local same = true
+        for i, note in ipairs(notes) do
+            if note ~= old[i] then same = false; break end
+        end
+        if same then return end
+    end
+    self.lineNotes = notes
+    self:DrawNotes()
+end
+
+function CodeBox:DrawNotes()
+    local notes = self.lineNotes or {}
+    local width = self.notesShown and self.notesWidth or 0
+    local _, size = self.edit:GetFont()
+    for i = 1, math.max(#notes, #self.notes) do
+        local fs, text, top = self.notes[i], notes[i], self.lineTops[i]
+        if not fs then -- one per line, no holes: all of them get hidden when the macro gets shorter
+            fs = self.edit:CreateFontString(nil, "OVERLAY")
+            fs:SetJustifyH("LEFT")
+            fs:SetJustifyV("MIDDLE")
+            fs:SetWordWrap(false)
+            fs.isNote = true
+            self.notes[i] = fs
+        end
+        if width > 0 and top and text and text ~= "" then
+            fs:SetFont(ns.UI_FONT, math.max(9, (size or 13) - 2), "")
+            fs:SetWidth(width - 2 * NOTE_PAD)
+            fs:SetHeight(self.rowHeight or 14)
+            fs:ClearAllPoints()
+            fs:SetPoint("TOPRIGHT", self.edit, "TOPRIGHT", -NOTE_PAD, top)
+            fs:SetText(text)
+            fs:Show()
+        else
+            fs:Hide()
+        end
+    end
 end
 
 -- The cursor's line number is bright, the others dim.
@@ -449,6 +525,8 @@ function CodeBox:SetScheme(scheme)
     self.lineColors = { text = scheme.text, dim = scheme.dim }
     self.gutterBg:SetColorTexture(ns.RGB(scheme.panel))
     self.gutterLine:SetColorTexture(ns.RGB(scheme.border))
+    self.notesBg:SetColorTexture(ns.RGB(scheme.panel))
+    self.notesLine:SetColorTexture(ns.RGB(scheme.border))
     self:Render(self:GetRaw(), self.edit:HasFocus() and self:GetRawCursor() or nil)
 end
 

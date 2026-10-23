@@ -1,6 +1,6 @@
 ![MacroSense](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/banner-v2.png)
 
-**A macro editor that knows macros: autocomplete, highlighting and error checks.**
+**A macro editor that knows macros: autocomplete, highlighting, error checks and a live preview.**
 
 > **Early development.** MacroSense is young and still growing. If something looks wrong, behaves oddly or
 > you miss a feature, please tell me: no report is too small. I read every one and try to fix things as fast
@@ -55,6 +55,14 @@ Saving is still allowed: the editor warns, it doesn't block you.
 
 **Mac players:** if a macro with `[mod:cmd]` sits on a key macOS itself uses with Cmd (Cmd+Q quits the game,
 Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you.
+
+## Live preview
+
+Next to every line the editor shows what it would do **right now**: which spell or item it casts and on
+whom (`Fear @mouseover`), `no match` when its conditions don't hold, `stops here` for a `/stopmacro` that
+fires, and the icon `#showtooltip` shows. Hold Shift, Ctrl or Alt (Cmd on a Mac), pick another target,
+summon another pet or point at a unit, and the notes change with it: you see every branch of a macro
+without casting anything. The game itself checks the conditions, exactly as when you press the key.
 
 ## Make it yours
 

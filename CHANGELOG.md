@@ -12,6 +12,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   nothing is close to stay unmarked (spells of another spec or pet, items not in the bags). Known names
   are your spells, your pets' spells (remembered from every pet you summon), items in your bags (and
   every item seen before) and, on Retail, your mounts.
+- **Live preview**: next to each line, what it would do if you pressed the macro now: the spell or item
+  and its target (`Fear @mouseover`), `no match` when no condition holds, `runs` for other commands,
+  `stops here` / `not reached` around a `/stopmacro`, and the icon `#showtooltip` shows. It follows held
+  modifiers, your target, mouseover, pet and combat; the game itself checks the conditions. **Live
+  preview** in the header turns it off.
 
 ## [0.1.0-beta2] - 2026-10-23
 

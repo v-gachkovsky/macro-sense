@@ -24,7 +24,7 @@ local function aliases(key)
     return out
 end
 
--- Localized aliases of the action commands go to the parser (/zaubern = /cast in German clients).
+-- Localized aliases of the action commands and /stopmacro go to the parser (/zaubern = /cast in German clients).
 local ACTION_KEYS = {
     CAST = "cast", USE = "use", CASTSEQUENCE = "castsequence", CASTRANDOM = "castrandom",
     USERANDOM = "userandom", CANCELAURA = "cancelaura", EQUIP = "equip", EQUIP_TO_SLOT = "equipslot",
@@ -33,7 +33,14 @@ function ns.RegisterActionCommands()
     for key, base in pairs(ACTION_KEYS) do
         for _, name in ipairs(aliases(key)) do ns.Parser.actionCommands[name] = base end
     end
+    for _, name in ipairs(aliases("STOPMACRO")) do ns.Parser.stopCommands[name] = true end
 end
+
+-- The game's own condition check for the live preview: SecureCmdOptionParse is what macros run with.
+ns.previewEnv = {
+    parse = function(options) return SecureCmdOptionParse(options) end,
+    sequenceStep = QueryCastSequence and function(sequence) return QueryCastSequence(sequence) end,
+}
 
 function ns.sources.commands()
     if commandCache then return commandCache end

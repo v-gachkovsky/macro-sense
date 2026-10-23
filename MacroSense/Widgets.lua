@@ -3,6 +3,7 @@ local _, ns = ...
 
 local WHITE = "Interface\\Buttons\\WHITE8x8"
 local UI_FONT = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF" -- localized: covers the client's alphabet
+ns.UI_FONT = UI_FONT
 
 local stylers = {}
 
@@ -57,6 +58,41 @@ function ns.Button(parent, label, width, onClick, accent)
     b:SetScript("OnDisable", function() paint(false) end)
     b:SetScript("OnClick", onClick)
     ns.OnStyle(function() paint(false) end)
+    return b
+end
+
+-- Checkbox with a label: a small square, filled with the accent color when on.
+-- getValue() -> boolean; onChange(value).
+function ns.Check(parent, label, getValue, onChange)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetHeight(22)
+    local box = CreateFrame("Frame", nil, b, "BackdropTemplate")
+    box:SetSize(14, 14)
+    box:SetPoint("LEFT")
+    box:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+    local fill = box:CreateTexture(nil, "ARTWORK")
+    fill:SetPoint("TOPLEFT", 3, -3)
+    fill:SetPoint("BOTTOMRIGHT", -3, 3)
+    b.label = ns.Text(b, 12)
+    b.label:SetPoint("LEFT", box, "RIGHT", 6, 0)
+    b.label:SetText(label)
+    b:SetWidth(14 + 6 + math.ceil(b.label:GetStringWidth()))
+    local function paint(hover)
+        local s = ns.scheme
+        if not s then return end
+        box:SetBackdropColor(ns.RGB(s.bg))
+        box:SetBackdropBorderColor(ns.RGB(hover and s.accent or s.border))
+        fill:SetColorTexture(ns.RGB(s.accent))
+        fill:SetShown(getValue() and true or false)
+    end
+    b:SetScript("OnEnter", function() paint(true) end)
+    b:SetScript("OnLeave", function() paint(false) end)
+    b:SetScript("OnClick", function()
+        onChange(not getValue())
+        paint(true)
+    end)
+    ns.OnStyle(function() paint(false) end)
+    b.fill = fill
     return b
 end
 
