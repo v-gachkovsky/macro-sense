@@ -18,6 +18,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   modifiers, your target, mouseover, pet and combat; the game itself checks the conditions. **Live
   preview** in the header turns it off.
 
+### Fixed
+- Secure commands the game keeps out of addons' reach (`/petmoveto`, `/petaggressive`, `/targetparty`,
+  `/worldmarker`, ...) were marked as unknown commands and missing from the suggestions after `/`. The
+  game's own `IsSecureCmd` now confirms them, so only those your client has are offered.
+
 ## [0.1.0-beta2] - 2026-10-23
 
 ### Added

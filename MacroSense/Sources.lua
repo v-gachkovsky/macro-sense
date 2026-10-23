@@ -42,6 +42,41 @@ ns.previewEnv = {
     sequenceStep = QueryCastSequence and function(sequence) return QueryCastSequence(sequence) end,
 }
 
+-- Secure commands (/cast, /petmoveto, ...): the game keeps their list from addons, but each alias is a
+-- global SLASH_<KEY><n>, and IsSecureCmd("/alias") tells whether this client has it. The keys come from
+-- Blizzard's chat code of every client; Retail also has them in SLASH_COMMAND.
+local SECURE_KEYS = {
+    "ASSIST", "CANCELAURA", "CANCELFORM", "CANCELQUEUEDSPELL", "CAST", "CASTRANDOM", "CASTSEQUENCE",
+    "CHANGEACTIONBAR", "CLEAR_WORLD_MARKER", "CLEARFOCUS", "CLEARTARGET", "CLICK", "DUEL", "DUEL_CANCEL",
+    "DUEL_TO_THE_DEATH", "EQUIP", "EQUIP_SET", "EQUIP_TO_SLOT", "FOCUS", "GUILD_DEMOTE", "GUILD_DISBAND",
+    "GUILD_LEADER", "GUILD_LEAVE", "GUILD_PROMOTE", "GUILD_UNINVITE", "LOGOUT", "MAINASSISTOFF", "MAINASSISTON",
+    "MAINTANKOFF", "MAINTANKON", "PET_AGGRESSIVE", "PET_ASSIST", "PET_ATTACK", "PET_AUTOCASTOFF",
+    "PET_AUTOCASTON", "PET_AUTOCASTTOGGLE", "PET_DEFENSIVE", "PET_DEFENSIVEASSIST", "PET_DISMISS", "PET_FOLLOW",
+    "PET_MOVE_TO", "PET_PASSIVE", "PET_STAY", "QUIT", "STARTATTACK", "STOPATTACK", "STOPCASTING", "STOPMACRO",
+    "STOPSPELLTARGET", "SWAPACTIONBAR", "TARGET", "TARGET_EXACT", "TARGET_LAST_ENEMY", "TARGET_LAST_FRIEND",
+    "TARGET_LAST_TARGET", "TARGET_NEAREST_ENEMY", "TARGET_NEAREST_ENEMY_PLAYER", "TARGET_NEAREST_FRIEND",
+    "TARGET_NEAREST_FRIEND_PLAYER", "TARGET_NEAREST_PARTY", "TARGET_NEAREST_RAID", "TEAM_CAPTAIN",
+    "TEAM_DISBAND", "TEAM_INVITE", "TEAM_QUIT", "TEAM_UNINVITE", "USE", "USERANDOM", "WORLD_MARKER",
+}
+
+local function isSecure(name)
+    return IsSecureCmd ~= nil and IsSecureCmd("/" .. name) and true or false
+end
+
+local function secureNames()
+    local keys, out = {}, {}
+    for _, key in ipairs(SECURE_KEYS) do keys[key] = true end
+    for _, list in ipairs({ type(SLASH_COMMAND) == "table" and SLASH_COMMAND or {}, SecureCmdList or {} }) do
+        for key in pairs(list) do keys[key] = true end
+    end
+    for key in pairs(keys) do
+        for _, name in ipairs(aliases(key)) do
+            if not IsSecureCmd or isSecure(name) then out[#out + 1] = name end
+        end
+    end
+    return out
+end
+
 function ns.sources.commands()
     if commandCache then return commandCache end
     local seen, out = {}, {}
@@ -53,9 +88,9 @@ function ns.sources.commands()
     end
     -- Common macro commands first, then everything the game and addons registered.
     for _, c in ipairs(ns.data.commands) do add(c.name) end
-    local extra = {}
+    local extra = secureNames()
     -- Chat types (/say) and emotes (/dance) are not in SlashCmdList.
-    for _, cmdList in ipairs({ SecureCmdList or {}, SlashCmdList, ChatTypeInfo or {} }) do
+    for _, cmdList in ipairs({ SlashCmdList, ChatTypeInfo or {} }) do
         for key in pairs(cmdList) do
             for _, name in ipairs(aliases(key)) do extra[#extra + 1] = name end
         end
@@ -82,7 +117,7 @@ function ns.Highlight.isCommand(name)
         commandSet, commandSetFor = {}, list
         for _, c in ipairs(list) do commandSet[c.name] = true end
     end
-    return commandSet[name] or false
+    return commandSet[name] or isSecure(name)
 end
 
 ------------------------------------------------------------------------

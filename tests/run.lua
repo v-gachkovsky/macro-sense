@@ -463,7 +463,8 @@ expectPreview("sequence: the list", "#showtooltip\n/castsequence reset=10 Corrup
     "icon: Corruption | Corruption, Immolate")
 expectPreview("sequence: the next step from the game", "#showtooltip\n/castsequence reset=10 Corruption, !Immolate", nil,
     "icon: Immolate | Immolate (2/2)",
-    { parse = fakeParse({}), sequenceStep = function(s) return s == "reset=10 Corruption, !Immolate" and 2, nil, "Immolate" end })
+    -- QueryCastSequence: index, item, spell, the spell in lower case.
+    { parse = fakeParse({}), sequenceStep = function(s) return s == "reset=10 Corruption, !Immolate" and 2, nil, "immolate" end })
 expectPreview("random", "/castrandom Fear, Howl of Terror", {}, "Fear, Howl of Terror")
 expectPreview("equip", "/equip Fire Ring\n/equipslot 13 Healthstone", {}, "equip Fire Ring | equip Healthstone")
 expectPreview("cancelaura", "/cancelaura [combat] Demon Armor; Fel Armor", {}, "cancel Fel Armor")
