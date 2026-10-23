@@ -81,12 +81,14 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.InvalidateSources("commands")
     elseif event == "PLAYER_LOGIN" then
         ns.RegisterActionCommands()
+        ns.History.Scan()
         Welcome()
     elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player") then
         ns.InvalidateSources("spells")
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then
+        ns.History.Scan()
         ns.Shortcuts.Invalidate()
         ns.Window.OnMacrosChanged()
     elseif event == "UPDATE_BINDINGS" or event == "ACTIONBAR_SLOT_CHANGED" then

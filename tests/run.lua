@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -568,6 +568,39 @@ do
         end
         check("shortened does the same: " .. name, same and #s <= #body, s)
     end
+end
+
+-- History: versions of a macro's text, oldest first in the store, newest first when offered.
+do
+    local H = ns.History
+    local store = {}
+    H.Add(store, "Fear", "/cast Fear", 100)
+    H.Add(store, "Fear", "/cast Fear", 200)
+    check("history: the same text once in a row", #store.Fear == 1)
+    H.Add(store, "Fear", "  \n", 300)
+    check("history: an empty text is not a version", #store.Fear == 1)
+    H.Add(store, "Fear", "/cast [@focus] Fear", 400)
+    H.Add(store, "Fear", "/cast Fear", 500)
+    local function bodies(list)
+        local out = {}
+        for i, v in ipairs(list) do out[i] = v.body end
+        return table.concat(out, " | ")
+    end
+    check("history: newest first, without the saved text", bodies(H.Versions(store, "Fear", "/cast [@focus] Fear"))
+        == "/cast Fear", bodies(H.Versions(store, "Fear", "/cast [@focus] Fear")))
+    check("history: each text once", bodies(H.Versions(store, "Fear", "x")) == "/cast Fear | /cast [@focus] Fear",
+        bodies(H.Versions(store, "Fear", "x")))
+    check("history: none for an unknown macro", #H.Versions(store, "Nope", "") == 0)
+    for i = 1, 12 do H.Add(store, "Many", "v" .. i, i) end
+    check("history: only the last versions are kept", #store.Many == H.LIMIT and store.Many[1].body == "v3",
+        #store.Many)
+    -- Renamed: the versions move, in time order with any the new name had.
+    store.Old, store.New = { { body = "a", time = 1 }, { body = "c", time = 3 } }, { { body = "b", time = 2 } }
+    H.Rename(store, "Old", "New")
+    check("history: a rename moves the versions", store.Old == nil and bodies(store.New) == "a | b | c",
+        store.New and bodies(store.New))
+    H.Rename(store, "Gone", "New")
+    check("history: renaming a macro without versions changes nothing", bodies(store.New) == "a | b | c")
 end
 
 -- Every scheme colors every role and UI part.

@@ -12,6 +12,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
   ...), `[x] Fear; Fear` becomes `[x][]Fear`, `[pet:Succubus][pet:Incubus]` becomes
   `[pet:Succubus/Incubus]`, and spaces the game doesn't need go. Chat, `/run`, other addons' commands and
   lines with errors stay as they are; Ctrl+Z brings the old text back.
+- **History**: every change saved to a macro, in the editor, the game's macro window or by another addon,
+  keeps the text it replaced (the last 10 per macro). **History** in the header lists them with when they
+  were saved; hover one to read it, click it to put it back in the editor, then Save. The versions follow a
+  macro renamed in the editor.
+
+### Changed
+- **Live preview** moved to the title bar, next to the font and the scheme, to make room in the header.
 
 ## [0.1.0-beta3] - 2026-10-23
 
