@@ -28,19 +28,14 @@ local function steps(sequence)
     return out
 end
 
--- A name from the game: plain, or the "[Name]" of a link.
-local function plainName(v)
-    if type(v) ~= "string" or v == "" then return nil end
-    return v:match("%[(.-)%]") or v
-end
-
--- /castsequence: the step that comes next, when the game tells (env.sequenceStep), else the whole list.
+-- /castsequence: the step that comes next when the game tells (env.sequenceStep), else the whole list.
+-- The game names steps in lower case, so the name comes from the macro.
 local function sequence(action, unit, env)
     local list = steps(action)
     if env.sequenceStep then
-        local ok, index, item, spell = pcall(env.sequenceStep, action)
-        local name = ok and (plainName(spell) or plainName(item))
-        if name and type(index) == "number" and index >= 1 and index <= #list then
+        local ok, index = pcall(env.sequenceStep, action)
+        local name = ok and type(index) == "number" and list[index]
+        if name then
             return { kind = "cast", name = name, unit = unit, step = index, steps = #list, icon = name }
         end
     end
@@ -83,7 +78,7 @@ end
 --   { kind = "icon", name? }        #showtooltip / #show: the icon shown now (nil: the question mark)
 --   { kind = "lua" }, { kind = "chat" }
 -- env.parse(options) -> action, unit: the game's SecureCmdOptionParse.
--- env.sequenceStep(sequence) -> index, item, spell: the game's QueryCastSequence (optional).
+-- env.sequenceStep(sequence) -> index of the next step: the game's QueryCastSequence (optional).
 function Preview.Evaluate(raw, env, skip)
     local results, metas, stopped, n = {}, {}, false, 0
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do

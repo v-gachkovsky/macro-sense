@@ -145,8 +145,21 @@ function StaticPopup_Show(which, _, _, data) StaticPopupDialogs[which].OnAccept(
 YES, NO, CANCEL, DELETE = "Yes", "No", "Cancel", "Delete"
 MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = 120, 18
 
-SlashCmdList, SecureCmdList, ChatTypeInfo = {}, { CAST = true, USE = true, TARGET = true }, { SAY = true }
+-- Like the game: the list of secure commands is hidden from addons, IsSecureCmd("/cast") tells.
+SlashCmdList, ChatTypeInfo = {}, { SAY = true }
 SLASH_CAST1, SLASH_USE1, SLASH_TARGET1, SLASH_SAY1 = "/cast", "/use", "/target", "/say"
+SLASH_PET_MOVE_TO1, SLASH_TEAM_QUIT1 = "/petmoveto", "/teamquit" -- this client has no /teamquit
+local secureKeys = { CAST = true, USE = true, TARGET = true, PET_MOVE_TO = true }
+function IsSecureCmd(command)
+    command = command:upper()
+    for key in pairs(secureKeys) do
+        local i = 1
+        while _G["SLASH_" .. key .. i] do
+            if _G["SLASH_" .. key .. i]:upper() == command then return true end
+            i = i + 1
+        end
+    end
+end
 EMOTE1_TOKEN, EMOTE1_CMD1 = "DANCE", "/dance"
 
 Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1 } }
@@ -1116,6 +1129,26 @@ end
 check("emote is a command", kindOf("/dance", "/dance") == "command")
 check("chat is a command", kindOf("/say hi", "/say") == "command")
 check("unknown command is an error", kindOf("/bogus", "/bogus") == "error")
+-- Secure commands: the game hides their list, IsSecureCmd knows them ("/petmoveto" was marked unknown).
+check("secure command is a command", kindOf("/petmoveto [nomod]", "/petmoveto") == "command")
+do
+    local petControl = dofile("tests/fixtures/macros.lua").petControl
+    local found = {}
+    for _, e in ipairs(ns.Highlight.Errors(petControl)) do found[#found + 1] = petControl:sub(e.from, e.to) end
+    check("no false alarms in the pet macro", #found == 0, table.concat(found, ", "))
+    local offered = {}
+    for _, c in ipairs(ns.sources.commands()) do offered[c.name] = true end
+    check("secure commands offered after /", offered.petmoveto == true)
+    check("only those this client has", offered.teamquit == nil)
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/petm")
+    check("/petm suggests petmoveto", ns.Popup:IsShown() and ns.Popup.items[1] and ns.Popup.items[1].name == "petmoveto",
+        ns.Popup.items[1] and ns.Popup.items[1].name)
+    Key("ESCAPE", "OnEscapePressed")
+    ns.Window.Revert()
+    NextFrame()
+end
 
 -- Theme switch recolors without touching the text.
 local body = raw()
