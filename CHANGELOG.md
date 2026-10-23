@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Picking `nomod` from the suggestions no longer adds `:` after it: `[nomod]` alone is how it is used, and
+  `nomod:shift` still works. A wrong modifier after `nomod:` (`nomod:shfit`) is marked now, as after `mod:`.
+
 ## [0.1.0] - 2026-10-23
 
 ### Added

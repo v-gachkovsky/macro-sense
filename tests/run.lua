@@ -120,6 +120,9 @@ check("complete word hides list", names("/cast [mod:shift|") == "", names("/cast
 check("commands first", names("/cas|"):find("^cast,castsequence,castrandom") ~= nil, names("/cas|"))
 local modItem = ns.Completion.Get(ctx("/cast [mo|"))[1]
 check("condition with value inserts ':'", modItem and modItem.insert == "mod:", modItem and modItem.insert)
+local nomodItem = ns.Completion.Get(ctx("/cast [nom|"))[1]
+check("nomod inserts no ':'", nomodItem and nomodItem.insert == "nomod", nomodItem and nomodItem.insert)
+check("nomod: with a value, still the modifiers", names("/cast [nomod:|"):find("^shift,ctrl,alt") ~= nil)
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
 
@@ -359,6 +362,9 @@ check("unknown unit is a warning", issues("/cast [@mousover] X") == "warning:mou
 check("player name is only a warning", issues("/cast [target=Thrall] X") == "warning:Thrall")
 check("bad value is an error", issues("/cast [btn:7] X") == "error:7", issues("/cast [btn:7] X"))
 check("second bad value", issues("/cast [mod:shift/shfit] X") == "error:shfit", issues("/cast [mod:shift/shfit] X"))
+check("nomod: alone or with modifiers", issues("/cast [nomod] X; [nomod:shift/ctrl] Y; [nomodifier:alt] Z") == "",
+    issues("/cast [nomod] X; [nomod:shift/ctrl] Y; [nomodifier:alt] Z"))
+check("nomod: a bad modifier", issues("/cast [nomod:shfit] X") == "error:shfit", issues("/cast [nomod:shfit] X"))
 check("value for a no-value condition", issues("/cast [combat:1] X") == "error::1", issues("/cast [combat:1] X"))
 check("reset: a bad value", issues("/castsequence reset=10/tagret A, B") == "error:tagret",
     issues("/castsequence reset=10/tagret A, B"))
