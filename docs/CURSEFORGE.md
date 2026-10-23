@@ -98,6 +98,7 @@ Every change you save, here, in the game's macro window or with another addon, k
 - Undo / redo: **Ctrl+Z**, **Ctrl+Y** (or Ctrl+Shift+Z). Save: **Ctrl+S**.
 - Line, column and a length counter (macros are limited to 255 characters).
 - Asks before discarding unsaved changes.
+- **Copy** a macro: a duplicate in the same tab, or a copy in the Character / General tab.
 
 ---
 

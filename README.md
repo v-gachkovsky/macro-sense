@@ -123,6 +123,14 @@ one to read it, click it to put it in the editor. It is an unsaved change then: 
 (Cmd+Z on Mac) takes it back. The versions follow a macro renamed here. General macros keep theirs for the
 account, character macros for the character.
 
+## Macro list
+
+The list shows the General or the Character tab, with how many macros each holds and how many fit. **Copy**
+under it copies the macro being edited, with what the editor shows (name, icon, text): **Duplicate** into the
+same tab, **Copy to Character** / **Copy to General** into the other one. The copy gets a free name (`Fear 2`,
+cut to fit 16 letters), because two macros with one name would share a key binding; the macro copied keeps
+its saved text.
+
 ## Icons and action bars
 
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),

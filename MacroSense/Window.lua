@@ -5,6 +5,7 @@ local _, ns = ...
 local MAX_GENERAL = MAX_ACCOUNT_MACROS or 120
 local MAX_CHARACTER = MAX_CHARACTER_MACROS or 18
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
+local MAX_NAME = 16 -- letters, as in the Blizzard macro window
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
 local ROW_H = 24
 local MIN_W, MIN_H = 780, 460 -- also the first size
@@ -17,7 +18,8 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, deleteBtn, tabs
-local shortenBtn, historyBtn
+local shortenBtn, historyBtn, copyBtn
+local SCOPE_NAMES = { general = "General", character = "Character" }
 
 local function MacroRange(scope)
     local general, character = GetNumMacros()
@@ -144,6 +146,7 @@ local function UpdateStatus()
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
     revertBtn:SetEnabled(dirty and state.index ~= nil)
     deleteBtn:SetEnabled(state.index ~= nil)
+    copyBtn:SetEnabled(state.index ~= nil)
     -- Mac: [mod:cmd] on a key macOS uses with Cmd (the macro's keys are the saved macro's).
     local message
     if ns.Shortcuts.Enabled() and state.index then
@@ -434,6 +437,71 @@ function Window.Delete(index)
     Load(last >= first and math.min(index, last) or nil)
 end
 
+-- A name no macro has: "Fear" -> "Fear 2", "Fear 2" -> "Fear 3", cut to fit the name limit. Two macros with
+-- one name would share a key binding ("MACRO Fear" runs the first one).
+local function FreeName(name)
+    local function taken(n)
+        local index = GetMacroIndexByName(n)
+        return index ~= nil and index > 0
+    end
+    if not taken(name) then return name end
+    local base, n = name:match("^(.-) (%d+)$")
+    base, n = base or name, tonumber(n) or 1
+    while true do
+        n = n + 1
+        local suffix, stem = " " .. n, base
+        while Letters(stem .. suffix) > MAX_NAME and stem ~= "" do
+            stem = stem:gsub("[\1-\127\192-\255][\128-\191]*$", "") -- the last letter, whole
+        end
+        local candidate = stem:match("^(.-)%s*$") .. suffix
+        if not taken(candidate) then return candidate end
+    end
+end
+
+-- A copy of what the editor shows (name, icon, text) in `scope`, opened then; the macro copied keeps its
+-- saved text.
+function Window.Copy(scope)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    if not state.index then return end
+    local first, last, max = MacroRange(scope)
+    if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    local body = code:GetRaw()
+    if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
+    local name = strtrim(nameBox:GetText())
+    local index = CreateMacro(FreeName(name ~= "" and name or state.name), state.icon or NEW_ICON, body,
+        scope == "character")
+    if not index or index == 0 then return ns.Print("could not copy the macro") end
+    ns.History.Scan()
+    state.scope, ns.db.scope = scope, scope
+    Load(index)
+end
+
+local function CopyItems()
+    local other = state.scope == "general" and "character" or "general"
+    local function item(scope, label, tip)
+        local first, last, max = MacroRange(scope)
+        local full = last - first + 1 >= max
+        return {
+            name = full and string.format("%s  |cff%s(full)|r", label, ns.scheme.dim) or label,
+            disabled = full,
+            onClick = function() Window.Copy(scope) end,
+            onEnter = function(row)
+                GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+                GameTooltip:AddLine(label, 1, 1, 1)
+                GameTooltip:AddLine(full and string.format("The %s tab is full.", SCOPE_NAMES[scope]) or tip,
+                    0.8, 0.8, 0.8, true)
+                GameTooltip:Show()
+            end,
+        }
+    end
+    local same = "under a free name like \"Fear 2\". The macro copied keeps its saved text."
+    return {
+        item(state.scope, "Duplicate", "A copy in this tab with what the editor shows now, " .. same),
+        item(other, "Copy to " .. SCOPE_NAMES[other], string.format("A copy %s with what the editor shows now, %s",
+            other == "character" and "for this character only" or "for all your characters", same)),
+    }
+end
+
 -- The macro list changed elsewhere (Blizzard UI, another addon): keep our selection by name.
 function Window.OnMacrosChanged()
     if not frame or not frame:IsShown() then return end
@@ -576,7 +644,7 @@ local function Build()
     end)
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Sidebar: tabs, list, New / Delete.
+    -- Sidebar: tabs, list, New / Copy / Delete.
     local side = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     side:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -1)
     side:SetPoint("BOTTOMLEFT", 1, 1)
@@ -589,12 +657,23 @@ local function Build()
     tabs.character:SetPoint("TOPLEFT", side, "TOP", 0, 0)
     tabs.character:SetPoint("TOPRIGHT", 0, 0)
 
-    local newBtn = ns.Button(side, "New", 100, Window.New)
+    local newBtn = ns.Button(side, "New", 64, Window.New)
     newBtn:SetPoint("BOTTOMLEFT", 8, 8)
-    deleteBtn = ns.Button(side, "Delete", 100, function()
+    deleteBtn = ns.Button(side, "Delete", 64, function()
         StaticPopup_Show("MACROSENSE_DELETE", state.name, nil, state.index)
     end)
     deleteBtn:SetPoint("BOTTOMRIGHT", -8, 8)
+    -- Copy: its menu opens above it, the list is in the way below.
+    copyBtn = ns.MenuButton(side, "Copy", 64, CopyItems, true)
+    copyBtn:SetPoint("BOTTOM", 0, 8)
+    copyBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Copy", 1, 1, 1)
+        GameTooltip:AddLine(self:IsEnabled() and "A copy of this macro, in this tab or the other one."
+            or "Save the macro first, then copy it.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    copyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -30)

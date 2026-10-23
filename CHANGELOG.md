@@ -16,6 +16,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   keeps the text it replaced (the last 10 per macro). **History** in the header lists them with when they
   were saved; hover one to read it, click it to put it back in the editor, then Save. The versions follow a
   macro renamed in the editor.
+- **Copy** under the macro list: **Duplicate** copies the macro into the same tab, **Copy to Character** /
+  **Copy to General** into the other one, with what the editor shows. The copy gets a free name
+  (`Fear 2`), so key bindings stay with one macro.
 
 ### Changed
 - **Live preview** moved to the title bar, next to the font and the scheme, to make room in the header.

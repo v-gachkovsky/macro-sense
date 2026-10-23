@@ -62,7 +62,8 @@ function Frame:SetFont(_, size) self.fontSize = size; return true end
 function Frame:GetFont() return "font", self.fontSize or 13, "" end
 local function charWidth(fs) return math.floor((fs.fontSize or 13) * 0.6 + 0.5) end
 local function rowHeight(fs) return (fs.fontSize or 13) + 1 end
-function Frame:GetMaxLetters() return 0 end
+function Frame:GetMaxLetters() return self.maxLetters or 0 end
+function Frame:SetMaxLetters(n) self.maxLetters = n end
 function Frame:IsEnabled() return self.enabled end
 function Frame:SetEnabled(v) self.enabled = v and true or false end
 function Frame:SetText(t)
@@ -1323,6 +1324,92 @@ do
     DeleteMacro(GetMacroIndexByName("Hist2"))
     Send("UPDATE_MACROS")
     clock = clock - 86400
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- Copy: a duplicate in the same tab or a copy in the other one, with what the editor shows, under a free name.
+do
+    local function button(label)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == label then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and ns.Highlight.Strip(r.text.text):sub(1, #label) == label then return r end
+        end
+    end
+    local function nameText()
+        for _, o in ipairs(created) do
+            if o.kind == "EditBox" and o.maxLetters == 16 then return o.text end
+        end
+    end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local copy = button("Copy")
+    CreateMacro("Zap", 1, "/cast Fireball", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Zap"))
+    NextFrame()
+    check("copy: offered for a saved macro", copy and copy:IsEnabled())
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast Frostbolt")
+    Key("ESCAPE", "OnEscapePressed")
+    Fire(copy, "OnClick")
+    check("copy: the menu opens above the button", MacroSenseMenu:IsShown() and MacroSenseMenu.point[1] == "BOTTOMLEFT"
+        and MacroSenseMenu.point[2] == copy, MacroSenseMenu.point and MacroSenseMenu.point[1])
+    Fire(menuItem("Duplicate"), "OnClick")
+    NextFrame()
+    check("copy: a duplicate under a free name, with the text shown", GetMacroIndexByName("Zap 2") > 0
+        and body("Zap 2") == "/cast Fireball\n/cast Frostbolt", GetMacroIndexByName("Zap 2"))
+    check("copy: the macro copied keeps its saved text", body("Zap") == "/cast Fireball", body("Zap"))
+    check("copy: the copy is opened", nameText() == "Zap 2" and raw() == "/cast Fireball\n/cast Frostbolt"
+        and not saveIsEnabled(), nameText())
+    Fire(copy, "OnClick")
+    Fire(menuItem("Copy to Character"), "OnClick")
+    NextFrame()
+    local index = GetMacroIndexByName("Zap 3")
+    check("copy: to the other tab, the next free name", index > MAX_ACCOUNT_MACROS and ns.db.scope == "character"
+        and nameText() == "Zap 3", index)
+    Fire(copy, "OnClick")
+    check("copy: from Character, the other tab is General", menuItem("Copy to General") ~= nil)
+    Fire(copy, "OnClick")
+    -- A full tab can't take one.
+    local fillers = MAX_CHARACTER_MACROS - select(2, GetNumMacros())
+    for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", true) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(GetMacroIndexByName("Zap"))
+    NextFrame()
+    Fire(copy, "OnClick")
+    local full = menuItem("Copy to Character")
+    check("copy: a full tab is marked", full and full.item.disabled and full.text.text:find("(full)", 1, true) ~= nil)
+    local count = select(2, GetNumMacros())
+    Fire(full, "OnClick")
+    check("copy: and takes nothing", select(2, GetNumMacros()) == count and MacroSenseMenu:IsShown())
+    Fire(copy, "OnClick")
+    -- A long name is cut to make room for the number, a whole letter at a time.
+    CreateMacro("Сімнадцять літер", 1, "/sit", false) -- 16 letters, Cyrillic: two bytes each
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Сімнадцять літер"))
+    NextFrame()
+    ns.Window.Copy("general")
+    check("copy: a long name is cut", GetMacroIndexByName("Сімнадцять літ 2") > 0, nameText())
+    -- Not for a macro that is not saved yet, and not in combat.
+    InCombatLockdown = function() return true end
+    count = select(1, GetNumMacros())
+    ns.Window.Copy("general")
+    check("copy: not in combat", select(1, GetNumMacros()) == count and printed[#printed]:find("in combat") ~= nil)
+    InCombatLockdown = function() return false end
+    ns.Window.New()
+    NextFrame()
+    check("copy: not before the macro is saved", not copy:IsEnabled())
+    for _, name in ipairs({ "Zap", "Zap 2", "Zap 3", "Сімнадцять літер", "Сімнадцять літ 2" }) do
+        DeleteMacro(GetMacroIndexByName(name))
+    end
+    for i = 1, fillers do DeleteMacro(GetMacroIndexByName("Filler " .. i)) end
+    Send("UPDATE_MACROS")
     ns.Window.Select(1)
     NextFrame()
 end
