@@ -125,6 +125,10 @@ UIParent = New("Frame")
 -- Fake game API
 ------------------------------------------------------------------------
 function GetTime() return now end
+-- Wall clock for saved versions: Oct 23 2026, 14:32 (local time); tests move it on.
+local clock = os.time({ year = 2026, month = 10, day = 23, hour = 14, min = 32 })
+function time() return clock end
+function date(fmt, t) return os.date(fmt, t or clock) end
 function IsMacClient() return true end
 C_AddOns = { IsAddOnLoaded = function() return false end, GetAddOnMetadata = function() return "@project-version@" end }
 function GetBuildInfo() return "12.1.5", "60000", "Oct 1 2026", 120105 end
@@ -1237,6 +1241,88 @@ do
     NextFrame()
     check("shorten: undo brings the text back", raw() == long .. "\n/cast [harmm] Fear; Fear", raw())
     check("shorten: and the button again", btn.label.text == "Shorten -" .. (#long - #shorter), btn.label.text)
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- History: a saved change keeps the text it replaced, wherever it was saved; a version goes back into the
+-- editor as an unsaved change.
+do
+    local function button(label)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == label then return o end
+        end
+    end
+    local function rows()
+        local out = {}
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() then out[#out + 1] = ns.Highlight.Strip(r.text.text) end
+        end
+        return out
+    end
+    local function nameBox()
+        for _, o in ipairs(created) do
+            if o.kind == "EditBox" and o ~= edit and o.text == "Hist" then return o end
+        end
+    end
+    local history = button("History")
+    CreateMacro("Hist", 1, "/cast Fireball", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Hist"))
+    NextFrame()
+    check("history: nothing before a change", history and not history:IsEnabled())
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast Frostbolt")
+    Key("ESCAPE", "OnEscapePressed")
+    ns.Window.Save()
+    check("history: a save keeps the text it replaced", history:IsEnabled())
+    Fire(history, "OnClick")
+    local shown = rows()
+    check("history: the version, when and how long", MacroSenseMenu:IsShown() and #shown == 1
+        and shown[1] == "Today, 14:32  14 chars", table.concat(shown, " / "))
+    Fire(MacroSenseMenu.rows[1], "OnClick")
+    NextFrame()
+    check("history: a version goes into the editor", raw() == "/cast Fireball" and not MacroSenseMenu:IsShown(), raw())
+    check("history: as an unsaved change", saveIsEnabled())
+    IsControlKeyDown = function() return true end
+    Fire(edit, "OnKeyDown", "Z")
+    IsControlKeyDown = function() return false end
+    NextFrame()
+    check("history: undo takes it back", raw() == "/cast Fireball\n/cast Frostbolt", raw())
+    -- Saved in the game's macro window the next day: kept too, newest first.
+    clock = clock + 86400
+    EditMacro(GetMacroIndexByName("Hist"), "Hist", 1, "/cast Polymorph")
+    Send("UPDATE_MACROS")
+    ns.Window.Revert()
+    NextFrame()
+    Fire(history, "OnClick")
+    shown = rows()
+    check("history: changes saved elsewhere count", #shown == 2 and shown[1] == "Today, 14:32  30 chars"
+        and shown[2] == "Yesterday, 14:32  14 chars", table.concat(shown, " / "))
+    Fire(history, "OnClick")
+    check("history: a second click closes the list", not MacroSenseMenu:IsShown())
+    -- A new name: the versions follow it.
+    local box = nameBox()
+    box:SetText("Hist2")
+    ns.Window.Save()
+    local store = ns.History.Store("general")
+    check("history: versions follow a new name", store.Hist == nil and store.Hist2 and #store.Hist2 == 2,
+        store.Hist2 and #store.Hist2)
+    Fire(history, "OnClick")
+    check("history: still offered after renaming", #rows() == 2, #rows())
+    Fire(history, "OnClick")
+    -- Character macros keep theirs per character.
+    local index = CreateMacro("Mine", 1, "/cast Fire Blast", true)
+    Send("UPDATE_MACROS")
+    EditMacro(index, "Mine", 1, "/cast Fire Blast\n/cast Fireball")
+    Send("UPDATE_MACROS")
+    check("history: a character macro's versions are the character's", ns.char.history and ns.char.history.Mine
+        and #ns.char.history.Mine == 1 and ns.db.history.Mine == nil)
+    DeleteMacro(GetMacroIndexByName("Mine"))
+    DeleteMacro(GetMacroIndexByName("Hist2"))
+    Send("UPDATE_MACROS")
+    clock = clock - 86400
     ns.Window.Select(1)
     NextFrame()
 end

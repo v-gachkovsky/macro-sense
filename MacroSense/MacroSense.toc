@@ -1,6 +1,6 @@
 ## Interface: 120105, 50504, 20506, 11509, 16001
 ## Title: MacroSense
-## Notes: Macro editor with autocomplete, syntax highlighting, error checks, a live preview, color schemes and an icon picker.
+## Notes: Macro editor with autocomplete, syntax highlighting, error checks, a live preview, version history, color schemes and an icon picker.
 ## Author: Volodymyr Hachkovsky
 ## Version: @project-version@
 ## SavedVariables: MacroSenseDB
@@ -19,6 +19,7 @@ Editing.lua
 Completion.lua
 Sources.lua
 Shortcuts.lua
+History.lua
 Widgets.lua
 Popup.lua
 CodeBox.lua

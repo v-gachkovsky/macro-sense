@@ -17,7 +17,7 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, deleteBtn, tabs
-local shortenBtn
+local shortenBtn, historyBtn
 
 local function MacroRange(scope)
     local general, character = GetNumMacros()
@@ -71,6 +71,51 @@ function Window.Shorten()
 end
 
 ------------------------------------------------------------------------
+-- History: earlier saved texts of the macro
+------------------------------------------------------------------------
+local function Versions()
+    if not state.index then return {} end
+    return ns.History.Versions(ns.History.Store(state.scope), state.name, state.body)
+end
+
+-- "Today, 14:32", "Yesterday, 09:10", "Oct 21, 18:05", "Oct 21, 2025".
+local function When(t)
+    local day, clock = date("%Y-%m-%d", t), date("%H:%M", t)
+    if day == date("%Y-%m-%d") then return "Today, " .. clock end
+    if day == date("%Y-%m-%d", time() - 86400) then return "Yesterday, " .. clock end
+    local month = date("%b ", t) .. tonumber(date("%d", t))
+    return month .. ", " .. (date("%Y", t) == date("%Y") and clock or date("%Y", t))
+end
+
+-- Like Shorten: the text goes into the editor, Save keeps it, undo takes it back.
+function Window.Restore(body)
+    code:SetRaw(body, #body, true)
+    code:SetFocus()
+    code:CheckNow()
+end
+
+local function HistoryItems()
+    local items, dim = {}, ns.scheme.dim
+    for _, v in ipairs(Versions()) do
+        items[#items + 1] = {
+            name = string.format("%s  |cff%s%d chars|r", When(v.time), dim, Letters(v.body)),
+            current = v.body == code:GetRaw(),
+            onClick = function() Window.Restore(v.body) end,
+            onEnter = function(row)
+                GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+                GameTooltip:AddLine(When(v.time), 1, 1, 1)
+                for line in (v.body .. "\n"):gmatch("([^\n]*)\n") do
+                    -- "|" would start a color code in the tooltip: shown as typed.
+                    GameTooltip:AddLine(line ~= "" and line:gsub("|", "||") or " ", 0.8, 0.8, 0.8, true)
+                end
+                GameTooltip:Show()
+            end,
+        }
+    end
+    return items
+end
+
+------------------------------------------------------------------------
 -- Status bar
 ------------------------------------------------------------------------
 -- Tooltip lines for issues: errors red, warnings yellow.
@@ -95,6 +140,7 @@ local function UpdateStatus()
     counter:SetText(string.format("Ln %d, Col %d    |cff%s%d / %d|r", line, col, countColor, letters, MAX_BODY))
     local dirty = IsDirty()
     UpdateShorten(raw)
+    historyBtn:SetEnabled(#Versions() > 0)
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
     revertBtn:SetEnabled(dirty and state.index ~= nil)
     deleteBtn:SetEnabled(state.index ~= nil)
@@ -342,13 +388,21 @@ function Window.Save()
     end
     if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     local index
+    -- Earlier versions follow a new name.
+    local renamed = state.index and name ~= state.name
+    if renamed then ns.History.Renamed(state.scope, state.name, name) end
     if state.index then
         -- The game keeps macros sorted by name, so the index may change.
         index = EditMacro(state.index, name, state.icon, body)
     else
         index = CreateMacro(name, state.icon or NEW_ICON, body, state.scope == "character")
     end
-    if not index or index == 0 then return ns.Print("could not save the macro") end
+    if not index or index == 0 then
+        if renamed then ns.History.Renamed(state.scope, name, state.name) end
+        return ns.Print("could not save the macro")
+    end
+    -- The text it replaced is kept now, not only when the game reports the change.
+    ns.History.Scan()
     state.index, state.name, state.body = index, name, body
     state.icon = select(2, GetMacroInfo(index)) or state.icon
     state.savedIcon = state.icon
@@ -504,6 +558,24 @@ local function Build()
         function(key) ns.db.font = key; Window.ApplyLook() end)
     fontDrop:SetPoint("RIGHT", size, "LEFT", -10, 0)
 
+    -- Live preview on / off, with the other settings of the view.
+    local previewCheck = ns.Check(title, "Live preview", function() return ns.db.preview end, function(on)
+        ns.db.preview = on
+        code:ShowNotes(on)
+        UpdatePreview()
+    end)
+    previewCheck:SetPoint("RIGHT", fontDrop, "LEFT", -16, 0)
+    previewCheck:HookScript("OnEnter", function(self)
+        local keys = IsMacClient and IsMacClient() and "Shift, Ctrl, Alt or Cmd" or "Shift, Ctrl or Alt"
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip:AddLine("Live preview", 1, 1, 1)
+        GameTooltip:AddLine("Next to each line: what it would do if you pressed the macro now.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("Hold " .. keys .. ", change your target or point at a unit to see the other branches.",
+            0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Sidebar: tabs, list, New / Delete.
     local side = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     side:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -1)
@@ -570,27 +642,9 @@ local function Build()
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)
     nameBox:SetScript("OnTextChanged", function() UpdateStatus() end)
 
-    -- Live preview on / off, at the right end of the header.
-    local previewCheck = ns.Check(main, "Live preview", function() return ns.db.preview end, function(on)
-        ns.db.preview = on
-        code:ShowNotes(on)
-        UpdatePreview()
-    end)
-    previewCheck:SetPoint("RIGHT", main, "TOPRIGHT", -12, -29)
-    previewCheck:HookScript("OnEnter", function(self)
-        local keys = IsMacClient and IsMacClient() and "Shift, Ctrl, Alt or Cmd" or "Shift, Ctrl or Alt"
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-        GameTooltip:AddLine("Live preview", 1, 1, 1)
-        GameTooltip:AddLine("Next to each line: what it would do if you pressed the macro now.", 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine("Hold " .. keys .. ", change your target or point at a unit to see the other branches.",
-            0.8, 0.8, 0.8, true)
-        GameTooltip:Show()
-    end)
-    previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
-
-    -- Shorten, left of the preview checkbox.
+    -- Shorten at the right end of the header.
     shortenBtn = ns.Button(main, "Shorten", 90, function() Window.Shorten() end)
-    shortenBtn:SetPoint("RIGHT", previewCheck, "LEFT", -12, 0)
+    shortenBtn:SetPoint("RIGHT", main, "TOPRIGHT", -12, -29)
     shortenBtn:HookScript("OnEnter", function(self)
         local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
@@ -604,10 +658,28 @@ local function Build()
     end)
     shortenBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- History, left of Shorten: its menu opens under it, lined up on the right.
+    historyBtn = ns.MenuButton(main, "History", 80, HistoryItems, false, true)
+    historyBtn:SetPoint("RIGHT", shortenBtn, "LEFT", -8, 0)
+    historyBtn:HookScript("OnEnter", function(self)
+        local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine("History", 1, 1, 1)
+        if self:IsEnabled() then
+            GameTooltip:AddLine("Earlier saved versions of this macro. Pick one to put it in the editor: Save keeps it, "
+                .. undo .. " takes it back.", 0.8, 0.8, 0.8, true)
+        else
+            GameTooltip:AddLine("When you save a change to this macro, here or in the game's macro window, the text "
+                .. "it had before is kept here.", 0.8, 0.8, 0.8, true)
+        end
+        GameTooltip:Show()
+    end)
+    historyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     local nameHint = ns.Text(main, 11, "dim")
     nameHint:SetPoint("LEFT", nameBox, "RIGHT", 10, 0)
     nameHint:SetText("click or drag the icon")
-    nameHint:SetPoint("RIGHT", shortenBtn, "LEFT", -12, 0)
+    nameHint:SetPoint("RIGHT", historyBtn, "LEFT", -12, 0)
     nameHint:SetWordWrap(false)
 
     -- Status bar: position, length, Save / Revert.
@@ -708,6 +780,7 @@ local function Build()
     frame:SetScript("OnHide", function()
         ns.Popup:Hide()
         ns.IconPicker.Close()
+        ns.CloseMenu()
     end)
     -- The preview also follows the game: modifiers held, target, mouseover, pet, combat.
     local sincePreview = 0

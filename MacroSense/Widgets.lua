@@ -57,6 +57,8 @@ function ns.Button(parent, label, width, onClick, accent)
     b:SetScript("OnEnable", function() paint(false) end)
     b:SetScript("OnDisable", function() paint(false) end)
     b:SetScript("OnClick", onClick)
+    -- A disabled button still shows its tooltip (it says why it is disabled).
+    if b.SetMotionScriptsWhileDisabled then b:SetMotionScriptsWhileDisabled(true) end
     ns.OnStyle(function() paint(false) end)
     return b
 end
@@ -121,7 +123,7 @@ function ns.Input(parent, width, maxLetters)
 end
 
 ------------------------------------------------------------------------
--- Dropdown: one shared list frame
+-- Menus: one shared list frame for dropdowns and menu buttons
 ------------------------------------------------------------------------
 local menu = CreateFrame("Frame", "MacroSenseMenu", UIParent, "BackdropTemplate")
 menu:SetFrameStrata("FULLSCREEN_DIALOG")
@@ -139,8 +141,21 @@ local function MenuRow(i)
     r.bg:SetAllPoints()
     r.text = ns.Text(r, 12)
     r.text:SetPoint("LEFT", 8, 0)
-    r:SetScript("OnEnter", function() r.bg:Show() end)
-    r:SetScript("OnLeave", function() r.bg:SetShown(r.current) end)
+    r.text:SetPoint("RIGHT", -8, 0)
+    r.text:SetWordWrap(false)
+    r:SetScript("OnEnter", function()
+        r.bg:SetShown(r.current or not r.item.disabled)
+        if r.item.onEnter then r.item.onEnter(r) end
+    end)
+    r:SetScript("OnLeave", function()
+        r.bg:SetShown(r.current)
+        GameTooltip:Hide()
+    end)
+    r:SetScript("OnClick", function()
+        if r.item.disabled then return end
+        menu:Hide()
+        r.item.onClick()
+    end)
     ns.OnStyle(function(s) r.bg:SetColorTexture(ns.RGB(s.selection)) end)
     return r
 end
@@ -153,6 +168,35 @@ menu:SetScript("OnUpdate", function(self)
         self:Hide()
     end
 end)
+
+-- items: { { name, onClick = fn, current = the chosen one, disabled, onEnter = fn(row) for a tooltip } }.
+-- Opens below `owner`, or above it with `up`; `right` lines it up with the owner's right edge.
+local function OpenMenu(owner, items, width, up, right)
+    if menu:IsShown() and menu.owner == owner then return menu:Hide() end
+    GameTooltip:Hide() -- the owner's tooltip would cover the list
+    for i = #menu.rows + 1, #items do menu.rows[i] = MenuRow(i) end
+    for i, r in ipairs(menu.rows) do
+        local item = items[i]
+        r:SetShown(item ~= nil)
+        if item then
+            r.item, r.current = item, item.current
+            r.bg:SetShown(r.current)
+            r.text:SetText(item.name)
+            r.text:SetAlpha(item.disabled and 0.45 or 1)
+        end
+    end
+    menu.owner = owner
+    menu:SetWidth(math.max(width, 180))
+    menu:SetHeight(#items * 20 + 4)
+    menu:ClearAllPoints()
+    local side = right and "RIGHT" or "LEFT"
+    if up then
+        menu:SetPoint("BOTTOM" .. side, owner, "TOP" .. side, 0, 2)
+    else
+        menu:SetPoint("TOP" .. side, owner, "BOTTOM" .. side, 0, -2)
+    end
+    menu:Show()
+end
 
 -- getItems() -> { { key, name }, ... }; getValue() -> key; onSelect(key).
 function ns.Dropdown(parent, width, getItems, getValue, onSelect)
@@ -172,33 +216,27 @@ function ns.Dropdown(parent, width, getItems, getValue, onSelect)
     end
 
     d:SetScript("OnClick", function(self)
-        if menu:IsShown() and menu.owner == self then return menu:Hide() end
-        local items = getItems()
-        for i = #menu.rows + 1, #items do menu.rows[i] = MenuRow(i) end
-        for i, r in ipairs(menu.rows) do
-            local item = items[i]
-            r:SetShown(item ~= nil)
-            if item then
-                r.current = item.key == getValue()
-                r.bg:SetShown(r.current)
-                r.text:SetText(item.name)
-                r:SetScript("OnClick", function()
-                    menu:Hide()
-                    onSelect(item.key)
-                    self:Refresh()
-                end)
-            end
+        local items = {}
+        for i, item in ipairs(getItems()) do
+            items[i] = { name = item.name, current = item.key == getValue(), onClick = function()
+                onSelect(item.key)
+                self:Refresh()
+            end }
         end
-        menu.owner = self
-        menu:SetWidth(math.max(width, 180))
-        menu:SetHeight(#items * 20 + 4)
-        menu:ClearAllPoints()
-        menu:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -2)
-        menu:Show()
+        OpenMenu(self, items, width)
     end)
     d:Refresh()
     return d
 end
+
+-- A button with a menu of actions: getItems() -> items as for OpenMenu, built on each click.
+function ns.MenuButton(parent, label, width, getItems, up, right)
+    local b = ns.Button(parent, label, width, nil)
+    b:SetScript("OnClick", function(self) OpenMenu(self, getItems(), width, up, right) end)
+    return b
+end
+
+function ns.CloseMenu() menu:Hide() end
 
 -- "-  13  +" stepper.
 function ns.Stepper(parent, min, max, getValue, onChange)

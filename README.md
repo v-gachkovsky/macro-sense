@@ -97,7 +97,7 @@ The notes follow the game several times a second: hold Shift, Ctrl, Alt (Cmd on 
 summon another pet or enter combat, and they change with it. While the mouse is on the editor there is no
 mouseover unit: point at a unit in the world or at a unit frame to see the `@mouseover` branch. The game
 itself checks the conditions (`SecureCmdOptionParse`, what macros run with). Lines with syntax errors get
-no note. **Live preview** in the header turns it off; the text then takes the whole width.
+no note. **Live preview** in the title bar turns it off; the text then takes the whole width.
 
 ## Shorten
 
@@ -113,6 +113,15 @@ and says how many it saves (`Shorten -41`):
 
 Chat, `/run`, commands of other addons and lines with errors stay as they are. Ctrl+Z (Cmd+Z on Mac)
 brings the old text back.
+
+## History
+
+The game keeps only the last text of a macro; MacroSense keeps the ones before it. Every change saved to a
+macro, in this editor, in the Blizzard macro window or by another addon, keeps the text it replaced (the last
+10 per macro). **History** in the header lists them with when they were saved and how long they are: hover
+one to read it, click it to put it in the editor. It is an unsaved change then: **Save** keeps it, Ctrl+Z
+(Cmd+Z on Mac) takes it back. The versions follow a macro renamed here. General macros keep theirs for the
+account, character macros for the character.
 
 ## Icons and action bars
 
@@ -147,6 +156,8 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
+- `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
+  needs the game.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
@@ -156,7 +167,7 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, schemes, shortcuts
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, schemes, shortcuts
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 
