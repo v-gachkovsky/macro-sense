@@ -1,6 +1,6 @@
 ![MacroSense](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/banner-v2.png)
 
-**A macro editor that knows macros: autocomplete, highlighting, error checks and a live preview.**
+**A macro editor that knows macros: a macro wizard, autocomplete, highlighting, error checks and a live preview.**
 
 > **Early development.** MacroSense is young and still growing. If something looks wrong, behaves oddly or
 > you miss a feature, please tell me: no report is too small. I read every one and try to fix things as fast
@@ -17,6 +17,21 @@ Open it from the **minimap button** (drag it along the edge to move it), with `/
 **Works on every client:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever.
 
 ---
+
+## Macro wizard
+
+Don't want to type `[@mouseover,help,nodead]` by hand? The **Macro wizard** builds the common macros from a
+few answers, right in the editor:
+
+- **Mouseover**: heal the friend under your mouse (then your target, then yourself), or hit the enemy there
+- **Focus**: interrupt or control your focus while you fight your target; Shift can set the focus
+- **Party member**: cast on party member 1-4 or yourself, or on all of them from one key with Shift, Ctrl, Alt
+- **At the cursor**: area spells land where your mouse points, with no circle to place
+- **One key, several spells**: something else with Shift, Ctrl or Alt held
+- **Trinkets with a spell**: your trinkets go off with a spell, whenever they are ready
+
+Type a few letters to pick a spell or item, answer a couple of questions and watch the macro appear with its
+colors, checks and live preview. Save keeps it.
 
 ## Autocomplete
 

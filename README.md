@@ -2,7 +2,7 @@
 
 <p align="center">
   A macro editor for <b>World of Warcraft</b> that knows macros<br>
-  autocomplete · syntax highlighting · error checks · live preview · icon picker
+  macro wizard · autocomplete · syntax highlighting · error checks · live preview · icon picker
 </p>
 
 <p align="center">
@@ -20,7 +20,8 @@
 The Blizzard macro window is a plain text box. MacroSense opens your macros in a real editor: it suggests
 commands, conditions, units, spells and items as you type, colors the syntax, underlines mistakes and
 shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
-addons see every change.
+addons see every change. The **Macro wizard** builds the common ones (mouseover, focus, party members, modifier
+keys, trinkets) from a few answers.
 
 Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button in
 the title bar of the Blizzard macro window. Drag the title bar to move it and the dotted corner to resize it
@@ -34,6 +35,29 @@ MacroSense is in the addon menu by the minimap too.
 
 Copy the `MacroSense` folder into `World of Warcraft/<client>/Interface/AddOns/`, or install it from
 CurseForge once it is published. For development, symlink the folder from this repository instead.
+
+## Macro wizard
+
+**Macro wizard**, over New / Copy / Delete, makes a new macro in the tab that is open from a few answers.
+Pick what it should do:
+
+| Pick | You get, for example |
+|------|----------------------|
+| **Mouseover** | `/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal`: the friend under the mouse, then your target, then you. For an enemy spell: the enemy under the mouse, then your target |
+| **Focus** | `/cast [@focus,harm,nodead][] Counterspell`; Shift can make your target the focus |
+| **Party member** | `/cast [@party2] Power Infusion`, on yourself, or members 1-4 from one key: no key, Shift, Ctrl, Alt |
+| **At the cursor** | `/cast [@cursor] Blizzard`: no circle to place; Shift can put it at your feet |
+| **One key, several spells** | `/cast [mod:shift] Polymorph; [mod:alt] Counterspell; Frostbolt` |
+| **Trinkets with a spell** | `/use 13`, `/use 14`, then the spell |
+
+Then answer: the spell or item (type a few letters and your spells and usable items come up; any other name
+works too), friends or enemies (set from the spell when the game knows), and extras such as stopping your
+cast first, auto attack or your pet. Trinket slots show what is in them, and one with a use effect is
+checked. Each answer goes into the editor at once, with its colors, checks and live preview, as an unsaved
+change: **Save** keeps the macro, Ctrl+Z (Cmd+Z on Mac) takes a change back. The macro is named after what
+it casts (`Frostbolt 2` when a macro has that name) until you type a name of your own. If you change the
+text in the editor, the wizard leaves it alone; **Replace** puts its macro back. The panel opens left of the
+window (right of it near the screen's left edge); picking another macro or closing the window closes it.
 
 ## Autocomplete
 
@@ -183,19 +207,21 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
+- `MacroSense/Wizard.lua`: the wizard's recipes, their questions and the macros they write. Pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/IconPicker.lua`: icon grid.
+- `MacroSense/WizardPanel.lua`: the wizard's panel.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, schemes, shortcuts, minimap
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 
