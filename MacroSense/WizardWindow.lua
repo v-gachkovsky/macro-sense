@@ -10,7 +10,7 @@ local W = ns.Wizard
 local WIDTH, PAD, LABEL, ROW = 600, 14, 70, 32
 local X = PAD + LABEL -- where the controls of a row start
 local TOP = 84 -- the title bar and the command row
-local BOTTOM = 276 -- Also, the macro and the buttons, at the bottom whatever the command
+local BOTTOM = 322 -- Also, the macro and the buttons, at the bottom whatever the command
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
 local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
@@ -19,8 +19,8 @@ local RESET_NAMES = { target = "New target", combat = "Combat ends", shift = "Sh
 local LIST_TITLES = { castsequence = "In turn, one per press", castrandom = "One of these at random" }
 
 local frame, preview, counter, createBtn
-local blocks = {} -- parts of the form, one under another: what (one / list / name), on whom, the rest (keys / reset)
-local keyRows = {} -- per key: its spell box and unit lists, placed by Arrange (no spell box for /target)
+local blocks = {} -- parts of the form, one under another: what (one / list / name / pet), on whom, the rest
+local keyRows = {} -- per key: its spell box, pet command and unit lists, placed by Arrange
 local controls = {} -- by name: what the tests drive and what starts over with each new form
 local spec -- the answers so far
 local scope -- the tab the macro goes into
@@ -337,26 +337,34 @@ end
 
 -- The parts the command asks for, one under another, and the window as tall as they are.
 function Arrange()
-    local list, target = W.IsList(spec.command), W.IsTarget(spec.command)
+    local list, target, pet = W.IsList(spec.command), W.IsTarget(spec.command), spec.command == "pet"
     local parts = {}
     if list then
         parts[1] = blocks.list
+    elseif pet then
+        parts[1] = blocks.pet
     elseif not target then
         parts[1] = blocks.one
     elseif spec.command == "target" then
         parts[1] = blocks.name
     end
-    parts[#parts + 1] = blocks.on
+    -- Units for a cast or a target; for the pet only when it attacks.
+    if not pet or spec.pet == "attack" then parts[#parts + 1] = blocks.on end
     if spec.command == "castsequence" then parts[#parts + 1] = blocks.reset end
     if not list then parts[#parts + 1] = blocks.keys end
-    -- A key casts something in the On row's last columns; for /target, /focus and /assist it only has units, in
-    -- the first ones.
-    for _, row in pairs(keyRows) do
+    -- A key casts something (or tells the pet something) in the first column and has its units in the On row's
+    -- last ones; for /target, /focus and /assist it only has units, in the first ones.
+    for key, row in pairs(keyRows) do
         local x = target and X or X + 158
-        row.box:SetShown(not target)
+        local units = not pet or spec.keys[key].pet == "attack"
+        row.box:SetShown(not target and not pet)
+        row.pet:SetShown(pet)
         row.on:SetPoint("TOPLEFT", x, row.y - 1)
         row["then"]:SetPoint("TOPLEFT", x + 158, row.y - 1)
         row.word:SetPoint("TOPLEFT", x + 126, row.y - 5)
+        row.on:SetShown(units)
+        row["then"]:SetShown(units)
+        row.word:SetShown(units)
     end
     blocks.keys.on:SetPoint("TOPLEFT", target and X or X + 158, -8)
     local shown = {}
@@ -468,6 +476,14 @@ local function Build()
     Tip(controls.byName, "By name", "Targets the nearest one with this name, when none of the units above is there. "
         .. "Leave On empty (-) to target by name only.")
 
+    -- What the pet does without a key.
+    blocks.pet = Block(34)
+    Text(blocks.pet, "Pet", PAD, -5)
+    Choice(blocks.pet, "pet", 150, W.petActions, function() return spec.pet end, function(action)
+        spec.pet = action
+        Arrange()
+    end):SetPoint("TOPLEFT", X, -1)
+
     -- On whom, and who: for every command (the units a command takes, Wizard.Units).
     blocks.on = Block(2 * 34)
     Text(blocks.on, "On", PAD, -5)
@@ -503,6 +519,12 @@ local function Build()
         box:SetPoint("TOPLEFT", X, y)
         controls[key .. "Cast"] = box
         local row = { y = y, box = box, word = Text(blocks.keys, "then", X + 284, y - 5, "dim") }
+        row.pet = Choice(blocks.keys, key .. "Pet", 150, W.petActions, function() return spec.keys[key].pet end,
+            function(action)
+                spec.keys[key].pet = action
+                Arrange()
+            end)
+        row.pet:SetPoint("TOPLEFT", X, y - 1)
         for j, suffix in ipairs({ "On", "Then" }) do
             row[j == 1 and "on" or "then"] = Choice(blocks.keys, key .. suffix, 120,
                 function() return W.Units(spec.command, j == 1 and "key" or "then") end,
@@ -542,23 +564,48 @@ local function Build()
 
     -- Also, the macro, the buttons: at the bottom, from the bottom up.
     local function Low(region, x, y) region:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", x, y) end
-    Low(Text(frame, "Also", 0, 0, "dim"), PAD, 268)
-    Low(Check(frame, "stopcasting", "Stop your cast first", function() return spec.stopcasting end,
-        function(on) spec.stopcasting = on end), PAD, 246)
-    Low(Check(frame, "startattack", "Start auto attack", function() return spec.startattack end,
-        function(on) spec.startattack = on end), PAD, 222)
-    Low(Check(frame, "petattack", "Your pet attacks your target", function() return spec.petattack end,
-        function(on) spec.petattack = on end), PAD, 198)
-    Low(Check(frame, "trinket1", "Use trinket 1", function() return spec.trinket1 end,
-        function(on) spec.trinket1 = on end), PAD + 280, 246)
-    Low(Check(frame, "trinket2", "Use trinket 2", function() return spec.trinket2 end,
-        function(on) spec.trinket2 = on end), PAD + 280, 222)
-    Low(Check(frame, "nearest", "The nearest enemy if none targeted", function() return spec.nearest end,
-        function(on) spec.nearest = on end), PAD + 280, 198)
-    Tip(controls.nearest, "The nearest enemy", "When your target is not an enemy, or is dead, the nearest enemy "
-        .. "becomes the target first (/targetenemy [noharm][dead]).")
-    Tip(controls.stopcasting, "Stop your cast first",
-        "For an interrupt or a save: it goes off at once, even in the middle of another cast.")
+    Low(Text(frame, "Also", 0, 0, "dim"), PAD, 314)
+    -- Three columns of yes / no, by name and by place from the top left.
+    local also = {
+        { "stopcasting", "Stop your cast first", "For an interrupt or a save: it goes off at once, even in the "
+            .. "middle of another cast." },
+        { "trinket1", "Trinket 1" },
+        { "nearest", "Nearest enemy if none", "When your target is not an enemy, or is dead, the nearest enemy "
+            .. "becomes the target first (/targetenemy [noharm][dead])." },
+        { "startattack", "Start auto attack" },
+        { "trinket2", "Trinket 2", "Your trinkets go off first (/use 13, /use 14), whenever they are ready." },
+        { "cancelform", "Leave your form first", "Out of a form or stance first (/cancelform): to heal out of "
+            .. "Bear Form, say." },
+        { "petattack", "Pet attacks your target" },
+        { "dismount", "Off your mount first", "Off the mount first (/dismount [mounted]), so the cast doesn't "
+            .. "fail on it." },
+    }
+    for i, c in ipairs(also) do
+        local name = c[1]
+        Low(Check(frame, name, c[2], function() return spec[name] end, function(on) spec[name] = on end),
+            PAD + (i - 1) % 3 * 192, 292 - math.floor((i - 1) / 3) * 24)
+        if c[3] then Tip(controls[name], c[2], c[3]) end
+    end
+    -- A buff to cancel first, and what to say in chat last.
+    Low(Text(frame, "Cancel a buff", 0, 0), PAD, 214)
+    controls.cancelaura = SpellBox(frame, 200, "the buff's name", function() return spec.cancelaura end,
+        function(action) spec.cancelaura = action end)
+    Low(controls.cancelaura, PAD + 120, 218)
+    Tip(controls.cancelaura, "Cancel a buff first", "Removes the buff before the rest (/cancelaura Ice Block): leave "
+        .. "it empty for none.")
+    Low(Text(frame, "Say in chat", 0, 0), PAD, 182)
+    Low(Choice(frame, "channel", 100, W.channels, function() return spec.channel end,
+        function(key) spec.channel = key end), PAD + 120, 185)
+    controls.say = ns.Input(frame, 344, 255)
+    Low(controls.say, PAD + 228, 186)
+    controls.say:SetScript("OnTextChanged", function(self, userInput)
+        if not userInput then return end
+        spec.say = self:GetText()
+        Update()
+    end)
+    function controls.say:Refresh() self:SetText(spec.say or "") end
+    Tip(controls.say, "Say in chat", "Said after the rest, in the channel on the left; %t is your target's name. "
+        .. "Leave it empty to say nothing.")
 
     local box = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     box:SetPoint("BOTTOMLEFT", PAD, 50)
@@ -601,7 +648,7 @@ function WizardWindow.Open(tab)
     preview:SetFont(font and font.path or ns.UI_FONT, 12, "")
     for slot, check in pairs({ [13] = controls.trinket1, [14] = controls.trinket2 }) do
         local name = ns.sources.equipped(slot)
-        check:SetLabel(string.format("Use trinket %d: %s", slot - 12, name and Short(name, 24) or "empty"))
+        check:SetLabel(string.format("Trinket %d: %s", slot - 12, name and Short(name, 14) or "empty"))
     end
     for _, control in pairs(controls) do
         if control.Refresh then control:Refresh() end
@@ -624,5 +671,6 @@ function WizardWindow.Toggle(tab)
 end
 
 -- A control of the form by name: "command", "cast", "list1", "byName", "on1", "shift", "shiftCast", "shiftOn", "shiftThen",
--- "resetTarget", "resetTimed", "resetSeconds", "trinket1", "create", ... (the tests fill the form through it).
+-- "resetTarget", "resetTimed", "resetSeconds", "pet", "shiftPet", "trinket1", "cancelaura", "channel", "say",
+-- "create", ... (the tests fill the form through it).
 function WizardWindow.Control(name) return controls[name] end

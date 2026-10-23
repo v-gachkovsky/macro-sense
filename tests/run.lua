@@ -726,13 +726,15 @@ end
 do
     local W = ns.Wizard
     local made = {}
-    -- A fresh form with `set` filled in; set.keys = { shift = { action, on = units, or unit = one } } holds keys.
+    -- A fresh form with `set` filled in; set.keys = { shift = { action, pet, on = units, or unit = one } } holds keys.
     local function form(set)
         local spec = W.Fresh()
         for k, v in pairs(set) do
             if k == "keys" then
                 for key, row in pairs(v) do
-                    spec.keys[key] = { active = true, on = row.on or { row.unit or "default", "none" }, action = row.action }
+                    local k = spec.keys[key]
+                    k.active, k.on = true, row.on or { row.unit or "default", "none" }
+                    k.action, k.pet = row.action, row.pet or k.pet
                 end
             else
                 spec[k] = v
@@ -844,6 +846,24 @@ do
     expectText("the nearest enemy when none is targeted", text({ action = bolt, only = "enemies", on = usual,
         nearest = true }), "#showtooltip\n/targetenemy [noharm][dead]\n/cast Frostbolt")
     check("wizard: /focus on nobody, no macro", W.Text(form({ command = "focus", on = { "none", "none", "none" } })) == nil)
+    -- The pet: without a key (none of those held), then each key's; Attack on units, Move to at the cursor.
+    expectText("pet: attack, and a command per key", text({ command = "pet", only = "enemies", keys = { shift = {},
+        ctrl = { pet = "moveto" }, alt = { pet = "attack", on = { "focus", "default" } } } }), "/petattack "
+        .. "[nomod:shift/ctrl/alt,@mouseover,harm,nodead][nomod:shift/ctrl/alt]\n/petfollow [mod:shift]\n"
+        .. "/petmoveto [mod:ctrl,@cursor]\n/petattack [mod:alt,@focus,harm,nodead][mod:alt]")
+    expectText("pet: one command, no key", text({ command = "pet", pet = "stay" }), "/petstay")
+    expectText("pet: attack your target", text({ command = "pet", on = usual, nearest = true }),
+        "/targetenemy [noharm][dead]\n/petattack")
+    expectText("pet: with trinkets, an icon", text({ command = "pet", pet = "passive", trinket2 = true }),
+        "#showtooltip\n/use 14\n/petpassive")
+    check("wizard name: the pet's", W.Name(form({ command = "pet" })) == "Pet")
+    -- Also: out of the form, off the mount, a buff cancelled first; something said in chat last.
+    expectText("also: what goes first and what is said", text({ action = bolt, on = usual, cancelform = true,
+        dismount = true, cancelaura = { name = "Ice Block" }, say = " Casting on %t ", channel = "party",
+        startattack = true }), "#showtooltip\n/cancelform\n/dismount [mounted]\n/cancelaura Ice Block\n"
+        .. "/cast Frostbolt\n/startattack\n/party Casting on %t")
+    expectText("also: nothing to say, no line", text({ action = bolt, on = usual, say = "  ", channel = "yell" }),
+        "#showtooltip\n/cast Frostbolt")
     check("wizard: a name only for /target", text({ command = "focus", byName = "Hogger", on = { "mouseover", "none",
         "none" } }) == "/focus [@mouseover,exists,nodead]")
     check("wizard name: what it targets", W.Name(form({ command = "focus" })) == "Focus"
@@ -858,6 +878,9 @@ do
     check("wizard units: /target, by name or units, not your target", keys(W.Units("target", "first"))
         == "none,mouseover,focus,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
         keys(W.Units("target", "first")))
+    check("wizard units: the pet attacks neither the cursor, you nor itself", keys(W.Units("pet", "first"))
+        == "default,target,mouseover,focus,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
+        keys(W.Units("pet", "first")))
     check("wizard units: /focus keys clear it, no focus to focus", keys(W.Units("focus", "key"))
         :find("^clear,target,mouseover,player,") ~= nil and W.Units("focus", "key")[1].name == "Clear focus",
         keys(W.Units("focus", "key")))
@@ -874,6 +897,10 @@ do
     W.Fit(fitted)
     check("wizard fit: a cast goes somewhere again, Clear goes", fitted.on[1] == "default"
         and fitted.keys.shift.on[1] == "default", fitted.keys.shift.on[1])
+    fitted.command, fitted.on = "pet", { "player", "cursor", "focus" }
+    W.Fit(fitted)
+    check("wizard fit: the pet attacks somebody", table.concat(fitted.on, ",") == "default,none,focus",
+        table.concat(fitted.on, ","))
     check("wizard: the spell of /cast is not in a list", W.Text(form({ command = "castrandom", action = bolt,
         list = { corruption } })) == "#showtooltip\n/castrandom [@mouseover,exists,nodead][] Corruption")
     for label, body in pairs(made) do

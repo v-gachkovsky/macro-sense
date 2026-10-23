@@ -1824,8 +1824,8 @@ do
     check("wizard: Cmd casts another spell", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead]"
         .. "[mod:shift,harm,nodead] Polymorph; [mod:cmd] Fire Blast; [@mouseover,harm,nodead][] Frostbolt", shown())
     Fire(C("cmd"), "OnClick")
-    check("wizard: the trinkets by what is in the slot", C("trinket1").label.text == "Use trinket 1: Lucky Charm"
-        and C("trinket2").label.text == "Use trinket 2: empty", C("trinket1").label.text)
+    check("wizard: the trinkets by what is in the slot", C("trinket1").label.text == "Trinket 1: Lucky Charm"
+        and C("trinket2").label.text == "Trinket 2: empty", C("trinket1").label.text)
     -- A long name is cut to stay in the window.
     local equipped = GetInventoryItemLink
     GetInventoryItemLink = function(unit, slot)
@@ -1834,7 +1834,7 @@ do
     end
     Fire(wizardBtn, "OnClick")
     Fire(wizardBtn, "OnClick")
-    check("wizard: a long trinket name cut", C("trinket2").label.text == "Use trinket 2: Unbound Changeling of t...",
+    check("wizard: a long trinket name cut", C("trinket2").label.text == "Trinket 2: Unbound Chang...",
         C("trinket2").label.text)
     GetInventoryItemLink = equipped
     TypeIn(cast, "frost")
@@ -1986,6 +1986,51 @@ do
         == "#showtooltip\n/cast [mod:shift,@party2,help,nodead][@party1,help,nodead] Frostbolt"
         and C("shiftCast"):IsShown() and C("shiftOn").point[2] == 242, shown())
     Fire(C("shift"), "OnClick")
+
+    -- Pet commands: what it does without a key, a command per key; units only for Attack.
+    pick(C("only"), "Enemies")
+    pick(C("on1"), "Mouseover")
+    pick(C("on2"), "As usual")
+    pick(C("command"), "Pet commands")
+    check("wizard: the pet attacks the mouseover, then your target", shown()
+        == "/petattack [@mouseover,harm,nodead][]" and MacroSenseWizard.height == tall and C("name").text == "Pet",
+        shown())
+    Fire(C("shift"), "OnClick")
+    check("wizard: Shift: the pet follows, no units for that", shown() == "/petattack [nomod:shift,@mouseover,"
+        .. "harm,nodead][nomod:shift]\n/petfollow [mod:shift]" and not C("shiftOn"):IsShown()
+        and C("shiftPet"):IsShown() and not C("shiftCast"):IsShown(), shown())
+    pick(C("shiftPet"), "Attack")
+    pick(C("shiftOn"), "Focus")
+    check("wizard: Shift: the pet attacks the focus", C("shiftOn"):IsShown() and shown():find(
+        "\n/petattack [mod:shift,@focus,harm,nodead]", 1, true) ~= nil, shown())
+    pick(C("pet"), "Follow")
+    Fire(C("ctrl"), "OnClick")
+    pick(C("ctrlPet"), "Move to the cursor")
+    check("wizard: no units without an attack", shown() == "/petfollow [nomod:shift/ctrl]\n"
+        .. "/petattack [mod:shift,@focus,harm,nodead]\n/petmoveto [mod:ctrl,@cursor]"
+        and MacroSenseWizard.height == tall - 68, shown())
+    Fire(C("shift"), "OnClick")
+    Fire(C("ctrl"), "OnClick")
+    pick(C("command"), "/cast")
+    check("wizard: back to /cast", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
+        and not C("shiftPet"):IsShown(), shown())
+
+    -- Also: out of a form, off the mount, a buff cancelled first; something said in chat last.
+    Fire(C("cancelform"), "OnClick")
+    Fire(C("dismount"), "OnClick")
+    TypeIn(C("cancelaura"), "Ice Block")
+    Fire(C("cancelaura"), "OnEnterPressed")
+    TypeIn(C("say"), "Casting on %t")
+    pick(C("channel"), "Raid")
+    check("wizard: what goes first, what is said last", shown() == "#showtooltip\n/cancelform\n/dismount [mounted]\n"
+        .. "/cancelaura Ice Block\n/cast [@mouseover,harm,nodead][] Frostbolt\n/raid Casting on %t", shown())
+    Fire(C("cancelform"), "OnClick")
+    Fire(C("dismount"), "OnClick")
+    TypeIn(C("cancelaura"), "")
+    Fire(C("cancelaura"), "OnEnterPressed")
+    TypeIn(C("say"), "")
+    check("wizard: and all of it taken back", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt",
+        shown())
 
     -- Not in combat, not into a full tab: the form stays.
     TypeIn(C("cast"), "frost")

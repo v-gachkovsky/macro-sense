@@ -45,7 +45,9 @@ CurseForge once it is published. For development, symlink the folder from this r
   a sequence asks what starts it over (a new target, the end of combat, Shift / Ctrl / Alt, some seconds
   without a press). `/use` offers your items first, then the equipment slots whose item has a use effect
   (`13`, `14`). `/target`, `/focus` and `/assist` take only units, party members among them: a key can take
-  other units or clear the target / focus, and `/target` can also go by name (a rare, say).
+  other units or clear the target / focus, and `/target` can also go by name (a rare, say). **Pet commands**:
+  what the pet does without a key (attack, on units in order, follow, stay, move to the cursor, passive,
+  defensive, aggressive, dismiss), and with each key held.
 - **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words, and your spells and
   usable items come up; any other name works too.
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
@@ -55,8 +57,9 @@ CurseForge once it is published. For development, symlink the folder from this r
   knows what it is for.
 - **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
   fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
-- **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), start auto attack, your
-  pet attacks your target, the nearest enemy if none is targeted.
+- **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
+  none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
+  first, cancel a buff first, and say something in chat last (`%t` is your target's name).
 - **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.
 
 The macro shows under the form as you choose, with its colors and length. **Create macro** saves it under a
@@ -72,6 +75,7 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | /castsequence Corruption, Immolate; start over on a new target | `/castsequence reset=target Corruption, Immolate` |
 | /focus on Mouseover, then Your target; Shift: Clear focus | `/clearfocus [mod:shift]`, `/stopmacro [mod:shift]`, `/focus [@mouseover,exists,nodead][@target,exists,nodead]` |
 | /target Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/target [mod:shift,@party2,help,nodead]...[@party1,help,nodead]` |
+| Pet: Attack on Mouseover, then As usual; Shift: Follow; Ctrl: Move to the cursor | `/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]`, `/petfollow [mod:shift]`, `/petmoveto [mod:ctrl,@cursor]` |
 | Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Autocomplete
