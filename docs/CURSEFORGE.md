@@ -85,8 +85,8 @@ Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you.
 
 ## Feedback
 
-Found a bug or have an idea? Leave a comment on this page with what you did, what you expected and what
-happened (a screenshot helps), plus the output of `/ms bug`.
+Found a bug or have an idea? Open an issue on [GitHub](https://github.com/v-gachkovsky/macro-sense/issues) (or leave a comment on this page) with what
+you did, what you expected and what happened (a screenshot helps), plus the output of `/ms bug`.
 
 ---
 
