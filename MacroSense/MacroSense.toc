@@ -1,9 +1,10 @@
 ## Interface: 120105, 50504, 20506, 11509, 16001
 ## Title: MacroSense
-## Notes: Macro editor with syntax highlighting, color schemes and context-aware autocomplete.
+## Notes: Macro editor with autocomplete, syntax highlighting, error checks, color schemes and an icon picker.
 ## Author: Volodymyr Hachkovsky
 ## Version: @project-version@
 ## SavedVariables: MacroSenseDB
+## IconTexture: Interface\AddOns\MacroSense\Media\logo
 
 Parser.lua
 Data.lua

@@ -4,6 +4,15 @@ _G.MacroSense = ns
 local L_PREFIX = "|cff569cd6MacroSense|r: "
 function ns.Print(...) print(L_PREFIX .. string.format(...)) end
 
+-- Where players report bugs. Set it once the project has a public page (GitHub / CurseForge issues).
+ns.ISSUES_URL = nil
+
+local Metadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+local function Version()
+    local v = Metadata(ADDON, "Version")
+    return (not v or v:find("@")) and "dev" or v
+end
+
 ns.defaults = {
     enabled = true, -- autocomplete
     debug = false,  -- print key events of the editor
@@ -11,7 +20,19 @@ ns.defaults = {
     fontSize = 13,
     scheme = ns.DEFAULT_SCHEME,
     scope = "general",
+    welcomeSeen = nil, -- version the early-development note was shown for
 }
+
+-- Once per installed version: the addon is young, bug reports are welcome.
+local function Welcome()
+    local version = Version()
+    if ns.db.welcomeSeen == version then return end
+    ns.db.welcomeSeen = version
+    ns.Print("%s - thanks for trying it! The addon is in early development.", version)
+    print("  Found a bug or have an idea? Please don't hesitate to tell me: I read every report")
+    print("  and try to fix things as fast as I can. Type /ms bug for the details to include.")
+    if ns.ISSUES_URL then print("  Report here: " .. ns.ISSUES_URL) end
+end
 
 local IsLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
 
@@ -47,6 +68,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.InvalidateSources("commands")
     elseif event == "PLAYER_LOGIN" then
         ns.RegisterActionCommands()
+        Welcome()
     elseif event == "SPELLS_CHANGED" then
         ns.InvalidateSources("spells")
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
@@ -73,10 +95,18 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.db.enabled = not ns.db.enabled
         ns.Print("autocomplete %s", OnOff(ns.db.enabled))
         if not ns.db.enabled then ns.Popup:Hide() end
+    elseif msg == "bug" then
+        -- Everything a bug report needs, ready to copy.
+        local build, _, _, toc = GetBuildInfo()
+        ns.Print("bug report details:")
+        print(string.format("  MacroSense %s, WoW %s (%s), %s", Version(), build, toc,
+            IsMacClient and IsMacClient() and "Mac" or "Windows"))
+        print("  Please describe what you did, what you expected and what happened; a screenshot helps.")
+        if ns.ISSUES_URL then print("  Report here: " .. ns.ISSUES_URL) end
     elseif msg == "debug" then
         ns.db.debug = not ns.db.debug
         ns.Print("debug %s", OnOff(ns.db.debug))
     else
-        ns.Print("/ms - open the editor; /ms autocomplete | debug - toggle")
+        ns.Print("/ms - open the editor; /ms bug - details for a bug report; /ms autocomplete | debug - toggle")
     end
 end
