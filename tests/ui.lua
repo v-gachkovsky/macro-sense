@@ -212,6 +212,11 @@ end
 check("editor exists", edit ~= nil)
 check("macro loaded", ns.Highlight.Strip(edit:GetText()) == "#showtooltip\n/cast Fireball", edit:GetText())
 check("text is colored", edit:GetText():find("|cff") ~= nil)
+do
+    local visible = 0
+    for _, o in ipairs(created) do if o.kind == "Slider" and o.SetRange and o:IsShown() then visible = visible + 1 end end
+    check("no scroll bars without overflow", visible == 0, visible)
+end
 
 local function raw() return ns.Highlight.Strip(edit:GetText()) end
 local function rawCursor() return ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition()) end
@@ -446,6 +451,9 @@ do
     check("wheel clamps at top", scroll.vscroll == 0, scroll.vscroll)
     Fire(b, "OnValueChanged", 30)
     check("dragging thumb scrolls", scroll.vscroll == 30, scroll.vscroll)
+    scroll.range = 0.4
+    Fire(scroll, "OnScrollRangeChanged")
+    check("sub-pixel range hides the bar", not b:IsShown())
     scroll.range = 0
     Fire(scroll, "OnScrollRangeChanged")
     check("scroll bar hidden without overflow", not b:IsShown())

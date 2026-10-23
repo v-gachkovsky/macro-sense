@@ -200,6 +200,7 @@ function ns.ScrollBar(parent, onChange, step)
     if bar.SetObeyStepOnDrag then bar:SetObeyStepOnDrag(step ~= nil) end
     bar:EnableMouse(true)
     bar.max, bar.visible = 0, 1
+    bar:Hide() -- until there is something to scroll
 
     local track = bar:CreateTexture(nil, "BACKGROUND")
     track:SetAllPoints()
@@ -234,7 +235,7 @@ function ns.ScrollBar(parent, onChange, step)
     function bar:SetRange(max, visible)
         self.max, self.visible = math.max(0, max or 0), math.max(1, visible or 1)
         self:SetMinMaxValues(0, self.max)
-        self:SetShown(self.max > 0)
+        self:SetShown(self.max >= 1) -- text insets can leave a sub-pixel range: nothing to scroll
         sizeThumb()
     end
     function bar:SetPosition(v)
@@ -257,6 +258,7 @@ function ns.AttachScrollBar(scroll, wheelStep)
     scroll:HookScript("OnScrollRangeChanged", update)
     scroll:HookScript("OnVerticalScroll", update)
     scroll:HookScript("OnSizeChanged", update)
+    scroll:HookScript("OnShow", update)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(_, delta)
         local range = scroll:GetVerticalScrollRange()
