@@ -97,6 +97,7 @@ end
 -- FontString measuring: 8 px per character, 14 px high; one row unless wrapLines is on.
 local wrapLines = false
 function Frame:SetWidth(w) self.width = w end
+function Frame:SetHeight(h) self.height = h end
 function Frame:GetUnboundedStringWidth() return #tostring(self.text) * charWidth(self) end
 function Frame:GetStringWidth() return #tostring(self.text) * charWidth(self) end
 function Frame:GetNumLines()
@@ -197,6 +198,16 @@ C_Item = {
     IsEquippableItem = function(link) return link:find("1234") ~= nil end,
     GetItemIconByID = function(id) return id end,
     GetItemCount = function() return 1 end,
+    IsHelpfulItem = function(item) return item == "Healthstone" end,
+    IsHarmfulItem = function() return false end,
+}
+-- Whether a spell is for friends or enemies; a name the game doesn't know it refuses.
+C_Spell = {
+    IsSpellHarmful = function(name)
+        if name == "Divine Hymn" then error("unknown spell") end
+        return name == "Fireball" or name == "Fire Blast" or name == "Frostbolt"
+    end,
+    IsSpellHelpful = function() return false end,
 }
 -- Gear: a trinket in slot 13 (no use effect, can't be equipped from the bags).
 function GetInventoryItemLink(_, slot) if slot == 13 then return "|cffa335ee|Hitem:777::|h[Lucky Charm]|h|r" end end
@@ -1706,6 +1717,376 @@ do
     _G[fn]("MacroSense", "LeftButton")
     check("compartment: it opens or closes the editor", MacroSenseFrame:IsShown() == not open)
     _G[fn]("MacroSense", "LeftButton")
+end
+
+-- Wizard: a window with a form; the macro shows under it as you choose, Create macro saves it and opens it.
+do
+    local function button(label)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == label then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    local editorName
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 then editorName = o end
+    end
+    local C = ns.WizardWindow.Control
+    -- A player types into a box of the form: it takes the focus, then the letters come.
+    local function TypeIn(box, text)
+        box:SetFocus()
+        Fire(box, "OnEditFocusGained")
+        box.text = text
+        Fire(box, "OnTextChanged", true)
+    end
+    local function offered(box)
+        local out = {}
+        for _, r in ipairs(box.list.rows) do
+            if r:IsShown() then out[#out + 1] = r.text.text end
+        end
+        return table.concat(out, ", ")
+    end
+    local function pick(dropdown, label)
+        Fire(dropdown, "OnClick")
+        Fire(menuItem(label), "OnClick")
+    end
+    local function shown() return ns.Highlight.Strip(C("preview").text) end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local wizardBtn = button("New (Wizard)")
+
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+    local count, before, first = GetNumMacros(), raw(), GetMacroInfo(1)
+    Fire(wizardBtn, "OnClick")
+    check("wizard: a window of its own", MacroSenseWizard and MacroSenseWizard:IsShown() and raw() == before)
+    check("wizard: nothing to create yet", shown():find("Pick a spell", 1, true) ~= nil and not C("create"):IsEnabled(),
+        shown())
+    check("wizard: into the tab that is open", C("tab").label.text == "General", C("tab").label.text)
+
+    local cast = C("cast")
+    TypeIn(cast, "fb")
+    check("wizard: a name by its first letters", offered(cast) == "Fire Blast", offered(cast))
+    TypeIn(cast, "fire")
+    check("wizard: your spells and the items you can use", offered(cast) == "Fire Blast, Fireball", offered(cast))
+    Fire(cast, "OnArrowPressed", "DOWN")
+    Fire(cast, "OnEnterPressed")
+    check("wizard: Enter takes the name the arrows picked", cast.text == "Fireball" and not cast.list:IsShown(), cast.text)
+    check("wizard: the macro shows as you choose", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball",
+        shown())
+    check("wizard: enemies, as the spell is for them", C("only").label.text == "Enemies", C("only").label.text)
+    check("wizard: named after it", C("name").text == "Fireball", C("name").text)
+    check("wizard: how long it is", C("create"):IsEnabled()
+        and ns.Highlight.Strip(C("counter").text) == #shown() .. " / 255", C("counter").text)
+
+    TypeIn(cast, "stone")
+    Fire(cast.list.rows[1], "OnClick")
+    check("wizard: a click picks a name; an item for friends, with /use",
+        shown() == "#showtooltip\n/use [@mouseover,help,nodead][] Healthstone", shown())
+    check("wizard: the name follows", C("name").text == "Healthstone", C("name").text)
+    pick(C("on2"), "Your target")
+    pick(C("on3"), "Yourself")
+    check("wizard: on whom, in order",
+        shown() == "#showtooltip\n/use [@mouseover,help,nodead][help,nodead][@player] Healthstone", shown())
+    Fire(C("alive"), "OnClick")
+    check("wizard: dead ones too", shown() == "#showtooltip\n/use [@mouseover,help][help][@player] Healthstone", shown())
+    Fire(C("alive"), "OnClick")
+
+    TypeIn(cast, "frost")
+    Fire(cast, "OnEnterPressed")
+    pick(C("on2"), "As usual")
+    check("wizard: nothing after As usual", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    Fire(C("shift"), "OnClick")
+    TypeIn(C("shiftCast"), "poly")
+    Fire(C("shiftCast"), "OnEnterPressed")
+    pick(C("shiftOn"), "Focus")
+    check("wizard: Shift casts another spell on another unit", shown()
+        == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Frostbolt", shown())
+    Fire(C("ctrl"), "OnClick")
+    pick(C("ctrlOn"), "Yourself")
+    check("wizard: Ctrl casts the same one on yourself", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead] "
+        .. "Polymorph; [mod:ctrl,@player][@mouseover,harm,nodead][] Frostbolt", shown())
+    Fire(C("ctrl"), "OnClick")
+    check("wizard: the list under a narrow box is wide enough for long names", C("shiftCast").list.width == 260
+        and C("cast").list.width == 330, C("shiftCast").list.width)
+    pick(C("shiftThen"), "Your target")
+    check("wizard: a key falls back too", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead]"
+        .. "[mod:shift,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Frostbolt", shown())
+    check("wizard: Cmd too, on a Mac", C("cmd") ~= nil and C("cmd").label.text == "Cmd")
+    Fire(C("cmd"), "OnClick")
+    TypeIn(C("cmdCast"), "fire b")
+    Fire(C("cmdCast"), "OnEnterPressed")
+    check("wizard: Cmd casts another spell", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead]"
+        .. "[mod:shift,harm,nodead] Polymorph; [mod:cmd] Fire Blast; [@mouseover,harm,nodead][] Frostbolt", shown())
+    Fire(C("cmd"), "OnClick")
+    check("wizard: the trinkets by what is in the slot", C("trinket1").label.text == "Trinket 1: Lucky Charm"
+        and C("trinket2").label.text == "Trinket 2: empty", C("trinket1").label.text)
+    -- A long name is cut to stay in the window.
+    local equipped = GetInventoryItemLink
+    GetInventoryItemLink = function(unit, slot)
+        if slot == 14 then return "|cffa335ee|Hitem:888::|h[Unbound Changeling of the Endless Night]|h|r" end
+        return equipped(unit, slot)
+    end
+    Fire(wizardBtn, "OnClick")
+    Fire(wizardBtn, "OnClick")
+    check("wizard: a long trinket name cut", C("trinket2").label.text == "Trinket 2: Unbound Chang...",
+        C("trinket2").label.text)
+    GetInventoryItemLink = equipped
+    TypeIn(cast, "frost")
+    Fire(cast, "OnEnterPressed")
+    pick(C("on2"), "As usual")
+    Fire(C("shift"), "OnClick")
+    TypeIn(C("shiftCast"), "poly")
+    Fire(C("shiftCast"), "OnEnterPressed")
+    pick(C("shiftOn"), "Focus")
+    C("name"):SetText("Burst")
+    Fire(C("stopcasting"), "OnClick")
+    Fire(C("trinket1"), "OnClick")
+    check("wizard: a name you typed stays", C("name").text == "Burst", C("name").text)
+    local burst = "#showtooltip Frostbolt\n/stopcasting\n/use 13\n"
+        .. "/cast [mod:shift,@focus,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Frostbolt"
+    check("wizard: and what else it does", shown() == burst, shown())
+
+    -- Create macro: saved under the name in the box, opened in the editor (unsaved changes there asked about
+    -- first: the fake dialog says yes).
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    Key("ESCAPE", "OnEscapePressed")
+    Fire(C("create"), "OnClick")
+    check("wizard: Create macro saves it", GetMacroIndexByName("Burst") > 0 and GetNumMacros() == count + 1
+        and body("Burst") == burst, GetNumMacros())
+    check("wizard: and opens it in the editor", not MacroSenseWizard:IsShown() and editorName.text == "Burst"
+        and raw() == burst and not saveIsEnabled(), editorName.text)
+    check("wizard: the macro edited before kept its saved text", body(first) == before, body(first))
+
+    -- Fresh each time; a name that is taken gets a number; the tab chosen.
+    Fire(wizardBtn, "OnClick")
+    check("wizard: a fresh form", C("cast").text == "" and not C("shift").fill:IsShown()
+        and C("on2").label.text == "As usual" and C("shiftThen").label.text == "-"
+        and shown():find("Pick a spell", 1, true) ~= nil)
+    TypeIn(C("cast"), "frost")
+    Fire(C("cast"), "OnEnterPressed")
+    C("name"):SetText("Burst")
+    Fire(C("create"), "OnClick")
+    check("wizard: a free name", GetMacroIndexByName("Burst 2") > 0, GetNumMacros())
+    Fire(wizardBtn, "OnClick")
+    TypeIn(C("cast"), "poly")
+    Fire(C("cast"), "OnEnterPressed")
+    pick(C("tab"), "Character")
+    Fire(C("create"), "OnClick")
+    local index = GetMacroIndexByName("Polymorph")
+    check("wizard: into the tab chosen", index > SLOTS.MAX_ACCOUNT_MACROS and ns.db.scope == "character", index)
+    Fire(wizardBtn, "OnClick")
+    check("wizard: the tab open now first", C("tab").label.text == "Character", C("tab").label.text)
+
+    -- Commands: /use offers the items first and the slots with a use effect; /castsequence and /castrandom take a
+    -- list; the window is as tall as the command's form.
+    local function last(label)
+        local found
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == label then found = o end
+        end
+        return found
+    end
+    local gear = GetInventoryItemLink
+    GetInventoryItemLink = function(unit, slot)
+        if slot == 14 then return "|cffa335ee|Hitem:5512::|h[Burning Talisman]|h|r" end
+        return gear(unit, slot)
+    end
+    local tall = MacroSenseWizard.height
+    pick(C("command"), "/use")
+    check("wizard: /use", C("castLabel").text == "Use" and MacroSenseWizard.height == tall, C("castLabel").text)
+    TypeIn(C("cast"), "")
+    check("wizard: /use offers the items first, then the slots", offered(C("cast")):find("^Healthstone, 14, Fire") ~= nil,
+        offered(C("cast")))
+    TypeIn(C("cast"), "1")
+    check("wizard: /use offers the slots with a use effect", offered(C("cast")) == "14", offered(C("cast")))
+    Fire(C("cast"), "OnEnterPressed")
+    check("wizard: a slot, named after what is in it", shown() == "#showtooltip\n/use [@mouseover,exists,nodead][] 14"
+        and C("name").text == "Burning Talisman", shown())
+    GetInventoryItemLink = gear
+    TypeIn(C("cast"), "fire")
+    Fire(C("cast"), "OnArrowPressed", "DOWN")
+    Fire(C("cast"), "OnEnterPressed")
+    check("wizard: a spell picked: /cast again", C("command").label.text == "/cast" and C("castLabel").text == "Cast"
+        and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", C("command").label.text)
+    pick(C("command"), "/castsequence")
+    check("wizard: /castsequence takes a list, the spell first", C("list1").text == "Fireball"
+        and C("listTitle").text == "In turn, one per press" and MacroSenseWizard.height == tall + 10,
+        MacroSenseWizard.height)
+    TypeIn(C("list2"), "frost")
+    Fire(C("list2"), "OnEnterPressed")
+    Fire(C("resetTarget"), "OnClick")
+    Fire(C("resetTimed"), "OnClick")
+    Fire(last("+"), "OnClick")
+    check("wizard: in turn, and what starts it over", shown()
+        == "#showtooltip\n/castsequence [@mouseover,harm,nodead][] reset=11/target Fireball, Frostbolt", shown())
+    pick(C("command"), "/castrandom")
+    check("wizard: /castrandom: one of them, nothing starts it over", shown()
+        == "#showtooltip\n/castrandom [@mouseover,harm,nodead][] Fireball, Frostbolt"
+        and C("listTitle").text == "One of these at random" and MacroSenseWizard.height == tall - 72, shown())
+    pick(C("command"), "/cast")
+    check("wizard: back to /cast, its spell kept", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball"
+        and MacroSenseWizard.height == tall, shown())
+    TypeIn(C("cast"), "")
+    Fire(C("cast"), "OnEnterPressed")
+    pick(C("command"), "/castsequence")
+    TypeIn(C("list1"), "frost")
+    Fire(C("list1"), "OnEnterPressed")
+    pick(C("command"), "/cast")
+    check("wizard: a /cast with no spell takes the list's first", C("cast").text == "Frostbolt"
+        and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    pick(C("command"), "/castrandom")
+    TypeIn(C("list3"), "")
+    Fire(C("list3"), "OnEnterPressed")
+    check("wizard: Enter in an empty box leaves it empty", C("list3").text == "", C("list3").text)
+    TypeIn(C("list3"), "")
+    Fire(C("list3"), "OnArrowPressed", "DOWN")
+    Fire(C("list3"), "OnEnterPressed")
+    check("wizard: or takes the name picked with the arrows", C("list3").text == "Fireball", C("list3").text)
+    pick(C("command"), "/cast")
+    Fire(C("nearest"), "OnClick")
+    check("wizard: the nearest enemy first", shown()
+        == "#showtooltip\n/targetenemy [noharm][dead]\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    Fire(C("nearest"), "OnClick")
+
+    -- /target, /focus, /assist: units only (As usual becomes your target); a key may clear; /target by name.
+    pick(C("command"), "/focus")
+    check("wizard: /focus on units, no icon line", shown() == "/focus [@mouseover,harm,nodead][@target,harm,nodead]"
+        and C("on2").label.text == "Your target" and MacroSenseWizard.height == tall - 34, shown())
+    check("wizard: a key's units where the spell was", not C("shiftCast"):IsShown() and C("shiftOn").point[2] == 84,
+        C("shiftOn").point[2])
+    Fire(C("shift"), "OnClick")
+    pick(C("shiftOn"), "Clear focus")
+    check("wizard: Shift clears the focus", shown() == "/clearfocus [mod:shift]\n/stopmacro [mod:shift]\n"
+        .. "/focus [@mouseover,harm,nodead][@target,harm,nodead]" and C("name").text == "Focus", shown())
+    pick(C("command"), "/target")
+    check("wizard: /target, not on your target", shown() == "/cleartarget [mod:shift]\n/stopmacro [mod:shift]\n"
+        .. "/target [@mouseover,harm,nodead]" and C("on2").label.text == "-" and MacroSenseWizard.height == tall, shown())
+    TypeIn(C("byName"), "Hogger")
+    check("wizard: /target by name", shown() == "/cleartarget [mod:shift]\n/stopmacro [mod:shift]\n"
+        .. "/target [@mouseover,harm,nodead][] Hogger" and C("name").text == "Hogger", shown())
+    TypeIn(C("byName"), "")
+    pick(C("only"), "Friends")
+    pick(C("on1"), "Party member 1")
+    pick(C("shiftOn"), "Party member 2")
+    check("wizard: party members by key", shown() == "/target [mod:shift,@party2,help,nodead][@party1,help,nodead]",
+        shown())
+    pick(C("command"), "/assist")
+    check("wizard: /assist", shown() == "/assist [mod:shift,@party2,help,nodead][@party1,help,nodead]"
+        and MacroSenseWizard.height == tall - 34, shown())
+    pick(C("command"), "/cast")
+    check("wizard: back to /cast: the spell, the keys in their places", shown()
+        == "#showtooltip\n/cast [mod:shift,@party2,help,nodead][@party1,help,nodead] Frostbolt"
+        and C("shiftCast"):IsShown() and C("shiftOn").point[2] == 242, shown())
+    Fire(C("shift"), "OnClick")
+
+    -- Pet commands: what it does without a key, a command per key; units only for Attack.
+    pick(C("only"), "Enemies")
+    pick(C("on1"), "Mouseover")
+    pick(C("on2"), "As usual")
+    pick(C("command"), "Pet commands")
+    check("wizard: the pet attacks the mouseover, then your target", shown()
+        == "/petattack [@mouseover,harm,nodead][]" and MacroSenseWizard.height == tall and C("name").text == "Pet",
+        shown())
+    Fire(C("shift"), "OnClick")
+    check("wizard: Shift: the pet follows, no units for that", shown() == "/petattack [nomod:shift,@mouseover,"
+        .. "harm,nodead][nomod:shift]\n/petfollow [mod:shift]" and not C("shiftOn"):IsShown()
+        and C("shiftPet"):IsShown() and not C("shiftCast"):IsShown(), shown())
+    pick(C("shiftPet"), "Attack")
+    pick(C("shiftOn"), "Focus")
+    check("wizard: Shift: the pet attacks the focus", C("shiftOn"):IsShown() and shown():find(
+        "\n/petattack [mod:shift,@focus,harm,nodead]", 1, true) ~= nil, shown())
+    pick(C("pet"), "Follow")
+    Fire(C("ctrl"), "OnClick")
+    pick(C("ctrlPet"), "Move to the cursor")
+    check("wizard: no units without an attack", shown() == "/petfollow [nomod:shift/ctrl]\n"
+        .. "/petattack [mod:shift,@focus,harm,nodead]\n/petmoveto [mod:ctrl,@cursor]"
+        and MacroSenseWizard.height == tall - 68, shown())
+    -- Classic Era and TBC have /petmoveto, but their game does nothing with it: not offered there.
+    LE_EXPANSION_LEVEL_CURRENT = 1
+    Fire(C("pet"), "OnClick")
+    check("wizard: no Move To before Cataclysm", menuItem("Follow") ~= nil and menuItem("Move to the cursor") == nil)
+    Fire(C("pet"), "OnClick")
+    LE_EXPANSION_LEVEL_CURRENT = 4
+    Fire(C("pet"), "OnClick")
+    check("wizard: Move To from Cataclysm on", menuItem("Move to the cursor") ~= nil)
+    Fire(C("pet"), "OnClick")
+    LE_EXPANSION_LEVEL_CURRENT = nil
+    Fire(C("shift"), "OnClick")
+    Fire(C("ctrl"), "OnClick")
+    pick(C("command"), "/cast")
+    check("wizard: back to /cast", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
+        and not C("shiftPet"):IsShown(), shown())
+
+    -- Also: out of a form, off the mount, a buff cancelled first; something said in chat last.
+    Fire(C("cancelform"), "OnClick")
+    Fire(C("dismount"), "OnClick")
+    TypeIn(C("cancelaura"), "Ice Block")
+    Fire(C("cancelaura"), "OnEnterPressed")
+    TypeIn(C("say"), "Casting on %t")
+    pick(C("channel"), "Raid")
+    check("wizard: what goes first, what is said last", shown() == "#showtooltip\n/cancelform\n/dismount [mounted]\n"
+        .. "/cancelaura Ice Block\n/cast [@mouseover,harm,nodead][] Frostbolt\n/raid Casting on %t", shown())
+    Fire(C("cancelform"), "OnClick")
+    Fire(C("dismount"), "OnClick")
+    TypeIn(C("cancelaura"), "")
+    Fire(C("cancelaura"), "OnEnterPressed")
+    TypeIn(C("say"), "")
+    check("wizard: and all of it taken back", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt",
+        shown())
+
+    -- Not in combat, not into a full tab: the form stays.
+    TypeIn(C("cast"), "frost")
+    Fire(C("cast"), "OnEnterPressed")
+    InCombatLockdown = function() return true end
+    count = GetNumMacros() + select(2, GetNumMacros())
+    Fire(C("create"), "OnClick")
+    check("wizard: not in combat", MacroSenseWizard:IsShown() and GetNumMacros() + select(2, GetNumMacros()) == count
+        and printed[#printed]:find("in combat", 1, true) ~= nil)
+    InCombatLockdown = function() return false end
+    local fillers = SLOTS.MAX_CHARACTER_MACROS - select(2, GetNumMacros())
+    for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", true) end
+    Send("UPDATE_MACROS")
+    Fire(C("create"), "OnClick")
+    check("wizard: not into a full tab", MacroSenseWizard:IsShown()
+        and printed[#printed]:find("no free character macro slots", 1, true) ~= nil, printed[#printed])
+    for i = 1, fillers do DeleteMacro(GetMacroIndexByName("Filler " .. i)) end
+
+    Fire(wizardBtn, "OnClick")
+    check("wizard: the button closes it", not MacroSenseWizard:IsShown())
+    Fire(wizardBtn, "OnClick")
+    ns.Window.Toggle()
+    check("wizard: closes with the editor", not MacroSenseWizard:IsShown())
+    ns.Window.Toggle()
+
+    for _, name in ipairs({ "Burst", "Burst 2", "Polymorph" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- A command the client has but its game does nothing with: /petmoveto before Cataclysm is a warning.
+do
+    local function warned(raw)
+        local e = ns.Highlight.Errors(raw)[1]
+        return e and e.severity == "warning" and e.short or nil
+    end
+    LE_EXPANSION_LEVEL_CURRENT = 1
+    check("petmoveto: a warning in TBC", warned("/petmoveto [@cursor]") == "not in this game version",
+        warned("/petmoveto [@cursor]"))
+    check("petmoveto: other commands are fine", #ns.Highlight.Errors("/target party1") == 0)
+    LE_EXPANSION_LEVEL_CURRENT = 4
+    check("petmoveto: fine from Cataclysm on", warned("/petmoveto [@cursor]") == nil)
+    LE_EXPANSION_LEVEL_CURRENT = nil
+    check("petmoveto: fine where the version is not known", warned("/petmoveto") == nil)
 end
 
 -- Theme switch recolors without touching the text.

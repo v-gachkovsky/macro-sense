@@ -117,6 +117,30 @@ function ns.sources.commands()
     return out
 end
 
+-- Commands every client has, but the game only carries out from an expansion on: the pet's Move To came with
+-- Cataclysm (3). LE_EXPANSION_LEVEL_CURRENT is the client's: 0 Classic Era, 1 TBC, 4 Mists of Pandaria.
+local LATER = { PET_MOVE_TO = 3 }
+
+-- The expansion a command (any of its names) came with, or nil.
+function ns.CommandSince(name)
+    for key, since in pairs(LATER) do
+        for _, alias in ipairs(aliases(key)) do
+            if alias == name then return since end
+        end
+    end
+end
+
+-- Whether this client's game carries out what came with `since` (unknown clients do).
+function ns.HasExpansion(since)
+    return not since or (LE_EXPANSION_LEVEL_CURRENT or since) >= since
+end
+
+function ns.Highlight.checkCommand(name)
+    if ns.HasExpansion(ns.CommandSince(name)) then return nil end
+    return string.format('"/%s" does nothing in this version of the game (it came with a later one)', name),
+        "not in this game version"
+end
+
 -- Highlighting marks commands the game does not know.
 local commandSet, commandSetFor
 function ns.Highlight.isCommand(name)
@@ -240,6 +264,26 @@ function ns.sources.slots()
         out[#out + 1] = { name = s.name, hint = item and (s.hint .. ": " .. item) or s.hint }
     end
     return out
+end
+
+-- What is in an equipment slot: its name and whether it has a use effect.
+function ns.sources.equipped(slot)
+    local link = GetInventoryItemLink("player", slot)
+    return linkName(link), link ~= nil and ItemSpell(link) ~= nil
+end
+
+-- Whether a spell or item is for friends or enemies, when the game knows: "friends", "enemies" or nil.
+local IsHelpful = C_Spell and C_Spell.IsSpellHelpful or IsHelpfulSpell
+local IsHarmful = C_Spell and C_Spell.IsSpellHarmful or IsHarmfulSpell
+local IsHelpfulItem = C_Item and C_Item.IsHelpfulItem or IsHelpfulItem
+local IsHarmfulItem = C_Item and C_Item.IsHarmfulItem or IsHarmfulItem
+function ns.sources.reaction(name, item)
+    local helpful, harmful = IsHelpful, IsHarmful
+    if item then helpful, harmful = IsHelpfulItem, IsHarmfulItem end
+    -- pcall: a name the game doesn't know (a spell of another spec) may be refused.
+    local function says(fn) return fn ~= nil and select(2, pcall(fn, name)) == true end
+    if says(harmful) then return "enemies" end
+    if says(helpful) then return "friends" end
 end
 
 -- The slots of a bag that hold something, with its name: "/use 0 1".

@@ -395,14 +395,20 @@ function Window.SetScope(scope)
     end)
 end
 
+-- An empty new macro in the tab that is open, if the tab has a free slot.
+local function Fresh()
+    local first, last, max = MacroRange(state.scope)
+    if last - first + 1 >= max then
+        ns.Print("no free %s macro slots", state.scope)
+        return false
+    end
+    Load(nil)
+    return true
+end
+
 function Window.New()
     Guard(function()
-        local first, last, max = MacroRange(state.scope)
-        if last - first + 1 >= max then
-            return ns.Print("no free %s macro slots", state.scope)
-        end
-        Load(nil)
-        nameBox:SetFocus()
+        if Fresh() then nameBox:SetFocus() end
     end)
 end
 
@@ -464,6 +470,14 @@ function Window.Delete(index)
     Load(last >= first and math.min(index, last) or nil)
 end
 
+-- `s` cut to its first `n` letters, whole ones.
+local function FirstLetters(s, n)
+    while Letters(s) > n and s ~= "" do
+        s = s:gsub("[\1-\127\192-\255][\128-\191]*$", "") -- the last letter, whole
+    end
+    return s
+end
+
 -- A name no macro has: "Fear" -> "Fear 2", "Fear 2" -> "Fear 3", cut to fit the name limit. Two macros with
 -- one name would share a key binding ("MACRO Fear" runs the first one).
 local function FreeName(name)
@@ -476,11 +490,8 @@ local function FreeName(name)
     base, n = base or name, tonumber(n) or 1
     while true do
         n = n + 1
-        local suffix, stem = " " .. n, base
-        while Letters(stem .. suffix) > MAX_NAME and stem ~= "" do
-            stem = stem:gsub("[\1-\127\192-\255][\128-\191]*$", "") -- the last letter, whole
-        end
-        local candidate = stem:match("^(.-)%s*$") .. suffix
+        local suffix = " " .. n
+        local candidate = FirstLetters(base, MAX_NAME - Letters(suffix)):match("^(.-)%s*$") .. suffix
         if not taken(candidate) then return candidate end
     end
 end
@@ -527,6 +538,28 @@ local function CopyItems()
         item(other, "Copy to " .. SCOPE_NAMES[other], string.format("A copy %s with what the editor shows now, %s",
             other == "character" and "for this character only" or "for all your characters", same)),
     }
+end
+
+------------------------------------------------------------------------
+-- Wizard: a new macro from a form, in a window of its own
+------------------------------------------------------------------------
+-- A name no macro has, cut to fit (see FreeName).
+function Window.FreeName(name) return FreeName(FirstLetters(name, MAX_NAME)) end
+
+-- The wizard's macro: saved in the tab `scope` under a free name, then opened in the editor.
+function Window.CreateFromWizard(name, body, scope)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local first, last, max = MacroRange(scope)
+    if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
+    Guard(function()
+        local index = CreateMacro(Window.FreeName(name), NEW_ICON, body, scope == "character")
+        if not index or index == 0 then return ns.Print("could not save the macro") end
+        ns.History.Scan()
+        state.scope, ns.db.scope = scope, scope
+        ns.WizardWindow.Close()
+        Load(index)
+    end)
 end
 
 -- The macro list changed elsewhere (Blizzard UI, another addon): keep our selection by name.
@@ -702,6 +735,19 @@ local function Build()
     end)
     copyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- The wizard over them: a new macro from a form, in a window of its own.
+    local wizardBtn = ns.Button(side, "New (Wizard)", 204, function() ns.WizardWindow.Toggle(state.scope) end)
+    wizardBtn:SetPoint("BOTTOMLEFT", newBtn, "TOPLEFT", 0, 6)
+    wizardBtn:SetPoint("BOTTOMRIGHT", deleteBtn, "TOPRIGHT", 0, 6)
+    wizardBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("New (Wizard)", 1, 1, 1)
+        GameTooltip:AddLine("A new macro from a form: what to cast and on whom (mouseover, focus, party members, "
+            .. "yourself, the cursor...), other spells on Shift, Ctrl or Alt, trinkets and more.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    wizardBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Search under the tabs: Enter opens the first match, Esc clears it.
     search = ns.Input(side, 204, 40, "MacroSenseSearch")
     search:SetPoint("TOPLEFT", 8, -32)
@@ -731,7 +777,7 @@ local function Build()
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -62)
-    list:SetPoint("BOTTOMRIGHT", -13, 38)
+    list:SetPoint("BOTTOMRIGHT", -13, 66)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)
@@ -923,6 +969,7 @@ local function Build()
     frame:SetScript("OnHide", function()
         ns.Popup:Hide()
         ns.IconPicker.Close()
+        ns.WizardWindow.Close()
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
     end)

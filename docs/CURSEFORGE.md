@@ -1,6 +1,6 @@
 ![MacroSense](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/banner-v2.png)
 
-**A macro editor that knows macros: autocomplete, highlighting, error checks and a live preview.**
+**A macro editor that knows macros: a macro wizard, autocomplete, highlighting, error checks and a live preview.**
 
 > **Early development.** MacroSense is young and still growing. If something looks wrong, behaves oddly or
 > you miss a feature, please tell me: no report is too small. I read every one and try to fix things as fast
@@ -17,6 +17,23 @@ Open it from the **minimap button** (drag it along the edge to move it), with `/
 **Works on every client:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever.
 
 ---
+
+## Macro wizard
+
+Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** opens a form where you pick it all:
+
+- **the command**: `/cast`, `/use`, `/castsequence` (with what starts it over), `/castrandom`, or `/target`,
+  `/focus` and `/assist` on units (party members by key, say; `/target` by name too), or **pet commands**
+  (attack your mouseover, follow with Shift, move to the cursor with Ctrl...)
+- **what to cast**: a spell or item, found by a few letters or the first letters of its words
+- **on whom, in order**: mouseover, focus, your target, yourself, your pet, party members 1-4, target's
+  target, arena enemies 1-3, the cursor, or as usual
+- **friends, enemies or anyone**, alive only: set from the spell for you
+- **Shift, Ctrl, Alt** (and **Cmd** on a Mac): another spell, or the same one on someone else, with a fallback of its own
+- **and also**: stop your cast first, your trinkets, auto attack, your pet, the nearest enemy if none is targeted,
+  out of your form or off your mount first, a buff cancelled first, a line in chat (`%t` is your target)
+
+The macro shows as you choose; **Create macro** saves it and opens it in the editor.
 
 ## Autocomplete
 

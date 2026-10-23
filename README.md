@@ -2,7 +2,7 @@
 
 <p align="center">
   A macro editor for <b>World of Warcraft</b> that knows macros<br>
-  autocomplete · syntax highlighting · error checks · live preview · icon picker
+  macro wizard · autocomplete · syntax highlighting · error checks · live preview · icon picker
 </p>
 
 <p align="center">
@@ -20,7 +20,8 @@
 The Blizzard macro window is a plain text box. MacroSense opens your macros in a real editor: it suggests
 commands, conditions, units, spells and items as you type, colors the syntax, underlines mistakes and
 shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
-addons see every change.
+addons see every change. **New (Wizard)** builds them from a form: mouseover, focus, party members, modifier
+keys, trinkets and more.
 
 Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button in
 the title bar of the Blizzard macro window. Drag the title bar to move it and the dotted corner to resize it
@@ -36,6 +37,48 @@ Install it from [CurseForge](https://www.curseforge.com/wow/addons/macro-sense),
 [Releases](https://github.com/v-gachkovsky/macro-sense/releases) and unpack it into
 `World of Warcraft/<client>/Interface/AddOns/`. For development, symlink the `MacroSense` folder from this
 repository instead.
+
+## Macro wizard
+
+**New (Wizard)**, over New / Copy / Delete, opens a window with a form for a new macro:
+
+- **Command**: `/cast` or `/use` for one spell or item (it follows what you pick: an item sets `/use`),
+  `/castsequence` for spells in turn, `/castrandom` for one of several at random. The form changes with it:
+  a sequence asks what starts it over (a new target, the end of combat, Shift / Ctrl / Alt, some seconds
+  without a press). `/use` offers your items first, then the equipment slots whose item has a use effect
+  (`13`, `14`). `/target`, `/focus` and `/assist` take only units, party members among them: a key can take
+  other units or clear the target / focus, and `/target` can also go by name (a rare, say). **Pet commands**:
+  what the pet does without a key (attack, on units in order, follow, stay, move to the cursor, passive,
+  defensive, aggressive, dismiss), and with each key held.
+- **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words, and your spells and
+  usable items come up; any other name works too.
+- **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
+  itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
+  1-3, At the cursor. When one is not there, the next one is tried.
+- **Only**: friends, enemies or anyone there, and **Alive only**. It follows the spell you pick, when the game
+  knows what it is for.
+- **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
+  fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
+- **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
+  none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
+  first, cancel a buff first, and say something in chat last (`%t` is your target's name).
+- **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.
+
+The macro shows under the form as you choose, with its colors and length. **Create macro** saves it under a
+free name (`Frostbolt 2` when a macro has that name) and opens it in the editor, with its live preview.
+
+| You choose | You get |
+|------------|---------|
+| Flash Heal on Mouseover, then As usual; friends | `/cast [@mouseover,help,nodead][] Flash Heal` |
+| ... then Your target, then Yourself | `/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal` |
+| Counterspell on Focus, then As usual; enemies; stop your cast first | `/stopcasting`, then `/cast [@focus,harm,nodead][] Counterspell` |
+| Flash Heal on Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/cast [mod:shift,@party2,help,nodead]...[@party1,help,nodead] Flash Heal` |
+| Blizzard At the cursor | `/cast [@cursor] Blizzard` |
+| /castsequence Corruption, Immolate; start over on a new target | `/castsequence reset=target Corruption, Immolate` |
+| /focus on Mouseover, then Your target; Shift: Clear focus | `/clearfocus [mod:shift]`, `/stopmacro [mod:shift]`, `/focus [@mouseover,exists,nodead][@target,exists,nodead]` |
+| /target Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/target [mod:shift,@party2,help,nodead]...[@party1,help,nodead]` |
+| Pet: Attack on Mouseover, then As usual; Shift: Follow; Ctrl: Move to the cursor | `/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]`, `/petfollow [mod:shift]`, `/petmoveto [mod:ctrl,@cursor]` |
+| Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Autocomplete
 
@@ -91,6 +134,8 @@ an empty `[]` removes both.
 - `/click`: a name no button has now is a warning (an addon may make it later), and so is a frame that is
   not a button; a misspelled mouse button (`RigthButton`) gets a fix; `down` as the last word is a warning,
   since the game reads it as no (`true` clicks on key press).
+- A command this game version has but does nothing with is a warning: `/petmoveto` in Classic Era and TBC
+  (the pet's Move To came with Cataclysm).
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
   yellow name; hover it to see the issues. The marks follow the saved text.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,
@@ -185,19 +230,21 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
+- `MacroSense/Wizard.lua`: the wizard's form as macro text. Pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/IconPicker.lua`: icon grid.
+- `MacroSense/WizardWindow.lua`: the wizard's window.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, schemes, shortcuts, minimap
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 
