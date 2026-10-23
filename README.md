@@ -51,7 +51,8 @@ CurseForge once it is published. For development, symlink the folder from this r
 
 Keys: **Tab** / **Enter** accept, **Up / Down** move, **PageUp / PageDown** jump 10, **Esc** closes the list.
 The list shows 10 rows and scrolls (also with the mouse wheel) through the rest. Deleting never opens the list.
-Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo.
+Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo, **Ctrl+F** search the macros
+(Cmd instead of Ctrl on Mac).
 Typing `[` adds the closing `]` with the cursor inside; typing `]` before it steps over it, and Backspace in
 an empty `[]` removes both.
 
@@ -125,8 +126,10 @@ account, character macros for the character.
 
 ## Macro list
 
-The list shows the General or the Character tab, with how many macros each holds and how many fit. **Copy**
-under it copies the macro being edited, with what the editor shows (name, icon, text): **Duplicate** into the
+The list shows the General or the Character tab, with how many macros each holds and how many fit.
+**Search** above it keeps the macros whose name or text has what you type, in any case; the tabs then say how
+many match in each (`General  (3)`). Enter opens the first match, Esc clears the search. **Copy** under it
+copies the macro being edited, with what the editor shows (name, icon, text): **Duplicate** into the
 same tab, **Copy to Character** / **Copy to General** into the other one. The copy gets a free name (`Fear 2`,
 cut to fit 16 letters), because two macros with one name would share a key binding; the macro copied keeps
 its saved text.

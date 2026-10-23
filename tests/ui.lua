@@ -1414,6 +1414,71 @@ do
     NextFrame()
 end
 
+-- Search: the list keeps macros whose name or text has the words, in any case; the tabs count matches.
+do
+    local function shownNames()
+        local out = {}
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o:IsShown() then out[#out + 1] = o.text.text end
+        end
+        table.sort(out)
+        return table.concat(out, ", ")
+    end
+    local function tabLabel(prefix)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and tostring(o.label.text):sub(1, #prefix) == prefix and o.line then
+                return o.label.text
+            end
+        end
+    end
+    local function noMatch()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and o.text == "No macros match" then return o:IsShown() end
+        end
+    end
+    CreateMacro("Fear Focus", 1, "/cast [@focus] Fear", false)
+    CreateMacro("Heal", 1, "/cast [@mouseover,help] Flash Heal", false)
+    CreateMacro("Sic", 1, "/petattack", true)
+    Send("UPDATE_MACROS")
+    local search = MacroSenseSearch
+    search:SetText("FEAR")
+    check("search: by name, in any case", shownNames() == "Fear Focus", shownNames())
+    search:SetText("flash")
+    check("search: by text", shownNames() == "Heal", shownNames())
+    check("search: the tabs count matches", tabLabel("General") == "General  (1)"
+        and tabLabel("Character") == "Character  (0)", tabLabel("General"))
+    search:SetText("petattack")
+    check("search: nothing here, the other tab has it", shownNames() == "" and noMatch()
+        and tabLabel("Character") == "Character  (1)", tabLabel("Character"))
+    -- Enter opens the first match, Esc brings every macro back.
+    search:SetText("heal")
+    search:SetFocus()
+    Fire(search, "OnEnterPressed")
+    NextFrame()
+    check("search: Enter opens the first match", raw() == "/cast [@mouseover,help] Flash Heal" and not search:HasFocus(),
+        raw())
+    Fire(search, "OnEscapePressed")
+    check("search: Esc shows every macro again", search.text == "" and shownNames():find("Fear Focus", 1, true)
+        and shownNames():find("Nuke", 1, true) and tabLabel("General"):find("/120", 1, true), shownNames())
+    check("search: no note without a search", not noMatch())
+    -- Ctrl+F (Cmd+F) in the editor goes to the search; closing the window clears it.
+    edit:SetFocus()
+    IsControlKeyDown = function() return true end
+    Fire(edit, "OnKeyDown", "F")
+    IsControlKeyDown = function() return false end
+    check("search: Ctrl+F goes to the search", search:HasFocus())
+    search:SetText("fear")
+    ns.Window.Toggle()
+    ns.Window.Toggle()
+    NextFrame()
+    check("search: cleared when the window closes", search.text == "" and shownNames():find("Heal", 1, true) ~= nil,
+        shownNames())
+    for _, name in ipairs({ "Fear Focus", "Heal", "Sic" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"
