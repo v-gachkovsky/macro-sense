@@ -37,7 +37,8 @@ local LABELS = { CMD = "Cmd", CTRL = "Ctrl", ALT = "Option", SHIFT = "Shift",
 -- modifiers of that group are held too: [mod:cmd,mod:shift] -> Cmd+Shift).
 function Shortcuts.CmdGroups(raw)
     local groups = {}
-    for inner in raw:gmatch("%[([^%]]*)%]") do
+    -- Brackets never span lines, and an unclosed "[" must not swallow the next group.
+    for inner in raw:gmatch("%[([^%[%]\n]*)%]") do
         local mods, cmd = {}, false
         for cond in inner:gmatch("[^,]+") do
             local name, values = cond:match("^%s*(%a+):([^%s]*)")
