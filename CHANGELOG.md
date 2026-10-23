@@ -18,6 +18,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Unknown units** (`@mousover`) are underlined as a **warning** in yellow: they may be a player's name,
   which macros allow.
 
+- **Line numbers** in a gutter on the left: error messages refer to lines, so they no longer have to be
+  counted. A wrapped line keeps one number, the cursor's line is bright, and the gutter follows the font
+  and its size (it widens past 99 lines).
 - **Scrollable suggestions**: the list shows 10 rows and scrolls through all matches (it used to stop
   at 10, so e.g. `Shields` was out of reach in `equipped:`): Up / Down follow the selection, PageUp /
   PageDown jump 10, the mouse wheel scrolls, and a thin scroll bar shows where you are.

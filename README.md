@@ -57,6 +57,9 @@ an empty `[]` removes both.
 
 ## Highlighting and error checks
 
+- Line numbers in a gutter on the left, as in a code editor: a long line that wraps keeps one number, the
+  cursor's line is bright, and the gutter follows the font and its size. Error messages refer to them.
+
 - Fonts: DejaVu Sans Mono (default), JetBrains Mono, Fira Mono, Source Code Pro, Inconsolata, game fonts
   and any LibSharedMedia font. Size 8 to 28.
 - Schemes: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the built-in

@@ -3,7 +3,8 @@ local _, ns = ...
 
 local H = ns.Highlight
 local UNDO_LIMIT = 200
-local INSET_L, INSET_T = 6, 4
+local INSET_T = 4    -- text inset at the top; the left one follows the line number gutter (self.insetL)
+local GUTTER_PAD = 6 -- space around the line numbers
 local UNDO_GROUP = 0.8 -- keystrokes closer than this (seconds) undo together
 local TYPING_PAUSE = 0.8 -- seconds after the last key: then the word being typed is checked too
 
@@ -27,11 +28,21 @@ function ns.CreateCodeBox(parent, name)
     self.edit = edit
     edit:SetMultiLine(true)
     edit:SetAutoFocus(false)
-    edit:SetTextInsets(INSET_L, 6, INSET_T, 4)
-    self.underlines = {}
+    self.insetL = GUTTER_PAD
+    edit:SetTextInsets(self.insetL, 6, INSET_T, 4)
+    self.underlines, self.numbers = {}, {}
     edit:HookScript("OnSizeChanged", function() self:ScheduleUnderlines() end)
     edit:SetFont(ns.fonts[1].path, 13, "")
     scroll:SetScrollChild(edit)
+
+    -- Line number gutter: the strip stays put, the numbers are in the text and scroll with it.
+    self.gutterBg = scroll:CreateTexture(nil, "BACKGROUND")
+    self.gutterBg:SetPoint("TOPLEFT", -3, 3)
+    self.gutterBg:SetPoint("BOTTOMLEFT", -3, -3)
+    self.gutterLine = scroll:CreateTexture(nil, "BORDER")
+    self.gutterLine:SetWidth(1)
+    self.gutterLine:SetPoint("TOPLEFT", self.gutterBg, "TOPRIGHT")
+    self.gutterLine:SetPoint("BOTTOMLEFT", self.gutterBg, "BOTTOMRIGHT")
     scroll:SetScript("OnSizeChanged", function(_, w) edit:SetWidth(w) end)
 
     -- Clicks below the last line still focus the text.
@@ -73,8 +84,11 @@ function ns.CreateCodeBox(parent, name)
             return
         end
         if ScrollingEdit_OnCursorChanged then ScrollingEdit_OnCursorChanged(e, x, y, w, h) end
+        -- A new row height (the font size changed): numbers and underlines move with it.
+        if h ~= self.caretH then self:ScheduleUnderlines() end
         self.caretX, self.caretY, self.caretH = x, y, h
         self.lastCursor = H.ToRaw(e:GetText(), e:GetCursorPosition())
+        self:HighlightLineNumber()
         if self.lockCursor and e:GetCursorPosition() ~= self.lockCursor then
             Debug("cursor locked at %d", self.lockCursor)
             e:SetCursorPosition(self.lockCursor)
@@ -148,16 +162,107 @@ function CodeBox:Render(raw, cursor)
 end
 
 ------------------------------------------------------------------------
--- Error underlines. An EditBox cannot underline, so lines are drawn under the text. Their place comes
--- from the game itself: the cursor is moved to each error for a moment and OnCursorChanged reports x / y.
+-- Text layout: line numbers and error underlines, redrawn a frame after the text or its look changes.
 ------------------------------------------------------------------------
 function CodeBox:ScheduleUnderlines()
     if self.underlinePending then return end
     self.underlinePending = true
     C_Timer.After(0, function()
         self.underlinePending = false
+        -- A wider gutter moves and re-wraps the text: measure again on the next frame.
+        if self:DrawLineNumbers() then return self:ScheduleUnderlines() end
         self:DrawUnderlines()
     end)
+end
+
+-- A hidden FontString in the editor's font measures text the way the EditBox lays it out.
+function CodeBox:Measurer()
+    local fs = self.measurer
+    if not fs then
+        fs = self.edit:CreateFontString(nil, "BACKGROUND")
+        fs:SetAlpha(0)
+        fs:SetWordWrap(true)
+        self.measurer = fs
+    end
+    fs:SetFont(self.edit:GetFont())
+    return fs
+end
+
+-- Rows a line takes once wrapped to the text width.
+function CodeBox:Rows(text)
+    local fs = self:Measurer()
+    fs:SetWidth(self.edit:GetWidth() - self.insetL - 6)
+    fs:SetText(text ~= "" and text or " ")
+    return math.max(1, fs.GetNumLines and fs:GetNumLines() or 1)
+end
+
+-- Width of text on one row. Trailing spaces do not count in a string's width: measure with a letter after.
+function CodeBox:TextWidth(text)
+    local fs = self:Measurer()
+    fs:SetWidth(0)
+    local function w(t)
+        fs:SetText(t)
+        return fs.GetUnboundedStringWidth and fs:GetUnboundedStringWidth() or fs:GetStringWidth()
+    end
+    return w(text .. "x") - w("x")
+end
+
+-- Height of a row: the cursor's height once the game reported it for this font, else two rows minus one.
+function CodeBox:LineHeight()
+    if self.caretH then return self.caretH end
+    local fs = self:Measurer()
+    fs:SetWidth(0)
+    fs:SetText("A\nA")
+    local two = fs:GetStringHeight()
+    fs:SetText("A")
+    return two - fs:GetStringHeight()
+end
+
+------------------------------------------------------------------------
+-- Line numbers: one per line of the macro, on the first row of a wrapped line.
+------------------------------------------------------------------------
+-- Returns true when the gutter changed width (the text then moves: measure again).
+function CodeBox:DrawLineNumbers()
+    local lines = {}
+    for l in (self:GetRaw() .. "\n"):gmatch("([^\n]*)\n") do lines[#lines + 1] = l end
+    local digits = math.max(2, #tostring(#lines))
+    local gutter = math.ceil(self:TextWidth(string.rep("0", digits))) + 2 * GUTTER_PAD
+    if gutter ~= self.gutterWidth then
+        self.gutterWidth, self.insetL = gutter, gutter + GUTTER_PAD
+        self.edit:SetTextInsets(self.insetL, 6, INSET_T, 4)
+        self.gutterBg:SetWidth(gutter + 3)
+        return true
+    end
+    local h, above = self:LineHeight(), 0
+    for i, line in ipairs(lines) do
+        local fs = self.numbers[i]
+        if not fs then
+            fs = self.edit:CreateFontString(nil, "OVERLAY")
+            fs:SetJustifyH("RIGHT")
+            fs.isLineNumber = true
+            self.numbers[i] = fs
+        end
+        fs:SetFont(self.edit:GetFont())
+        fs:SetWidth(gutter - GUTTER_PAD)
+        fs:ClearAllPoints()
+        fs:SetPoint("TOPLEFT", self.edit, "TOPLEFT", 0, -INSET_T - above * h)
+        fs:SetText(i)
+        fs:Show()
+        above = above + self:Rows(line)
+    end
+    for i = #lines + 1, #self.numbers do self.numbers[i]:Hide() end
+    self.lineCount = #lines
+    self:HighlightLineNumber()
+    return false
+end
+
+-- The cursor's line number is bright, the others dim.
+function CodeBox:HighlightLineNumber()
+    if not self.lineColors then return end
+    local current = select(2, self:GetRaw():sub(1, self.lastCursor or 0):gsub("\n", "")) + 1
+    for i, fs in ipairs(self.numbers) do
+        fs:SetTextColor(ns.RGB(i == current and self.lineColors.text or self.lineColors.dim))
+    end
 end
 
 -- Where the cursor would be at raw position `pos`, asking the game: { x, y, h } or nil when the game
@@ -173,42 +278,15 @@ end
 -- The same from text widths: a hidden FontString in the editor's font. Positions inside a wrapped
 -- part of a line are not known this way (nil).
 function CodeBox:MeasureByLayout(pos)
-    local fs = self.measurer
-    if not fs then
-        fs = self.edit:CreateFontString(nil, "BACKGROUND")
-        fs:SetAlpha(0)
-        fs:SetWordWrap(true)
-        self.measurer = fs
-    end
-    fs:SetFont(self.edit:GetFont())
-    local wrapWidth = self.edit:GetWidth() - INSET_L - 6
-    local function rows(text)
-        fs:SetWidth(wrapWidth)
-        fs:SetText(text ~= "" and text or " ")
-        return math.max(1, fs.GetNumLines and fs:GetNumLines() or 1)
-    end
-    -- Trailing spaces do not count in a string's width: measure with a letter after them.
-    local function width(text)
-        fs:SetWidth(0)
-        local function w(t)
-            fs:SetText(t)
-            return fs.GetUnboundedStringWidth and fs:GetUnboundedStringWidth() or fs:GetStringWidth()
-        end
-        return w(text .. "x") - w("x")
-    end
     local raw = self:GetRaw()
     local before = raw:sub(1, pos)
     local prefix = before:match("[^\n]*$")
     local line = prefix .. raw:sub(pos + 1):match("^[^\n]*")
     local above = 0
-    for l in before:sub(1, #before - #prefix):gmatch("([^\n]*)\n") do above = above + rows(l) end
-    if rows(line) > 1 and rows(prefix) > 1 then return nil end
-    local h = self.caretH
-    if not h then
-        fs:SetText("Ag")
-        h = fs:GetStringHeight()
-    end
-    return { x = INSET_L + width(prefix), y = -INSET_T - above * h, h = h }
+    for l in before:sub(1, #before - #prefix):gmatch("([^\n]*)\n") do above = above + self:Rows(l) end
+    if self:Rows(line) > 1 and self:Rows(prefix) > 1 then return nil end
+    local h = self:LineHeight()
+    return { x = self.insetL + self:TextWidth(prefix), y = -INSET_T - above * h, h = h }
 end
 
 -- The word ending at the cursor may still become valid: a suggestion starts with it and is longer
@@ -266,7 +344,7 @@ function CodeBox:DrawUnderlines()
         local probed = not self.layoutOnly
         local origin = probed and self:MeasureByCursor(0)
         if not origin then self.layoutOnly = true end
-        local offX = origin and origin.x < 1 and INSET_L or 0
+        local offX = origin and origin.x < 1 and self.insetL or 0
         local offY = origin and origin.y > -1 and -INSET_T or 0
         local function measure(pos)
             if not origin then return self:MeasureByLayout(pos) end
@@ -368,12 +446,18 @@ function CodeBox:SetScheme(scheme)
     local r, g, b = ns.RGB(scheme.selection)
     self.edit:SetHighlightColor(r, g, b, 0.6)
     self.errorColor, self.warningColor = scheme.invalid, scheme.warning
+    self.lineColors = { text = scheme.text, dim = scheme.dim }
+    self.gutterBg:SetColorTexture(ns.RGB(scheme.panel))
+    self.gutterLine:SetColorTexture(ns.RGB(scheme.border))
     self:Render(self:GetRaw(), self.edit:HasFocus() and self:GetRawCursor() or nil)
 end
 
 -- Returns false when the game could not load the font.
 function CodeBox:SetFont(path, size)
     local ok = self.edit:SetFont(path, size, "") ~= false
+    -- The old cursor height no longer fits: measure rows until the game reports the new one.
+    self.caretH = nil
+    self.edit:SetCursorPosition(self.edit:GetCursorPosition())
     self:ScheduleUnderlines()
     return ok
 end
