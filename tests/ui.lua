@@ -77,11 +77,23 @@ function Frame:HasFocus() return focused == self end
 function Frame:SetFocus() focused = self end
 function Frame:ClearFocus() if focused == self then focused = nil; Fire(self, "OnEditFocusLost") end end
 function Frame:GetCursorPosition() return self.cursor end
+local cursorEventsLate = false -- like the real game seems to: OnCursorChanged comes a frame later
 function Frame:SetCursorPosition(pos)
     self.cursor = pos
     local line = select(2, self.text:sub(1, pos):gsub("\n", ""))
-    Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14)
+    if cursorEventsLate then
+        timers[#timers + 1] = function() Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14) end
+    else
+        Fire(self, "OnCursorChanged", 0, -line * 14, 2, 14)
+    end
 end
+-- FontString measuring: 8 px per character, one row, 14 px high.
+function Frame:GetUnboundedStringWidth() return #self.text * 8 end
+function Frame:GetStringWidth() return #self.text * 8 end
+function Frame:GetNumLines() return 1 end
+function Frame:GetStringHeight() return 14 end
+function Frame:GetFont() return "font", 14, "" end
+function Frame:SetPoint(...) self.point = { ... } end
 
 function CreateFrame(kind, name) return New(kind, name) end
 UIParent = New("Frame")
@@ -383,6 +395,24 @@ do
     ns.Window.Revert()
     NextFrame()
     check("no errors after revert", underlines() == 0 and statusError() == "", statusError())
+
+    -- The game reports cursor positions a frame late: underlines come from text widths instead.
+    cursorEventsLate = true
+    edit:SetCursorPosition(#edit.text)
+    NextFrame()
+    Type("\n/use [bogus] x")
+    NextFrame()
+    NextFrame()
+    local count, tex = underlines()
+    check("late events: underline drawn", count == 1, count)
+    local line = select(2, raw():gsub("\n", ""))
+    -- "bogus" starts after 6 characters of its line: x = inset 6 + 6 chars * 8; y = inset 4 + rows above * 14.
+    check("late events: x from text width", tex and tex.point[4] == 6 + 6 * 8, tex and tex.point[4])
+    check("late events: y from rows above", tex and tex.point[5] == -4 - line * 14 - 14 + 1, tex and tex.point[5])
+    check("late events: cursor stays", rawCursor() == #raw(), rawCursor())
+    cursorEventsLate = false
+    ns.Window.Revert()
+    NextFrame()
 end
 
 -- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").

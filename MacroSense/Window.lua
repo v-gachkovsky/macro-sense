@@ -457,9 +457,12 @@ local function Build()
     dirtyDot:SetPoint("LEFT", counter, "RIGHT", 24, 0)
     status = ns.Text(bar, 11, "text")
     status:SetPoint("LEFT", dirtyDot, "RIGHT", 6, 0)
+    -- Errors / warnings use the room between the status and Revert, cut short when too long.
     warning = ns.Text(bar, 11, "text")
+    warning:SetPoint("LEFT", status, "RIGHT", 16, 0)
     warning:SetPoint("RIGHT", revertBtn, "LEFT", -12, 0)
     warning:SetJustifyH("RIGHT")
+    warning:SetWordWrap(false)
 
     -- Editor.
     local editorBg = CreateFrame("Frame", nil, main, "BackdropTemplate")
