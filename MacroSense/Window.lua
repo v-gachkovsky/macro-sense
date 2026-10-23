@@ -38,6 +38,15 @@ end
 ------------------------------------------------------------------------
 -- Status bar
 ------------------------------------------------------------------------
+-- Tooltip lines for issues: errors red, warnings yellow.
+local function AddIssueLines(issues)
+    for _, e in ipairs(issues) do
+        local r, g, b = 1, 0.35, 0.35
+        if e.severity == "warning" then r, g, b = 1, 0.82, 0 end
+        GameTooltip:AddLine(string.format("Line %d: %s", e.line, e.message), r, g, b)
+    end
+end
+
 local function UpdateStatus()
     if not warning or not ns.scheme or code.measuring then return end
     local raw = code:GetRaw()
@@ -124,6 +133,19 @@ end
 ------------------------------------------------------------------------
 local rows = {}
 
+-- Issues of a saved macro: the worst severity ("error", "warning" or nil) and the issues themselves.
+local function MacroIssues(body)
+    local issues, worst = ns.Highlight.Errors(body or ""), nil
+    for _, e in ipairs(issues) do
+        worst = "warning"
+        if e.severity == "error" then
+            worst = "error"
+            break
+        end
+    end
+    return worst, issues
+end
+
 local function Row(i)
     local r = CreateFrame("Button", nil, list.child)
     r:SetHeight(ROW_H)
@@ -139,13 +161,39 @@ local function Row(i)
     r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     r.text:SetPoint("RIGHT", -6, 0)
     r.text:SetWordWrap(false)
-    r:SetScript("OnEnter", function() if not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end end)
-    r:SetScript("OnLeave", function() r.bg:SetShown(r.selected); r.bg:SetAlpha(1) end)
+    -- A macro with errors gets the alert sign, as on Save.
+    r.alert = r:CreateTexture(nil, "OVERLAY")
+    r.alert:SetSize(14, 14)
+    r.alert:SetPoint("RIGHT", -6, 0)
+    r.alert:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
+    r.alert:Hide()
+    -- Hover: the issues, line by line.
+    r:SetScript("OnEnter", function()
+        if not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end
+        if not r.severity then return end
+        GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
+        AddIssueLines(r.issues)
+        GameTooltip:Show()
+    end)
+    r:SetScript("OnLeave", function()
+        r.bg:SetShown(r.selected)
+        r.bg:SetAlpha(1)
+        GameTooltip:Hide()
+    end)
     r:SetScript("OnClick", function() Window.Select(r.index) end)
     -- Drag a macro onto an action bar, like in the Blizzard macro window.
     r:RegisterForDrag("LeftButton")
     r:SetScript("OnDragStart", function() Window.Pickup(r.index) end)
-    ns.OnStyle(function(s) r.bg:SetColorTexture(ns.RGB(s.selection)) end)
+    -- The name is red with errors, yellow with warnings only.
+    function r:Paint()
+        local s = ns.scheme
+        if not s then return end
+        self.bg:SetColorTexture(ns.RGB(s.selection))
+        local color = self.severity == "error" and s.invalid or self.severity == "warning" and s.warning or s.text
+        self.text:SetTextColor(ns.RGB(color))
+    end
+    ns.OnStyle(function() r:Paint() end)
     return r
 end
 
@@ -156,10 +204,16 @@ function Window.RefreshList()
     for index = first, last do
         n = n + 1
         rows[n] = rows[n] or Row(n)
-        local r, name, icon = rows[n], GetMacroInfo(index)
+        local r, name, icon, body = rows[n], GetMacroInfo(index)
         r.index, r.selected = index, index == state.index
         r.icon:SetTexture(ns.IconTexture(icon))
         r.text:SetText(name)
+        -- Marks follow the saved text: the one being edited shows its issues in the editor.
+        r.severity, r.issues = MacroIssues(body)
+        local alert = r.severity == "error"
+        r.alert:SetShown(alert)
+        r.text:SetPoint("RIGHT", alert and r.alert or r, alert and "LEFT" or "RIGHT", alert and -4 or -6, 0)
+        r:Paint()
         r.bg:SetShown(r.selected)
         r.bg:SetAlpha(1)
         r:Show()
@@ -549,11 +603,7 @@ local function Build()
         local errors, message = warning.errors or {}, warning.message
         if #errors == 0 and not message then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        for _, e in ipairs(errors) do
-            local r, g, b = 1, 0.35, 0.35
-            if e.severity == "warning" then r, g, b = 1, 0.82, 0 end
-            GameTooltip:AddLine(string.format("Line %d: %s", e.line, e.message), r, g, b)
-        end
+        AddIssueLines(errors)
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
         if warning.shown and warning.shown.fix then
             GameTooltip:AddLine(string.format('Click to use "%s"', warning.shown.fix), 0.4, 1, 0.4)

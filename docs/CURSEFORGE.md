@@ -51,7 +51,9 @@ the status bar names them (hover for the full list), and the Save button shows a
   Your pets' spells are remembered from every pet you summon, so a Succubus macro stays fine while the
   Felhunter is out
 
-Saving is still allowed: the editor warns, it doesn't block you.
+Saving is still allowed: the editor warns, it doesn't block you. In the macro list, a macro with errors
+stands out with a red name and a warning sign (only warnings: a yellow name), so a broken one is easy to
+find among dozens; hover it to see what's wrong.
 
 **Mac players:** if a macro with `[mod:cmd]` sits on a key macOS itself uses with Cmd (Cmd+Q quits the game,
 Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you.
