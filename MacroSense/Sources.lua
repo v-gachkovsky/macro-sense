@@ -242,6 +242,26 @@ function ns.sources.slots()
     return out
 end
 
+-- What is in an equipment slot: its name and whether it has a use effect.
+function ns.sources.equipped(slot)
+    local link = GetInventoryItemLink("player", slot)
+    return linkName(link), link ~= nil and ItemSpell(link) ~= nil
+end
+
+-- Whether a spell or item is for friends or enemies, when the game knows: "friends", "enemies" or nil.
+local IsHelpful = C_Spell and C_Spell.IsSpellHelpful or IsHelpfulSpell
+local IsHarmful = C_Spell and C_Spell.IsSpellHarmful or IsHarmfulSpell
+local IsHelpfulItem = C_Item and C_Item.IsHelpfulItem or IsHelpfulItem
+local IsHarmfulItem = C_Item and C_Item.IsHarmfulItem or IsHarmfulItem
+function ns.sources.reaction(name, item)
+    local helpful, harmful = IsHelpful, IsHarmful
+    if item then helpful, harmful = IsHelpfulItem, IsHarmfulItem end
+    -- pcall: a name the game doesn't know (a spell of another spec) may be refused.
+    local function says(fn) return fn ~= nil and select(2, pcall(fn, name)) == true end
+    if says(harmful) then return "enemies" end
+    if says(helpful) then return "friends" end
+end
+
 -- The slots of a bag that hold something, with its name: "/use 0 1".
 function ns.sources.bagSlots(bag)
     local out = {}

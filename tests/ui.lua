@@ -197,6 +197,16 @@ C_Item = {
     IsEquippableItem = function(link) return link:find("1234") ~= nil end,
     GetItemIconByID = function(id) return id end,
     GetItemCount = function() return 1 end,
+    IsHelpfulItem = function(item) return item == "Healthstone" end,
+    IsHarmfulItem = function() return false end,
+}
+-- Whether a spell is for friends or enemies; a name the game doesn't know it refuses.
+C_Spell = {
+    IsSpellHarmful = function(name)
+        if name == "Divine Hymn" then error("unknown spell") end
+        return name == "Fireball" or name == "Fire Blast" or name == "Frostbolt"
+    end,
+    IsSpellHelpful = function() return false end,
 }
 -- Gear: a trinket in slot 13 (no use effect, can't be equipped from the bags).
 function GetInventoryItemLink(_, slot) if slot == 13 then return "|cffa335ee|Hitem:777::|h[Lucky Charm]|h|r" end end
@@ -1706,6 +1716,199 @@ do
     _G[fn]("MacroSense", "LeftButton")
     check("compartment: it opens or closes the editor", MacroSenseFrame:IsShown() == not open)
     _G[fn]("MacroSense", "LeftButton")
+end
+
+-- Wizard: a new macro from a recipe and a few answers, written into the editor as they come; Save keeps it.
+do
+    local function button(label)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == label then return o end
+        end
+    end
+    local function recipeButton(title)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.title and o.title.text == title then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    local nameBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 then nameBox = o end
+    end
+    local W = ns.WizardPanel
+    -- A player types into a box of the wizard: it takes the focus, then the letters come.
+    local function TypeIn(box, text)
+        box:SetFocus()
+        Fire(box, "OnEditFocusGained")
+        box.text = text
+        Fire(box, "OnTextChanged", true)
+    end
+    local function offered(box)
+        local out = {}
+        for _, r in ipairs(box.list.rows) do
+            if r:IsShown() then out[#out + 1] = r.text.text end
+        end
+        return table.concat(out, ", ")
+    end
+    local wizardBtn = button("Macro wizard")
+
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+    local count = GetNumMacros()
+    local first = select(3, GetMacroInfo(1))
+    -- Unsaved changes first: asked about (the fake dialog says yes), then a new macro.
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    Key("ESCAPE", "OnEscapePressed")
+    Fire(wizardBtn, "OnClick")
+    check("wizard: opens with a new, empty macro", MacroSenseWizard and MacroSenseWizard:IsShown() and raw() == ""
+        and nameBox.text == "" and select(3, GetMacroInfo(1)) == first)
+    check("wizard: left of the window", MacroSenseWizard.point[1] == "BOTTOMRIGHT"
+        and MacroSenseWizard.point[2] == MacroSenseFrame and MacroSenseWizard.point[3] == "BOTTOMLEFT")
+    check("wizard: lists what it makes", recipeButton("Mouseover") and recipeButton("Focus")
+        and recipeButton("Party member") and recipeButton("At the cursor") and recipeButton("One key, several spells")
+        and recipeButton("Trinkets with a spell"))
+
+    Fire(recipeButton("Mouseover"), "OnClick")
+    check("wizard: nothing in the editor before a spell", raw() == "", raw())
+    local box = W.Control("action")
+    TypeIn(box, "fire")
+    check("wizard: your spells match", offered(box) == "Fire Blast, Fireball", offered(box))
+    TypeIn(box, "stone")
+    check("wizard: and the items you can use, by any part of the name", offered(box) == "Healthstone", offered(box))
+    TypeIn(box, "fire")
+    Fire(box, "OnArrowPressed", "DOWN")
+    Fire(box, "OnEnterPressed")
+    check("wizard: Enter takes the name the arrows picked", box.text == "Fireball" and not box.list:IsShown(), box.text)
+    check("wizard: a spell for enemies casts on enemies",
+        raw() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", raw())
+    check("wizard: named after it", nameBox.text == "Fireball", nameBox.text)
+    check("wizard: not saved yet", GetNumMacros() == count and saveIsEnabled())
+    Fire(W.Control("startattack"), "OnClick")
+    check("wizard: an answer changes the macro",
+        raw() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball\n/startattack", raw())
+    TypeIn(box, "health")
+    Fire(box.list.rows[1], "OnClick")
+    check("wizard: a click picks a name; an item for friends, with /use",
+        raw() == "#showtooltip\n/use [@mouseover,help,nodead][help,nodead][@player] Healthstone", raw())
+    check("wizard: the name follows", nameBox.text == "Healthstone", nameBox.text)
+    -- A spell of another spec: not in the list, taken as it is typed (the game refuses to say what it is for).
+    TypeIn(box, "Divine Hymn")
+    Fire(box, "OnEnterPressed")
+    check("wizard: any name typed counts",
+        raw() == "#showtooltip\n/cast [@mouseover,help,nodead][help,nodead][@player] Divine Hymn", raw())
+
+    -- Typed in the editor: kept, until Replace.
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/say hi")
+    Key("ESCAPE", "OnEscapePressed")
+    local mine = raw()
+    Fire(W.Control("stopcasting"), "OnClick")
+    check("wizard: what you typed in the editor stays", raw() == mine and button("Replace"):IsShown(), raw())
+    Fire(button("Replace"), "OnClick")
+    check("wizard: Replace puts its macro in", raw() == "#showtooltip\n/stopcasting\n"
+        .. "/cast [@mouseover,help,nodead][help,nodead][@player] Divine Hymn" and not button("Replace"):IsShown(), raw())
+    nameBox:SetText("My macro")
+    TypeIn(box, "frost")
+    Fire(box, "OnEnterPressed")
+    check("wizard: a name you typed stays", nameBox.text == "My macro", nameBox.text)
+    check("wizard: auto attack, asked again for an enemy, as it was answered",
+        raw() == "#showtooltip\n/stopcasting\n/cast [@mouseover,harm,nodead][] Frostbolt\n/startattack", raw())
+
+    -- Another recipe starts over; a choice from a list.
+    Fire(button("<"), "OnClick")
+    Fire(recipeButton("Party member"), "OnClick")
+    check("wizard: another recipe starts over", raw() == "" and W.Control("action").text == "", raw())
+    TypeIn(W.Control("action"), "poly")
+    Fire(W.Control("action"), "OnEnterPressed")
+    check("wizard: party member 1 first", raw() == "#showtooltip\n/cast [@party1] Polymorph", raw())
+    Fire(W.Control("who"), "OnClick")
+    Fire(menuItem("Members 1-4 by key"), "OnClick")
+    check("wizard: members by key", raw()
+        == "#showtooltip\n/cast [mod:shift,@party2][mod:ctrl,@party3][mod:alt,@party4][@party1] Polymorph", raw())
+    -- The game takes the focus from a box as its page hides: what was typed there stays out of the macro.
+    local typing = W.Control("action")
+    TypeIn(typing, "fro")
+    local before = raw()
+    Fire(button("<"), "OnClick")
+    local ok = pcall(typing.ClearFocus, typing)
+    check("wizard: a box that hides with the focus writes nothing", ok and raw() == before, raw())
+
+    -- Trinkets: named, checked when they have a use effect; with one checked the macro is there at once.
+    local equipped = GetInventoryItemLink
+    GetInventoryItemLink = function(unit, slot)
+        if slot == 14 then return "|cffa335ee|Hitem:5512::|h[Burning Talisman]|h|r" end
+        return equipped(unit, slot)
+    end
+    Fire(button("<"), "OnClick")
+    Fire(recipeButton("Trinkets with a spell"), "OnClick")
+    local top, bottom = W.Control("top"), W.Control("bottom")
+    check("wizard: trinkets by name", top.label.text == "Trinket 1: Lucky Charm"
+        and bottom.label.text == "Trinket 2: Burning Talisman", top.label.text)
+    check("wizard: the one with a use effect checked", bottom.fill:IsShown() and not top.fill:IsShown())
+    check("wizard: a macro at once", raw() == "#showtooltip\n/use 14", raw())
+    GetInventoryItemLink = equipped
+
+    Fire(button("Save"), "OnClick")
+    local index = GetMacroIndexByName("My macro")
+    check("wizard: Save keeps it", GetNumMacros() == count + 1 and index > 0
+        and select(3, GetMacroInfo(index)) == "#showtooltip\n/use 14", index)
+    check("wizard: open after saving", MacroSenseWizard:IsShown())
+    ns.Window.Select(GetMacroIndexByName("Nuke"))
+    NextFrame()
+    check("wizard: another macro closes it", not MacroSenseWizard:IsShown())
+
+    -- The name it gives is free; the button closes it again; so does closing the window.
+    CreateMacro("Frostbolt", 1, "/cast Frostbolt", false)
+    Send("UPDATE_MACROS")
+    Fire(wizardBtn, "OnClick")
+    Fire(recipeButton("At the cursor"), "OnClick")
+    TypeIn(W.Control("action"), "frostbolt")
+    Fire(W.Control("action"), "OnEnterPressed")
+    check("wizard: a name no macro has", nameBox.text == "Frostbolt 2" and raw() == "#showtooltip\n/cast [@cursor] Frostbolt",
+        nameBox.text)
+    Fire(button("Save"), "OnClick")
+    Fire(W.Control("feet"), "OnClick")
+    check("wizard: after Save, its own name stays", nameBox.text == "Frostbolt 2" and saveIsEnabled()
+        and raw() == "#showtooltip\n/cast [mod:shift,@player][@cursor] Frostbolt", nameBox.text)
+    Fire(wizardBtn, "OnClick")
+    check("wizard: the button closes it", not MacroSenseWizard:IsShown() and raw() ~= "")
+    ns.Window.New()
+    Fire(wizardBtn, "OnClick")
+    ns.Window.Toggle()
+    check("wizard: closes with the window", not MacroSenseWizard:IsShown())
+    ns.Window.Toggle()
+    check("wizard: not back when the window is", not MacroSenseWizard:IsShown())
+    -- Right of the window when there is no room on its left.
+    MacroSenseFrame.left = 100
+    Fire(wizardBtn, "OnClick")
+    check("wizard: right of the window near the screen's left edge", MacroSenseWizard.point[1] == "BOTTOMLEFT"
+        and MacroSenseWizard.point[3] == "BOTTOMRIGHT")
+    MacroSenseFrame.left = nil
+    Fire(wizardBtn, "OnClick")
+
+    -- A full tab has no room for it.
+    local fillers = SLOTS.MAX_CHARACTER_MACROS - select(2, GetNumMacros())
+    for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", true) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("character")
+    Fire(wizardBtn, "OnClick")
+    check("wizard: not in a full tab", not MacroSenseWizard:IsShown()
+        and printed[#printed]:find("no free character macro slots", 1, true) ~= nil, printed[#printed])
+    for i = 1, fillers do DeleteMacro(GetMacroIndexByName("Filler " .. i)) end
+    for _, name in ipairs({ "My macro", "Frostbolt", "Frostbolt 2" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
 end
 
 -- Theme switch recolors without touching the text.

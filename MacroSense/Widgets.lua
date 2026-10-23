@@ -77,8 +77,11 @@ function ns.Check(parent, label, getValue, onChange)
     fill:SetPoint("BOTTOMRIGHT", -3, 3)
     b.label = ns.Text(b, 12)
     b.label:SetPoint("LEFT", box, "RIGHT", 6, 0)
-    b.label:SetText(label)
-    b:SetWidth(14 + 6 + math.ceil(b.label:GetStringWidth()))
+    function b:SetLabel(text)
+        self.label:SetText(text)
+        self:SetWidth(14 + 6 + math.ceil(self.label:GetStringWidth()))
+    end
+    b:SetLabel(label)
     local function paint(hover)
         local s = ns.scheme
         if not s then return end
@@ -94,6 +97,7 @@ function ns.Check(parent, label, getValue, onChange)
         paint(true)
     end)
     ns.OnStyle(function() paint(false) end)
+    function b:Refresh() paint(false) end -- the value changed elsewhere
     b.fill = fill
     return b
 end

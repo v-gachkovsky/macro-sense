@@ -62,10 +62,10 @@ Wizard.recipes = {
     {
         key = "mouseover",
         title = "Mouseover",
-        text = "Cast on whoever your mouse points at, on a party frame or in the world. Your target stays.",
+        text = "Cast on whoever is under your mouse, on frames or in the world. The target stays.",
         fields = {
             ACTION, ON,
-            { key = "self", kind = "check", label = "Nobody friendly there: cast on yourself", default = true,
+            { key = "self", kind = "check", label = "No friend there: cast on yourself", default = true,
                 when = friends },
             STOP, With(ATTACK, { when = enemies }), With(PET, { when = enemies }),
         },
@@ -81,7 +81,7 @@ Wizard.recipes = {
     {
         key = "focus",
         title = "Focus",
-        text = "Cast on your focus: interrupt or control a second enemy while you fight your target.",
+        text = "Interrupt or control your focus while you keep fighting your target.",
         fields = {
             ACTION, With(ON, { default = "enemies" }),
             { key = "fallback", kind = "check", label = "No focus: cast on your target", default = true },
@@ -100,7 +100,7 @@ Wizard.recipes = {
     {
         key = "party",
         title = "Party member",
-        text = "Cast on yourself or on a party member by their place in the party frames, whoever you target.",
+        text = "Cast on yourself or a party member by their place in the party frames.",
         fields = {
             ACTION,
             { key = "who", kind = "choice", label = "Cast on", default = "party1", options = {
@@ -122,7 +122,7 @@ Wizard.recipes = {
     {
         key = "cursor",
         title = "At the cursor",
-        text = "Area spells land where your mouse points, with no circle to place first.",
+        text = "Area spells land where your mouse points, with no circle to place.",
         fields = {
             With(ACTION, { label = "Spell" }),
             { key = "feet", kind = "check", label = "Shift: at your feet" },
@@ -136,7 +136,7 @@ Wizard.recipes = {
     {
         key = "keys",
         title = "One key, several spells",
-        text = "Hold Shift, Ctrl or Alt to cast something else from the same key.",
+        text = "Hold Shift, Ctrl or Alt to cast something else with the same key.",
         fields = {
             With(ACTION, { label = "No key" }),
             With(ACTION, { key = "shift", label = "Shift" }),
@@ -158,7 +158,7 @@ Wizard.recipes = {
     {
         key = "trinkets",
         title = "Trinkets with a spell",
-        text = "Your trinkets go off together with a spell, whenever they are ready.",
+        text = "Your trinkets go off with a spell, whenever they are ready.",
         fields = {
             With(ACTION, { label = "Spell" }),
             -- `slot`: the panel names what is in it and checks it when it has a use effect.

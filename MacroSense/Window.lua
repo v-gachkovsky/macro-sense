@@ -343,6 +343,7 @@ end
 -- Editing
 ------------------------------------------------------------------------
 local function Load(index)
+    ns.WizardPanel.Close() -- it writes into the macro it started with, not into another one
     if index then
         local name, icon, body = GetMacroInfo(index)
         state.index, state.name, state.icon, state.body = index, name, icon, body or ""
@@ -395,14 +396,20 @@ function Window.SetScope(scope)
     end)
 end
 
+-- An empty new macro in the tab that is open, if the tab has a free slot.
+local function Fresh()
+    local first, last, max = MacroRange(state.scope)
+    if last - first + 1 >= max then
+        ns.Print("no free %s macro slots", state.scope)
+        return false
+    end
+    Load(nil)
+    return true
+end
+
 function Window.New()
     Guard(function()
-        local first, last, max = MacroRange(state.scope)
-        if last - first + 1 >= max then
-            return ns.Print("no free %s macro slots", state.scope)
-        end
-        Load(nil)
-        nameBox:SetFocus()
+        if Fresh() then nameBox:SetFocus() end
     end)
 end
 
@@ -464,23 +471,28 @@ function Window.Delete(index)
     Load(last >= first and math.min(index, last) or nil)
 end
 
+-- `s` cut to its first `n` letters, whole ones.
+local function FirstLetters(s, n)
+    while Letters(s) > n and s ~= "" do
+        s = s:gsub("[\1-\127\192-\255][\128-\191]*$", "") -- the last letter, whole
+    end
+    return s
+end
+
 -- A name no macro has: "Fear" -> "Fear 2", "Fear 2" -> "Fear 3", cut to fit the name limit. Two macros with
--- one name would share a key binding ("MACRO Fear" runs the first one).
-local function FreeName(name)
+-- one name would share a key binding ("MACRO Fear" runs the first one). The name of macro `own` counts as free.
+local function FreeName(name, own)
     local function taken(n)
         local index = GetMacroIndexByName(n)
-        return index ~= nil and index > 0
+        return index ~= nil and index > 0 and index ~= own
     end
     if not taken(name) then return name end
     local base, n = name:match("^(.-) (%d+)$")
     base, n = base or name, tonumber(n) or 1
     while true do
         n = n + 1
-        local suffix, stem = " " .. n, base
-        while Letters(stem .. suffix) > MAX_NAME and stem ~= "" do
-            stem = stem:gsub("[\1-\127\192-\255][\128-\191]*$", "") -- the last letter, whole
-        end
-        local candidate = stem:match("^(.-)%s*$") .. suffix
+        local suffix = " " .. n
+        local candidate = FirstLetters(base, MAX_NAME - Letters(suffix)):match("^(.-)%s*$") .. suffix
         if not taken(candidate) then return candidate end
     end
 end
@@ -527,6 +539,40 @@ local function CopyItems()
         item(other, "Copy to " .. SCOPE_NAMES[other], string.format("A copy %s with what the editor shows now, %s",
             other == "character" and "for this character only" or "for all your characters", same)),
     }
+end
+
+------------------------------------------------------------------------
+-- Wizard: a new macro from a few answers, in a panel next to the window
+------------------------------------------------------------------------
+local wizard = {} -- what the wizard last put in the editor (text) and the name box (name)
+
+function Window.StartWizard()
+    if ns.WizardPanel.IsShown() then return ns.WizardPanel.Close() end
+    Guard(function()
+        if not Fresh() then return end
+        wizard = {}
+        ns.WizardPanel.Open(frame)
+    end)
+end
+
+-- The wizard's macro goes into the editor as an unsaved change (undo takes it back), and the name it suggests
+-- into the name box while that is empty or has the name it gave before. Text changed in the editor meanwhile
+-- stays, unless `force`: false then.
+function Window.WizardWrite(text, name, force)
+    local raw = code:GetRaw()
+    if not force and raw ~= "" and raw ~= wizard.text then return false end
+    if raw ~= text then
+        code:SetRaw(text, #text, true)
+        code:CheckNow()
+    end
+    wizard.text = text
+    local typed = strtrim(nameBox:GetText())
+    if name and (typed == "" or typed == wizard.name) then
+        wizard.name = FreeName(FirstLetters(name, MAX_NAME), state.index)
+        nameBox:SetText(wizard.name)
+    end
+    UpdateStatus()
+    return true
 end
 
 -- The macro list changed elsewhere (Blizzard UI, another addon): keep our selection by name.
@@ -702,6 +748,19 @@ local function Build()
     end)
     copyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- The wizard over them: a new macro from a few answers, in a panel next to the window.
+    local wizardBtn = ns.Button(side, "Macro wizard", 204, function() Window.StartWizard() end)
+    wizardBtn:SetPoint("BOTTOMLEFT", newBtn, "TOPLEFT", 0, 6)
+    wizardBtn:SetPoint("BOTTOMRIGHT", deleteBtn, "TOPRIGHT", 0, 6)
+    wizardBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Macro wizard", 1, 1, 1)
+        GameTooltip:AddLine("A new macro in this tab from a few answers: mouseover, focus, party members, spells "
+            .. "at the cursor, other spells on Shift, Ctrl or Alt, trinkets with a spell.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    wizardBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Search under the tabs: Enter opens the first match, Esc clears it.
     search = ns.Input(side, 204, 40, "MacroSenseSearch")
     search:SetPoint("TOPLEFT", 8, -32)
@@ -731,7 +790,7 @@ local function Build()
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -62)
-    list:SetPoint("BOTTOMRIGHT", -13, 38)
+    list:SetPoint("BOTTOMRIGHT", -13, 66)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)
@@ -923,6 +982,7 @@ local function Build()
     frame:SetScript("OnHide", function()
         ns.Popup:Hide()
         ns.IconPicker.Close()
+        ns.WizardPanel.Close()
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
     end)
