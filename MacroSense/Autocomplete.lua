@@ -11,7 +11,12 @@ function ns.AttachAutocomplete(box)
 
     local function Update()
         pending = false
-        if not ns.db.enabled or not box.edit:HasFocus() then return Popup:Hide() end
+        if not ns.db.enabled then return Popup:Hide() end
+        if not box.edit:HasFocus() then
+            -- A click on the list takes the focus for a moment (see OnEditFocusLost): leave it be.
+            if Popup:IsShown() and Popup:IsMouseOver() then return end
+            return Popup:Hide()
+        end
         local raw, cursor = box:GetRaw(), box:GetRawCursor()
         local ctx = ns.Parser.GetContext(raw, cursor)
         local previous = snap
@@ -96,7 +101,16 @@ function ns.AttachAutocomplete(box)
         return false
     end
 
+    -- Pressing the mouse on any other frame takes the focus from the text, before the click lands.
+    -- On the list itself that is a click on a suggestion (or its scroll bar): keep the list open and
+    -- give the focus back, so the click can pick the item. Anywhere else, close the list.
     box.edit:HookScript("OnEditFocusLost", function()
+        if Popup:IsShown() and Popup:IsMouseOver() then
+            C_Timer.After(0, function()
+                if Popup:IsShown() then box.edit:SetFocus() end
+            end)
+            return
+        end
         Popup:Hide()
         box:LockCursor(false)
     end)
