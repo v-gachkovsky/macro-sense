@@ -3,6 +3,7 @@ local _, ns = ...
 
 local H = ns.Highlight
 local UNDO_LIMIT = 200
+local INSET_L, INSET_T = 6, 4
 local UNDO_GROUP = 0.8 -- keystrokes closer than this (seconds) undo together
 
 local CodeBox = {}
@@ -25,7 +26,9 @@ function ns.CreateCodeBox(parent, name)
     self.edit = edit
     edit:SetMultiLine(true)
     edit:SetAutoFocus(false)
-    edit:SetTextInsets(6, 6, 4, 4)
+    edit:SetTextInsets(INSET_L, 6, INSET_T, 4)
+    self.underlines = {}
+    edit:HookScript("OnSizeChanged", function() self:ScheduleUnderlines() end)
     edit:SetFont(ns.fonts[1].path, 13, "")
     scroll:SetScrollChild(edit)
     scroll:SetScript("OnSizeChanged", function(_, w) edit:SetWidth(w) end)
@@ -54,6 +57,10 @@ function ns.CreateCodeBox(parent, name)
     end)
 
     edit:SetScript("OnCursorChanged", function(e, x, y, w, h)
+        if self.measuring then
+            self.measured = { x = x, y = y, h = h }
+            return
+        end
         if ScrollingEdit_OnCursorChanged then ScrollingEdit_OnCursorChanged(e, x, y, w, h) end
         self.caretX, self.caretY, self.caretH = x, y, h
         self.lastCursor = H.ToRaw(e:GetText(), e:GetCursorPosition())
@@ -125,6 +132,74 @@ function CodeBox:Render(raw, cursor)
     self.updating = false
     if cursor then self.edit:SetCursorPosition(H.ToColored(colored, cursor)) end
     self.raw = raw
+    self:ScheduleUnderlines()
+end
+
+------------------------------------------------------------------------
+-- Error underlines. An EditBox cannot underline, so lines are drawn under the text. Their place comes
+-- from the game itself: the cursor is moved to each error for a moment and OnCursorChanged reports x / y.
+------------------------------------------------------------------------
+function CodeBox:ScheduleUnderlines()
+    if self.underlinePending then return end
+    self.underlinePending = true
+    C_Timer.After(0, function()
+        self.underlinePending = false
+        self:DrawUnderlines()
+    end)
+end
+
+-- Where the cursor would be at raw position `pos`: { x, y, h } or nil.
+function CodeBox:Measure(pos)
+    self.measured = nil
+    self.measuring = true
+    self.edit:SetCursorPosition(H.ToColored(self.edit:GetText(), pos))
+    self.measuring = false
+    return self.measured
+end
+
+-- Syntax errors, except the word being typed right now.
+function CodeBox:Errors()
+    local cursor = self.edit:HasFocus() and self:GetRawCursor()
+    local out = {}
+    for _, e in ipairs(H.Errors(self:GetRaw())) do
+        if e.to ~= cursor then out[#out + 1] = e end
+    end
+    return out
+end
+
+function CodeBox:DrawUnderlines()
+    local errors = self:Errors()
+    self.errors = errors
+    for _, tex in ipairs(self.underlines) do tex:Hide() end
+    if #errors > 0 and self.edit:IsVisible() then
+        local saved = self.edit:GetCursorPosition()
+        -- The game may report positions with or without the text insets: position 0 tells which.
+        local origin = self:Measure(0)
+        local offX = origin and origin.x < 1 and INSET_L or 0
+        local offY = origin and origin.y > -1 and -INSET_T or 0
+        for i, e in ipairs(errors) do
+            local a, b = self:Measure(e.from - 1), self:Measure(e.to)
+            if a then
+                local tex = self.underlines[i]
+                if not tex then
+                    tex = self.edit:CreateTexture(nil, "OVERLAY")
+                    tex.isUnderline = true
+                    self.underlines[i] = tex
+                end
+                -- A word wrapped onto the next line: underline its start only.
+                local width = (b and math.abs(b.y - a.y) < 1) and (b.x - a.x) or 8
+                tex:SetColorTexture(ns.RGB(self.errorColor or "f14c4c"))
+                tex:SetSize(math.max(width, 6), 2)
+                tex:ClearAllPoints()
+                tex:SetPoint("TOPLEFT", self.edit, "TOPLEFT", a.x + offX, a.y + offY - a.h + 1)
+                tex:Show()
+            end
+        end
+        self.measuring = true
+        self.edit:SetCursorPosition(saved)
+        self.measuring = false
+    end
+    if self.onErrors then self.onErrors(errors) end
 end
 
 function CodeBox:GetRaw() return self.raw or H.Strip(self.edit:GetText()) end
@@ -186,12 +261,15 @@ function CodeBox:SetScheme(scheme)
     self.edit:SetTextColor(ns.RGB(scheme.text))
     local r, g, b = ns.RGB(scheme.selection)
     self.edit:SetHighlightColor(r, g, b, 0.6)
+    self.errorColor = scheme.invalid
     self:Render(self:GetRaw(), self.edit:HasFocus() and self:GetRawCursor() or nil)
 end
 
 -- Returns false when the game could not load the font.
 function CodeBox:SetFont(path, size)
-    return self.edit:SetFont(path, size, "") ~= false
+    local ok = self.edit:SetFont(path, size, "") ~= false
+    self:ScheduleUnderlines()
+    return ok
 end
 
 function CodeBox:SetFocus() self.edit:SetFocus() end

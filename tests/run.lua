@@ -156,6 +156,33 @@ H.isCommand = function(name) return name == "cast" end
 expectKinds("/bogus x", "/bogus=error x=option")
 H.isCommand = nil
 
+-- Syntax errors.
+local function errs(raw)
+    local out = {}
+    for _, e in ipairs(H.Errors(raw)) do out[#out + 1] = raw:sub(e.from, e.to) .. "=" .. e.message .. "@" .. e.line end
+    return table.concat(out, " | ")
+end
+local function expectErrs(raw, want)
+    local got = errs(raw)
+    check("errors " .. raw, got == want, "\n  got  " .. got .. "\n  want " .. want)
+end
+expectErrs("/cast [@mouseover, harm, nodead] Spell", "")     -- spaces after commas are fine (checked in game)
+expectErrs("/cast [@mouseover,harm,nodead][] Spell", "")
+expectErrs("/cast [harmm] Spell", 'harmm=unknown condition "harmm"@1')
+expectErrs("/cast [harm Spell", "[=[ is not closed with ]@1")
+expectErrs("/cast harm] Spell", "]=] without [@1")
+expectErrs("/cast [harm,,dead] X", ",=empty condition@1")
+expectErrs("/cast [,harm] X", ",=empty condition@1")
+expectErrs("/cast [harm,] X", ",=empty condition@1")
+expectErrs("/cast [@] X", "@=@ needs a unit@1")
+expectErrs("/cast [target=] X", "target==target= needs a unit@1")
+expectErrs("/cast [mod:] X", ":=mod: needs a value@1")
+expectErrs("/cast [ ] X", "")
+expectErrs("#showtooltip\n/cast [nocombat] A\n/cast [bogus] B", 'bogus=unknown condition "bogus"@3')
+H.isCommand = function(name) return name == "cast" end
+expectErrs("/cats X", '/cats=unknown command "/cats"@1')
+H.isCommand = nil
+
 local scheme = { text = "ffffff", command = "111111", action = "222222", operator = "333333",
     bracket = "444444", unit = "555555", condition = "666666", value = "777777", error = "888888", meta = "999999" }
 for _, raw in ipairs({

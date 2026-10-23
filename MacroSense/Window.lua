@@ -37,7 +37,7 @@ end
 -- Status bar
 ------------------------------------------------------------------------
 local function UpdateStatus()
-    if not warning or not ns.scheme then return end
+    if not warning or not ns.scheme or code.measuring then return end
     local raw = code:GetRaw()
     local cursor = code.edit:HasFocus() and code:GetRawCursor() or 0
     local before = raw:sub(1, cursor)
@@ -57,7 +57,15 @@ local function UpdateStatus()
         local keys = ns.Shortcuts.KeysFor(state.index, state.name)
         message = ns.Shortcuts.Message(ns.Shortcuts.Conflicts(raw, keys))
     end
-    warning:SetText(message and ("|cff" .. s.warning .. message .. "|r") or "")
+    -- Syntax errors come first.
+    local errors = code.errors or {}
+    if #errors > 0 then
+        local e = errors[1]
+        local more = #errors > 1 and string.format(" (+%d more)", #errors - 1) or ""
+        warning:SetText(string.format("|cff%sLine %d: %s%s|r", s.invalid, e.line, e.message, more))
+    else
+        warning:SetText(message and ("|cff" .. s.warning .. message .. "|r") or "")
+    end
 
     -- The dot is a texture: not every font has a "●" glyph.
     dirtyDot:SetShown(dirty and letters <= MAX_BODY)
@@ -462,6 +470,7 @@ local function Build()
     code.scroll:SetPoint("TOPLEFT", 4, -4)
     code.scroll:SetPoint("BOTTOMRIGHT", -15, 4)
     ns.AttachAutocomplete(code)
+    code.onErrors = function() UpdateStatus() end
     -- Our own status bar follows text and cursor changes (Autocomplete owns onChange / onCaret).
     code.edit:HookScript("OnTextChanged", UpdateStatus)
     code.edit:HookScript("OnCursorChanged", UpdateStatus)
