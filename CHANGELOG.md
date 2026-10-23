@@ -39,6 +39,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 - **Live preview** moved to the title bar, next to the font and the scheme, to make room in the header.
 
+### Fixed
+- With a pet out on Classic Era, TBC Anniversary and Mists of Pandaria Classic, the Character tab didn't open,
+  a picked suggestion didn't go in and a macro opened without its text: reading the pet's spells failed on
+  these clients. The typo check now reads them the way they allow, and if it can't read your spells, items
+  or mounts, only the check is skipped, not the editor.
+
 ## [0.1.0-beta3] - 2026-10-23
 
 ### Added

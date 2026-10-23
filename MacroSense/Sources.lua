@@ -405,10 +405,11 @@ end
 ------------------------------------------------------------------------
 local PetBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet
 
--- Spells of the pet that is out now (any flavor).
+-- Spells of the pet that is out now. The Classic clients have C_SpellBook too, but only HasPetSpells and
+-- a few others there: the names come from the old functions.
 local function petSpellNames()
     local out = {}
-    if C_SpellBook and C_SpellBook.HasPetSpells and PetBank then
+    if C_SpellBook and C_SpellBook.HasPetSpells and C_SpellBook.GetSpellBookItemName and PetBank then
         for i = 1, C_SpellBook.HasPetSpells() or 0 do
             local name = C_SpellBook.GetSpellBookItemName(i, PetBank)
             if name then out[#out + 1] = name end
@@ -435,6 +436,7 @@ local function mountNames()
 end
 
 local knownCache, guesses
+local sourcesFailed -- the typo check could not read a source once: reported then, not again
 -- { set = { lowercase name = true }, list = { names }, items = { item names } }
 function ns.KnownActions()
     if knownCache then return knownCache end
@@ -466,7 +468,16 @@ end
 -- unmarked: they may be spells of another spec or pet, items not in the bags, toys...
 function ns.Highlight.checkAction(name, command)
     if name:find("^%d") or name:find("^item:") then return nil end -- slots, item links
-    local known = ns.KnownActions()
+    -- A source that fails (a game function this client doesn't have) costs the typo check, not the editor.
+    local ok, known = pcall(ns.KnownActions)
+    if not ok then
+        if not sourcesFailed then
+            sourcesFailed = true
+            geterrorhandler()(known)
+        end
+        knownCache, guesses = { set = {}, list = {}, items = {} }, {}
+        return nil
+    end
     if known.set[name:lower()] then return nil end
     local key = command .. "\1" .. name
     if guesses[key] == nil then
