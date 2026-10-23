@@ -47,6 +47,9 @@ the status bar names them (hover for the full list), and the Save button shows a
 - `@` or `target=` without a unit, `mod:` without a value
 - a wrong value: `btn:7`, `group:arena`, `mod:shfit`, or a value where none belongs: `combat:1`
 - unknown units like `@mousover` are a yellow **warning**: they may be a player's name
+- **typos in spell and item names**: `Shadwo Bolt` gets `did you mean "Shadow Bolt"?`, and a click fixes it.
+  Your pets' spells are remembered from every pet you summon, so a Succubus macro stays fine while the
+  Felhunter is out
 
 Saving is still allowed: the editor warns, it doesn't block you.
 

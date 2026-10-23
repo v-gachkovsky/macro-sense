@@ -8,6 +8,9 @@ ns.Highlight = Highlight
 
 -- Set by Sources: function(name) -> true when "/name" is a registered command. Unknown commands are errors.
 Highlight.isCommand = nil
+-- Set by Sources: function(name, command) -> nil, or { message, short, fix } when a spell / item name
+-- looks like a typo of a known one ("Shadwo Bolt" -> "Shadow Bolt"). command: "cast", "use", "equip", ...
+Highlight.checkAction = nil
 
 local CHAT = {
     say = true, s = true, yell = true, y = true, party = true, p = true, raid = true, ra = true, rw = true,
@@ -129,8 +132,19 @@ local function conditionSpans(s, base, add)
     end
 end
 
--- Arguments of a secure command: "[cond] arg; [cond] arg".
-local function argSpans(s, base, add, argKind, sequence)
+-- A spell or item name. One that looks like a typo of a known name gets a warning with the fix.
+local function actionSpan(name, from, add, command)
+    local to = from + #name - 1
+    local typo = command and Highlight.checkAction and Highlight.checkAction(name, command)
+    if typo then
+        add(from, to, "action", typo.message, "warning", typo)
+    else
+        add(from, to, "action")
+    end
+end
+
+-- Arguments of a secure command: "[cond] arg; [cond] arg". command: the action command ("cast", ...), if any.
+local function argSpans(s, base, add, argKind, sequence, command)
     local i = 1
     while i <= #s do
         local c = s:sub(i, i)
@@ -188,12 +202,15 @@ local function argSpans(s, base, add, argKind, sequence)
                 end
                 -- "Fireball(Rank 3)": the rank is a value.
                 local name, rank = word:match("^(.-)(%(.*%))$")
-                if name and name ~= "" then
-                    add(base + i, base + i + #name - 1, argKind)
-                    add(base + i + #name, base + i + #word - 1, "value")
-                elseif word ~= "" then
-                    add(base + i, base + i + #word - 1, argKind)
+                local nameOnly = (name and name ~= "") and name or word
+                if nameOnly ~= "" then
+                    if argKind == "action" then
+                        actionSpan(nameOnly, base + i, add, command)
+                    else
+                        add(base + i, base + i + #nameOnly - 1, argKind)
+                    end
                 end
+                if name and name ~= "" then add(base + i + #name, base + i + #word - 1, "value") end
                 i = stop + 1
             end
         end
@@ -204,7 +221,7 @@ local function lineSpans(line, base, add)
     local meta = line:match("^#%a+")
     if meta then
         add(base + 1, base + #meta, "meta")
-        argSpans(line:sub(#meta + 1), base + #meta, add, "action")
+        argSpans(line:sub(#meta + 1), base + #meta, add, "action", false, "cast")
         return
     end
     local lead, cmd = line:match("^(%s*)/(%S*)")
@@ -223,13 +240,16 @@ local function lineSpans(line, base, add)
     if LUA[name] then return luaSpans(rest, cmdTo, add) end
     local action = ns.Parser and ns.Parser.actionCommands[name]
     local argKind = UNIT_ARGS[name] and "unit" or (action and "action") or "option"
-    argSpans(rest, cmdTo, add, argKind, action == "castsequence")
+    argSpans(rest, cmdTo, add, argKind, action == "castsequence", action)
 end
 
 function Highlight.Spans(raw)
     local spans = {}
-    local function add(from, to, kind, message, severity)
-        if to >= from then spans[#spans + 1] = { from, to, kind, message, message and (severity or "error") } end
+    -- extra: { short, fix } for issues that come with a shorter text or a fix.
+    local function add(from, to, kind, message, severity, extra)
+        if to >= from then
+            spans[#spans + 1] = { from, to, kind, message, message and (severity or "error"), extra }
+        end
     end
     local pos = 0
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
@@ -240,13 +260,18 @@ function Highlight.Spans(raw)
     return spans
 end
 
--- Syntax problems: { from, to, message, line, severity = "error" | "warning" } (raw positions, 1-based, inclusive).
+-- Syntax problems: { from, to, message, line, severity = "error" | "warning", short?, fix? }
+-- (raw positions, 1-based, inclusive; fix replaces from..to).
 function Highlight.Errors(raw)
     local out = {}
     for _, span in ipairs(Highlight.Spans(raw)) do
         if span[4] then
             local line = select(2, raw:sub(1, span[1]):gsub("\n", "")) + 1
-            out[#out + 1] = { from = span[1], to = span[2], message = span[4], line = line, severity = span[5] }
+            local extra = span[6] or {}
+            out[#out + 1] = {
+                from = span[1], to = span[2], message = span[4], line = line, severity = span[5],
+                short = extra.short, fix = extra.fix,
+            }
         end
     end
     return out

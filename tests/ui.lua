@@ -149,7 +149,8 @@ SlashCmdList, SecureCmdList, ChatTypeInfo = {}, { CAST = true, USE = true, TARGE
 SLASH_CAST1, SLASH_USE1, SLASH_TARGET1, SLASH_SAY1 = "/cast", "/use", "/target", "/say"
 EMOTE1_TOKEN, EMOTE1_CMD1 = "DANCE", "/dance"
 
-Enum = { SpellBookSpellBank = { Player = 0 }, SpellBookItemType = { Spell = 1 } }
+Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1 } }
+local petBook = {} -- names of the pet's spells; empty = no pet
 local book = { -- name, rank: Classic lists every learned rank
     { "Fireball", "Rank 1" }, { "Fireball", "Rank 2" }, { "Fireball", "Rank 3" },
     { "Fire Blast", "" }, { "Frostbolt", "Rank 1" }, { "Polymorph", "" },
@@ -157,6 +158,8 @@ local book = { -- name, rank: Classic lists every learned rank
 C_SpellBook = {
     GetNumSpellBookSkillLines = function() return 1 end,
     GetSpellBookSkillLineInfo = function() return { itemIndexOffset = 0, numSpellBookItems = #book } end,
+    HasPetSpells = function() return #petBook > 0 and #petBook or nil end,
+    GetSpellBookItemName = function(i, bank) if bank == 1 then return petBook[i] end end,
     GetSpellBookItemInfo = function(slot)
         return { name = book[slot][1], subName = book[slot][2], itemType = 1, isPassive = false, iconID = slot }
     end,
@@ -952,6 +955,48 @@ do
     check("late events: and back", n[2] and n[2].point[5] == -4 - 14, n[2] and n[2].point[5])
     cursorEventsLate = false
     edit:SetFocus()
+end
+
+-- Typos: "Firebal" is marked after the typing pause with a suggestion; a click on it fixes the text.
+do
+    local function hover()
+        for _, o in ipairs(created) do
+            if o.kind == "Frame" and o.scripts.OnMouseUp and o.scripts.OnEnter and o.scripts.OnLeave then return o end
+        end
+    end
+    local function statusText()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("Line %d+:") then return o.text end
+        end
+        return ""
+    end
+    ns.Window.Revert()
+    NextFrame()
+    ns.Window.New() -- a clean macro: no issues left from the tests above
+    NextFrame()
+    edit:SetFocus()
+    Type("/cast Firebal")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(1)
+    check("typo suggestion in the status bar", statusText():find('did you mean "Fireball"%?') ~= nil, statusText())
+    Fire(hover(), "OnMouseUp")
+    NextFrame()
+    check("click fixes the name", raw() == "/cast Fireball", raw())
+    check("no issue after the fix", statusText() == "", statusText())
+    -- Items: names seen in the bags are remembered for later.
+    check("seen items remembered", ns.db.itemNames and ns.db.itemNames["Healthstone"] == true)
+    -- Pet spells: remembered from every pet seen, so the other pet's spells stay known.
+    petBook = { "Seduction", "Lash of Pain" }
+    Send("UNIT_PET", "player")
+    check("current pet's spells known", ns.KnownActions().set["seduction"] == true)
+    petBook = { "Spell Lock" }
+    Send("UNIT_PET", "player")
+    local set = ns.KnownActions().set
+    check("other pet's spells still known", set["seduction"] and set["spell lock"])
+    check("pet spells saved per character", ns.char.petSpells["Lash of Pain"] == true)
+    petBook = {}
+    ns.Window.Select(1)
+    NextFrame()
 end
 
 -- Unknown commands and conditions are marked; known ones are not.

@@ -4,6 +4,7 @@
 ## Author: Volodymyr Hachkovsky
 ## Version: @project-version@
 ## SavedVariables: MacroSenseDB
+## SavedVariablesPerCharacter: MacroSenseCharDB
 ## IconTexture: Interface\AddOns\MacroSense\Media\logo
 
 Parser.lua
@@ -11,6 +12,7 @@ Data.lua
 Conditions.lua
 Themes.lua
 Highlight.lua
+Spelling.lua
 Editing.lua
 Completion.lua
 Sources.lua
