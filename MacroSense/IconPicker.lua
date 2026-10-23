@@ -2,7 +2,9 @@
 -- and items, then every macro icon the game offers. Search matches spell / item names and icon file names.
 local _, ns = ...
 
-local COLS, ROWS, SIZE, GAP, PAD = 10, 7, 34, 4, 10
+local MIN_COLS, MIN_ROWS, SIZE, GAP, PAD = 10, 7, 34, 4, 10
+local TOP, BOTTOM, SIDE = PAD * 2 + 26, PAD + 20, PAD + 18 -- around the grid: search, footer, scroll bar
+local cols, rows = MIN_COLS, MIN_ROWS -- follow the window size
 local QUESTION_MARK = 134400
 
 local Picker = {}
@@ -52,11 +54,15 @@ local function Build()
     return out
 end
 
-local function MaxOffset() return math.max(0, math.ceil(#shown / COLS) - ROWS) end
+local function MaxOffset() return math.max(0, math.ceil(#shown / cols) - rows) end
+
+local function SizeFor(c, r)
+    return PAD + c * (SIZE + GAP) - GAP + SIDE, TOP + r * (SIZE + GAP) - GAP + BOTTOM
+end
 
 local function Refresh()
     for i, b in ipairs(buttons) do
-        local entry = shown[offset * COLS + i]
+        local entry = i <= cols * rows and shown[offset * cols + i] or nil
         b.entry = entry
         b:SetShown(entry ~= nil)
         if entry then
@@ -83,7 +89,7 @@ local function Filter()
             if entry.name and entry.name:lower():find(q, 1, true) then shown[#shown + 1] = entry end
         end
     end
-    slider:SetRange(MaxOffset(), ROWS)
+    slider:SetRange(MaxOffset(), rows)
     SetOffset(0)
 end
 
@@ -94,7 +100,11 @@ local function Create()
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
     frame:EnableMouse(true)
-    frame:SetSize(PAD * 2 + COLS * (SIZE + GAP) - GAP + 18, PAD * 3 + 26 + ROWS * (SIZE + GAP) - GAP + 20)
+    frame:SetResizable(true)
+    ns.SetMinSize(frame, SizeFor(MIN_COLS, MIN_ROWS))
+    local minW, minH = SizeFor(MIN_COLS, MIN_ROWS)
+    local saved = ns.db.picker
+    frame:SetSize(math.max(saved and saved.w or 0, minW), math.max(saved and saved.h or 0, minH))
     ns.Backdrop(frame, "panel", "border")
     frame:Hide()
 
@@ -109,11 +119,9 @@ local function Create()
     close:SetPoint("TOPRIGHT", -PAD, -PAD)
 
     buttons = {}
-    for i = 1, COLS * ROWS do
+    local function Button(i)
         local b = CreateFrame("Button", nil, frame)
         b:SetSize(SIZE, SIZE)
-        local col, row = (i - 1) % COLS, math.floor((i - 1) / COLS)
-        b:SetPoint("TOPLEFT", PAD + col * (SIZE + GAP), -(PAD * 2 + 26) - row * (SIZE + GAP))
         b.tex = b:CreateTexture(nil, "ARTWORK")
         b.tex:SetAllPoints()
         b.tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -134,12 +142,33 @@ local function Create()
             GameTooltip:Show()
         end)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        buttons[i] = b
+        return b
     end
 
+    -- As many columns and rows as fit; the first visible icon stays in view.
+    local function Layout()
+        local first = offset * cols
+        local w, h = frame:GetWidth(), frame:GetHeight()
+        cols = math.max(MIN_COLS, math.floor((w - PAD - SIDE + GAP) / (SIZE + GAP)))
+        rows = math.max(MIN_ROWS, math.floor((h - TOP - BOTTOM + GAP) / (SIZE + GAP)))
+        for i = 1, cols * rows do
+            buttons[i] = buttons[i] or Button(i)
+            local col, row = (i - 1) % cols, math.floor((i - 1) / cols)
+            buttons[i]:ClearAllPoints()
+            buttons[i]:SetPoint("TOPLEFT", PAD + col * (SIZE + GAP), -TOP - row * (SIZE + GAP))
+        end
+        if slider then
+            slider:SetRange(MaxOffset(), rows)
+            SetOffset(math.floor(first / cols))
+        end
+    end
+    Layout()
+    frame:SetScript("OnSizeChanged", Layout)
+    ns.ResizeGrip(frame, function() ns.db.picker = { w = frame:GetWidth(), h = frame:GetHeight() } end)
+
     slider = ns.ScrollBar(frame, SetOffset, 1)
-    slider:SetPoint("TOPRIGHT", -PAD, -(PAD * 2 + 26))
-    slider:SetPoint("BOTTOMRIGHT", -PAD, PAD + 20)
+    slider:SetPoint("TOPRIGHT", -PAD, -TOP)
+    slider:SetPoint("BOTTOMRIGHT", -PAD, BOTTOM)
 
     frame:EnableMouseWheel(true)
     frame:SetScript("OnMouseWheel", function(_, delta) SetOffset(offset - delta * 2) end)

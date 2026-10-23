@@ -565,6 +565,23 @@ do
     check("picked icon is unsaved change", saveIsEnabled())
     ns.Window.Save()
     check("icon saved", macros[1].icon == target.entry.icon, tostring(macros[1].icon))
+    -- Resizing the picker shows more columns and rows, and remembers the size.
+    local function gridShown()
+        local n = 0
+        for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then n = n + 1 end end
+        return n
+    end
+    check("10 x 7 icons at the minimum size", gridShown() == 70, gridShown())
+    MacroSenseIconPicker.GetWidth = function() return 600 end   -- room for 14 columns
+    MacroSenseIconPicker.GetHeight = function() return 500 end  -- room for 11 rows
+    Fire(MacroSenseIconPicker, "OnSizeChanged")
+    check("bigger picker shows more icons", gridShown() == 14 * 11, gridShown())
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.scripts.OnMouseUp and o.scripts.OnMouseDown and not o.scripts.OnClick then
+            Fire(o, "OnMouseUp")
+        end
+    end
+    check("picker size remembered", ns.db.picker and ns.db.picker.w == 600 and ns.db.picker.h == 500)
     MacroSenseIconPicker:Hide()
     check("picker closes", not MacroSenseIconPicker:IsShown())
 end
