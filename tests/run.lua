@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Themes.lua", "Completion.lua", "Highlight.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -174,13 +174,45 @@ for _, raw in ipairs({
 end
 check("colorize wraps", H.Colorize("/cast A", scheme) == "|cff111111/cast|r |cff222222A|r", H.Colorize("/cast A", scheme))
 
+-- macOS shortcuts hit by [mod:cmd].
+local S = ns.Shortcuts
+local function conflicts(raw, keys)
+    local out = {}
+    for _, c in ipairs(S.Conflicts(raw, keys)) do out[#out + 1] = c.combo end
+    return table.concat(out, ",")
+end
+check("cmd on Q", conflicts("/cast [mod:cmd] A; B", { "Q" }) == "Cmd+Q", conflicts("/cast [mod:cmd] A; B", { "Q" }))
+check("no cmd, no warning", conflicts("/cast [mod:shift] A; B", { "Q" }) == "")
+check("nomod:cmd is not cmd", conflicts("/cast [nomod:cmd] A", { "Q" }) == "")
+check("cmd on a free key", conflicts("/cast [mod:cmd] A", { "1", "E" }) == "")
+check("cmd + shift in one group", conflicts("/cast [mod:cmd,mod:shift] A", { "3" }) == "Cmd+Shift+3",
+    conflicts("/cast [mod:cmd,mod:shift] A", { "3" }))
+check("shift from the binding", conflicts("/cast [mod:cmd] A", { "SHIFT-Q" }) == "Cmd+Shift+Q",
+    conflicts("/cast [mod:cmd] A", { "SHIFT-Q" }))
+check("cmd in a list", conflicts("/cast [mod:alt/cmd] A", { "W" }) == "Cmd+W", conflicts("/cast [mod:alt/cmd] A", { "W" }))
+check("alt/cmd list does not add alt", conflicts("/cast [mod:alt/cmd] A", { "H" }) == "Cmd+H")
+check("modifier: long form", conflicts("/cast [modifier:CMD] A", { "tab" }) == "Cmd+Tab", conflicts("/cast [modifier:CMD] A", { "tab" }))
+check("option label", conflicts("/cast [mod:cmd,mod:alt] A", { "ESCAPE" }) == "Cmd+Option+Esc",
+    conflicts("/cast [mod:cmd,mod:alt] A", { "ESCAPE" }))
+check("several keys", conflicts("/cast [mod:cmd] A", { "Q", "W" }) == "Cmd+Q,Cmd+W")
+check("message one", S.Message(S.Conflicts("/cast [mod:cmd] A", { "Q" })) == "Cmd+Q is a macOS shortcut (quits the game)")
+check("message many", S.Message(S.Conflicts("/cast [mod:cmd] A", { "Q", "W" })) == "Cmd+Q, Cmd+W are macOS shortcuts")
+check("message none", S.Message({}) == nil)
+check("slot 1", S.slotCommand(1) == "ACTIONBUTTON1")
+check("slot 13 page 2", S.slotCommand(13) == "ACTIONBUTTON1")
+check("slot 30 right bar", S.slotCommand(30) == "MULTIACTIONBAR3BUTTON6")
+check("slot 61 bottom left", S.slotCommand(61) == "MULTIACTIONBAR1BUTTON1")
+check("slot 80 form bar", S.slotCommand(80) == "ACTIONBUTTON8")
+check("slot 150 bar 5", S.slotCommand(150) == "MULTIACTIONBAR5BUTTON6")
+check("slot 130 none", S.slotCommand(130) == nil)
+
 -- Every scheme colors every role and UI part.
 for _, scheme in ipairs(ns.schemes) do
     local missing = {}
     for _, role in pairs(ns.TOKEN_ROLES) do
         if not (scheme[role] or ""):find("^%x%x%x%x%x%x$") then missing[#missing + 1] = role end
     end
-    for _, ui in ipairs({ "bg", "panel", "border", "selection", "accent", "text", "dim" }) do
+    for _, ui in ipairs({ "bg", "panel", "border", "selection", "accent", "warning", "text", "dim" }) do
         if not (scheme[ui] or ""):find("^%x%x%x%x%x%x$") then missing[#missing + 1] = ui end
     end
     check("scheme " .. scheme.key, #missing == 0, table.concat(missing, ","))

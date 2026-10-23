@@ -11,6 +11,7 @@ Themes.lua
 Highlight.lua
 Completion.lua
 Sources.lua
+Shortcuts.lua
 Widgets.lua
 Popup.lua
 CodeBox.lua

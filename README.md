@@ -34,6 +34,9 @@ Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo.
   built-in themes of VS Code and JetBrains IDEs). Each macro token has a semantic role (keyword, property, string, ...),
   and a scheme colors roles, so new schemes are easy to add in `Themes.lua`.
 - Unknown commands and conditions are shown in the error color.
+- Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game,
+  Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns. Keys are found from a direct
+  `MACRO name` binding and the standard action bars; bars of addons (Bartender, ElvUI) are not checked.
 
 ## Commands
 
@@ -48,6 +51,7 @@ Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo.
 - `MacroSense/Completion.lua`: ranks suggestions. Pure Lua.
 - `MacroSense/Data.lua`, `MacroSense/Themes.lua`: static commands, conditions, units; fonts, schemes.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
+- `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
