@@ -55,7 +55,8 @@ ns.data = {
         { name = "combat",           hint = "in combat" },
         { name = "nocombat",         hint = "out of combat" },
         { name = "mod",              hint = "modifier held", arg = true },
-        { name = "nomod",            hint = "no modifier held", arg = true },
+        -- [nomod] alone is how it is used: no ":" after it. "nomod:shift" still gets mod's values and checks.
+        { name = "nomod",            hint = "no modifier held" },
         { name = "harm",             hint = "unit is hostile" },
         { name = "help",             hint = "unit is friendly" },
         { name = "exists",           hint = "unit exists" },
