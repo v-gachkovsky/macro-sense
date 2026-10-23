@@ -563,6 +563,51 @@ do
     check("mouseovr can't become a unit: marked at once", warned())
 end
 
+-- Long lists scroll: 10 rows on screen; arrows, PageUp / PageDown and the wheel reach every item.
+do
+    local P = ns.Popup
+    ns.Window.Revert()
+    NextFrame()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/")
+    local n = #P.items
+    local function shownRows()
+        local c = 0
+        for _, r in ipairs(P.rows) do if r:IsShown() then c = c + 1 end end
+        return c
+    end
+    check("long list kept whole", n > 20, n)
+    check("10 rows on screen", shownRows() == 10, shownRows())
+    check("scroll bar for a long list", P.bar:IsShown())
+    for _ = 1, 12 do Arrow("DOWN") end
+    check("selection past the 10th row", P.selected == 13, P.selected)
+    check("view follows the selection", P.offset == 3, P.offset)
+    check("last row shows the selection", P.rows[10].text.text == P.items[13].name, P.rows[10].text.text)
+    Key("PAGEDOWN")
+    check("PageDown moves 10", P.selected == 23 and P.offset == 13, P.selected .. "/" .. P.offset)
+    Fire(P, "OnMouseWheel", 1)
+    check("wheel scrolls the view, selection stays", P.offset == 10 and P.selected == 23, P.offset)
+    for _ = 1, 4 do Key("PAGEUP") end
+    check("PageUp stops at the top", P.selected == 1 and P.offset == 0, P.selected .. "/" .. P.offset)
+    Arrow("UP")
+    check("Up wraps to the end and shows it", P.selected == n and P.offset == n - 10, P.selected .. "/" .. P.offset)
+    check("cursor kept while scrolling", raw():sub(-2) == "\n/" and rawCursor() == #raw(), rawCursor())
+    local want = P.items[P.offset + 2].name
+    Fire(P.rows[2], "OnClick")
+    NextFrame()
+    check("click takes the item shown in that row", raw():sub(-(#want + 2)) == "/" .. want .. " ", raw():sub(-20))
+    Key("ESCAPE", "OnEscapePressed")
+    -- A short list: no scroll bar.
+    ns.Window.Revert()
+    NextFrame()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/cast [group:")
+    check("short list: no scroll bar", P:IsShown() and not P.bar:IsShown() and shownRows() == 2, shownRows())
+    Key("ESCAPE", "OnEscapePressed")
+    ns.Window.Revert()
+    NextFrame()
+end
+
 -- A finished word does not reopen the list after Tab, even when longer words match ("mouseovertarget").
 edit:SetCursorPosition(#edit.text)
 Type("\n/cast [@mouse")

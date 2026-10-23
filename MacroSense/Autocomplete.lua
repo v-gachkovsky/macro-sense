@@ -78,10 +78,12 @@ function ns.AttachAutocomplete(box)
 
     box.onKey = function(key)
         if not Popup:IsShown() then return false end
-        if key == "UP" or key == "DOWN" then
+        local step = (key == "UP" and -1) or (key == "DOWN" and 1)
+            or (key == "PAGEUP" and -10) or (key == "PAGEDOWN" and 10)
+        if step then
             -- The EditBox may already have moved the cursor to another line: put it back.
             box:LockCursor(true, snap and snap.cursor)
-            Popup:Move(key == "UP" and -1 or 1)
+            Popup:Move(step)
             return true
         elseif key == "TAB" or key == "ENTER" then
             Popup:Accept()

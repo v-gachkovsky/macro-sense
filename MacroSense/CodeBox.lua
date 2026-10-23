@@ -110,7 +110,7 @@ end
 -- A key may arrive twice in one frame (OnKeyDown and OnArrowPressed / OnEnterPressed ...): handle it once.
 function CodeBox:Key(key, source)
     Debug("key %s (%s)", key, source)
-    if key ~= "UP" and key ~= "DOWN" then self.lockCursor = nil end
+    if key ~= "UP" and key ~= "DOWN" and key ~= "PAGEUP" and key ~= "PAGEDOWN" then self.lockCursor = nil end
     local now = GetTime()
     if self.lastKey == key and self.lastKeyTime == now and self.lastKeySource ~= source then
         return self.lastKeyResult
