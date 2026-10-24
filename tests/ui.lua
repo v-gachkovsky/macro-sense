@@ -1770,8 +1770,10 @@ do
     check("wizard: into the tab that is open", C("tab").label.text == "General", C("tab").label.text)
 
     local cast = C("cast")
+    TypeIn(cast, "FB")
+    check("wizard: a name by the first letters of its words", offered(cast) == "Fire Blast", offered(cast))
     TypeIn(cast, "fb")
-    check("wizard: a name by its first letters", offered(cast) == "Fire Blast", offered(cast))
+    check("wizard: small letters in a word, in that order", offered(cast) == "Fireball, Frostbolt", offered(cast))
     TypeIn(cast, "fire")
     check("wizard: your spells and the items you can use", offered(cast) == "Fire Blast, Fireball", offered(cast))
     Fire(cast, "OnArrowPressed", "DOWN")

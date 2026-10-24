@@ -52,8 +52,8 @@ repository instead.
   other units or clear the target / focus, and `/target` can also go by name (a rare, say). **Pet commands**:
   what the pet does without a key (attack, on units in order, follow, stay, move to the cursor, passive,
   defensive, aggressive, dismiss), and with each key held.
-- **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words, and your spells and
-  usable items come up; any other name works too.
+- **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words in capitals (`FB`),
+  and your spells and usable items come up; any other name works too.
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
   itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
   1-3, At the cursor. When one is not there, the next one is tried.
@@ -104,9 +104,13 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | `/castsequence reset=` | `target`, `combat`, `shift`, `ctrl`, `alt` or seconds (`10`); after `/` the ones not used yet |
 | `#` | `#showtooltip`, `#show` |
 
-Names of several words are found by their first letters too: `da` finds Demon Armor, `swp` Shadow Word: Pain,
-`ca` Curse of Agony (small words may be left out), `shwp` takes more of a word. The list puts the names you
-typed the first letters of first, then the names that start with what you typed, then the rest.
+Two capitals or more are the first letters of words: `DA` finds Demon Armor, `SWP` Shadow Word: Pain, `CA` Curse
+of Agony (words may be left out), and so does `CoA` (a small letter for a small word). The names with just those
+first letters come first. Small letters stay in one word: first the names that start with them, then those with a
+word that starts with them (`fi` finds Soul Fire; a space goes on to the next word, `sh wo` finds Shadow Word:
+Pain), those that have them inside, and last those with a word that has them in that order from its start (`nmd`
+finds `nomod`; `ds` doesn't find Demon Skin, `DS` does). Capitals that are no name's first letters count as small
+ones, so Caps Lock doesn't get in the way.
 
 Keys: **Tab** / **Enter** accept, **Up / Down** move, **PageUp / PageDown** jump 10, **Esc** closes the list.
 The list shows 10 rows and scrolls (also with the mouse wheel) through the rest. Deleting never opens the list.

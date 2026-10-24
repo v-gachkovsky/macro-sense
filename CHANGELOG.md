@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **Search by first letters** takes capitals now, two or more: `DA` finds Demon Armor, `SWP` Shadow Word: Pain,
+  `CA` or `CoA` Curse of Agony (a small letter for a small word). Small letters stay in one word: `ds` no longer
+  finds Demon Skin, and `nmd` finds `nomod` (the letters of a word in their order, from its start). The names that
+  start with what you typed come first, and a space goes on to the next word (`sh wo`). Capitals that are no
+  name's first letters count as small ones.
+
+### Fixed
+- Case no longer counts in Cyrillic names or in names with accented letters: `дем` finds Демонічна броня, `écl`
+  Éclair de givre, and capitals work there too (`ДБ`, `ÉDG`).
+
 ## [0.2.0] - 2026-10-24
 
 ### Added

@@ -23,7 +23,7 @@ Open it from the **minimap button** (drag it along the edge to move it), with `/
 **A macro from the wizard**
 
 1. **New (Wizard)** under the macro list.
-2. **Cast**: a few letters of the spell (or the first letters of its words).
+2. **Cast**: a few letters of the spell (or the first letters of its words, in capitals).
 3. **On**: Mouseover, then As usual. **Only**: Enemies, set from the spell.
 4. **With a key held**: Alt casts Immolate on the same units.
 5. **Create macro**: it is saved and opens in the editor.
@@ -49,7 +49,7 @@ Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** opens a 
 - **the command**: `/cast`, `/use`, `/castsequence` (with what starts it over), `/castrandom`, or `/target`,
   `/focus` and `/assist` on units (party members by key, say; `/target` by name too), or **pet commands**
   (attack your mouseover, follow with Shift, move to the cursor with Ctrl...)
-- **what to cast**: a spell or item, found by a few letters or the first letters of its words
+- **what to cast**: a spell or item, found by a few letters or by the first letters of its words in capitals
 - **on whom, in order**: mouseover, focus, your target, yourself, your pet, party members 1-4, target's
   target, arena enemies 1-3, the cursor, or as usual
 - **friends, enemies or anyone**, alive only: set from the spell for you
@@ -79,8 +79,8 @@ The macro shows as you choose; **Create macro** saves it and opens it in the edi
 | a spell with several learned ranks (Classic) | its ranks, highest first: `Fireball(Rank 4)` |
 | `#` | `#showtooltip`, `#show` |
 
-Spell names of several words come up by their first letters too: `da` finds **Demon Armor**, `swp`
-**Shadow Word: Pain**, `ca` **Curse of Agony**.
+Capitals find names by the first letters of their words: `DA` finds **Demon Armor**, `SWP` **Shadow Word:
+Pain**, `CoA` **Curse of Agony**. Small letters stay in one word, in their order: `nmd` finds `nomod`.
 
 **Tab** or **Enter** accepts, **Up / Down** move through the list, **PageUp / PageDown** jump 10, **Esc** closes
 it (after a spell, Esc keeps the plain name without a rank). Long lists scroll, also with the mouse wheel.
