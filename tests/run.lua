@@ -126,35 +126,64 @@ check("nomod: with a value, still the modifiers", names("/cast [nomod:|"):find("
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
 
--- Names of several words: their first letters find them ("da" -> Demon Armor), the best fits first.
+-- Two capitals or more find names by the first letters of their words ("DA" -> Demon Armor), small letters by
+-- the letters of a word in that order ("nmd" -> nomod), the best fits first.
 do
     local spells = ns.sources.spells
     ns.sources.spells = function()
         local out = {}
-        for _, name in ipairs({ "Dark Pact", "Demon Armor", "Demon Skin", "Curse of Agony", "Shadow Word: Pain",
-            "Fear", "Fel Armor", "Soul Fire", "Anti-Magic Shell", "Дбайливість", "Демонічна броня" }) do
+        for _, name in ipairs({ "Demon Armor", "Dark Pact", "Demon Skin", "Curse of Agony", "Sweeping Strikes",
+            "Shadow Word: Pain", "Searing Pain", "Fear", "Fel Armor", "Soul Fire", "Anti-Magic Shell", "Дбайливість",
+            "Демонічна броня", "Темний союз", "Іскра", "Іскра життя", "Éclair de givre" }) do
             out[#out + 1] = { name = name, ranks = {} }
         end
         return out
     end
-    check("initials first, then names that start with them", names("/cast da|") == "Demon Armor,Dark Pact",
-        names("/cast da|"))
-    check("initials in any case", names("/cast DA|") == "Demon Armor,Dark Pact", names("/cast DA|"))
-    check("initials with the small words", names("/cast coa|") == "Curse of Agony", names("/cast coa|"))
-    check("small words left out", names("/cast ca|") == "Curse of Agony", names("/cast ca|"))
-    check("first letters of each word", names("/cast shwp|") == "Shadow Word: Pain", names("/cast shwp|"))
-    check("words after a colon and a hyphen", names("/cast swp|") == "Shadow Word: Pain"
-        and names("/cast ams|") == "Anti-Magic Shell", names("/cast swp|"))
-    check("spaces typed between them", names("/cast sh wo|") == "Shadow Word: Pain", names("/cast sh wo|"))
-    check("the start of a later word", names("/cast fi|") == "Soul Fire", names("/cast fi|"))
-    check("names that start with it before the rest", names("/cast fe|") == "Fear,Fel Armor", names("/cast fe|"))
+    check("capitals: the first letters of words", names("/cast DA|") == "Demon Armor", names("/cast DA|"))
+    check("capitals: just those first, then with more words", names("/cast SP|") == "Searing Pain,Shadow Word: Pain",
+        names("/cast SP|"))
+    check("capitals: the small words left out", names("/cast CA|") == "Curse of Agony", names("/cast CA|"))
+    check("capitals: a small letter for a small word", names("/cast CoA|") == "Curse of Agony", names("/cast CoA|"))
+    check("capitals: words after a colon and a hyphen", names("/cast SWP|") == "Shadow Word: Pain"
+        and names("/cast AMS|") == "Anti-Magic Shell", names("/cast AMS|"))
+    check("capitals with spaces between", names("/cast S W P|") == "Shadow Word: Pain", names("/cast S W P|"))
+    check("capitals: each one a word of its own", names("/cast SS|") == "Sweeping Strikes", names("/cast SS|"))
+    check("capitals no name has that way: as small letters", names("/cast FEA|") == "Fear", names("/cast FEA|"))
+    check("one capital: a letter like any", names("/cast F|") == names("/cast f|") and names("/cast f|") ~= "",
+        names("/cast F|"))
+    check("small: not the first letters of words", names("/cast da|") == "Dark Pact" and names("/cast ds|") == ""
+        and names("/cast coa|") == "", names("/cast da|") .. " / " .. names("/cast ds|") .. " / " .. names("/cast coa|"))
+    check("small: a word that starts with it", names("/cast fi|") == "Soul Fire", names("/cast fi|"))
+    check("small: a space goes on to the next word", names("/cast sh wo|") == "Shadow Word: Pain"
+        and names("/cast curse ag|") == "Curse of Agony", names("/cast sh wo|") .. " / " .. names("/cast curse ag|"))
+    check("names that start with it before the rest", names("/cast fe|") == "Fear,Fel Armor,Soul Fire",
+        names("/cast fe|"))
     check("a name typed in full: no other fits", names("/cast Fear|") == "", names("/cast Fear|"))
-    check("letters of other alphabets, whole", names("/cast Дб|") == "Демонічна броня,Дбайливість",
-        names("/cast Дб|"))
-    check("letters inside a word still match last", names("/cast rmo|") == "Demon Armor,Fel Armor",
-        names("/cast rmo|"))
+    check("letters inside a word", names("/cast rmo|") == "Demon Armor,Fel Armor", names("/cast rmo|"))
+    check("the letters of a word in that order", names("/cast dmn|") == "Demon Armor,Demon Skin"
+        and names("/cast swp|") == "Sweeping Strikes", names("/cast dmn|") .. " / " .. names("/cast swp|"))
+    check("the letters of a word from its start", names("/cast mnr|") == "", names("/cast mnr|"))
+    check("letters of other alphabets", names("/cast Дб|") == "Дбайливість", names("/cast Дб|"))
+    check("other alphabets: case doesn't count", names("/cast дб|") == "Дбайливість"
+        and names("/cast іск|") == "Іскра,Іскра життя", names("/cast дб|") .. " / " .. names("/cast іск|"))
+    check("other alphabets: capitals", names("/cast ДБ|") == "Демонічна броня" and names("/cast ТС|") == "Темний союз"
+        and names("/cast ІЖ|") == "Іскра життя", names("/cast ТС|") .. " / " .. names("/cast ІЖ|"))
+    check("other alphabets: a name typed in full, small", names("/cast демонічна броня|") == ""
+        and names("/cast іскра|") == "Іскра,Іскра життя", names("/cast іскра|"))
+    check("letters with accents", names("/cast ÉDG|") == "Éclair de givre" and names("/cast écl|") == "Éclair de givre",
+        names("/cast ÉDG|") .. " / " .. names("/cast écl|"))
     ns.sources.spells = spells
 end
+do
+    local out = ns.Completion.Match({ { name = "Fire Blast" }, { name = "fb" } }, "FB")
+    check("capitals: a name like them is not a name typed in full", #out == 1 and out[1].name == "Fire Blast",
+        out[1] and out[1].name)
+    out = ns.Completion.Match({ { name = "Soul Fire" }, { name = "Fireball" } }, "fi")
+    check("small: names that start with it before a later word", #out == 2 and out[1].name == "Fireball",
+        out[1] and out[1].name)
+end
+check("conditions by the letters of a word", names("/cast [nmd|") == "nomod", names("/cast [nmd|"))
+check("letters inside before letters apart", names("/cast [nd|") == "indoors,nomod,nodead", names("/cast [nd|"))
 
 -- Items: /equip wants gear, /use puts items first, /cast puts spells first.
 check("equip items", names("/equip F|") == "Fire Ring", names("/equip F|"))

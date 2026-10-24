@@ -94,6 +94,34 @@ end
 -- What was typed against a name
 ------------------------------------------------------------------------
 local SEPARATOR = "[%s%-:/(),]"
+local WORD = "[^%s%-:/(),]+" -- what is between them
+local LETTER = "[^\128-\191][\128-\191]*" -- one letter of UTF-8, whole
+
+-- Capitals besides A-Z, in UTF-8: À-Þ and Cyrillic Ѐ-Я. Each: the lead byte and the range of the second, the
+-- lead byte of the small letter and how far its second byte is.
+local CASES = {
+    { "\195([\128-\150\152-\158])", "\195", 32 },
+    { "\208([\128-\143])", "\209", 16 },
+    { "\208([\144-\159])", "\208", 32 },
+    { "\208([\160-\175])", "\209", -32 },
+}
+
+local function Lower(s)
+    s = s:lower()
+    for _, case in ipairs(CASES) do
+        s = s:gsub(case[1], function(c) return case[2] .. string.char(c:byte() + case[3]) end)
+    end
+    return s
+end
+
+-- Two capitals or more ("DA", "SWP", "CoA"; not "Da" or "D"): then each letter is the first letter of a word.
+local function Capitals(s)
+    local n = 0
+    for c in s:gmatch(LETTER) do
+        if Lower(c) ~= c then n = n + 1 end
+    end
+    return n >= 2
+end
 
 -- Where the words of `name` start: its first letter, and each one after a space or - : / ( ) ,
 local function WordStarts(name)
@@ -109,48 +137,78 @@ end
 -- The first letter of each word, whole: "curse of agony" -> "coa".
 local function Initials(name)
     local out = {}
-    for _, i in ipairs(WordStarts(name)) do out[#out + 1] = name:match("^[^\128-\191][\128-\191]*", i) end
+    for _, i in ipairs(WordStarts(name)) do out[#out + 1] = name:match("^" .. LETTER, i) end
     return table.concat(out)
 end
 
--- Whether `q` is made of beginnings of words of `name`, in order: each word used gives its first letters, and
--- words may be left out. "da" -> "demon armor", "shwp" -> "shadow word: pain", "ca" -> "curse of agony".
-local function ByWords(name, q)
-    local starts = WordStarts(name)
-    local function from(i, w)
-        if i > #q then return true end
-        for k = w, #starts do
-            local at, n = starts[k], 0
-            while i + n <= #q and name:byte(at + n) == q:byte(i + n) do
-                n = n + 1
-                if from(i + n, k + 1) then return true end
-            end
-        end
-        return false
+-- Whether each part of `q` between spaces begins a word of `name`, in that order, words may be left out:
+-- "fi" -> "soul fire", "sh wo" -> "shadow word: pain".
+local function WordsBegin(name, q)
+    local starts, k = WordStarts(name), 1
+    for part in q:gmatch("%S+") do
+        while starts[k] and name:sub(starts[k], starts[k] + #part - 1) ~= part do k = k + 1 end
+        if not starts[k] then return false end
+        k = k + 1
     end
-    return from(1, 1)
+    return true
 end
 
--- The items whose names fit what was typed, best first, each group in the list's order: those it is the
--- initials of ("da" -> Demon Armor), those that start with it, those whose words it begins ("ca" -> Curse of
--- Agony), those that have it inside. Case doesn't count, spaces typed between words neither. A name typed in
--- full keeps only the names that start with it.
+-- Whether the letters of `q` come in `s` in that order, from `at` on: "nmd" in "nomod".
+local function InOrder(s, q, at)
+    at = at or 1
+    for c in q:gmatch(LETTER) do
+        local i = s:find(c, at, true)
+        if not i then return false end
+        at = i + #c
+    end
+    return true
+end
+
+-- Whether a word of `name` has the letters of `q` in that order, the first one starting it: "nmd" -> "nomod",
+-- "frbl" -> "frostbolt"; not "ds" -> "demon skin" (two words), not "mnd" -> "nomod" (not from its start).
+local function InWord(name, q)
+    local first = q:match("^" .. LETTER)
+    if not first then return false end
+    for word in name:gmatch(WORD) do
+        if word:sub(1, #first) == first and InOrder(word, q:sub(#first + 1), #first + 1) then return true end
+    end
+    return false
+end
+
+-- The group of Match a name goes in, if any.
+local function Group(name, q, bare, caps)
+    if caps then
+        local initials = Initials(name)
+        return (initials == bare and 1) or (InOrder(initials, bare) and 2)
+    end
+    local at = q == "" and 1 or name:find(q, 1, true)
+    return (at == 1 and 1) or (bare ~= "" and WordsBegin(name, q) and 2) or (at and 3)
+        or (bare ~= "" and q == bare and InWord(name, q) and 4)
+end
+
+-- The items whose names fit what was typed, best first, each group in the list's order. Two capitals or more
+-- make each letter the first letter of a word ("DA" -> Demon Armor, "CoA" -> Curse of Agony): the names with just
+-- those first, then those with more words ("CA"); if no name has them, they count as small letters. Small
+-- letters stay in a word: the names that start with them, those with a word that starts with them ("fi" -> Soul
+-- Fire; a space goes on to the next word: "sh wo" -> Shadow Word: Pain), those that have them inside, those with
+-- a word that has them in that order from its start ("nmd" -> nomod). A name typed in full keeps only the names
+-- that start with it.
 function Completion.Match(items, typed)
-    local q = typed:lower()
+    local q = Lower(typed)
     local bare = q:gsub("%s+", "")
+    local caps = Capitals(typed)
     local groups, full = { {}, {}, {}, {} }, false
     for _, item in ipairs(items) do
-        local name = item.name:lower()
-        local at = q == "" and 1 or name:find(q, 1, true)
-        full = full or name == q
-        local group = (#bare >= 2 and Initials(name) == bare and 1) or (at == 1 and 2)
-            or (bare ~= "" and ByWords(name, bare) and 3) or (at and 4)
+        local name = Lower(item.name)
+        full = full or (not caps and name == q)
+        local group = Group(name, q, bare, caps)
         if group then table.insert(groups[group], item) end
     end
+    if caps and #groups[1] + #groups[2] == 0 then return Completion.Match(items, q) end
     local out = {}
     for _, group in ipairs(groups) do
         for _, item in ipairs(group) do
-            if not full or item.name:lower():find(q, 1, true) == 1 then out[#out + 1] = item end
+            if not full or Lower(item.name):find(q, 1, true) == 1 then out[#out + 1] = item end
         end
     end
     return out
@@ -176,7 +234,7 @@ function Completion.Get(ctx)
         if #out >= Completion.limit then return out end
         out[#out + 1] = { name = item.name, hint = item.hint, icon = item.icon, insert = insertText(ctx.kind, item) }
     end
-    if #out == 1 and out[1].name:lower() == prefix then return {} end
+    if #out == 1 and Lower(out[1].name) == Lower(ctx.prefix) then return {} end
     return out
 end
 
