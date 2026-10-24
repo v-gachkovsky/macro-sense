@@ -80,7 +80,8 @@ The macro shows as you choose; **Create macro** saves it and opens it in the edi
 | `#` | `#showtooltip`, `#show` |
 
 Capitals find names by the first letters of their words: `DA` finds **Demon Armor**, `SWP` **Shadow Word:
-Pain**, `CoA` **Curse of Agony**. Small letters stay in one word, in their order: `nmd` finds `nomod`.
+Pain**, `CoA` **Curse of Agony**. Small letters stay in one word, in their order: `nmd` finds `nomod`. So `DS`
+finds **Demon Skin**, but `ds` doesn't.
 
 **Tab** or **Enter** accepts, **Up / Down** move through the list, **PageUp / PageDown** jump 10, **Esc** closes
 it (after a spell, Esc keeps the plain name without a rank). Long lists scroll, also with the mouse wheel.
