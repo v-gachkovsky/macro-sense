@@ -1083,6 +1083,13 @@ do
     local ok, done = pcall(names.Step, 1000)
     check("icon names: TBC: the functions without achievements", ok and done and Names(names, 11) == "Shadow Bolt",
         tostring(done))
+    -- Classic: seven categories, the first without a count; the others still count.
+    GetCategoryList = function() return { 14808, 92 } end
+    GetCategoryNumAchievements = function(category) return category == 92 and 2 or nil end
+    names = Lookup(1000, 100)
+    ok, done = pcall(names.Step, 1000)
+    check("icon names: a category without a count is skipped", ok and done
+        and Names(names, 11) == "Shadow Bolt,Achievement 92.1", Names(names, 11))
     -- Anything else odd there comes up once, not every frame.
     GetCategoryNumAchievements = function() return 1 end
     GetAchievementInfo = function() error("odd") end
