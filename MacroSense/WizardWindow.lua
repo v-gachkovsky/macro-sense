@@ -647,7 +647,7 @@ function WizardWindow.Open(tab)
     controls.name:SetText("")
     -- The editor's font, when it is one of ours (not one from another addon).
     local font = ns.FindByKey(ns.fonts, ns.db.font)
-    preview:SetFont(font and font.path or ns.UI_FONT, 12, "")
+    preview:SetFont(font and font.path or ns.UIFont(), 12, "")
     for slot, check in pairs({ [13] = controls.trinket1, [14] = controls.trinket2 }) do
         local name = ns.sources.equipped(slot)
         check:SetLabel(string.format("Trinket %d: %s", slot - 12, name and Short(name, 14) or "empty"))

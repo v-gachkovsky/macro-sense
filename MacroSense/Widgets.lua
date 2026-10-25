@@ -1,9 +1,18 @@
 -- Flat, theme-aware widgets for the editor window. Every widget restyles itself when the scheme changes.
 local _, ns = ...
 
+local L = ns.L
 local WHITE = "Interface\\Buttons\\WHITE8x8"
 local UI_FONT = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF" -- localized: covers the client's alphabet
-ns.UI_FONT = UI_FONT
+-- Clients whose own font has letters beyond Latin. The others write Ukrainian with the game's Friz Quadrata with
+-- Cyrillic letters: the game's own fonts use that file for Russian on every client.
+local OWN_LETTERS = { ruRU = true, koKR = true, zhCN = true, zhTW = true }
+
+-- The font of the interface's texts in the chosen language.
+function ns.UIFont()
+    if ns.language == "uk" and not OWN_LETTERS[GetLocale()] then return "Fonts\\FRIZQT___CYR.TTF" end
+    return UI_FONT
+end
 
 local stylers = {}
 
@@ -18,6 +27,16 @@ function ns.ApplyScheme(scheme)
     for _, fn in ipairs(stylers) do fn(scheme) end
 end
 
+-- StaticPopup_Show in the chosen language, or in `language`: a dialog's text and buttons are written in English
+-- and translated when it is shown.
+function ns.Ask(which, arg1, arg2, data, language)
+    local d = StaticPopupDialogs[which]
+    local function T(text) return text and (language and ns.Translate(language, text) or L[text]) end
+    d.english = d.english or { d.text, d.button1, d.button2 }
+    d.text, d.button1, d.button2 = T(d.english[1]), T(d.english[2]), T(d.english[3])
+    return StaticPopup_Show(which, arg1, arg2, data)
+end
+
 -- `frame` must be created with "BackdropTemplate".
 function ns.Backdrop(frame, bgKey, borderKey)
     frame:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
@@ -29,7 +48,7 @@ end
 
 function ns.Text(parent, size, colorKey)
     local fs = parent:CreateFontString(nil, "OVERLAY")
-    fs:SetFont(UI_FONT, size or 12, "")
+    fs:SetFont(ns.UIFont(), size or 12, "")
     fs:SetJustifyH("LEFT")
     ns.OnStyle(function(s) fs:SetTextColor(ns.RGB(s[colorKey or "text"])) end)
     return fs
@@ -108,7 +127,7 @@ function ns.Input(parent, width, maxLetters, name)
     e:SetSize(width, 24)
     e:SetAutoFocus(false)
     e:SetTextInsets(6, 6, 0, 0)
-    e:SetFont(UI_FONT, 13, "")
+    e:SetFont(ns.UIFont(), 13, "")
     if maxLetters then e:SetMaxLetters(maxLetters) end
     e:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
     e:SetScript("OnEscapePressed", e.ClearFocus)
@@ -236,7 +255,10 @@ local function OpenMenu(owner, items, width, up, right)
         end
     end
     menu.owner = owner
-    menu:SetWidth(math.max(width, 180))
+    -- As wide as the longest row, in any language.
+    local w = math.max(width, 180)
+    for i, item in ipairs(items) do w = math.max(w, menu.rows[i].text:GetStringWidth() + (item.onRemove and 32 or 16)) end
+    menu:SetWidth(w)
     menu:SetHeight(#items * 20 + 4)
     menu:ClearAllPoints()
     local side = right and "RIGHT" or "LEFT"

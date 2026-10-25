@@ -1,8 +1,10 @@
 local ADDON, ns = ...
 _G.MacroSense = ns
 
-local L_PREFIX = "|cff569cd6MacroSense|r: "
-function ns.Print(...) print(L_PREFIX .. string.format(...)) end
+local L = ns.L
+local PREFIX = "|cff569cd6MacroSense|r: "
+-- A chat line; `text` is translated, then filled in like string.format.
+function ns.Print(text, ...) print(PREFIX .. string.format(L[text], ...)) end
 
 -- Where players report bugs.
 ns.ISSUES_URL = "https://github.com/v-gachkovsky/macro-sense/issues"
@@ -23,6 +25,7 @@ ns.defaults = {
     preview = true, -- the live preview column
     minimapButton = true,
     minimapAngle = 250, -- where on the minimap's edge, in degrees (0 = right, 90 = up)
+    language = "en", -- "uk": Ukrainian (Locale.lua)
     welcomeSeen = nil, -- version the early-development note was shown for
 }
 
@@ -32,9 +35,9 @@ local function Welcome()
     if ns.db.welcomeSeen == version then return end
     ns.db.welcomeSeen = version
     ns.Print("%s - thanks for trying it! The addon is in early development.", version)
-    print("  Found a bug or have an idea? Please don't hesitate to tell me: I read every report")
-    print("  and try to fix things as fast as I can. Type /ms bug for the details to include.")
-    if ns.ISSUES_URL then print("  Report here: " .. ns.ISSUES_URL) end
+    print(L["  Found a bug or have an idea? Please don't hesitate to tell me: I read every report"])
+    print(L["  and try to fix things as fast as I can. Type /ms bug for the details to include."])
+    if ns.ISSUES_URL then print(string.format(L["  Report here: %s"], ns.ISSUES_URL)) end
 end
 
 local IsLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
@@ -72,6 +75,7 @@ f:SetScript("OnEvent", function(_, event, name)
                 if MacroSenseDB[k] == nil then MacroSenseDB[k] = v end
             end
             ns.db = MacroSenseDB
+            ns.SetLanguage(ns.db.language)
             MacroSenseCharDB = MacroSenseCharDB or {}
             MacroSenseCharDB.petSpells = MacroSenseCharDB.petSpells or {}
             ns.char = MacroSenseCharDB
@@ -107,7 +111,7 @@ f:SetScript("OnEvent", function(_, event, name)
     end
 end)
 
-local function OnOff(v) return v and "|cff00ff00on|r" or "|cffff0000off|r" end
+local function OnOff(v) return v and "|cff00ff00" .. L["on"] .. "|r" or "|cffff0000" .. L["off"] .. "|r" end
 
 SLASH_MACROSENSE1 = "/macrosense"
 SLASH_MACROSENSE2 = "/ms"
@@ -128,8 +132,8 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.Print("bug report details:")
         print(string.format("  MacroSense %s, WoW %s (%s), %s", Version(), build, toc,
             IsMacClient and IsMacClient() and "Mac" or "Windows"))
-        print("  Please describe what you did, what you expected and what happened; a screenshot helps.")
-        if ns.ISSUES_URL then print("  Report here: " .. ns.ISSUES_URL) end
+        print(L["  Please describe what you did, what you expected and what happened; a screenshot helps."])
+        if ns.ISSUES_URL then print(string.format(L["  Report here: %s"], ns.ISSUES_URL)) end
     elseif msg == "debug" then
         ns.db.debug = not ns.db.debug
         ns.Print("debug %s", OnOff(ns.db.debug))

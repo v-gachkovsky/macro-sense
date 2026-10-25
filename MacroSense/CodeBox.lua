@@ -319,7 +319,7 @@ function CodeBox:DrawNotes()
             self.notes[i] = fs
         end
         if width > 0 and top and text and text ~= "" then
-            fs:SetFont(ns.UI_FONT, math.max(9, (size or 13) - 2), "")
+            fs:SetFont(ns.UIFont(), math.max(9, (size or 13) - 2), "")
             fs:SetWidth(width - 2 * NOTE_PAD)
             fs:SetHeight(self.rowHeight or 14)
             fs:ClearAllPoints()

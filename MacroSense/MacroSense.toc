@@ -8,6 +8,8 @@
 ## IconTexture: Interface\AddOns\MacroSense\Media\logo
 ## AddonCompartmentFunc: MacroSense_OnAddonCompartmentClick
 
+Locale.lua
+Ukrainian.lua
 Parser.lua
 Data.lua
 Conditions.lua

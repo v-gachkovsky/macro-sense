@@ -1,6 +1,7 @@
 -- The MacroSense window: macro list on the left, editor on the right. Macros are the game's own
 -- (CreateMacro / EditMacro), so everything stays in sync with the Blizzard macro UI.
 local _, ns = ...
+local L = ns.L
 
 local MAX_GENERAL, MAX_CHARACTER = ns.MAX_GENERAL, ns.MAX_CHARACTER
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
@@ -39,6 +40,14 @@ local function Letters(s)
     return select(2, s:gsub("[^\128-\191]", ""))
 end
 
+-- A tab's name, in the chosen language.
+local function TabName(scope) return L[SCOPE_NAMES[scope]] end
+
+local function NoRoom(scope)
+    if scope == "general" then return ns.Print("no free general macro slots") end
+    ns.Print("no free character macro slots")
+end
+
 local function IsDirty()
     if not frame then return false end
     local body, name = code:GetRaw(), nameBox:GetText()
@@ -67,7 +76,7 @@ end
 local function UpdateShorten(raw)
     local saved = Letters(raw) - Letters(Shortened(raw))
     shortenBtn:SetEnabled(saved > 0)
-    shortenBtn.label:SetText(saved > 0 and string.format("Shorten -%d", saved) or "Shorten")
+    shortenBtn.label:SetText(saved > 0 and string.format(L["Shorten -%d"], saved) or L["Shorten"])
 end
 
 -- Undo brings the old text back.
@@ -88,12 +97,16 @@ local function Versions()
     return ns.History.Versions(ns.History.Store(state.scope), state.name, state.body)
 end
 
+local MONTHS = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }
+
 -- "Today, 14:32", "Yesterday, 09:10", "Oct 21, 18:05", "Oct 21, 2025".
 local function When(t)
     local day, clock = date("%Y-%m-%d", t), date("%H:%M", t)
-    if day == date("%Y-%m-%d") then return "Today, " .. clock end
-    if day == date("%Y-%m-%d", time() - 86400) then return "Yesterday, " .. clock end
-    local month = date("%b ", t) .. tonumber(date("%d", t))
+    if day == date("%Y-%m-%d") then return string.format(L["Today, %s"], clock) end
+    if day == date("%Y-%m-%d", time() - 86400) then return string.format(L["Yesterday, %s"], clock) end
+    -- {month} and {day}: the order differs between languages.
+    local month = L["{month} {day}"]:gsub("{month}", L[MONTHS[tonumber(date("%m", t))]])
+        :gsub("{day}", tonumber(date("%d", t)))
     return month .. ", " .. (date("%Y", t) == date("%Y") and clock or date("%Y", t))
 end
 
@@ -108,7 +121,7 @@ local function HistoryItems()
     local items, dim = {}, ns.scheme.dim
     for _, v in ipairs(Versions()) do
         items[#items + 1] = {
-            name = string.format("%s  |cff%s%d chars|r", When(v.time), dim, Letters(v.body)),
+            name = string.format("%s  |cff%s%s|r", When(v.time), dim, ns.Plural(Letters(v.body), "%d char", "%d chars")),
             current = v.body == code:GetRaw(),
             onClick = function() Window.Restore(v.body) end,
             onEnter = function(row)
@@ -133,7 +146,7 @@ local function AddIssueLines(issues)
     for _, e in ipairs(issues) do
         local r, g, b = 1, 0.35, 0.35
         if e.severity == "warning" then r, g, b = 1, 0.82, 0 end
-        GameTooltip:AddLine(string.format("Line %d: %s", e.line, e.message), r, g, b)
+        GameTooltip:AddLine(string.format(L["Line %d: %s"], e.line, e.message), r, g, b)
     end
 end
 
@@ -147,7 +160,8 @@ local function UpdateStatus()
     local letters = Letters(raw)
     local s = ns.scheme
     local countColor = letters > MAX_BODY and s.invalid or s.dim
-    counter:SetText(string.format("Ln %d, Col %d    |cff%s%d / %d|r", line, col, countColor, letters, MAX_BODY))
+    counter:SetText(string.format(L["Ln %d, Col %d"], line, col)
+        .. string.format("    |cff%s%d / %d|r", countColor, letters, MAX_BODY))
     local dirty = IsDirty()
     UpdateShorten(raw)
     historyBtn:SetEnabled(#Versions() > 0)
@@ -170,8 +184,8 @@ local function UpdateStatus()
     -- quoted name and notes ("unknown unit"); the full list is in the tooltip.
     local function line(e, color, total)
         local short = e.short or e.message:gsub('%s*%b""', ""):gsub("%s*%b()", "")
-        local more = total > 1 and string.format(" (+%d more)", total - 1) or ""
-        return string.format("|cff%sLine %d: %s%s|r", color, e.line, short, more)
+        local more = total > 1 and string.format(L[" (+%d more)"], total - 1) or ""
+        return "|cff" .. color .. string.format(L["Line %d: %s"], e.line, short) .. more .. "|r"
     end
     local total = #issues + (message and 1 or 0)
     local shown -- the issue in the status bar; a click applies its fix
@@ -179,7 +193,7 @@ local function UpdateStatus()
         shown = errors[1]
         warning:SetText(line(shown, s.invalid, total))
     elseif message then
-        local more = total > 1 and string.format(" (+%d more)", total - 1) or ""
+        local more = total > 1 and string.format(L[" (+%d more)"], total - 1) or ""
         warning:SetText("|cff" .. s.warning .. message .. more .. "|r")
     elseif #warnings > 0 then
         shown = warnings[1]
@@ -193,9 +207,9 @@ local function UpdateStatus()
     dirtyDot:SetShown(dirty and letters <= MAX_BODY)
     dirtyDot:SetVertexColor(ns.RGB(s.accent))
     if letters > MAX_BODY then
-        status:SetText("|cff" .. s.invalid .. "Macro is longer than " .. MAX_BODY .. " characters|r")
+        status:SetText("|cff" .. s.invalid .. string.format(L["Macro is longer than %d characters"], MAX_BODY) .. "|r")
     elseif dirty then
-        status:SetText("Unsaved changes")
+        status:SetText(L["Unsaved changes"])
     else
         status:SetText("")
     end
@@ -258,11 +272,11 @@ local function Row(i)
         if not on then r.bg:SetShown(r.selected); r.bg:SetAlpha(1) end
     end
     -- At the end: copy (a menu: this tab or the other one) and x (delete, after asking).
-    r.remove = ns.RowButton(r, "x", "invalid", lit, function() return "Delete this macro" end, function()
-        StaticPopup_Show("MACROSENSE_DELETE", r.name, nil, { index = r.index, name = r.name, scope = state.scope })
+    r.remove = ns.RowButton(r, "x", "invalid", lit, function() return L["Delete this macro"] end, function()
+        ns.Ask("MACROSENSE_DELETE", r.name, nil, { index = r.index, name = r.name, scope = state.scope })
     end)
     r.remove:SetPoint("RIGHT", -2, 0)
-    r.copy = ns.RowButton(r, COPY_ICON, "text", lit, function() return "Copy this macro" end,
+    r.copy = ns.RowButton(r, COPY_ICON, "text", lit, function() return L["Copy this macro"] end,
         function() Window.OpenCopyMenu(r.copy, r.index) end)
     r.copy:SetPoint("RIGHT", r.remove, "LEFT")
     -- A macro with errors gets the alert sign, as on Save.
@@ -349,11 +363,11 @@ function Window.RefreshList()
     -- While searching, the tabs say how many match.
     if q == "" then
         local general, character = GetNumMacros()
-        tabs.general.label:SetText(string.format("General  %d/%d", general, MAX_GENERAL))
-        tabs.character.label:SetText(string.format("Character  %d/%d", character, MAX_CHARACTER))
+        tabs.general.label:SetText(string.format(L["General  %d/%d"], general, MAX_GENERAL))
+        tabs.character.label:SetText(string.format(L["Character  %d/%d"], character, MAX_CHARACTER))
     else
-        tabs.general.label:SetText(string.format("General  (%d)", CountMatches("general", q)))
-        tabs.character.label:SetText(string.format("Character  (%d)", CountMatches("character", q)))
+        tabs.general.label:SetText(string.format(L["General  (%d)"], CountMatches("general", q)))
+        tabs.character.label:SetText(string.format(L["Character  (%d)"], CountMatches("character", q)))
     end
     for scope, tab in pairs(tabs) do tab.active = scope == state.scope; tab:Paint() end
 end
@@ -378,15 +392,23 @@ local function Load(index)
 end
 
 -- Ask before throwing away unsaved changes.
+-- Asked in the language chosen, before the interface reloads to show it.
+StaticPopupDialogs.MACROSENSE_RELOAD = {
+    text = "Reload the interface to switch the language?",
+    button1 = "Reload", button2 = "Later",
+    OnAccept = function() ReloadUI() end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
 StaticPopupDialogs.MACROSENSE_DISCARD = {
     text = "Discard unsaved changes to this macro?",
-    button1 = YES, button2 = NO,
+    button1 = "Yes", button2 = "No",
     OnAccept = function(_, fn) fn() end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 StaticPopupDialogs.MACROSENSE_DELETE = {
     text = "Delete macro \"%s\"?",
-    button1 = DELETE or "Delete", button2 = CANCEL,
+    button1 = "Delete", button2 = "Cancel",
     -- The macros may have moved since the x was clicked: then it is found by its name in its tab.
     OnAccept = function(_, m)
         local index = GetMacroInfo(m.index) == m.name and m.index or IndexIn(m.scope, m.name)
@@ -397,7 +419,7 @@ StaticPopupDialogs.MACROSENSE_DELETE = {
 
 local function Guard(fn)
     if IsDirty() then
-        StaticPopup_Show("MACROSENSE_DISCARD", nil, nil, fn)
+        ns.Ask("MACROSENSE_DISCARD", nil, nil, fn)
     else
         fn()
     end
@@ -422,7 +444,7 @@ end
 local function Fresh()
     local first, last, max = MacroRange(state.scope)
     if last - first + 1 >= max then
-        ns.Print("no free %s macro slots", state.scope)
+        NoRoom(state.scope)
         return false
     end
     Load(nil)
@@ -532,7 +554,7 @@ function Window.Copy(scope, index)
     index = index or state.index
     if not index then return end
     local first, last, max = MacroRange(scope)
-    if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    if last - first + 1 >= max then return NoRoom(scope) end
     local function make(name, icon, body)
         local copy = CreateMacro(FreeName(name), icon or NEW_ICON, body, scope == "character")
         if not copy or copy == 0 then return ns.Print("could not copy the macro") end
@@ -558,24 +580,34 @@ local function CopyItems(index)
         local first, last, max = MacroRange(scope)
         local full = last - first + 1 >= max
         return {
-            name = full and string.format("%s  |cff%s(full)|r", label, ns.scheme.dim) or label,
+            name = full and string.format("%s  |cff%s%s|r", label, ns.scheme.dim, L["(full)"]) or label,
             disabled = full,
             onClick = function() Window.Copy(scope, index) end,
             onEnter = function(row)
                 GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(label, 1, 1, 1)
-                GameTooltip:AddLine(full and string.format("The %s tab is full.", SCOPE_NAMES[scope]) or tip,
+                GameTooltip:AddLine(full and string.format(L["The %s tab is full."], TabName(scope)) or tip,
                     0.8, 0.8, 0.8, true)
                 GameTooltip:Show()
             end,
         }
     end
-    local how = index == state.index and " with what the editor shows now, under a free name like \"Fear 2\". The "
-        .. "macro copied keeps its saved text." or ", under a free name like \"Fear 2\"."
+    -- The macro being edited is copied with what the editor shows.
+    local tips = index == state.index and {
+        same = L["A copy in this tab with what the editor shows now, under a free name like \"Fear 2\". The macro "
+            .. "copied keeps its saved text."],
+        character = L["A copy for this character only with what the editor shows now, under a free name like "
+            .. "\"Fear 2\". The macro copied keeps its saved text."],
+        general = L["A copy for all your characters with what the editor shows now, under a free name like "
+            .. "\"Fear 2\". The macro copied keeps its saved text."],
+    } or {
+        same = L["A copy in this tab, under a free name like \"Fear 2\"."],
+        character = L["A copy for this character only, under a free name like \"Fear 2\"."],
+        general = L["A copy for all your characters, under a free name like \"Fear 2\"."],
+    }
     return {
-        item(state.scope, "Duplicate", "A copy in this tab" .. how),
-        item(other, "Copy to " .. SCOPE_NAMES[other], string.format("A copy %s%s",
-            other == "character" and "for this character only" or "for all your characters", how)),
+        item(state.scope, L["Duplicate"], tips.same),
+        item(other, other == "character" and L["Copy to Character"] or L["Copy to General"], tips[other]),
     }
 end
 
@@ -644,7 +676,7 @@ function Window.Import(macros, done)
 end
 
 local function ShareItems()
-    local tab = SCOPE_NAMES[state.scope]
+    local tab = TabName(state.scope)
     local general, character = GetNumMacros()
     local here = state.scope == "general" and general or character
     local function item(name, tip, onClick, disabled)
@@ -661,18 +693,18 @@ local function ShareItems()
         }
     end
     return {
-        item("Export this macro", state.index and "Its code, as saved, to copy and share."
-            or "Save the macro first, then export it.", function()
+        item(L["Export this macro"], state.index and L["Its code, as saved, to copy and share."]
+            or L["Save the macro first, then export it."], function()
             ns.ShareWindow.Export({ { scope = state.scope, name = state.name, icon = state.savedIcon,
                 body = state.body } })
         end, not state.index),
-        item(string.format("Export the %s tab (%d)", tab, here), "The code of every macro in this tab.",
+        item(string.format(L["Export the %s tab (%d)"], tab, here), L["The code of every macro in this tab."],
             function() ns.ShareWindow.Export(Macros(state.scope)) end, here == 0),
-        item(string.format("Export all macros (%d)", general + character),
-            "The code of every macro of both tabs; imported, each goes into its own tab.",
+        item(string.format(L["Export all macros (%d)"], general + character),
+            L["The code of every macro of both tabs; imported, each goes into its own tab."],
             function() ns.ShareWindow.Export(Macros()) end, general + character == 0),
-        item("Import a code...", "Paste a code to make its macros. Nothing is replaced: a taken name gets a "
-            .. "number, like \"Fear 2\".", function() ns.ShareWindow.Import() end),
+        item(L["Import a code..."], L["Paste a code to make its macros. Nothing is replaced: a taken name gets a "
+            .. "number, like \"Fear 2\"."], function() ns.ShareWindow.Import() end),
     }
 end
 
@@ -683,7 +715,7 @@ local TRASH_SHOWN = 12 -- deleted macros in the menu: the newest
 
 StaticPopupDialogs.MACROSENSE_EMPTY_TRASH = {
     text = "Empty the trash? Its %s deleted macros will be gone for good.",
-    button1 = YES, button2 = NO,
+    button1 = "Yes", button2 = "No",
     OnAccept = function()
         for _, scope in ipairs({ "general", "character" }) do
             local trash = ns.History.Trash(scope)
@@ -695,7 +727,7 @@ StaticPopupDialogs.MACROSENSE_EMPTY_TRASH = {
 
 StaticPopupDialogs.MACROSENSE_FORGET_DELETED = {
     text = "Delete \"%s\" from the trash? It will be gone for good.",
-    button1 = DELETE or "Delete", button2 = CANCEL,
+    button1 = "Delete", button2 = "Cancel",
     OnAccept = function(_, d) ns.History.TakeOut(ns.History.Trash(d.scope), d.entry) end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -714,7 +746,7 @@ end
 function Window.Undelete(scope, entry)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local first, last, max = MacroRange(scope)
-    if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    if last - first + 1 >= max then return NoRoom(scope) end
     Guard(function()
         local name = FreeName(entry.name)
         local index = CreateMacro(name, entry.icon or NEW_ICON, entry.body, scope == "character")
@@ -736,13 +768,13 @@ local function TrashItems()
             name = string.format("%s  |cff%s%s|r", d.entry.name, dim, When(d.entry.time)),
             disabled = full,
             onClick = function() Window.Undelete(d.scope, d.entry) end,
-            onRemove = function() StaticPopup_Show("MACROSENSE_FORGET_DELETED", d.entry.name, nil, d) end,
-            removeTip = "Delete for good",
+            onRemove = function() ns.Ask("MACROSENSE_FORGET_DELETED", d.entry.name, nil, d) end,
+            removeTip = L["Delete for good"],
             onEnter = function(row)
                 GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(d.entry.name, 1, 1, 1)
-                GameTooltip:AddLine(full and string.format("The %s tab is full.", SCOPE_NAMES[d.scope])
-                    or string.format("Deleted from %s: %s. Click to bring it back.", SCOPE_NAMES[d.scope],
+                GameTooltip:AddLine(full and string.format(L["The %s tab is full."], TabName(d.scope))
+                    or string.format(L["Deleted from %s: %s. Click to bring it back."], TabName(d.scope),
                         When(d.entry.time)), 0.8, 0.8, 0.8, true)
                 for line in ((d.entry.body or "") .. "\n"):gmatch("([^\n]*)\n") do
                     GameTooltip:AddLine(line ~= "" and line:gsub("|", "||") or " ", 0.6, 0.6, 0.6, true)
@@ -752,13 +784,13 @@ local function TrashItems()
         }
     end
     local noop = function() end
-    if #deleted == 0 then items[1] = { name = "No deleted macros", disabled = true, onClick = noop } end
+    if #deleted == 0 then items[1] = { name = L["No deleted macros"], disabled = true, onClick = noop } end
     if #deleted > TRASH_SHOWN then
-        items[#items + 1] = { name = string.format("%d older", #deleted - TRASH_SHOWN), disabled = true,
+        items[#items + 1] = { name = ns.Plural(#deleted - TRASH_SHOWN, "%d older", "%d older"), disabled = true,
             onClick = noop }
     end
-    items[#items + 1] = { name = "Empty the trash", disabled = #deleted == 0,
-        onClick = function() StaticPopup_Show("MACROSENSE_EMPTY_TRASH", #deleted) end }
+    items[#items + 1] = { name = L["Empty the trash"], disabled = #deleted == 0,
+        onClick = function() ns.Ask("MACROSENSE_EMPTY_TRASH", #deleted) end }
     return items
 end
 
@@ -794,7 +826,9 @@ function Window.RestoreBackup(backup)
         for _, m in ipairs(plan.again) do CreateMacro(m.name, m.icon or NEW_ICON, m.body, m.scope == "character") end
         ns.History.Scan()
         ns.Print("backup restored: %d changed back, %d made again", #plan.back, #plan.again)
-        if #plan.full > 0 then ns.Print("%d did not fit: no free slot in their tab", #plan.full) end
+        if #plan.full > 0 then
+            ns.Print(ns.Plural(#plan.full, "%d did not fit: no free slot in its tab", "%d did not fit: no free slot in their tab"))
+        end
         local first, last = MacroRange(state.scope)
         Load(state.index and IndexIn(state.scope, state.name) or (last >= first and first or nil))
     end)
@@ -803,14 +837,14 @@ end
 StaticPopupDialogs.MACROSENSE_RESTORE_BACKUP = {
     text = "Restore the backup of %s?\n\nIts macros get their text and icon back and the missing ones are made "
         .. "again; macros made since stay. A backup of your macros now is made first.",
-    button1 = YES, button2 = NO,
+    button1 = "Yes", button2 = "No",
     OnAccept = function(_, backup) Window.RestoreBackup(backup) end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
 StaticPopupDialogs.MACROSENSE_DELETE_BACKUP = {
     text = "Delete the backup of %s? It will be gone for good.",
-    button1 = DELETE or "Delete", button2 = CANCEL,
+    button1 = "Delete", button2 = "Cancel",
     OnAccept = function(_, backup) ns.Backups.Remove(BackupList(), backup) end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
@@ -823,27 +857,29 @@ local function BackupItems()
         GameTooltip:AddLine(text, 0.8, 0.8, 0.8, true)
     end
     local items = { {
-        name = "Back up now",
+        name = L["Back up now"],
         onClick = function()
             local macros = Macros()
             if #macros == 0 then return ns.Print("no macros to back up") end
-            if ns.Backups.Add(list, macros, time()) then return ns.Print("backed up %d macros", #macros) end
+            if ns.Backups.Add(list, macros, time()) then
+                return ns.Print(ns.Plural(#macros, "backed up %d macro", "backed up %d macros"))
+            end
             ns.Print("your macros are as in the last backup")
         end,
         onEnter = function(row)
-            tip(row, "Back up now", string.format("A backup of all your macros, General and Character. One is also "
-                .. "made by itself on the first login of a day when they changed; the last %d are kept, for each "
-                .. "character.", ns.Backups.LIMIT))
+            tip(row, L["Back up now"], string.format(L["A backup of all your macros, General and Character. One is "
+                .. "also made by itself on the first login of a day when they changed; the last %d backups are kept "
+                .. "for each character."], ns.Backups.LIMIT))
             GameTooltip:Show()
         end,
     } }
     for i = #list, 1, -1 do
         local b = list[i]
         items[#items + 1] = {
-            name = string.format("%s  |cff%s%d macros|r", When(b.time), dim, #b.macros),
-            onClick = function() StaticPopup_Show("MACROSENSE_RESTORE_BACKUP", When(b.time), nil, b) end,
-            onRemove = function() StaticPopup_Show("MACROSENSE_DELETE_BACKUP", When(b.time), nil, b) end,
-            removeTip = "Delete this backup",
+            name = string.format("%s  |cff%s%s|r", When(b.time), dim, ns.Plural(#b.macros, "%d macro", "%d macros")),
+            onClick = function() ns.Ask("MACROSENSE_RESTORE_BACKUP", When(b.time), nil, b) end,
+            onRemove = function() ns.Ask("MACROSENSE_DELETE_BACKUP", When(b.time), nil, b) end,
+            removeTip = L["Delete this backup"],
             onEnter = function(row)
                 local count = { general = 0, character = 0 }
                 local names = {}
@@ -851,15 +887,16 @@ local function BackupItems()
                     count[m.scope] = count[m.scope] + 1
                     if n <= NAMES_SHOWN then names[n] = m.name end
                 end
-                tip(row, "Backup of " .. When(b.time), string.format("General %d, Character %d. Click to restore "
-                    .. "it.", count.general, count.character))
-                local more = #b.macros > NAMES_SHOWN and string.format(" and %d more", #b.macros - NAMES_SHOWN) or ""
+                tip(row, string.format(L["Backup of %s"], When(b.time)), string.format(L["General %d, Character %d. "
+                    .. "Click to restore it."], count.general, count.character))
+                local more = #b.macros > NAMES_SHOWN and string.format(L[" and %d more"], #b.macros - NAMES_SHOWN)
+                    or ""
                 GameTooltip:AddLine(table.concat(names, ", ") .. more, 0.6, 0.6, 0.6, true)
                 GameTooltip:Show()
             end,
         }
     end
-    if #list == 0 then items[2] = { name = "No backups yet", disabled = true, onClick = function() end } end
+    if #list == 0 then items[2] = { name = L["No backups yet"], disabled = true, onClick = function() end } end
     return items
 end
 
@@ -873,7 +910,7 @@ function Window.FreeName(name) return FreeName(FirstLetters(name, MAX_NAME)) end
 function Window.CreateFromWizard(name, body, scope)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local first, last, max = MacroRange(scope)
-    if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    if last - first + 1 >= max then return NoRoom(scope) end
     if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     Guard(function()
         local index = CreateMacro(Window.FreeName(name), NEW_ICON, body, scope == "character")
@@ -994,35 +1031,51 @@ local function Build()
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
 
-    local schemeItems = {}
-    for _, s in ipairs(ns.schemes) do schemeItems[#schemeItems + 1] = { key = s.key, name = s.name } end
-    local schemeDrop = ns.Dropdown(title, 190, function() return schemeItems end,
-        function() return ns.db.scheme end,
-        function(key) ns.db.scheme = key; Window.ApplyLook() end)
-    schemeDrop:SetPoint("RIGHT", close, "LEFT", -10, 0)
+    -- The language: the texts are made in it, so switching it reloads the interface (asked in the new language).
+    local languageDrop = ns.Dropdown(title, 104, function()
+        return { { key = "en", name = L["English"] }, { key = "uk", name = L["Ukrainian"] } }
+    end, function() return ns.db.language end, function(key)
+        ns.db.language = key
+        if key ~= ns.language then ns.Ask("MACROSENSE_RELOAD", nil, nil, nil, key) end
+    end)
+    languageDrop:SetPoint("RIGHT", close, "LEFT", -10, 0)
+    languageDrop:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip:AddLine(L["Language"], 1, 1, 1)
+        GameTooltip:AddLine(L["The language of MacroSense. The interface reloads to switch it."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    languageDrop:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
+    local schemeDrop = ns.Dropdown(title, 140, function()
+        local items = {}
+        for i, s in ipairs(ns.schemes) do items[i] = { key = s.key, name = L[s.name] } end
+        return items
+    end, function() return ns.db.scheme end, function(key) ns.db.scheme = key; Window.ApplyLook() end)
+    schemeDrop:SetPoint("RIGHT", languageDrop, "LEFT", -10, 0)
 
     local size = ns.Stepper(title, 8, 28, function() return ns.db.fontSize end,
         function(v) ns.db.fontSize = v; Window.ApplyLook() end)
     size:SetPoint("RIGHT", schemeDrop, "LEFT", -10, 0)
 
-    local fontDrop = ns.Dropdown(title, 160, FontList, function() return ns.db.font end,
+    local fontDrop = ns.Dropdown(title, 140, FontList, function() return ns.db.font end,
         function(key) ns.db.font = key; Window.ApplyLook() end)
     fontDrop:SetPoint("RIGHT", size, "LEFT", -10, 0)
 
     -- Live preview on / off, with the other settings of the view.
-    local previewCheck = ns.Check(title, "Live preview", function() return ns.db.preview end, function(on)
+    local previewCheck = ns.Check(title, L["Live preview"], function() return ns.db.preview end, function(on)
         ns.db.preview = on
         code:ShowNotes(on)
         UpdatePreview()
     end)
     previewCheck:SetPoint("RIGHT", fontDrop, "LEFT", -16, 0)
     previewCheck:HookScript("OnEnter", function(self)
-        local keys = IsMacClient and IsMacClient() and "Shift, Ctrl, Alt or Cmd" or "Shift, Ctrl or Alt"
+        local keys = IsMacClient and IsMacClient() and L["Shift, Ctrl, Alt or Cmd"] or L["Shift, Ctrl or Alt"]
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-        GameTooltip:AddLine("Live preview", 1, 1, 1)
-        GameTooltip:AddLine("Next to each line: what it would do if you pressed the macro now.", 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine("Hold " .. keys .. ", change your target or point at a unit to see the other branches.",
-            0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Live preview"], 1, 1, 1)
+        GameTooltip:AddLine(L["Next to each line: what it would do if you pressed the macro now."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(string.format(L["Hold %s, change your target or point at a unit to see the other "
+            .. "branches."], keys), 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1042,46 +1095,48 @@ local function Build()
 
     -- At the bottom: Share / Trash / Backups; New / New (Wizard) over them. Their menus open above them, the list
     -- is in the way below. Each macro in the list has its copy and x buttons.
-    local shareBtn = ns.MenuButton(side, "Share", 64, ShareItems, true)
+    local shareBtn = ns.MenuButton(side, L["Share"], 64, ShareItems, true)
     shareBtn:SetPoint("BOTTOMLEFT", 8, 8)
     shareBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Share", 1, 1, 1)
-        GameTooltip:AddLine("Macros as a code to copy and send, and codes from others to import.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Share"], 1, 1, 1)
+        GameTooltip:AddLine(L["Macros as a code to copy and send, and codes from others to import."], 0.8, 0.8, 0.8,
+            true)
         GameTooltip:Show()
     end)
     shareBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    local trashBtn = ns.MenuButton(side, "Trash", 64, TrashItems, true)
+    local trashBtn = ns.MenuButton(side, L["Trash"], 64, TrashItems, true)
     trashBtn:SetPoint("BOTTOM", 0, 8)
     trashBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Trash", 1, 1, 1)
-        GameTooltip:AddLine("Macros deleted here, in the game's macro window or by another addon: pick one to bring "
-            .. "it back.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Trash"], 1, 1, 1)
+        GameTooltip:AddLine(L["Macros deleted here, in the game's macro window or by another addon: pick one to "
+            .. "bring it back."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     trashBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    local backupsBtn = ns.MenuButton(side, "Backups", 64, BackupItems, true, true)
+    local backupsBtn = ns.MenuButton(side, L["Backups"], 64, BackupItems, true, true)
     backupsBtn:SetPoint("BOTTOMRIGHT", -8, 8)
     backupsBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Backups", 1, 1, 1)
-        GameTooltip:AddLine("All your macros as they were: one is made each day you log in and they changed, and "
-            .. "whenever you ask. Pick one to restore it.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Backups"], 1, 1, 1)
+        GameTooltip:AddLine(L["All your macros as they were: one is made each day you log in and they changed, "
+            .. "and whenever you ask. Pick one to restore it."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     backupsBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    local newBtn = ns.Button(side, "New", 99, Window.New)
+    local newBtn = ns.Button(side, L["New"], 99, Window.New)
     newBtn:SetPoint("BOTTOMLEFT", 8, 36)
 
     -- The wizard next to it: a new macro from a form, in a window of its own.
-    local wizardBtn = ns.Button(side, "New (Wizard)", 99, function() ns.WizardWindow.Toggle(state.scope) end)
+    local wizardBtn = ns.Button(side, L["New (Wizard)"], 99, function() ns.WizardWindow.Toggle(state.scope) end)
     wizardBtn:SetPoint("BOTTOMRIGHT", -8, 36)
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("New (Wizard)", 1, 1, 1)
-        GameTooltip:AddLine("A new macro from a form: what to cast and on whom (mouseover, focus, party members, "
-            .. "yourself, the cursor...), other spells on Shift, Ctrl or Alt, trinkets and more.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["New (Wizard)"], 1, 1, 1)
+        GameTooltip:AddLine(L["A new macro from a form: what to cast and on whom (mouseover, focus, party members, "
+            .. "yourself, the cursor...), other spells on Shift, Ctrl or Alt, trinkets and more."], 0.8, 0.8, 0.8,
+            true)
         GameTooltip:Show()
     end)
     wizardBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1093,7 +1148,7 @@ local function Build()
     search:SetTextInsets(6, 24, 0, 0)
     local placeholder = ns.Text(search, 12, "dim")
     placeholder:SetPoint("LEFT", 6, 0)
-    placeholder:SetText("Search name or text")
+    placeholder:SetText(L["Search name or text"])
     local clear = ns.Button(search, "x", 18, function() search:SetText("") end)
     clear:SetHeight(18)
     clear:SetPoint("RIGHT", -3, 0)
@@ -1123,7 +1178,7 @@ local function Build()
     list:SetScript("OnSizeChanged", function(_, w) list.child:SetWidth(w) end)
     noMatch = ns.Text(side, 12, "dim")
     noMatch:SetPoint("TOP", list, "TOP", 0, -12)
-    noMatch:SetText("No macros match")
+    noMatch:SetText(L["No macros match"])
     noMatch:Hide()
 
     -- Header: icon + name.
@@ -1137,8 +1192,8 @@ local function Build()
     iconFrame:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     iconFrame:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Click: choose an icon", 1, 1, 1)
-        GameTooltip:AddLine("Drag: put the macro on an action bar", 1, 1, 1)
+        GameTooltip:AddLine(L["Click: choose an icon"], 1, 1, 1)
+        GameTooltip:AddLine(L["Drag: put the macro on an action bar"], 1, 1, 1)
         GameTooltip:Show()
     end)
     iconFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1177,34 +1232,34 @@ local function Build()
     nameBox:SetScript("OnTabPressed", NameDone)
 
     -- Shorten at the right end of the header.
-    shortenBtn = ns.Button(main, "Shorten", 90, function() Window.Shorten() end)
+    shortenBtn = ns.Button(main, L["Shorten"], 90, function() Window.Shorten() end)
     shortenBtn:SetPoint("RIGHT", main, "TOPRIGHT", -12, -29)
     shortenBtn:HookScript("OnEnter", function(self)
         local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:AddLine("Shorten", 1, 1, 1)
-        GameTooltip:AddLine("The same macro in fewer characters: target= becomes @, modifier becomes mod, "
+        GameTooltip:AddLine(L["Shorten"], 1, 1, 1)
+        GameTooltip:AddLine(L["The same macro in fewer characters: target= becomes @, modifier becomes mod, "
             .. "[pet:Imp][pet:Felhunter] becomes [pet:Imp/Felhunter], [x] Fear; Fear becomes [x][]Fear, "
-            .. "and spaces the game doesn't need go.", 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine(self:IsEnabled() and (undo .. " brings the old text back.") or "Nothing to shorten here.",
-            0.8, 0.8, 0.8, true)
+            .. "and spaces the game doesn't need go."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(self:IsEnabled() and string.format(L["%s brings the old text back."], undo)
+            or L["Nothing to shorten here."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     shortenBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- History, left of Shorten: its menu opens under it, lined up on the right.
-    historyBtn = ns.MenuButton(main, "History", 80, HistoryItems, false, true)
+    historyBtn = ns.MenuButton(main, L["History"], 80, HistoryItems, false, true)
     historyBtn:SetPoint("RIGHT", shortenBtn, "LEFT", -8, 0)
     historyBtn:HookScript("OnEnter", function(self)
         local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:AddLine("History", 1, 1, 1)
+        GameTooltip:AddLine(L["History"], 1, 1, 1)
         if self:IsEnabled() then
-            GameTooltip:AddLine("Earlier saved versions of this macro. Pick one to put it in the editor: Save keeps it, "
-                .. undo .. " takes it back.", 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(string.format(L["Earlier saved versions of this macro. Pick one to put it in the "
+                .. "editor: Save keeps it, %s takes it back."], undo), 0.8, 0.8, 0.8, true)
         else
-            GameTooltip:AddLine("When you save a change to this macro, here or in the game's macro window, the text "
-                .. "it had before is kept here.", 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(L["When you save a change to this macro, here or in the game's macro window, the "
+                .. "text it had before is kept here."], 0.8, 0.8, 0.8, true)
         end
         GameTooltip:Show()
     end)
@@ -1212,7 +1267,7 @@ local function Build()
 
     local nameHint = ns.Text(main, 11, "dim")
     nameHint:SetPoint("LEFT", nameBox, "RIGHT", 10, 0)
-    nameHint:SetText("click or drag the icon")
+    nameHint:SetText(L["click or drag the icon"])
     nameHint:SetPoint("RIGHT", historyBtn, "LEFT", -12, 0)
     nameHint:SetWordWrap(false)
 
@@ -1222,7 +1277,7 @@ local function Build()
     bar:SetPoint("BOTTOMRIGHT")
     bar:SetHeight(36)
     ns.Backdrop(bar, "panel", "panel")
-    saveBtn = ns.Button(bar, "Save", 90, Window.Save, true)
+    saveBtn = ns.Button(bar, L["Save"], 90, Window.Save, true)
     saveBtn.alert = saveBtn:CreateTexture(nil, "OVERLAY")
     saveBtn.alert:SetSize(16, 16)
     saveBtn.alert:SetPoint("RIGHT", saveBtn.label, "LEFT", -4, 0)
@@ -1231,13 +1286,13 @@ local function Build()
     saveBtn:HookScript("OnEnter", function(self)
         if not self.alert:IsShown() then return end
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("The macro has syntax errors", 1, 0.3, 0.3)
-        GameTooltip:AddLine("It can still be saved.", 1, 1, 1)
+        GameTooltip:AddLine(L["The macro has syntax errors"], 1, 0.3, 0.3)
+        GameTooltip:AddLine(L["It can still be saved."], 1, 1, 1)
         GameTooltip:Show()
     end)
     saveBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     saveBtn:SetPoint("RIGHT", -24, 0) -- room for the resize grip in the corner
-    revertBtn = ns.Button(bar, "Revert", 90, Window.Revert)
+    revertBtn = ns.Button(bar, L["Revert"], 90, Window.Revert)
     revertBtn:SetPoint("RIGHT", saveBtn, "LEFT", -6, 0)
     counter = ns.Text(bar, 11, "dim")
     counter:SetPoint("LEFT", 12, 0)
@@ -1264,7 +1319,7 @@ local function Build()
         AddIssueLines(errors)
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
         if warning.shown and warning.shown.fix then
-            GameTooltip:AddLine(string.format('Click to use "%s"', warning.shown.fix), 0.4, 1, 0.4)
+            GameTooltip:AddLine(string.format(L["Click to use \"%s\""], warning.shown.fix), 0.4, 1, 0.4)
         end
         GameTooltip:Show()
     end)
@@ -1311,6 +1366,7 @@ local function Build()
     ns.ResizeGrip(frame, SavePosition)
 
     frame:SetScript("OnShow", function()
+        languageDrop:Refresh()
         fontDrop:Refresh()
         size:Refresh()
         schemeDrop:Refresh()
