@@ -1054,6 +1054,35 @@ do
     check("share: a macro without a name", Problem(nameless):find("damaged") ~= nil, Problem(nameless))
 end
 
+-- Icon for a macro's name: of the spell or item (yours) it is named after.
+do
+    local spells, items = ns.sources.spells, ns.sources.items
+    ns.sources.spells = function()
+        return { { name = "Blast", icon = 13 }, { name = "Fireball", icon = 1 }, { name = "Fire Blast", icon = 2 },
+            { name = "Frost Nova", icon = 4 }, { name = "Frostbolt", icon = 3 }, { name = "Polymorph", icon = 5 },
+            { name = "Shadow Word: Pain", icon = 6 }, { name = "Pain Suppression", icon = 7 },
+            { name = "Nature's Swiftness", icon = 8 }, { name = "Kick", icon = 9 }, { name = "Focus Magic", icon = 10 },
+            { name = "Огненный шар", icon = 11 }, { name = "Iconless" }, { name = "Healthstone" } }
+    end
+    ns.sources.items = function() return { { name = "Healthstone", icon = 20 }, { name = "Kick", icon = 21 } } end
+    local I = ns.Completion.IconFor
+    check("icon for: named like it, in any case", I("fireball") == 1 and I("FIRE BLAST") == 2 and I("огненный Шар") == 11)
+    check("icon for: marks don't count", I("Natures Swiftness") == 8 and I("Shadow Word Pain") == 6
+        and I("Kick(focus)") == 9 and I("Fire Blast!") == 2)
+    check("icon for: an item; a spell without an icon doesn't count", I("healthstone") == 20)
+    check("icon for: a spell before an item", I("Kick") == 9)
+    check("icon for: in the name as whole words, the longest", I("Fire Blast focus") == 2 and I("MO Kick") == 9
+        and I("Shadow Word: Pain arena1") == 6 and I("Fireballs") ~= 1, tostring(I("Fireballs")))
+    check("icon for: the start of a word, the shortest", I("Poly") == 5 and I("Poly MO") == 5 and I("Frost") == 3
+        and I("Nova") == 4 and I("Swift") == 8 and I("Bolt") == nil, tostring(I("Frost")))
+    check("icon for: target words are skipped", I("Focus Poly") == 5 and I("arena2 poly") == 5)
+    check("icon for: 3 letters at least, of the first other word", I("Fi") == nil and I("SW Pain") == nil
+        and I("Ог") == nil and I("Огн") == 11)
+    check("icon for: nothing", I("Mount") == nil and I("") == nil and I("   ") == nil and I("Focus") == nil)
+    check("icon for: no icon, no match", I("Iconless") == nil)
+    ns.sources.spells, ns.sources.items = spells, items
+end
+
 -- Backups: all the macros, to go back to.
 do
     local B = ns.Backups

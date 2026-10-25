@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Tab** or **Enter** in a macro's name goes on to its text. A new macro whose icon you haven't picked then
+  gets the icon of the spell or item of yours it is named after (`Fireball`, `Kick Focus`, `Poly MO`); with no
+  match, or with `#showtooltip` in its text, it keeps the question mark.
+
 ## [0.4.0] - 2026-10-25
 
 ### Added

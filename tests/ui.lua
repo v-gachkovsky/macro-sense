@@ -1647,6 +1647,60 @@ do
     NextFrame()
 end
 
+-- The name, then Tab or Enter: on to the text. A new macro whose icon was not picked gets the icon of the spell
+-- or item it is named after; one picked, a saved macro's, and the question mark of #showtooltip stay.
+do
+    local box
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 then box = o end
+    end
+    local function header()
+        for _, o in ipairs(created) do
+            if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then return o.texture end
+        end
+    end
+    local function named(name, key)
+        box:SetFocus()
+        box:SetText(name)
+        Fire(box, key or "OnEnterPressed")
+        return header()
+    end
+    ns.Window.New()
+    NextFrame()
+    check("name: Enter goes on to the text", named("Polymorph") == ns.IconTexture(6) and edit:HasFocus()
+        and not box:HasFocus(), header())
+    check("name: Tab too", named("frostbolt", "OnTabPressed") == ns.IconTexture(5) and edit:HasFocus())
+    check("name: an item", named("Healthstone") == ns.IconTexture(5512))
+    check("name: none found, the question mark again", named("Mount") == ns.IconTexture(134400))
+    edit:SetFocus()
+    Type("#showtooltip")
+    check("name: #showtooltip keeps the question mark", named("Fire Blast") == ns.IconTexture(134400))
+    ns.Window.Revert()
+    ns.Window.New()
+    NextFrame()
+    named("Fire Blast")
+    ns.Window.Save()
+    check("name: the icon is saved", select(2, GetMacroInfo(GetMacroIndexByName("Fire Blast"))) == 4)
+    check("name: a saved macro keeps its icon", named("Polymorph") == ns.IconTexture(4) and edit:HasFocus())
+    ns.Window.Revert()
+    DeleteMacro(GetMacroIndexByName("Fire Blast"))
+    Send("UPDATE_MACROS")
+    ns.Window.New()
+    NextFrame()
+    Fire(MacroSenseIconButton, "OnClick")
+    local grid = {}
+    for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
+    Fire(grid[1], "OnClick") -- the question mark, picked
+    MacroSenseIconPicker:Hide()
+    check("name: a picked icon stays", named("Polymorph") == ns.IconTexture(134400))
+    ns.Window.New()
+    NextFrame()
+    check("name: picked for the macro before, not this one", named("Polymorph") == ns.IconTexture(6))
+    box:SetText("")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- Copy: the copy button of each macro in the list, a duplicate in the same tab or a copy in the other one, under
 -- a free name. The macro being edited with what the editor shows; another one as saved. There is no Copy button.
 do
