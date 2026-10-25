@@ -385,20 +385,6 @@ function Window.Select(index)
     Guard(function() Load(index) end)
 end
 
--- The editor on macro `index`, opened if it is closed (Shift + right-click on an action bar). Unsaved changes
--- to another macro are asked about first; the macro's own stay.
-function Window.Open(index)
-    if not frame then Build() end
-    frame:Show()
-    frame:Raise()
-    if index == state.index and IsDirty() then return end
-    Guard(function()
-        state.scope = index > MAX_GENERAL and "character" or "general"
-        ns.db.scope = state.scope
-        Load(index)
-    end)
-end
-
 function Window.SetScope(scope)
     if scope == state.scope then return end
     Guard(function()
@@ -1010,4 +996,19 @@ function Window.Toggle()
     if index and index > 0 then return Load(index) end
     local first, last = MacroRange(state.scope)
     Load(last >= first and first or nil)
+end
+
+-- The editor on macro `index`, opened if it is closed (Shift + right-click on an action bar). Unsaved changes
+-- to another macro are asked about first; the macro's own stay. Below Build, like Toggle: it may build the
+-- window, and a local function is only seen after it.
+function Window.Open(index)
+    if not frame then Build() end
+    frame:Show()
+    frame:Raise()
+    if index == state.index and IsDirty() then return end
+    Guard(function()
+        state.scope = index > MAX_GENERAL and "character" or "general"
+        ns.db.scope = state.scope
+        Load(index)
+    end)
 end

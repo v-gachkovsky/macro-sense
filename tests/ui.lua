@@ -264,7 +264,11 @@ local function Handle(frame)
     return {
         GetID = function() return frame.id or 0 end,
         GetEffectiveAttribute = function(_, name) return Attribute(frame, name) end,
-        CallMethod = function(_, method, ...) frame[method](frame, ...) end,
+        -- Out of the secure code; the game hands its errors to the error handler.
+        CallMethod = function(_, method, ...)
+            local ok, err = pcall(frame[method], frame, ...)
+            if not ok then geterrorhandler()(err) end
+        end,
     }
 end
 function SecureHandlerWrapScript(frame, script, header, preBody)
@@ -385,6 +389,16 @@ do
 end
 
 CreateMacro("Nuke", 1, "#showtooltip\n/cast Fireball", false)
+-- Shift + right-click on it on an action bar opens the editor, also before it was ever opened.
+actions[2] = { "macro", 133, "spell", text = "Nuke" }
+IsShiftKeyDown = function() return true end
+Fire(startButton, "OnClick", "RightButton", true)
+Fire(startButton, "OnClick", "RightButton", false)
+IsShiftKeyDown = function() return false end
+check("action bars: the editor opens on it the first time", #reported == 0 and MacroSenseFrame ~= nil
+    and MacroSenseFrame:IsShown(), reported[1])
+reported, actions[2] = {}, nil
+if MacroSenseFrame then MacroSenseFrame:Hide() end
 ns.Window.Toggle()
 -- Find the CodeBox edit: the multi-line EditBox with an OnTextChanged that strips colors.
 local edit
@@ -2161,6 +2175,7 @@ do
         NextFrame()
         return b
     end
+    local errors = #reported -- the game shows them; the click itself goes on
     CreateMacro("Bar Fear", 1, "/cast Fear", false)
     CreateMacro("Bar Heal", 1, "/cast Heal", true)
     Send("UPDATE_MACROS")
@@ -2276,6 +2291,7 @@ do
     Click(bottom, "RightButton", true)
     check("action bars: another macro asks first", asked == 1 and raw() == "/cast Heal", asked .. " " .. raw())
     StaticPopup_Show = show
+    check("action bars: no Lua errors", #reported == errors, reported[errors + 1])
 
     for _, name in ipairs({ "Bar Fear", "Bar Heal" }) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
