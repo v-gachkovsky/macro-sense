@@ -115,6 +115,42 @@ local function Lower(s)
 end
 Completion.Lower = Lower -- the icon search ignores case the same way
 
+-- A name's words, to compare names: lower case, apostrophes dropped, other marks as spaces, and a space at both
+-- ends, so that " fire blast " is in " fire blast focus " as whole words.
+local function Words(s)
+    return " " .. (Lower(s):gsub("'", ""):gsub("[%s%p]+", " "):match("^ *(.-) *$")) .. " "
+end
+
+-- Words of a macro's name that say whom it is for, not what it casts ("Poly Focus", "Heal MO", "Kick arena1").
+local TARGET_WORDS = { focus = true, mouseover = true, mo = true, target = true, self = true, player = true,
+    cursor = true, party = true, arena = true, pet = true, boss = true }
+
+-- The icon of the spell or item (of yours: spellbook, bags, gear) a macro is named after, or nil: the longest
+-- whose name is in the macro's name as whole words, in any case ("fireball", "Kick Focus": Kick); else the
+-- shortest with a word that starts like the macro's first word that is not a target, of 3 letters or more
+-- ("Poly MO": Polymorph, "Nova": Frost Nova).
+function Completion.IconFor(name)
+    local macro, all, best = Words(name), {}, nil
+    for _, kind in ipairs({ "spells", "items" }) do
+        for _, c in ipairs(source(kind)) do
+            if c.icon then all[#all + 1] = { icon = c.icon, words = Words(c.name) } end
+        end
+    end
+    for _, c in ipairs(all) do
+        if macro:find(c.words, 1, true) and (not best or #c.words > #best.words) then best = c end
+    end
+    if best then return best.icon end
+    for word in macro:gmatch("%S+") do
+        if not TARGET_WORDS[word:gsub("%d+$", "")] then
+            if select(2, word:gsub("[^\128-\191]", "")) < 3 then return nil end
+            for _, c in ipairs(all) do
+                if c.words:find(" " .. word, 1, true) and (not best or #c.words < #best.words) then best = c end
+            end
+            return best and best.icon
+        end
+    end
+end
+
 -- Two capitals or more ("DA", "SWP", "CoA"; not "Da" or "D"): then each letter is the first letter of a word.
 local function Capitals(s)
     local n = 0

@@ -368,7 +368,7 @@ local function Load(index)
     else
         state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, ""
     end
-    state.savedIcon = state.icon
+    state.savedIcon, state.iconPicked = state.icon, false
     nameBox:SetText(state.name)
     iconTex:SetTexture(ns.IconTexture(state.icon))
     ns.IconPicker.SetCurrent(state.icon)
@@ -1147,7 +1147,7 @@ local function Build()
     iconFrame:SetScript("OnClick", function()
         if ns.IconPicker.IsShown() then return ns.IconPicker.Close() end
         ns.IconPicker.Open(frame, state.icon, function(icon)
-            state.icon = icon
+            state.icon, state.iconPicked = icon, true
             iconTex:SetTexture(ns.IconTexture(icon))
             UpdateStatus()
         end)
@@ -1162,6 +1162,19 @@ local function Build()
     nameBox = ns.Input(main, 220, 16)
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)
     nameBox:SetScript("OnTextChanged", function() UpdateStatus() end)
+    -- Tab or Enter: on to the text. A new macro whose icon was not picked gets the icon of the spell or item it is
+    -- named after (the question mark when none), unless #showtooltip in its text wants the question mark.
+    local function NameDone()
+        if not state.index and not state.iconPicked and not ("\n" .. code:GetRaw():lower()):find("\n%s*#show") then
+            state.icon = ns.Completion.IconFor(nameBox:GetText()) or NEW_ICON
+            iconTex:SetTexture(ns.IconTexture(state.icon))
+            ns.IconPicker.SetCurrent(state.icon)
+            UpdateStatus()
+        end
+        code:SetFocus()
+    end
+    nameBox:SetScript("OnEnterPressed", NameDone)
+    nameBox:SetScript("OnTabPressed", NameDone)
 
     -- Shorten at the right end of the header.
     shortenBtn = ns.Button(main, "Shorten", 90, function() Window.Shorten() end)
