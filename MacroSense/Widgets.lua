@@ -126,28 +126,40 @@ function ns.Input(parent, width, maxLetters, name)
     return e
 end
 
--- A small x at the end of a row, to remove what the row shows: dim, red under the mouse, with a tooltip line
--- (tip()). lit(on): the row stays lit while the mouse is over the x.
-function ns.RowX(row, lit, tip, onClick)
-    local x = CreateFrame("Button", nil, row)
-    x:SetSize(20, 20)
-    x.text = ns.Text(x, 12, "dim")
-    x.text:SetPoint("CENTER")
-    x.text:SetText("x")
-    x:SetScript("OnEnter", function()
+-- A small button at the end of a row: a letter ("x") or a texture (a path), dim, in the scheme's `hover` color
+-- under the mouse, with a tooltip line (tip()). lit(on): the row stays lit while the mouse is over it.
+function ns.RowButton(row, glyph, hover, lit, tip, onClick)
+    local b = CreateFrame("Button", nil, row)
+    b:SetSize(20, 20)
+    local texture = glyph:find("\\", 1, true) ~= nil
+    if texture then
+        b.mark = b:CreateTexture(nil, "ARTWORK")
+        b.mark:SetSize(13, 13)
+        b.mark:SetTexture(glyph, nil, nil, "TRILINEAR") -- smooth at any size
+    else
+        b.mark = ns.Text(b, 12)
+        b.mark:SetText(glyph)
+    end
+    b.mark:SetPoint("CENTER")
+    local function paint(key)
+        local r, g, bl = ns.RGB(ns.scheme[key])
+        if texture then b.mark:SetVertexColor(r, g, bl) else b.mark:SetTextColor(r, g, bl) end
+    end
+    ns.OnStyle(function() paint("dim") end)
+    b:SetScript("OnEnter", function()
         lit(true)
-        x.text:SetTextColor(ns.RGB(ns.scheme.invalid))
-        GameTooltip:SetOwner(x, "ANCHOR_RIGHT")
+        paint(hover)
+        GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
         GameTooltip:AddLine(tip(), 1, 1, 1)
         GameTooltip:Show()
     end)
-    x:SetScript("OnLeave", function()
+    b:SetScript("OnLeave", function()
         lit(false)
-        x.text:SetTextColor(ns.RGB(ns.scheme.dim))
+        paint("dim")
         GameTooltip:Hide()
     end)
-    x:SetScript("OnClick", onClick)
-    return x
+    b:SetScript("OnClick", onClick)
+    return b
 end
 
 ------------------------------------------------------------------------
@@ -172,8 +184,8 @@ local function MenuRow(i)
     r.text:SetPoint("RIGHT", -8, 0)
     r.text:SetWordWrap(false)
     -- An x at the end of a row whose item can be removed (item.onRemove).
-    r.remove = ns.RowX(r, function(on) r.bg:SetShown(on or r.current) end, function() return r.item.removeTip end,
-        function()
+    r.remove = ns.RowButton(r, "x", "invalid", function(on) r.bg:SetShown(on or r.current) end,
+        function() return r.item.removeTip end, function()
             menu:Hide()
             r.item.onRemove()
         end)
@@ -235,6 +247,7 @@ local function OpenMenu(owner, items, width, up, right)
     end
     menu:Show()
 end
+ns.OpenMenu = OpenMenu
 
 -- getItems() -> { { key, name }, ... }; getValue() -> key; onSelect(key).
 function ns.Dropdown(parent, width, getItems, getValue, onSelect)

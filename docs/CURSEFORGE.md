@@ -168,7 +168,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - **Search** your macros by name or text (**Ctrl+F**): the tabs show how many match in each.
 - Line, column and a length counter (macros are limited to 255 characters).
 - Asks before discarding unsaved changes.
-- **Copy** a macro: a duplicate in the same tab, or a copy in the Character / General tab.
+- **Copy** or **delete** a macro with the buttons at its end in the list: a duplicate in the same tab, or a copy in
+  the Character / General tab.
 - **Share** macros: a code of one macro, a tab or all of them, to copy and send. **Import a code** shows what
   it holds and where each macro goes before making them, and never replaces one of yours.
 

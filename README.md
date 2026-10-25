@@ -43,7 +43,7 @@ repository instead.
 
 <p align="center"><img src="docs/guide-wizard.gif" width="720" alt="The macro wizard"></p>
 
-**New (Wizard)**, over New / Copy, opens a window with a form for a new macro:
+**New (Wizard)**, next to New, opens a window with a form for a new macro:
 
 - **Command**: `/cast` or `/use` for one spell or item (it follows what you pick: an item sets `/use`),
   `/castsequence` for spells in turn, `/castrandom` for one of several at random. The form changes with it:
@@ -205,12 +205,14 @@ General macros keep theirs for the account, character macros for the character.
 
 The list shows the General or the Character tab, with how many macros each holds and how many fit.
 **Search** above it keeps the macros whose name or text has what you type, in any case; the tabs then say how
-many match in each (`General  (3)`). Enter opens the first match, Esc clears the search. The **x** at the end
-of a macro deletes it, after asking; the macro being edited stays open when another one goes. **Copy** under it
-copies the macro being edited, with what the editor shows (name, icon, text): **Duplicate** into the
+many match in each (`General  (3)`). Enter opens the first match, Esc clears the search.
+
+Each macro in the list has two buttons at its end. **Copy** (two squares) copies it: **Duplicate** into the
 same tab, **Copy to Character** / **Copy to General** into the other one. The copy gets a free name (`Fear 2`,
-cut to fit 16 letters), because two macros with one name would share a key binding; the macro copied keeps
-its saved text.
+cut to fit 16 letters), because two macros with one name would share a key binding, and opens. The macro
+being edited is copied with what the editor shows (name, icon, text) and keeps its saved text; another one is
+copied as saved. **x** deletes the macro, after asking; the macro being edited stays open when another one
+goes.
 
 **Share** under the list makes a code of the macro, of the tab or of all your macros: copy it and send it
 (Discord, a forum), and anyone with MacroSense makes the macros with **Share > Import a code**. Before
@@ -304,9 +306,9 @@ The CurseForge description is in `docs/CURSEFORGE.md`.
 
 ## License
 
-Code: MIT, see `LICENSE`. Fonts keep their own free licenses: DejaVu (Bitstream Vera license),
-JetBrains Mono, Fira Mono, Source Code Pro and Inconsolata (SIL OFL 1.1); the texts are in
-`MacroSense/Media/Fonts/`.
+Code: MIT, see `LICENSE`; so is the copy icon, drawn for MacroSense (`MacroSense/Media/copy.tga`). Fonts
+keep their own free licenses: DejaVu (Bitstream Vera license), JetBrains Mono, Fira Mono, Source Code Pro
+and Inconsolata (SIL OFL 1.1); the texts are in `MacroSense/Media/Fonts/`.
 
 ---
 

@@ -19,8 +19,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   backup of the macros now is made first. The x next to a backup deletes it.
 
 ### Changed
-- The Delete button is gone: the x at the end of each macro in the list deletes it, after asking. The
-  macro being edited stays open, with its unsaved changes, when another one is deleted.
+- The Copy and Delete buttons are gone: each macro in the list has a copy button (the same menu: a duplicate,
+  or a copy in the other tab) and an x (delete, after asking) at its end. Any macro can be copied, not only
+  the one being edited, and the one being edited stays open, with its unsaved changes, when another one is
+  deleted. New and New (Wizard) share a row, so the list is a row taller.
 - A macro renamed in the game's macro window keeps its earlier versions under the new name, as one renamed
   here does.
 
