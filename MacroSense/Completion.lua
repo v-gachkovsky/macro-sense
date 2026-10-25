@@ -113,6 +113,7 @@ local function Lower(s)
     end
     return s
 end
+Completion.Lower = Lower -- the icon search ignores case the same way
 
 -- Two capitals or more ("DA", "SWP", "CoA"; not "Da" or "D"): then each letter is the first letter of a word.
 local function Capitals(s)

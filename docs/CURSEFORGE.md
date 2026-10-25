@@ -145,7 +145,8 @@ Every change you save, here, in the game's macro window or with another addon, k
 ## Icons and action bars
 
 - Click the macro's icon to pick a new one: the question mark (so `#showtooltip` chooses), your spells and
-  items first, then all 27,000+ game icons. **Search** by spell or item name.
+  items first, then all 27,000+ game icons. **Search** by the name of any spell that uses an icon, known to
+  you or not, or of your items (achievements too, on Retail and Mists of Pandaria).
 - The icon grid can be resized, moved away from the editor and docked back.
 - **Drag** a macro from the list, or its icon from the header, straight onto an action bar.
 - **Shift + right-click** a macro on an action bar to edit it: the editor opens on it instead of the macro

@@ -10,6 +10,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Shift + right-click on a macro on an action bar** opens the editor on that macro instead of running it,
   and the button's tooltip says so. On the game's action bars and those of Bartender, Dominos and ElvUI.
 
+### Changed
+- **Icon search** finds an icon by the name of any spell in the game that uses it, not only by your own spells
+  and items, and by achievements on Retail and Mists of Pandaria. The game has no names for its icons: they are
+  looked up in the background the first time the icon grid opens in a session (a few seconds; the grid's
+  bottom line shows how far). Pointing at an icon shows its names, and case doesn't count in Cyrillic or
+  accented names there either.
+
 ## [0.2.1] - 2026-10-24
 
 ### Changed

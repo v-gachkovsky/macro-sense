@@ -26,6 +26,7 @@ Widgets.lua
 Popup.lua
 CodeBox.lua
 Autocomplete.lua
+IconNames.lua
 IconPicker.lua
 WizardWindow.lua
 Window.lua

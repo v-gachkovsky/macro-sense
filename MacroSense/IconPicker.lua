@@ -1,5 +1,6 @@
 -- Icon grid for macros: the question mark first (#showtooltip picks the icon), then icons of your spells
--- and items, then every macro icon the game offers. Search matches spell / item names and icon file names.
+-- and items, then every macro icon the game offers. Search matches the names of your spells and items, of any
+-- spell or achievement that uses an icon (IconNames.lua), and icon file names where the game gives them.
 local _, ns = ...
 
 local MIN_COLS, MIN_ROWS, SIZE, GAP, PAD = 10, 7, 34, 4, 10
@@ -10,7 +11,7 @@ local QUESTION_MARK = 134400
 local Picker = {}
 ns.IconPicker = Picker
 
-local frame, search, slider, buttons, info
+local frame, search, slider, buttons, info, scanner
 local all, shown = nil, {}
 local offset, current, onPick = 0, nil, nil
 local anchor -- the editor window the picker docks to
@@ -70,6 +71,7 @@ local function Build()
         for _, icon in ipairs(GameIcons(GetMacroIcons)) do gameIcons[#gameIcons + 1] = icon end
         for _, icon in ipairs(GameIcons(GetMacroItemIcons)) do gameIcons[#gameIcons + 1] = icon end
     end
+    ns.IconNames.Want(gameIcons)
     for _, icon in ipairs(gameIcons) do add(icon) end
     return out
 end
@@ -90,7 +92,10 @@ local function Refresh()
             b.selected:SetShown(entry.icon == current)
         end
     end
-    info:SetText(#shown == 0 and "No icons" or string.format("%d icons", #shown))
+    local text = #shown == 0 and "No icons" or string.format("%d icons", #shown)
+    local progress = ns.IconNames.Progress()
+    if progress < 1 then text = string.format("%s (looking up names: %d%%)", text, math.floor(progress * 100)) end
+    info:SetText(text)
 end
 
 local function SetOffset(v)
@@ -99,18 +104,25 @@ local function SetOffset(v)
     Refresh()
 end
 
-local function Filter()
-    local q = strtrim(search:GetText() or ""):lower()
+local function Matches(entry, q)
+    if entry.name and ns.Completion.Lower(entry.name):find(q, 1, true) then return true end
+    local names = ns.IconNames.For(entry.icon)
+    return names ~= nil and names.text:find(q, 1, true) ~= nil
+end
+
+-- keep: the view stays where it is (names found since the search came in), else it goes to the top.
+local function Filter(keep)
+    local q = ns.Completion.Lower(strtrim(search:GetText() or ""))
     if q == "" then
         shown = all
     else
         shown = {}
         for _, entry in ipairs(all) do
-            if entry.name and entry.name:lower():find(q, 1, true) then shown[#shown + 1] = entry end
+            if Matches(entry, q) then shown[#shown + 1] = entry end
         end
     end
     slider:SetRange(MaxOffset(), rows)
-    SetOffset(0)
+    SetOffset(keep and offset or 0)
 end
 
 local function Create()
@@ -130,10 +142,10 @@ local function Create()
 
     search = ns.Input(frame, 200, 40)
     search:SetPoint("TOPLEFT", PAD, -PAD)
-    search:SetScript("OnTextChanged", Filter)
+    search:SetScript("OnTextChanged", function() Filter() end)
     local hint = ns.Text(frame, 11, "dim")
     hint:SetPoint("LEFT", search, "RIGHT", 8, 0)
-    hint:SetText("Search spell or item")
+    hint:SetText("Search by name")
 
     local close = ns.Button(frame, "x", 24, function() frame:Hide() end)
     close:SetPoint("TOPRIGHT", -PAD, -PAD)
@@ -155,10 +167,16 @@ local function Create()
             Refresh()
             if onPick then onPick(current) end
         end)
+        -- Its name, then the names of other spells and achievements that use it.
         b:SetScript("OnEnter", function()
-            if not (b.entry and b.entry.name) then return end
+            local names = b.entry and ns.IconNames.For(b.entry.icon)
+            local name = b.entry and b.entry.name or names and names[1]
+            if not name then return end
             GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
-            GameTooltip:SetText(b.entry.name)
+            GameTooltip:SetText(name)
+            for _, other in ipairs(names or {}) do
+                if other ~= name then GameTooltip:AddLine(other, 0.8, 0.8, 0.8) end
+            end
             GameTooltip:Show()
         end)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -221,6 +239,19 @@ local function Create()
 
     info = ns.Text(frame, 11, "dim")
     info:SetPoint("BOTTOMLEFT", PAD, PAD)
+
+    -- Names for the game's icons: looked up a little each frame while the grid is open. What they match
+    -- shows up every half second and at the end.
+    local since = 0
+    scanner = CreateFrame("Frame", nil, frame)
+    scanner:SetScript("OnUpdate", function(_, elapsed)
+        local done = ns.IconNames.Step(4)
+        since = since + elapsed
+        if not done and since < 0.5 then return end
+        since = 0
+        if strtrim(search:GetText() or "") ~= "" then Filter(true) else Refresh() end
+        if done then scanner:Hide() end
+    end)
 end
 
 -- anchor: frame to sit next to; icon: the macro's icon now; pick(icon) runs on every click.
@@ -231,6 +262,7 @@ function Picker.Open(editor, icon, pick)
     all = Build()
     search:SetText("")
     Filter()
+    scanner:Show() -- names left to look up; it hides when there are none
     local saved = Saved()
     if saved.docked or not saved.point then
         Dock()
