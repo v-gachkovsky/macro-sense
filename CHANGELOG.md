@@ -12,12 +12,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
   macro goes; nothing is replaced (a taken name gets a number), and a code cut short or changed is refused.
 - **Trash** under the macro list: the macros deleted here, in the game's macro window or by another addon
   (the last 30 of each tab) come back with a click, into their tab, under a free name if theirs is taken.
+  The x next to one deletes it for good.
 - **Backups** under the macro list: all your macros as they were, one made by itself on the first login of
   a day when they changed and one whenever you ask (the last 10, for each character). Restoring one gives
   its macros their text and icon back and makes the deleted ones again; macros made since stay, and a
   backup of the macros now is made first. The x next to a backup deletes it.
 
 ### Changed
+- The Delete button is gone: the x at the end of each macro in the list deletes it, after asking. The
+  macro being edited stays open, with its unsaved changes, when another one is deleted.
 - A macro renamed in the game's macro window keeps its earlier versions under the new name, as one renamed
   here does.
 

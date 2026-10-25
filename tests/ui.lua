@@ -1500,7 +1500,7 @@ do
     check("list: a warning makes it yellow, no sign", typo and typo.text.textColor == s.warning and not typo.alert:IsShown(),
         typo and typo.text.textColor)
     check("list: a clean macro stays plain", clean and clean.text.textColor == s.text and not clean.alert:IsShown()
-        and clean.text.point[2] == clean, clean and clean.text.textColor)
+        and clean.text.point[2] == clean.remove, clean and clean.text.textColor)
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(broken, "OnEnter")
@@ -1672,7 +1672,7 @@ do
     Type("\n/cast Frostbolt")
     Key("ESCAPE", "OnEscapePressed")
     Fire(copy, "OnClick")
-    check("copy: the menu opens above the button", MacroSenseMenu:IsShown() and MacroSenseMenu.point[1] == "BOTTOMLEFT"
+    check("copy: the menu opens above the button", MacroSenseMenu:IsShown() and MacroSenseMenu.point[1] == "BOTTOMRIGHT"
         and MacroSenseMenu.point[2] == copy, MacroSenseMenu.point and MacroSenseMenu.point[1])
     Fire(menuItem("Duplicate"), "OnClick")
     NextFrame()
@@ -2766,10 +2766,174 @@ do
     MacroSenseMenu:Hide()
     check("trash: the newest twelve, the rest counted", #rows == 14 and rows[1].text.text:find("^Old 14")
         and ns.Highlight.Strip(rows[13].text.text) == "2 older" and rows[13].item.disabled, #rows)
+
+    -- The x of a deleted macro deletes it for good, after asking; the rest stay.
+    rows = Rows()
+    check("trash: an x on each deleted macro", rows[1].remove:IsShown() and rows[12].remove:IsShown()
+        and not rows[13].remove:IsShown() and not rows[14].remove:IsShown())
+    tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(rows[1].remove, "OnEnter")
+    GameTooltip.AddLine = nil
+    Fire(rows[1].remove, "OnLeave")
+    local which, said
+    StaticPopup_Show = function(w, text, ...)
+        which, said = w, text
+        return show(w, text, ...)
+    end
+    Fire(rows[1].remove, "OnClick")
+    StaticPopup_Show = show
+    local trash = ns.History.Trash("general")
+    check("trash: the x deletes it for good, after asking", tip[1] == "Delete for good"
+        and which == "MACROSENSE_FORGET_DELETED" and said == "Old 14" and #trash == 13
+        and trash[#trash].name == "Old 13", said)
+    check("trash: one older less", Labels():find("1 older", 1, true) ~= nil, Labels())
     for _, name in ipairs({ "Trash B", "Trash B 2", "Trash D" }) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
     wipe(ns.History.Trash("general"))
     wipe(ns.History.Trash("character"))
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- A menu row that is the chosen one and has an x stays lit when the mouse leaves the x.
+do
+    local b = ns.MenuButton(UIParent, "Test", 80, function()
+        return { { name = "Chosen", current = true, onClick = function() end, onRemove = function() end,
+            removeTip = "Remove" } }
+    end)
+    Fire(b, "OnClick")
+    local r = MacroSenseMenu.rows[1]
+    Fire(r.remove, "OnEnter")
+    Fire(r.remove, "OnLeave")
+    check("menu x: the chosen row stays lit", r.bg:IsShown())
+    MacroSenseMenu:Hide()
+end
+
+-- The x of a macro in the list deletes it, after asking. The one being edited: the next one opens; another one:
+-- the editor keeps what it shows. There is no Delete button.
+do
+    local deleteButton
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Delete" then deleteButton = o end
+    end
+    check("list x: no Delete button", deleteButton == nil)
+    for _, name in ipairs({ "Del X", "Del A", "Del B", "Del C", "Del D", "Del F" }) do
+        CreateMacro(name, 1, "/cast " .. name:sub(-1), false)
+    end
+    Send("UPDATE_MACROS")
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
+        end
+    end
+    local function body(name)
+        local index = GetMacroIndexByName(name)
+        return index > 0 and select(3, GetMacroInfo(index)) or nil
+    end
+    ns.Window.Open(GetMacroIndexByName("Del B"))
+    NextFrame()
+    check("list x: on each macro", row("Del A").remove:IsShown() and row("Del B").remove:IsShown())
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(row("Del A").remove, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("list x: says what it does, the row lit", tip[1] == "Delete this macro" and row("Del A").bg:IsShown()
+        and row("Del A").remove.text.textColor == ns.scheme.invalid, tip[1])
+    Fire(row("Del A").remove, "OnLeave")
+    check("list x: as it was", not row("Del A").bg:IsShown() and row("Del A").remove.text.textColor == ns.scheme.dim)
+
+    -- Another macro, above the one being edited: its unsaved text stays, and Save saves it to its own macro.
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    local which, said, show = nil, nil, StaticPopup_Show
+    StaticPopup_Show = function(w, text, ...)
+        which, said = w, text
+        return show(w, text, ...)
+    end
+    Fire(row("Del A").remove, "OnClick")
+    StaticPopup_Show = show
+    check("list x: another macro, after asking", which == "MACROSENSE_DELETE" and said == "Del A"
+        and GetMacroIndexByName("Del A") == 0 and row("Del A") == nil, said)
+    check("list x: the editor keeps its text", raw() == "/cast B\n/sit" and row("Del B").selected, raw())
+    ns.Window.Save()
+    check("list x: and saves it to its macro", body("Del B") == "/cast B\n/sit" and body("Del C") == "/cast C",
+        body("Del B"))
+
+    -- The one being edited: the next one opens.
+    Fire(row("Del B").remove, "OnClick")
+    check("list x: the one being edited, then the next", GetMacroIndexByName("Del B") == 0 and raw() == "/cast C"
+        and row("Del C").selected, raw())
+
+    -- Another macro, below the one being edited: that one stays where it is.
+    Fire(row("Del F").remove, "OnClick")
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    ns.Window.Save()
+    check("list x: one below, the edited one stays itself", GetMacroIndexByName("Del F") == 0
+        and row("Del C").selected and body("Del C") == "/cast C\n/sit" and body("Del X") == "/cast X", body("Del C"))
+
+    -- The macros moved before the answer: the macro asked about is found by its name; one gone, nothing happens.
+    local asked
+    StaticPopup_Show = function(_, _, _, data) asked = data end -- the question stays open
+    Fire(row("Del C").remove, "OnClick")
+    DeleteMacro(GetMacroIndexByName("Del X"))
+    StaticPopupDialogs.MACROSENSE_DELETE.OnAccept(nil, asked)
+    check("list x: moved, found by its name", GetMacroIndexByName("Del C") == 0 and body("Del D") == "/cast D")
+    Fire(row("Del D").remove, "OnClick")
+    StaticPopup_Show = show
+    DeleteMacro(GetMacroIndexByName("Del D"))
+    local count = GetNumMacros()
+    StaticPopupDialogs.MACROSENSE_DELETE.OnAccept(nil, asked)
+    check("list x: gone already, nothing deleted", GetNumMacros() == count)
+
+    -- Two macros of one name: the x deletes its own.
+    CreateMacro("Twin", 1, "/cast 1", false)
+    CreateMacro("Twin", 1, "/cast 2", false)
+    Send("UPDATE_MACROS")
+    local twins = {}
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.alert and o.text and o.text.text == "Twin" and o:IsShown() then twins[#twins + 1] = o end
+    end
+    table.sort(twins, function(a, b) return a.index < b.index end)
+    Fire(twins[2].remove, "OnClick")
+    local first = body("Twin")
+    DeleteMacro(GetMacroIndexByName("Twin"))
+    check("list x: of two of one name, its own", first == "/cast 1" and GetMacroIndexByName("Twin") == 0, first)
+
+    -- Asked in one tab, answered in the other: the macro being edited there stays itself.
+    CreateMacro("Del G", 1, "/cast G", false)
+    CreateMacro("Del H", 1, "/cast H", true)
+    Send("UPDATE_MACROS")
+    StaticPopup_Show = function(_, _, _, data) asked = data end
+    Fire(row("Del G").remove, "OnClick")
+    StaticPopup_Show = show
+    ns.Window.Open(GetMacroIndexByName("Del H"))
+    NextFrame()
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    StaticPopupDialogs.MACROSENSE_DELETE.OnAccept(nil, asked)
+    ns.Window.Save()
+    check("list x: asked in one tab, the other's macro stays", GetMacroIndexByName("Del G") == 0
+        and body("Del H") == "/cast H\n/sit", body("Del H"))
+    DeleteMacro(GetMacroIndexByName("Del H"))
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    NextFrame()
+
+    -- Not in combat.
+    CreateMacro("Del E", 1, "/sit", false)
+    Send("UPDATE_MACROS")
+    InCombatLockdown = function() return true end
+    Fire(row("Del E").remove, "OnClick")
+    InCombatLockdown = function() return false end
+    check("list x: not in combat", GetMacroIndexByName("Del E") > 0 and printed[#printed]:find("in combat") ~= nil)
+    DeleteMacro(GetMacroIndexByName("Del E"))
+    Send("UPDATE_MACROS")
     ns.Window.SetScope("general")
     ns.Window.Select(1)
     NextFrame()
@@ -2976,7 +3140,7 @@ do
     check("backups: the x deletes that one, after asking", asked == "MACROSENSE_DELETE_BACKUP"
         and #backups == before - 1 and backups[#backups] ~= newest and not MacroSenseMenu:IsShown(), asked)
     for _, o in ipairs(created) do
-        if o.kind == "Button" and o.label and o.label.text == "Trash" then Fire(o, "OnClick") end
+        if o.kind == "Button" and o.label and o.label.text == "Share" then Fire(o, "OnClick") end
     end
     local xs = 0
     for _, r in ipairs(MacroSenseMenu.rows) do

@@ -43,6 +43,18 @@ function History.Discard(trash, name, macro, time)
     while #trash > History.TRASH do table.remove(trash, 1) end
 end
 
+-- Takes `entry` out of `trash`, brought back or deleted for good: that one, though another may have its name
+-- and text. True when it was there.
+function History.TakeOut(trash, entry)
+    for i, e in ipairs(trash) do
+        if e == entry then
+            table.remove(trash, i)
+            return true
+        end
+    end
+    return false
+end
+
 -- The macros of `before` missing from `after` (both: name -> { body, icon }): renamed when a name new in
 -- `after` has the same text (each new name once), else deleted. Returns { [old] = new } and the deleted names.
 function History.Gone(before, after)

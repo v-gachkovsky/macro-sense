@@ -43,7 +43,7 @@ repository instead.
 
 <p align="center"><img src="docs/guide-wizard.gif" width="720" alt="The macro wizard"></p>
 
-**New (Wizard)**, over New / Copy / Delete, opens a window with a form for a new macro:
+**New (Wizard)**, over New / Copy, opens a window with a form for a new macro:
 
 - **Command**: `/cast` or `/use` for one spell or item (it follows what you pick: an item sets `/use`),
   `/castsequence` for spells in turn, `/castrandom` for one of several at random. The form changes with it:
@@ -205,7 +205,8 @@ General macros keep theirs for the account, character macros for the character.
 
 The list shows the General or the Character tab, with how many macros each holds and how many fit.
 **Search** above it keeps the macros whose name or text has what you type, in any case; the tabs then say how
-many match in each (`General  (3)`). Enter opens the first match, Esc clears the search. **Copy** under it
+many match in each (`General  (3)`). Enter opens the first match, Esc clears the search. The **x** at the end
+of a macro deletes it, after asking; the macro being edited stays open when another one goes. **Copy** under it
 copies the macro being edited, with what the editor shows (name, icon, text): **Duplicate** into the
 same tab, **Copy to Character** / **Copy to General** into the other one. The copy gets a free name (`Fear 2`,
 cut to fit 16 letters), because two macros with one name would share a key binding; the macro copied keeps
@@ -220,8 +221,8 @@ matter; a code cut short or changed is refused.
 
 **Trash** next to it keeps the macros you delete, here, in the game's macro window or with another addon:
 the last 30 of each tab, General ones for the account, Character ones for the character. Hover one to
-read it, click it to bring it back into its tab, under a free name if its own is taken. A macro renamed
-in the game's window is not taken for deleted.
+read it, click it to bring it back into its tab, under a free name if its own is taken; its **x** deletes it
+for good. A macro renamed in the game's window is not taken for deleted.
 
 **Backups** keeps all your macros as they were: one is made by itself on your first login of a day when
 they changed, and **Back up now** makes one whenever you like (the last 10 for each character, each with
