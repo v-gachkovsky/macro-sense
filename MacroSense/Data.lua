@@ -172,4 +172,11 @@ local slots = Constants and Constants.MacroConsts or {}
 ns.MAX_GENERAL = slots.MAX_ACCOUNT_MACROS or MAX_ACCOUNT_MACROS or 120
 ns.MAX_CHARACTER = slots.MAX_CHARACTER_MACROS or MAX_CHARACTER_MACROS or 30
 
+-- The icon chosen for macro `index`, to keep and to save. GetMacroInfo gives the one shown now, which for the
+-- question mark and #showtooltip can be the shown spell's: the game's macro window too picks with this one.
+function ns.MacroIcon(index)
+    if C_Macro and C_Macro.GetSelectedMacroIcon then return C_Macro.GetSelectedMacroIcon(index) end
+    return (select(2, GetMacroInfo(index)))
+end
+
 return ns.data

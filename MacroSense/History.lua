@@ -100,8 +100,8 @@ local function Macros()
     local now = { general = {}, character = {} }
     local general, character = GetNumMacros()
     local function add(scope, index)
-        local name, icon, body = GetMacroInfo(index)
-        if name then now[scope][name] = { body = body or "", icon = icon } end
+        local name, _, body = GetMacroInfo(index)
+        if name then now[scope][name] = { body = body or "", icon = ns.MacroIcon(index) } end
     end
     for index = 1, general do add("general", index) end
     for index = MAX_GENERAL + 1, MAX_GENERAL + character do add("character", index) end
