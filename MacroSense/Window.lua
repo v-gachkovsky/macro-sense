@@ -479,11 +479,11 @@ local function FirstLetters(s, n)
 end
 
 -- A name no macro has: "Fear" -> "Fear 2", "Fear 2" -> "Fear 3", cut to fit the name limit. Two macros with
--- one name would share a key binding ("MACRO Fear" runs the first one).
-local function FreeName(name)
+-- one name would share a key binding ("MACRO Fear" runs the first one). `also`: names given out already.
+local function FreeName(name, also)
     local function taken(n)
         local index = GetMacroIndexByName(n)
-        return index ~= nil and index > 0
+        return (index ~= nil and index > 0) or (also ~= nil and also[n] == true)
     end
     if not taken(name) then return name end
     local base, n = name:match("^(.-) (%d+)$")
@@ -537,6 +537,100 @@ local function CopyItems()
         item(state.scope, "Duplicate", "A copy in this tab with what the editor shows now, " .. same),
         item(other, "Copy to " .. SCOPE_NAMES[other], string.format("A copy %s with what the editor shows now, %s",
             other == "character" and "for this character only" or "for all your characters", same)),
+    }
+end
+
+------------------------------------------------------------------------
+-- Share: macros as a code to copy, and back (Share.lua, ShareWindow.lua)
+------------------------------------------------------------------------
+-- The saved macros of `scope`, or of both tabs, as Share.Encode takes them.
+local function Macros(scope)
+    local out = {}
+    for _, s in ipairs(scope and { scope } or { "general", "character" }) do
+        local first, last = MacroRange(s)
+        for index = first, last do
+            local name, icon, body = GetMacroInfo(index)
+            if name then out[#out + 1] = { scope = s, name = name, icon = icon, body = body or "" } end
+        end
+    end
+    return out
+end
+
+-- Where each macro of a code goes, in order: { macro, name = a free one } into its own tab, or { macro, full =
+-- true } with no free slot there, or { macro, long = true } for a text longer than the game allows.
+function Window.ImportPlan(macros)
+    local room, given, plan = {}, {}, {}
+    for _, s in ipairs({ "general", "character" }) do
+        local first, last, max = MacroRange(s)
+        room[s] = max - (last - first + 1)
+    end
+    for i, m in ipairs(macros) do
+        if Letters(m.body) > MAX_BODY then
+            plan[i] = { macro = m, long = true }
+        elseif room[m.scope] > 0 then
+            room[m.scope] = room[m.scope] - 1
+            local name = FreeName(FirstLetters(m.name, MAX_NAME), given)
+            given[name] = true
+            plan[i] = { macro = m, name = name }
+        else
+            plan[i] = { macro = m, full = true }
+        end
+    end
+    return plan
+end
+
+-- Creates the macros of a code where ImportPlan puts them and opens the first, then done(). Unsaved changes
+-- are asked about first.
+function Window.Import(macros, done)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    Guard(function()
+        local made, first = 0, nil
+        for _, p in ipairs(Window.ImportPlan(macros)) do
+            if p.name then
+                local m = p.macro
+                CreateMacro(p.name, m.icon ~= "" and m.icon or NEW_ICON, m.body, m.scope == "character")
+                made, first = made + 1, first or p
+            end
+        end
+        if not first then return end
+        ns.History.Scan()
+        ns.Print("imported %d of %d macros", made, #macros)
+        state.scope, ns.db.scope = first.macro.scope, first.macro.scope
+        Load(GetMacroIndexByName(first.name))
+        if done then done() end
+    end)
+end
+
+local function ShareItems()
+    local tab = SCOPE_NAMES[state.scope]
+    local general, character = GetNumMacros()
+    local here = state.scope == "general" and general or character
+    local function item(name, tip, onClick, disabled)
+        return {
+            name = name,
+            disabled = disabled,
+            onClick = onClick,
+            onEnter = function(row)
+                GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+                GameTooltip:AddLine(name, 1, 1, 1)
+                GameTooltip:AddLine(tip, 0.8, 0.8, 0.8, true)
+                GameTooltip:Show()
+            end,
+        }
+    end
+    return {
+        item("Export this macro", state.index and "Its code, as saved, to copy and share."
+            or "Save the macro first, then export it.", function()
+            ns.ShareWindow.Export({ { scope = state.scope, name = state.name, icon = state.savedIcon,
+                body = state.body } })
+        end, not state.index),
+        item(string.format("Export the %s tab (%d)", tab, here), "The code of every macro in this tab.",
+            function() ns.ShareWindow.Export(Macros(state.scope)) end, here == 0),
+        item(string.format("Export all macros (%d)", general + character),
+            "The code of every macro of both tabs; imported, each goes into its own tab.",
+            function() ns.ShareWindow.Export(Macros()) end, general + character == 0),
+        item("Import a code...", "Paste a code to make its macros. Nothing is replaced: a taken name gets a "
+            .. "number, like \"Fear 2\".", function() ns.ShareWindow.Import() end),
     }
 end
 
@@ -717,15 +811,24 @@ local function Build()
     tabs.character:SetPoint("TOPLEFT", side, "TOP", 0, 0)
     tabs.character:SetPoint("TOPRIGHT", 0, 0)
 
+    -- At the bottom: Share; New / Copy / Delete over it. Their menus open above them, the list is in the way below.
+    local shareBtn = ns.MenuButton(side, "Share", 64, ShareItems, true)
+    shareBtn:SetPoint("BOTTOMLEFT", 8, 8)
+    shareBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Share", 1, 1, 1)
+        GameTooltip:AddLine("Macros as a code to copy and send, and codes from others to import.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    shareBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     local newBtn = ns.Button(side, "New", 64, Window.New)
-    newBtn:SetPoint("BOTTOMLEFT", 8, 8)
+    newBtn:SetPoint("BOTTOMLEFT", 8, 36)
     deleteBtn = ns.Button(side, "Delete", 64, function()
         StaticPopup_Show("MACROSENSE_DELETE", state.name, nil, state.index)
     end)
-    deleteBtn:SetPoint("BOTTOMRIGHT", -8, 8)
-    -- Copy: its menu opens above it, the list is in the way below.
+    deleteBtn:SetPoint("BOTTOMRIGHT", -8, 36)
     copyBtn = ns.MenuButton(side, "Copy", 64, CopyItems, true)
-    copyBtn:SetPoint("BOTTOM", 0, 8)
+    copyBtn:SetPoint("BOTTOM", 0, 36)
     copyBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine("Copy", 1, 1, 1)
@@ -777,7 +880,7 @@ local function Build()
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -62)
-    list:SetPoint("BOTTOMRIGHT", -13, 66)
+    list:SetPoint("BOTTOMRIGHT", -13, 94)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)
@@ -970,6 +1073,7 @@ local function Build()
         ns.Popup:Hide()
         ns.IconPicker.Close()
         ns.WizardWindow.Close()
+        ns.ShareWindow.Close()
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
     end)

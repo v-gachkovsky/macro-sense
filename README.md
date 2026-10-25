@@ -211,6 +211,13 @@ same tab, **Copy to Character** / **Copy to General** into the other one. The co
 cut to fit 16 letters), because two macros with one name would share a key binding; the macro copied keeps
 its saved text.
 
+**Share** under the list makes a code of the macro, of the tab or of all your macros: copy it and send it
+(Discord, a forum), and anyone with MacroSense makes the macros with **Share > Import a code**. Before
+anything is made, the window says what the code holds and where each macro goes. Nothing is replaced: a
+taken name gets a number (`Fear 2`), and a macro with no free slot in its tab is left out. The code is one
+line of letters and digits, which chat apps leave as it is, ending in a dot, so words around it don't
+matter; a code cut short or changed is refused.
+
 ## Icons and action bars
 
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),
@@ -254,6 +261,8 @@ Bartender, Dominos and ElvUI.
 - `MacroSense/Wizard.lua`: the wizard's form as macro text. Pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
+- `MacroSense/Share.lua`: macros as a code and back. Pure Lua.
+- `MacroSense/ShareWindow.lua`: the window of a code, to export and to import.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
@@ -269,7 +278,7 @@ Bartender, Dominos and ElvUI.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap, icon names
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap, icon names, share codes
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 

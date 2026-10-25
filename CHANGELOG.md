@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Share** under the macro list: a code of the macro, of the tab or of all your macros, to copy and send,
+  and **Import a code** to make macros from one. The import window says what the code holds and where each
+  macro goes; nothing is replaced (a taken name gets a number), and a code cut short or changed is refused.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added
