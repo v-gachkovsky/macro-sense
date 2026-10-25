@@ -1,6 +1,7 @@
 -- Icon grid for macros: the question mark first (#showtooltip picks the icon), then icons of your spells
--- and items, then every macro icon the game offers. Search matches the names of your spells and items, of any
--- spell or achievement that uses an icon (IconNames.lua), and icon file names where the game gives them.
+-- and items, then every macro icon the game offers, with icons you put in Interface\Icons yourself. Search
+-- matches the names of your spells and items, of any spell or achievement that uses an icon (IconNames.lua),
+-- and icon file names where the game gives them.
 local _, ns = ...
 
 local MIN_COLS, MIN_ROWS, SIZE, GAP, PAD = 10, 7, 34, 4, 10
@@ -59,7 +60,7 @@ local function Build()
             if name then seen[key].name = (seen[key].name and seen[key].name .. " " or "") .. name end
             return
         end
-        local entry = { icon = icon, name = name or (type(icon) == "string" and icon) or nil }
+        local entry = { icon = icon, name = name or (type(icon) == "string" and icon:match("[^\\/]+$")) or nil }
         seen[key] = entry
         out[#out + 1] = entry
     end
@@ -67,9 +68,16 @@ local function Build()
     for _, spell in ipairs(ns.sources.spells()) do add(spell.icon, spell.name) end
     for _, item in ipairs(ns.sources.items()) do add(item.icon, item.name) end
     if not gameIcons then
+        -- As in the game's macro window: for spells, then for items, the icons you put in Interface\Icons
+        -- yourself first. They come as file names; the game saves them by their path.
         gameIcons = {}
-        for _, icon in ipairs(GameIcons(GetMacroIcons)) do gameIcons[#gameIcons + 1] = icon end
-        for _, icon in ipairs(GameIcons(GetMacroItemIcons)) do gameIcons[#gameIcons + 1] = icon end
+        local function from(fill, yours)
+            for _, icon in ipairs(GameIcons(fill)) do gameIcons[#gameIcons + 1] = yours and Texture(icon) or icon end
+        end
+        from(GetLooseMacroIcons, true)
+        from(GetMacroIcons)
+        from(GetLooseMacroItemIcons, true)
+        from(GetMacroItemIcons)
     end
     ns.IconNames.Want(gameIcons)
     for _, icon in ipairs(gameIcons) do add(icon) end

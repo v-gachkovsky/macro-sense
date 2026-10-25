@@ -208,7 +208,8 @@ its saved text.
 ## Icons and action bars
 
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),
-then icons of your spells and items, then every macro icon of the game. Search matches the names of your
+then icons of your spells and items, then every macro icon of the game, with the icons you put in
+`Interface\Icons` yourself, as in the game's macro window. Search matches the names of your
 spells and items, and of any spell in the game that uses an icon (achievements too, on Retail and Mists of
 Pandaria). The game has no names for its icons, so the first time the grid opens in a session they are looked
 up in the background for a few seconds; its bottom line shows how far. Point at an icon to see its names.
