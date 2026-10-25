@@ -2,6 +2,7 @@
 -- Lists that depend on the character (forms, specs, item types, pet) come from ns.sources.
 local _, ns = ...
 ns = ns or {}
+local L = ns.L
 
 local Conditions = {}
 ns.Conditions = Conditions
@@ -100,7 +101,7 @@ local RULES = {
 function Conditions.CheckValue(name, v)
     local rule = RULES[Conditions.Base(name)]
     if not rule or v == "" or rule.check(v) then return nil end
-    return string.format('invalid %s value "%s" (expected %s)', name:lower(), v, rule.expect)
+    return string.format(L["invalid %s value \"%s\" (expected %s)"], name:lower(), v, L[rule.expect])
 end
 
 local function source(name)
@@ -133,7 +134,7 @@ local RESETS = { target = true, combat = true, shift = true, ctrl = true, alt = 
 -- nil when fine, or the error message for reset value `v`.
 function Conditions.CheckReset(v)
     if RESETS[v:lower()] or v:find("^%d+$") then return nil end
-    return string.format('invalid reset value "%s" (expected seconds, target, combat, shift, ctrl or alt)', v)
+    return string.format(L["invalid reset value \"%s\" (expected seconds, target, combat, shift, ctrl or alt)"], v)
 end
 
 -- Suggestions after "reset=" and each "/": the ones not used yet (one number at most: only the first counts).

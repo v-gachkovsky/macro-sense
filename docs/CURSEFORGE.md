@@ -150,6 +150,7 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - **Monospace fonts** included: DejaVu Sans Mono, JetBrains Mono, Fira Mono, Source Code Pro, Inconsolata.
   Game fonts and LibSharedMedia fonts work too. Size from 8 to 28.
 - **Resizable window**; size and position are remembered.
+- **English or Ukrainian**: pick the language in the editor's header.
 
 ## Icons and action bars
 

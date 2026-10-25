@@ -4,6 +4,18 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Ukrainian**: the whole interface in Ukrainian (the window, the wizard, menus, tooltips, the error checks,
+  the live preview, chat lines), picked in the list in the editor's header; switching the language reloads
+  the interface, after asking in the language picked. On a client whose font has no Cyrillic letters the
+  interface uses the game's Friz Quadrata that has them.
+
+### Changed
+- Menus are as wide as their longest line.
+- The history menu says "1 char", not "1 chars".
+
 ## [0.5.0] - 2026-10-25
 
 ### Added

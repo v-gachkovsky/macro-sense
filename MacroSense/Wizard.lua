@@ -356,11 +356,11 @@ local TARGET_NAMES = { target = "Target", focus = "Focus", assist = "Assist", pe
 function Wizard.Name(spec)
     if Wizard.IsTarget(spec.command) or spec.command == "pet" then
         local name = ByName(spec)
-        return name ~= "" and name or TARGET_NAMES[spec.command]
+        return name ~= "" and name or ns.L[TARGET_NAMES[spec.command]]
     end
     local first = First(spec)
     if first then return first.label or first.name end
-    if spec.trinket1 or spec.trinket2 then return "Trinkets" end
+    if spec.trinket1 or spec.trinket2 then return ns.L["Trinkets"] end
 end
 
 return Wizard

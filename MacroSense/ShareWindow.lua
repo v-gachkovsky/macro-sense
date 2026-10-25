@@ -1,6 +1,7 @@
 -- The window of a code (Share.lua). Export: the code of the macros picked, selected, to copy. Import: a pasted
 -- code, what it holds and where each macro would go; Import creates them (Window.Import).
 local _, ns = ...
+local L = ns.L
 
 local ShareWindow = {}
 ns.ShareWindow = ShareWindow
@@ -19,7 +20,7 @@ local function Names(list)
     local names = {}
     for i = 1, math.min(#list, LISTED) do names[i] = list[i].name end
     local text = table.concat(names, ", ")
-    if #list > LISTED then text = text .. string.format(" and %d more", #list - LISTED) end
+    if #list > LISTED then text = text .. string.format(L[" and %d more"], #list - LISTED) end
     return text
 end
 
@@ -33,21 +34,21 @@ local function Preview()
     if not macros then return info:SetText("|cff" .. ns.scheme.invalid .. problem .. "|r") end
     local lines, fit = {}, 0
     for i, p in ipairs(ns.Window.ImportPlan(macros)) do
-        local tab = SCOPE_NAMES[p.macro.scope]
+        local tab = L[SCOPE_NAMES[p.macro.scope]]
         local line
         if p.name then
             fit = fit + 1
-            line = p.name == p.macro.name and string.format("%s: into %s", p.name, tab)
-                or string.format("%s: into %s as \"%s\" (the name is taken)", p.macro.name, tab, p.name)
+            line = p.name == p.macro.name and string.format(L["%s: into %s"], p.name, tab)
+                or string.format(L["%s: into %s as \"%s\" (the name is taken)"], p.macro.name, tab, p.name)
         elseif p.long then
-            line = string.format("%s: longer than the game allows, not imported", p.macro.name)
+            line = string.format(L["%s: longer than the game allows, not imported"], p.macro.name)
         else
-            line = string.format("%s: no free slot in %s", p.macro.name, tab)
+            line = string.format(L["%s: no free slot in %s"], p.macro.name, tab)
         end
         if i <= LISTED then lines[#lines + 1] = line end
     end
-    if #macros > LISTED then lines[#lines + 1] = string.format("... and %d more", #macros - LISTED) end
-    table.insert(lines, 1, string.format("%d macro%s in the code:", #macros, #macros == 1 and "" or "s"))
+    if #macros > LISTED then lines[#lines + 1] = string.format(L["... and %d more"], #macros - LISTED) end
+    table.insert(lines, 1, ns.Plural(#macros, "%d macro in the code:", "%d macros in the code:"))
     info:SetText(table.concat(lines, "\n"))
     found = macros
     importBtn:SetEnabled(fit > 0)
@@ -98,7 +99,7 @@ local function Build()
     box:SetMultiLine(true)
     box:SetAutoFocus(false)
     box:SetMaxLetters(0)
-    box:SetFont(ns.UI_FONT, 12, "")
+    box:SetFont(ns.UIFont(), 12, "")
     box:SetSize(WIDTH - 2 * PAD - 25, 138)
     ns.OnStyle(function(s) box:SetTextColor(ns.RGB(s.text)) end)
     scroll:SetScrollChild(box)
@@ -120,9 +121,9 @@ local function Build()
     info:SetJustifyV("TOP")
     info:SetWordWrap(true)
 
-    closeBtn = ns.Button(frame, "Close", 80, function() frame:Hide() end)
+    closeBtn = ns.Button(frame, L["Close"], 80, function() frame:Hide() end)
     closeBtn:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-    importBtn = ns.Button(frame, "Import", 90, function()
+    importBtn = ns.Button(frame, L["Import"], 90, function()
         if found then ns.Window.Import(found, function() frame:Hide() end) end
     end, true)
     importBtn:SetPoint("RIGHT", closeBtn, "LEFT", -6, 0)
@@ -134,7 +135,7 @@ local function Open(newMode)
     if not frame then Build() end
     mode = newMode
     importBtn:SetShown(mode == "import")
-    closeBtn.label:SetText(mode == "import" and "Cancel" or "Close")
+    closeBtn.label:SetText(mode == "import" and L["Cancel"] or L["Close"])
     frame:Show()
     frame:Raise()
     box:SetFocus()
@@ -144,8 +145,9 @@ end
 function ShareWindow.Export(macros)
     code = ns.Share.Encode(macros)
     Open("export")
-    titleText:SetText(#macros == 1 and "Export a macro" or string.format("Export %d macros", #macros))
-    hint:SetText(string.format("Press %s to copy the code, then share it: anyone with MacroSense can import it.",
+    titleText:SetText(#macros == 1 and L["Export a macro"]
+        or ns.Plural(#macros, "Export %d macros", "Export %d macros"))
+    hint:SetText(string.format(L["Press %s to copy the code, then share it: anyone with MacroSense can import it."],
         Keys("C")))
     box:SetText(code)
     box:HighlightText()
@@ -155,8 +157,8 @@ end
 -- An empty box to paste a code into.
 function ShareWindow.Import()
     Open("import")
-    titleText:SetText("Import macros")
-    hint:SetText(string.format("Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number.",
+    titleText:SetText(L["Import macros"])
+    hint:SetText(string.format(L["Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number."],
         Keys("V")))
     box:SetText("")
     Preview()

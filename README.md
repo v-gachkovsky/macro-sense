@@ -253,6 +253,15 @@ Drag a macro from the list, or its icon from the header, onto an action bar. **S
 there opens it in the editor instead of running it, and its tooltip says so: on the game's bars and those of
 Bartender, Dominos and ElvUI.
 
+## Language
+
+MacroSense speaks English and Ukrainian: pick one in the list in the editor's header, left of the color
+scheme. The texts are made in the language when they are shown, so switching it reloads the interface (it
+asks first, in the language picked). Everything MacroSense says is translated: the window, the wizard, menus,
+tooltips, the error checks, the live preview and its chat lines; spell and item names stay as the game gives
+them. The game has no Ukrainian client, so this is MacroSense's own setting, and on a client whose font has
+no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
+
 ## Commands
 
 - `/ms` - open / close the editor
@@ -265,6 +274,8 @@ Bartender, Dominos and ElvUI.
 
 ### Layout
 
+- `MacroSense/Locale.lua`, `MacroSense/Ukrainian.lua`: texts in the chosen language, by their English text;
+  the Ukrainian translations. Pure Lua.
 - `MacroSense/Parser.lua`: what the word under the cursor is. Pure Lua.
 - `MacroSense/Highlight.lua`: tokenizer, colorizer, syntax errors, cursor mapping between raw and colored
   text. Pure Lua.
