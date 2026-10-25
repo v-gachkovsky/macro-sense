@@ -147,6 +147,30 @@ local function MenuRow(i)
     r.text:SetPoint("LEFT", 8, 0)
     r.text:SetPoint("RIGHT", -8, 0)
     r.text:SetWordWrap(false)
+    -- An x at the end of a row whose item can be removed (item.onRemove); the row stays lit over it.
+    local x = CreateFrame("Button", nil, r)
+    x:SetSize(20, 20)
+    x:SetPoint("RIGHT")
+    x.text = ns.Text(x, 12, "dim")
+    x.text:SetPoint("CENTER")
+    x.text:SetText("x")
+    x:SetScript("OnEnter", function()
+        r.bg:SetShown(true)
+        x.text:SetTextColor(ns.RGB(ns.scheme.invalid))
+        GameTooltip:SetOwner(x, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(r.item.removeTip, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    x:SetScript("OnLeave", function()
+        r.bg:SetShown(r.current)
+        x.text:SetTextColor(ns.RGB(ns.scheme.dim))
+        GameTooltip:Hide()
+    end)
+    x:SetScript("OnClick", function()
+        menu:Hide()
+        r.item.onRemove()
+    end)
+    r.remove = x
     r:SetScript("OnEnter", function()
         r.bg:SetShown(r.current or not r.item.disabled)
         if r.item.onEnter then r.item.onEnter(r) end
@@ -173,7 +197,8 @@ menu:SetScript("OnUpdate", function(self)
     end
 end)
 
--- items: { { name, onClick = fn, current = the chosen one, disabled, onEnter = fn(row) for a tooltip } }.
+-- items: { { name, onClick = fn, current = the chosen one, disabled, onEnter = fn(row) for a tooltip,
+-- onRemove = fn for an x at the row's end, removeTip = its tooltip } }.
 -- Opens below `owner`, or above it with `up`; `right` lines it up with the owner's right edge.
 local function OpenMenu(owner, items, width, up, right)
     if menu:IsShown() and menu.owner == owner then return menu:Hide() end
@@ -187,6 +212,8 @@ local function OpenMenu(owner, items, width, up, right)
             r.bg:SetShown(r.current)
             r.text:SetText(item.name)
             r.text:SetAlpha(item.disabled and 0.45 or 1)
+            r.remove:SetShown(item.onRemove ~= nil)
+            r.text:SetPoint("RIGHT", item.onRemove and -24 or -8, 0)
         end
     end
     menu.owner = owner

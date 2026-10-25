@@ -34,6 +34,17 @@ function Backups.Add(list, macros, time)
     return true
 end
 
+-- Takes `backup` out of `list`: that one, though another may hold the same macros. True when it was there.
+function Backups.Remove(list, backup)
+    for i, b in ipairs(list) do
+        if b == backup then
+            table.remove(list, i)
+            return true
+        end
+    end
+    return false
+end
+
 -- The day's backup is due: none yet, or the newest is from another day.
 function Backups.Due(list, now)
     local last = list[#list]

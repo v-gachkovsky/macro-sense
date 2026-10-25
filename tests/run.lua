@@ -1068,6 +1068,10 @@ do
     for i = 1, B.LIMIT + 1 do B.Add(list, { M("general", "N", 1, tostring(i)) }, 1000 + i) end
     check("backups: the last ones, oldest first", #list == B.LIMIT and list[1].time == 1002
         and list[#list].time == 1000 + B.LIMIT + 1, #list)
+    local b1, b2, b3 = { time = 1 }, { time = 2 }, { time = 3 }
+    local kept = { b1, b2, b3 }
+    check("backups: one taken out", B.Remove(kept, b2) and #kept == 2 and kept[1] == b1 and kept[2] == b3)
+    check("backups: only that one", not B.Remove(kept, { time = 1 }) and #kept == 2)
     date = os.date
     local day = os.time({ year = 2026, month = 10, day = 25, hour = 9 })
     check("backups: due with none", B.Due({}, day))
