@@ -121,15 +121,16 @@ ns.locales.uk = {
     ["Delete \"%s\" from the trash? It will be gone for good."] = "Видалити «%s» з кошика? Він зникне назавжди.",
     ["could not restore the macro"] = "не вдалося повернути макрос",
     ["Backups"] = "Бекапи",
-    ["All your macros as they were: one is made each day you log in and they changed, and whenever you ask. Pick "
-        .. "one to restore it."] =
-        "Усі ваші макроси такими, якими вони були: бекап робиться щодня, коли ви входите в гру, якщо макроси "
-        .. "змінилися, і будь-коли на ваше прохання. Оберіть бекап, щоб відновити його.",
+    ["Your macros are saved by themselves the first time you log in each day, if they changed since. You can also "
+        .. "make a backup yourself, any time. To get your macros back as they were, just pick a backup."] =
+        "Ваші макроси зберігаються самі щодня, коли ви вперше заходите в гру, якщо з минулого разу вони "
+        .. "змінилися. Бекап можна зробити й самому, будь-коли. Щоб повернути макроси такими, якими вони були, "
+        .. "просто оберіть бекап.",
     ["Back up now"] = "Зробити бекап зараз",
-    ["A backup of all your macros, General and Character. One is also made by itself on the first login of a day "
-        .. "when they changed; the last %d backups are kept for each character."] =
-        "Бекап усіх ваших макросів, загальних і персонажа. Він також робиться сам при першому вході за день, "
-        .. "якщо макроси змінилися; для кожного персонажа зберігаються останні %d бекапів.",
+    ["Saves all your macros now, General and this character's. Each character keeps its last %d backups; older "
+        .. "ones are deleted by themselves."] =
+        "Зберігає всі ваші макроси просто зараз, загальні й цього персонажа. Для кожного персонажа лишаються "
+        .. "останні %d бекапів, старіші видаляються самі.",
     ["%d macros"] = { "%d макрос", "%d макроси", "%d макросів" },
     ["Backup of %s"] = "Бекап: %s",
     ["General %d, Character %d. Click to restore it."] = "Загальних: %d, персонажа: %d. Клацніть, щоб відновити.",

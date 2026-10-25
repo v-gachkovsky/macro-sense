@@ -869,9 +869,9 @@ local function BackupItems()
             ns.Print("your macros are as in the last backup")
         end,
         onEnter = function(row)
-            tip(row, L["Back up now"], string.format(L["A backup of all your macros, General and Character. One is "
-                .. "also made by itself on the first login of a day when they changed; the last %d backups are kept "
-                .. "for each character."], ns.Backups.LIMIT))
+            tip(row, L["Back up now"], string.format(L["Saves all your macros now, General and this character's. "
+                .. "Each character keeps its last %d backups; older ones are deleted by themselves."],
+                ns.Backups.LIMIT))
             GameTooltip:Show()
         end,
     } }
@@ -1122,8 +1122,9 @@ local function Build()
     backupsBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Backups"], 1, 1, 1)
-        GameTooltip:AddLine(L["All your macros as they were: one is made each day you log in and they changed, "
-            .. "and whenever you ask. Pick one to restore it."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Your macros are saved by themselves the first time you log in each day, if they "
+            .. "changed since. You can also make a backup yourself, any time. To get your macros back as they "
+            .. "were, just pick a backup."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     backupsBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
