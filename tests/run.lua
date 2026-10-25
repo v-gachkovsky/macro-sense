@@ -1076,6 +1076,20 @@ do
     check("icon names: achievements keep the four", Names(names, 13) == "Spell 20,Spell 21,Spell 22,Spell 23",
         Names(names, 13))
     check("icon names: once done, nothing is read again", names.Step(1000) and read == 3, read)
+    -- TBC has the functions without the achievements: its one category has no count.
+    GetCategoryList = function() return { 81 } end
+    GetCategoryNumAchievements = function() return nil end
+    names = Lookup(1000, 100)
+    local ok, done = pcall(names.Step, 1000)
+    check("icon names: TBC: the functions without achievements", ok and done and Names(names, 11) == "Shadow Bolt",
+        tostring(done))
+    -- Anything else odd there comes up once, not every frame.
+    GetCategoryNumAchievements = function() return 1 end
+    GetAchievementInfo = function() error("odd") end
+    names = Lookup(1000, 100)
+    local first = pcall(names.Step, 1000)
+    local again, over = pcall(names.Step, 1000)
+    check("icon names: an error in the achievements comes once", not first and again and over)
     C_Spell, InCombatLockdown, debugprofilestop = nil, nil, nil
     GetCategoryList, GetCategoryNumAchievements, GetAchievementInfo = nil, nil, nil
 end

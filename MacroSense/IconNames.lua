@@ -57,16 +57,18 @@ function IconNames.Step(ms)
         nextID = nextID + CHUNK
         if debugprofilestop() >= stop then return false end
     end
-    -- Achievements (from Wrath on) have icons of their own.
+    -- Achievements (from Wrath on) have icons of their own. Done first: should they go wrong, it is once, not
+    -- every frame.
+    finished = true
     if GetCategoryList and GetAchievementInfo then
         for _, category in ipairs(GetCategoryList()) do
-            for i = 1, GetCategoryNumAchievements(category, true) do
+            -- TBC has the functions without the achievements: no count.
+            for i = 1, GetCategoryNumAchievements(category, true) or 0 do
                 local _, name, _, _, _, _, _, _, _, icon = GetAchievementInfo(category, i)
                 Add(icon, name)
             end
         end
     end
-    finished = true
     return true
 end
 
