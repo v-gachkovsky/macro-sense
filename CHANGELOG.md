@@ -10,6 +10,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Share** under the macro list: a code of the macro, of the tab or of all your macros, to copy and send,
   and **Import a code** to make macros from one. The import window says what the code holds and where each
   macro goes; nothing is replaced (a taken name gets a number), and a code cut short or changed is refused.
+- **Trash** under the macro list: the macros deleted here, in the game's macro window or by another addon
+  (the last 30 of each tab) come back with a click, into their tab, under a free name if theirs is taken.
+
+### Changed
+- A macro renamed in the game's macro window keeps its earlier versions under the new name, as one renamed
+  here does.
 
 ## [0.3.0] - 2026-10-25
 

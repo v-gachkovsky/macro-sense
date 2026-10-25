@@ -140,6 +140,8 @@ macro does exactly the same as before, and Ctrl+Z brings the old text back.
 Broke a macro that used to work? The game keeps only the last text; MacroSense keeps the ones before it.
 Every change you save, here, in the game's macro window or with another addon, keeps the text it replaced
 (the last 10 per macro). Open **History**, hover a version to read it, click it to bring it back, and Save.
+Deleted a macro by mistake? **Trash** under the list brings it back, whether you deleted it here, in the
+game's macro window or with another addon.
 
 ## Make it yours
 
