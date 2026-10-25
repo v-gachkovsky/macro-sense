@@ -2,6 +2,7 @@
 -- The EditBox holds "colored" text (raw text + |cffrrggbb ... |r codes); everything else works on raw text.
 local _, ns = ...
 ns = ns or {}
+local L = ns.L
 
 local Highlight = {}
 ns.Highlight = Highlight
@@ -75,7 +76,7 @@ end
 local function unitSpan(unit, from, add)
     local to = from + #unit - 1
     if ns.Conditions and not ns.Conditions.IsUnit(unit) then
-        add(from, to, "unit", string.format('unknown unit "%s" (fine if it is a player\'s name)', unit), "warning")
+        add(from, to, "unit", string.format(L["unknown unit \"%s\" (fine if it is a player's name)"], unit), "warning")
     else
         add(from, to, "unit")
     end
@@ -89,14 +90,14 @@ local function conditionSpans(s, base, add)
     local at = base + lead
     local unit = body:match("^@(.*)$")
     if unit then
-        if unit == "" then return add(at + 1, at + 1, "error", "@ needs a unit") end
+        if unit == "" then return add(at + 1, at + 1, "error", L["@ needs a unit"]) end
         add(at + 1, at + 1, "operator")
         unitSpan(unit, at + 2, add)
         return
     end
     unit = body:match("^target=(.*)$")
     if unit then
-        if unit == "" then return add(at + 1, at + 7, "error", "target= needs a unit") end
+        if unit == "" then return add(at + 1, at + 7, "error", L["target= needs a unit"]) end
         add(at + 1, at + 7, "operator")
         unitSpan(unit, at + 8, add)
         return
@@ -106,13 +107,13 @@ local function conditionSpans(s, base, add)
     if isCondition(name) then
         add(at + 1, at + #name, "condition")
     else
-        add(at + 1, at + #name, "error", string.format('unknown condition "%s"', name))
+        add(at + 1, at + #name, "error", string.format(L["unknown condition \"%s\""], name))
     end
     local C = ns.Conditions
     if values == "" then
-        add(at + #name + 1, at + #name + 1, "error", name .. ": needs a value")
+        add(at + #name + 1, at + #name + 1, "error", string.format(L["%s: needs a value"], name))
     elseif values and isCondition(name) and C and not C.TakesValue(name) then
-        add(at + #name + 1, at + #body, "error", name:lower() .. " takes no value")
+        add(at + #name + 1, at + #body, "error", string.format(L["%s takes no value"], name:lower()))
     elseif values then
         local pos = at + #name + 1
         add(pos, pos, "operator")
@@ -148,7 +149,7 @@ end
 local function slotSpan(slot, from, add, min)
     local n = tonumber(slot)
     if n >= min and n <= 19 then return add(from, from + #slot - 1, "value") end
-    add(from, from + #slot - 1, "error", string.format("no equipment slot %s (1-19)", slot))
+    add(from, from + #slot - 1, "error", string.format(L["no equipment slot %s (1-19)"], slot))
 end
 
 -- An item by where it is or by number: "13" (equipment slot), "0 1" (bag 0, slot 1), "item:6948".
@@ -169,7 +170,7 @@ local function itemRefSpans(word, from, add)
             add(from, from + 4, "option")
             add(from + 5, from + #word - 1, "value")
         else
-            add(from, from + #word - 1, "error", "item: needs an item number, like item:6948")
+            add(from, from + #word - 1, "error", L["item: needs an item number, like item:6948"])
         end
         return true
     end
@@ -180,8 +181,8 @@ end
 local function equipslotSpans(word, from, add)
     local slot, gap, item = word:match("^(%d+)(%s+)(.+)$")
     if not slot then
-        local message = word:find("^%d+$") and "the item is missing after the slot"
-            or "/equipslot needs the slot first, like /equipslot 13 Name"
+        local message = word:find("^%d+$") and L["the item is missing after the slot"]
+            or L["/equipslot needs the slot first, like /equipslot 13 Name"]
         return add(from, from + #word - 1, "error", message)
     end
     slotSpan(slot, from, add, 1)
@@ -202,8 +203,8 @@ local function clickSpans(word, from, add)
     -- Any word is passed on to the button, so only a near miss of a mouse button is marked.
     local guess = not mouse:find("^[Bb]utton%d+$") and ns.Spelling and ns.Spelling.Suggest(mouse, MOUSE_BUTTONS)
     if guess and guess ~= mouse then
-        add(at, at + #mouse - 1, "value", string.format('unknown mouse button "%s", did you mean "%s"?', mouse, guess),
-            "warning", { short = string.format('did you mean "%s"?', guess), fix = guess })
+        add(at, at + #mouse - 1, "value", string.format(L["unknown mouse button \"%s\", did you mean \"%s\"?"], mouse,
+            guess), "warning", { short = string.format(L["did you mean \"%s\"?"], guess), fix = guess })
     else
         add(at, at + #mouse - 1, "value")
     end
@@ -212,18 +213,19 @@ local function clickSpans(word, from, add)
     local first, lower = down:sub(1, 1):lower(), down:lower()
     local said = first:find("[1-9yt0nf]") or lower == "on" or lower == "off" or lower == "enabled" or lower == "disabled"
     if said then return add(at, at + #down - 1, "value") end
-    add(at, at + #down - 1, "value", string.format('the game reads "%s" as no: true clicks on key press', down), "warning")
+    add(at, at + #down - 1, "value", string.format(L["the game reads \"%s\" as no: true clicks on key press"], down),
+        "warning")
 end
 
 -- "reset=10/target" in front of a /castsequence list: seconds or what starts the sequence over, "/" between.
 local function resetSpans(reset, from, add, sequence)
     if not sequence then
-        return add(from, from + #reset - 1, "error", "reset= works only in /castsequence")
+        return add(from, from + #reset - 1, "error", L["reset= works only in /castsequence"])
     end
     add(from, from + 4, "option")
     add(from + 5, from + 5, "operator")
     local values = reset:sub(7)
-    if values == "" then return add(from + 5, from + 5, "error", "reset= needs a value") end
+    if values == "" then return add(from + 5, from + 5, "error", L["reset= needs a value"]) end
     local at, start = from + 5, 1 -- values[k] is at `at + k`
     while true do
         local slash = values:find("/", start, true)
@@ -249,7 +251,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
             if close then
                 add(base + i, base + i, "bracket")
             else
-                add(base + i, base + i, "error", "[ is not closed with ]")
+                add(base + i, base + i, "error", L["[ is not closed with ]"])
                 close = #s + 1
                 -- One error is enough: the rest of the line still gets colors, not more errors.
                 addCond = function(from, to, kind, message)
@@ -265,7 +267,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
                 local pos = base + i + from - 1
                 if split and not part:find("%S") then
                     local at = base + i + (comma or from - 1) -- the comma next to the gap
-                    addCond(at, at, "error", "empty condition")
+                    addCond(at, at, "error", L["empty condition"])
                 else
                     conditionSpans(part, pos, addCond)
                 end
@@ -276,7 +278,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
             if close <= #s then add(base + close, base + close, "bracket") end
             i = close + 1
         elseif c == "]" then
-            add(base + i, base + i, "error", "] without [")
+            add(base + i, base + i, "error", L["] without ["])
             i = i + 1
         elseif c == ";" or (sequence and c == ",") then
             add(base + i, base + i, "operator")
@@ -336,7 +338,7 @@ local function lineSpans(line, base, add)
         if Highlight.checkCommand and name ~= "" then problem, short = Highlight.checkCommand(name) end
         add(cmdFrom, cmdTo, "command", problem, "warning", short and { short = short })
     else
-        add(cmdFrom, cmdTo, "error", string.format('unknown command "/%s"', cmd))
+        add(cmdFrom, cmdTo, "error", string.format(L["unknown command \"/%s\""], cmd))
     end
     local restBase = cmdTo - base
     local rest = line:sub(restBase + 1)

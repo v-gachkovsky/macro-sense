@@ -2,6 +2,7 @@
 -- the game's own condition check (SecureCmdOptionParse) comes in through `env`.
 local _, ns = ...
 ns = ns or {}
+local L = ns.L
 
 local Preview = {}
 ns.Preview = Preview
@@ -14,10 +15,10 @@ local function displayName(action)
     local s = trim(action):gsub("^!", "")
     if s:find("^%d+$") then
         local slot = ns.data and ns.data.slots[tonumber(s)]
-        return slot and slot.hint or "slot " .. s
+        return slot and L[slot.hint] or string.format(L["slot %s"], s)
     end
     local bag, slot = s:match("^(%d+)%s+(%d+)$")
-    if bag then return string.format("bag %s, slot %s", bag, slot) end
+    if bag then return string.format(L["bag %s, slot %s"], bag, slot) end
     return trim((s:gsub("%b()$", "")))
 end
 
@@ -135,17 +136,17 @@ function Preview.Note(r, c)
     local function paint(color, s) return "|cff" .. color .. s .. "|r" end
     local unit = r.unit and paint(c.unit, " @" .. r.unit) or ""
     if r.kind == "cast" then
-        local s = (r.verb and paint(c.text, r.verb .. " ") or "") .. paint(c.action, r.name)
+        local s = (r.verb and paint(c.text, L[r.verb] .. " ") or "") .. paint(c.action, r.name)
         if r.step then s = s .. paint(c.dim, string.format(" (%d/%d)", r.step, r.steps)) end
         return s .. unit
     elseif r.kind == "runs" then
-        return paint(c.text, "runs") .. (r.arg and " " .. paint(c.action, r.arg) or "") .. unit
+        return paint(c.text, L["runs"]) .. (r.arg and " " .. paint(c.action, r.arg) or "") .. unit
     elseif r.kind == "icon" then
-        return paint(c.dim, "icon: ") .. (r.name and paint(c.action, r.name) or paint(c.dim, "?"))
+        return paint(c.dim, L["icon: "]) .. (r.name and paint(c.action, r.name) or paint(c.dim, "?"))
     elseif r.kind == "stop" then
-        return paint(c.warning, "stops here")
+        return paint(c.warning, L["stops here"])
     end
-    return paint(c.dim, QUIET[r.kind] or "")
+    return paint(c.dim, QUIET[r.kind] and L[QUIET[r.kind]] or "")
 end
 
 return Preview

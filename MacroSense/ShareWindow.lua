@@ -31,7 +31,7 @@ local function Preview()
     importBtn:SetEnabled(false)
     if not text:find("%S") then return info:SetText("") end
     local macros, problem = ns.Share.Decode(text)
-    if not macros then return info:SetText("|cff" .. ns.scheme.invalid .. problem .. "|r") end -- translated
+    if not macros then return info:SetText("|cff" .. ns.scheme.invalid .. problem .. "|r") end
     local lines, fit = {}, 0
     for i, p in ipairs(ns.Window.ImportPlan(macros)) do
         local tab = L[SCOPE_NAMES[p.macro.scope]]
@@ -145,7 +145,8 @@ end
 function ShareWindow.Export(macros)
     code = ns.Share.Encode(macros)
     Open("export")
-    titleText:SetText(#macros == 1 and L["Export a macro"] or ns.Plural(#macros, "Export %d macros", "Export %d macros"))
+    titleText:SetText(#macros == 1 and L["Export a macro"]
+        or ns.Plural(#macros, "Export %d macros", "Export %d macros"))
     hint:SetText(string.format(L["Press %s to copy the code, then share it: anyone with MacroSense can import it."],
         Keys("C")))
     box:SetText(code)

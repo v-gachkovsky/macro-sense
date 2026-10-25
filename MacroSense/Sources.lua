@@ -1,5 +1,6 @@
 -- Game data for completion: registered slash commands and the spellbook. Cached until the game says it changed.
 local _, ns = ...
+local L = ns.L
 
 local commandCache, spellCache, itemCache
 
@@ -137,8 +138,8 @@ end
 
 function ns.Highlight.checkCommand(name)
     if ns.HasExpansion(ns.CommandSince(name)) then return nil end
-    return string.format('"/%s" does nothing in this version of the game (it came with a later one)', name),
-        "not in this game version"
+    return string.format(L["\"/%s\" does nothing in this version of the game (it came with a later one)"], name),
+        L["not in this game version"]
 end
 
 -- Highlighting marks commands the game does not know.
@@ -261,7 +262,7 @@ function ns.sources.slots()
     local out = {}
     for _, s in ipairs(ns.data.slots) do
         local item = linkName(GetInventoryItemLink("player", tonumber(s.name)))
-        out[#out + 1] = { name = s.name, hint = item and (s.hint .. ": " .. item) or s.hint }
+        out[#out + 1] = { name = s.name, hint = item and (L[s.hint] .. ": " .. item) or s.hint }
     end
     return out
 end
@@ -439,10 +440,10 @@ function ns.Highlight.checkClick(name)
     if name:find("[%.:]") then return nil end -- not a plain global name: left to the game
     local frame = _G[name]
     if frame == nil then
-        return string.format('no button "%s" now (an addon may make it later)', name), "no such button now"
+        return string.format(L["no button \"%s\" now (an addon may make it later)"], name), L["no such button now"]
     end
     if not clickable(frame) then
-        return string.format('"%s" is not a button /click can click', name), "not a button /click can click"
+        return string.format(L["\"%s\" is not a button /click can click"], name), L["not a button /click can click"]
     end
 end
 
@@ -533,8 +534,8 @@ function ns.Highlight.checkAction(name, command)
     local guess = guesses[key]
     if not guess then return nil end
     return {
-        message = string.format('unknown name "%s", did you mean "%s"?', name, guess),
-        short = string.format('did you mean "%s"?', guess),
+        message = string.format(L["unknown name \"%s\", did you mean \"%s\"?"], name, guess),
+        short = string.format(L["did you mean \"%s\"?"], guess),
         fix = guess,
     }
 end

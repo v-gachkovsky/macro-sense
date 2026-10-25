@@ -2,6 +2,7 @@
 -- The analysis is pure Lua; finding the macro's keys needs the game (bindings, action bars).
 local _, ns = ...
 ns = ns or {}
+local L = ns.L
 
 local Shortcuts = {}
 ns.Shortcuts = Shortcuts
@@ -108,11 +109,11 @@ end
 function Shortcuts.Message(conflicts)
     if #conflicts == 0 then return nil end
     if #conflicts == 1 then
-        return string.format("%s is a macOS shortcut (%s)", conflicts[1].combo, conflicts[1].what)
+        return string.format(L["%s is a macOS shortcut (%s)"], conflicts[1].combo, L[conflicts[1].what])
     end
     local combos = {}
     for i, c in ipairs(conflicts) do combos[i] = c.combo end
-    return table.concat(combos, ", ") .. " are macOS shortcuts"
+    return string.format(L["%s are macOS shortcuts"], table.concat(combos, ", "))
 end
 
 ------------------------------------------------------------------------

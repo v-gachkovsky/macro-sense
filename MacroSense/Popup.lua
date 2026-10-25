@@ -57,7 +57,8 @@ local function Layout(row, i, scrolls)
     row:SetPoint("TOPRIGHT", -PAD - (scrolls and BAR_ROOM or 0), -PAD - (i - 1) * h)
     row.icon:SetSize(h - 4, h - 4)
     row.text:SetFont(font, fontSize, "")
-    row.hint:SetFont(font, math.max(fontSize - 2, 8), "")
+    -- Hints are words, not code: in Ukrainian in the interface's font, which has its letters.
+    row.hint:SetFont(ns.language == "uk" and ns.UIFont() or font, math.max(fontSize - 2, 8), "")
 end
 
 -- Scroll bar on the right, only when the list is longer than the rows.
@@ -79,7 +80,7 @@ function Popup:Refresh()
             row.text:SetPoint("LEFT", item.icon and (self.rowHeight + ICON_GAP) or 6, 0)
             row.text:SetPoint("RIGHT", row.hint, "LEFT", -8, 0)
             row.text:SetText(item.name)
-            row.hint:SetText(item.hint or "")
+            row.hint:SetText(item.hint and ns.L[item.hint] or "")
             if colors then
                 row.bg:SetColorTexture(ns.RGB(colors.selection))
                 row.bg:SetShown(index == self.selected)

@@ -100,9 +100,9 @@ local function Refresh()
             b.selected:SetShown(entry.icon == current)
         end
     end
-    local text = #shown == 0 and "No icons" or string.format("%d icons", #shown)
+    local text = #shown == 0 and ns.L["No icons"] or ns.Plural(#shown, "%d icon", "%d icons")
     local progress = ns.IconNames.Progress()
-    if progress < 1 then text = string.format("%s (looking up names: %d%%)", text, math.floor(progress * 100)) end
+    if progress < 1 then text = string.format(ns.L["%s (looking up names: %d%%)"], text, math.floor(progress * 100)) end
     info:SetText(text)
 end
 
@@ -153,7 +153,7 @@ local function Create()
     search:SetScript("OnTextChanged", function() Filter() end)
     local hint = ns.Text(frame, 11, "dim")
     hint:SetPoint("LEFT", search, "RIGHT", 8, 0)
-    hint:SetText("Search by name")
+    hint:SetText(ns.L["Search by name"])
 
     local close = ns.Button(frame, "x", 24, function() frame:Hide() end)
     close:SetPoint("TOPRIGHT", -PAD, -PAD)

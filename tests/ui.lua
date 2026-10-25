@@ -78,7 +78,7 @@ function Frame:GetFrameLevel() return 1 end
 function Frame:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
 function Frame:IsMouseOver() return false end
 -- Fonts: a character is 0.6 of the size wide, a row is size + 1 high (size 13: 8 x 14 px).
-function Frame:SetFont(_, size) self.fontSize = size; return true end
+function Frame:SetFont(path, size) self.fontPath, self.fontSize = path, size; return true end
 function Frame:GetFont() return "font", self.fontSize or 13, "" end
 local function charWidth(fs) return math.floor((fs.fontSize or 13) * 0.6 + 0.5) end
 local function rowHeight(fs) return (fs.fontSize or 13) + 1 end
@@ -161,6 +161,9 @@ local clock = os.time({ year = 2026, month = 10, day = 23, hour = 14, min = 32 }
 function time() return clock end
 function date(fmt, t) return os.date(fmt, t or clock) end
 function IsMacClient() return true end
+function GetLocale() return "enUS" end
+local reloads = 0
+function ReloadUI() reloads = reloads + 1 end
 C_AddOns = { IsAddOnLoaded = function() return false end, GetAddOnMetadata = function() return "@project-version@" end }
 function GetBuildInfo() return "12.1.5", "60000", "Oct 1 2026", 120105 end
 C_Timer = { After = function(delay, fn) timers[#timers + 1] = { at = now + delay, fn = fn } end }
@@ -3312,6 +3315,183 @@ do
     check("petmoveto: fine from Cataclysm on", warned("/petmoveto [@cursor]") == nil)
     LE_EXPANSION_LEVEL_CURRENT = nil
     check("petmoveto: fine where the version is not known", warned("/petmoveto") == nil)
+end
+
+-- Every text MacroSense shows has a Ukrainian translation, and every translation is of a text it shows: the
+-- texts in the code (L["..."], ns.Print("..."), ns.Plural(n, "...", "..."), the dialogs) and those of its lists.
+do
+    local uk = ns.locales.uk
+    local shown, data = {}, {}
+    -- A "..." at src[i], whole: its value and where it ends.
+    local function literal(src, i)
+        local j = i + 1
+        while src:sub(j, j) ~= '"' do j = j + (src:sub(j, j) == "\\" and 2 or 1) end
+        return assert(load("return " .. src:sub(i, j)))(), j + 1
+    end
+    -- "..." .. "..." from i on: its value, or nil when it is not literals only.
+    local function literals(src, i)
+        i = src:find("%S", i)
+        if src:sub(i, i) ~= '"' then return nil end
+        local value, j = literal(src, i)
+        while true do
+            local k = src:find("%S", j)
+            if src:sub(k, k + 1) ~= ".." then return value, j end
+            k = src:find("%S", k + 2)
+            if src:sub(k, k) ~= '"' then return nil end
+            local more
+            more, j = literal(src, k)
+            value = value .. more
+        end
+    end
+    -- Past the first argument of a call: the comma after it.
+    local function nextArg(src, i)
+        local depth = 0
+        while true do
+            local c = src:sub(i, i)
+            if c == '"' then
+                i = select(2, literal(src, i))
+            else
+                if c == "(" then depth = depth + 1 elseif c == ")" then depth = depth - 1 end
+                if c == "," and depth == 0 then return i + 1 end
+                i = i + 1
+            end
+        end
+    end
+    local plural = {}
+    for line in io.lines("MacroSense/MacroSense.toc") do
+        if line:match("%.lua$") and line ~= "Locale.lua" and line ~= "Ukrainian.lua" then
+            local lines = {}
+            for l in io.lines("MacroSense/" .. line) do
+                if not l:find("^%s*%-%-") then lines[#lines + 1] = l end
+            end
+            local src = table.concat(lines, "\n")
+            for i in src:gmatch("()L%[") do
+                if not src:sub(i - 1, i - 1):find("[%w_]") then
+                    local text = literals(src, i + 2)
+                    if text then shown[text] = true end
+                end
+            end
+            for i in src:gmatch("()ns%.Print%(") do
+                local text = literals(src, i + 9)
+                if text then shown[text] = true end
+            end
+            for i in src:gmatch("()Plural%(") do
+                local one, j = literals(src, nextArg(src, i + 7))
+                local other = one and literals(src, src:find(",", j, true) + 1)
+                if other then shown[other], plural[other] = true, true end
+            end
+        end
+    end
+    for which, d in pairs(StaticPopupDialogs) do
+        if which:find("^MACROSENSE_") then
+            for _, text in pairs(d.english or { d.text, d.button1, d.button2 }) do shown[text] = true end
+        end
+    end
+    local function add(text) if text and text ~= "" then data[text] = true end end
+    for _, list in pairs(ns.data) do
+        for _, item in ipairs(list) do add(item.hint) end
+    end
+    for _, s in ipairs(ns.schemes) do add(s.name) end
+    local W = ns.Wizard
+    for _, list in ipairs({ W.commands, W.PetActions(99), W.channels, W.units }) do
+        for _, item in ipairs(list) do add(item.name) end
+    end
+    for _, command in ipairs(W.commands) do
+        for _, place in ipairs({ "first", "then", "key" }) do
+            for _, item in ipairs(W.Units(command.key, place)) do add(item.name) end
+        end
+    end
+    for _, what in pairs(ns.Shortcuts.MAC) do add(what) end
+    add(ns.ActionBars.TIP)
+    -- Kept in their files' locals: month names, tab names, the preview's quiet notes and verbs, hints made in
+    -- Sources and Completion, what a condition's value should be, and the wizard's names for a macro.
+    for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        "General", "Character", "nothing", "no match", "not reached", "chat", "equip", "cancel", "no form", "primary",
+        "secondary", "your pet", "pet family", "equipped", "item", "extra action", "leave the vehicle",
+        "popup: first button", "popup: second button", "highest", "shift, ctrl, alt or a key action like SELFCAST",
+        "1-5 or a button name", "party or raid", "a bar page 1-6", "a form number, 0 = no form",
+        "a specialization number", "Target", "Focus", "Assist", "Pet" }) do add(text) end
+    local SAME = { Mac = true, Retail = true, Monokai = true, ["-"] = true, ["1-5"] = true } -- the same in Ukrainian
+    local missing, unused, notForms = {}, {}, {}
+    for text in pairs(shown) do
+        if not uk[text] then missing[#missing + 1] = text end
+    end
+    for text in pairs(data) do
+        if not uk[text] and not SAME[text] and not text:find("^/") then missing[#missing + 1] = text end
+    end
+    for text, translation in pairs(uk) do
+        if not shown[text] and not data[text] then unused[#unused + 1] = text end
+        if (type(translation) == "table") ~= (plural[text] == true) then notForms[#notForms + 1] = text end
+    end
+    check("ukrainian: every text is translated", #missing == 0, table.concat(missing, " | "))
+    check("ukrainian: every translation is of a text shown", #unused == 0, table.concat(unused, " | "))
+    check("ukrainian: counts have their forms, and only they", #notForms == 0, table.concat(notForms, " | "))
+end
+
+-- In Ukrainian: a dialog, a chat line, a menu; the interface's font has Cyrillic letters on a client whose own
+-- font has none. Choosing a language asks, in that language, to reload the interface.
+do
+    ns.SetLanguage("uk")
+    check("ukrainian: a font with its letters", ns.Text(UIParent, 12).fontPath == "Fonts\\FRIZQT___CYR.TTF")
+    GetLocale = function() return "ruRU" end
+    check("ukrainian: a Russian client's own font", ns.Text(UIParent, 12).fontPath == "Fonts\\FRIZQT__.TTF")
+    GetLocale = function() return "enUS" end
+    local done
+    ns.Ask("MACROSENSE_DISCARD", nil, nil, function() done = true end)
+    local d = StaticPopupDialogs.MACROSENSE_DISCARD
+    check("ukrainian: a dialog", done and d.text == "Відкинути незбережені зміни цього макросу?" and d.button1 == "Так"
+        and d.button2 == "Ні", d.text)
+    ns.Print("macros cannot be changed in combat")
+    check("ukrainian: a chat line", printed[#printed]:find("у бою макроси змінювати не можна", 1, true) ~= nil,
+        printed[#printed])
+    local button
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Backups" then button = o end
+    end
+    ns.char.backups = { { time = clock, macros = { { scope = "general", name = "A", icon = 1, body = "" },
+        { scope = "general", name = "B", icon = 1, body = "" } } } }
+    Fire(button, "OnClick")
+    local rows = {}
+    for _, r in ipairs(MacroSenseMenu.rows) do
+        if r:IsShown() then rows[#rows + 1] = r.text.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") end
+    end
+    MacroSenseMenu:Hide()
+    check("ukrainian: a menu, with a count", rows[1] == "Зробити копію зараз"
+        and rows[2]:find("^Сьогодні, %d%d:%d%d  2 макроси$") ~= nil, table.concat(rows, " / "))
+    ns.char.backups = nil
+    ns.Popup:Style(ns.scheme, "Fonts\\Code.ttf", 13)
+    ns.Popup:Open(edit, { { name = "cast", hint = "cast a spell" } }, 0, 0, 14)
+    local row = ns.Popup.rows[1]
+    check("ukrainian: a suggestion's hint, in the interface's font", row.hint.text == "застосувати заклинання"
+        and row.hint.fontPath == "Fonts\\FRIZQT___CYR.TTF" and row.text.fontPath == "Fonts\\Code.ttf", row.hint.text)
+    ns.Popup:Hide()
+    ns.SetLanguage("en")
+    ns.Window.ApplyLook()
+    check("ukrainian: English again", ns.Text(UIParent, 12).fontPath == "Fonts\\FRIZQT__.TTF")
+    MacroSenseDB.language = "uk"
+    Send("ADDON_LOADED", "MacroSense")
+    check("ukrainian: chosen when the addon loads", ns.language == "uk")
+    MacroSenseDB.language = "en"
+    Send("ADDON_LOADED", "MacroSense")
+
+    local language
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "English" then language = o end
+    end
+    local function choose(name)
+        Fire(language, "OnClick")
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == name then return Fire(r, "OnClick") end
+        end
+    end
+    choose("Ukrainian")
+    local r = StaticPopupDialogs.MACROSENSE_RELOAD
+    check("language: kept, and the interface reloads", ns.db.language == "uk" and reloads == 1 and ns.language == "en",
+        reloads)
+    check("language: asked in the language chosen", r.text == "Перезавантажити інтерфейс, щоб змінити мову?"
+        and r.button1 == "Перезавантажити", r.text)
+    choose("English")
+    check("language: the one shown, no reload", ns.db.language == "en" and reloads == 1, reloads)
 end
 
 -- Theme switch recolors without touching the text.

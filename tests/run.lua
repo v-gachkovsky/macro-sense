@@ -1083,6 +1083,55 @@ do
     ns.sources.spells, ns.sources.items = spells, items
 end
 
+-- Ukrainian: texts in the chosen language, counts in their three forms, and every translation keeps the %s and
+-- %d of its English text, in the same order.
+do
+    local L = ns.L
+    ns.SetLanguage("uk")
+    check("locale: a text in Ukrainian", L["Save"] == "Зберегти" and ns.language == "uk")
+    check("locale: one not translated stays English", L["no such text"] == "no such text")
+    local forms = {}
+    for _, n in ipairs({ 1, 2, 4, 5, 11, 12, 14, 21, 22, 25, 111, 0 }) do
+        forms[#forms + 1] = ns.Plural(n, "%d macro", "%d macros")
+    end
+    check("locale: the three forms of a count", table.concat(forms, ",") == "1 макрос,2 макроси,4 макроси,5 макросів,"
+        .. "11 макросів,12 макросів,14 макросів,21 макрос,22 макроси,25 макросів,111 макросів,0 макросів",
+        table.concat(forms, ","))
+    check("locale: in another language", ns.Translate("en", "Save") == "Save"
+        and ns.Translate("uk", "Save") == "Зберегти")
+    check("locale: a code's problem", select(2, ns.Share.Decode("hello")) == "Це не код MacroSense.")
+    check("locale: a value's problem, with what is expected", ns.Conditions.CheckValue("bar", "9")
+        == "неправильне значення bar «9» (очікується сторінка панелі 1-6)", ns.Conditions.CheckValue("bar", "9"))
+    check("locale: the macOS warning", ns.Shortcuts.Message({ { combo = "Cmd+Q", what = "quits the game" } })
+        == "Cmd+Q — сполучення клавіш macOS (закриває гру)")
+    ns.SetLanguage("xx")
+    check("locale: another language is English", ns.language == "en" and L["Save"] == "Save")
+    check("locale: English counts", ns.Plural(1, "%d macro", "%d macros") == "1 macro"
+        and ns.Plural(2, "%d macro", "%d macros") == "2 macros")
+    ns.SetLanguage("en")
+
+    local function percents(s)
+        local out = {}
+        for m in s:gmatch("%%[%-%+ #0]*%d*%.?%d*[%a%%]") do out[#out + 1] = m end
+        return table.concat(out, " ")
+    end
+    local function braces(s) -- {month} {day}: their order may differ
+        local out = {}
+        for m in s:gmatch("{%a+}") do out[#out + 1] = m end
+        table.sort(out)
+        return table.concat(out, " ")
+    end
+    local bad = {}
+    for english, translation in pairs(ns.locales.uk) do
+        local list = type(translation) == "table" and translation or { translation }
+        if type(translation) == "table" and #translation ~= 3 then bad[#bad + 1] = english end
+        for _, t in ipairs(list) do
+            if percents(t) ~= percents(english) or braces(t) ~= braces(english) then bad[#bad + 1] = english end
+        end
+    end
+    check("locale: every translation keeps its %s and %d", #bad == 0, table.concat(bad, " | "))
+end
+
 -- Backups: all the macros, to go back to.
 do
     local B = ns.Backups

@@ -121,7 +121,8 @@ local function HistoryItems()
     local items, dim = {}, ns.scheme.dim
     for _, v in ipairs(Versions()) do
         items[#items + 1] = {
-            name = string.format("%s  |cff%s%s|r", When(v.time), dim, ns.Plural(Letters(v.body), "%d char", "%d chars")),
+            name = string.format("%s  |cff%s%s|r", When(v.time), dim,
+                ns.Plural(Letters(v.body), "%d char", "%d chars")),
             current = v.body == code:GetRaw(),
             onClick = function() Window.Restore(v.body) end,
             onEnter = function(row)
@@ -183,7 +184,7 @@ local function UpdateStatus()
     -- Short form here: the issue's own short text ("did you mean ...?") or the message without the
     -- quoted name and notes ("unknown unit"); the full list is in the tooltip.
     local function line(e, color, total)
-        local short = e.short or e.message:gsub('%s*%b""', ""):gsub("%s*%b()", "")
+        local short = e.short or e.message:gsub('%s*%b""', ""):gsub("%s*«.-»", ""):gsub("%s*%b()", "")
         local more = total > 1 and string.format(L[" (+%d more)"], total - 1) or ""
         return "|cff" .. color .. string.format(L["Line %d: %s"], e.line, short) .. more .. "|r"
     end
@@ -827,7 +828,8 @@ function Window.RestoreBackup(backup)
         ns.History.Scan()
         ns.Print("backup restored: %d changed back, %d made again", #plan.back, #plan.again)
         if #plan.full > 0 then
-            ns.Print(ns.Plural(#plan.full, "%d did not fit: no free slot in its tab", "%d did not fit: no free slot in their tab"))
+            ns.Print(ns.Plural(#plan.full, "%d did not fit: no free slot in its tab",
+                "%d did not fit: no free slot in their tab"))
         end
         local first, last = MacroRange(state.scope)
         Load(state.index and IndexIn(state.scope, state.name) or (last >= first and first or nil))

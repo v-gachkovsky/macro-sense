@@ -55,9 +55,9 @@ end
 local function Tooltip(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("MacroSense", 1, 1, 1)
-    GameTooltip:AddLine("Click: open or close the editor", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("Drag: move the button", 0.8, 0.8, 0.8)
-    GameTooltip:AddLine("/ms minimap hides it", 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(ns.L["Click: open or close the editor"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(ns.L["Drag: move the button"], 0.8, 0.8, 0.8)
+    GameTooltip:AddLine(ns.L["/ms minimap hides it"], 0.8, 0.8, 0.8)
     GameTooltip:Show()
 end
 

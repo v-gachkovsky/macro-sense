@@ -257,7 +257,9 @@ local function OpenMenu(owner, items, width, up, right)
     menu.owner = owner
     -- As wide as the longest row, in any language.
     local w = math.max(width, 180)
-    for i, item in ipairs(items) do w = math.max(w, menu.rows[i].text:GetStringWidth() + (item.onRemove and 32 or 16)) end
+    for i, item in ipairs(items) do
+        w = math.max(w, menu.rows[i].text:GetStringWidth() + (item.onRemove and 32 or 16))
+    end
     menu:SetWidth(w)
     menu:SetHeight(#items * 20 + 4)
     menu:ClearAllPoints()
