@@ -15,7 +15,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Backups** under the macro list: all your macros as they were, one made by itself on the first login of
   a day when they changed and one whenever you ask (the last 10, for each character). Restoring one gives
   its macros their text and icon back and makes the deleted ones again; macros made since stay, and a
-  backup of the macros now is made first.
+  backup of the macros now is made first. The x next to a backup deletes it.
 
 ### Changed
 - A macro renamed in the game's macro window keeps its earlier versions under the new name, as one renamed

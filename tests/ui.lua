@@ -2951,6 +2951,40 @@ do
     StaticPopup_Show = show
     check("backups: asked first, then unsaved changes", asked == 2 and body("character", "Bk B") == "/cast Heal", asked)
 
+    -- An x on each backup deletes it, after asking; none on Back up now, nor in the other menus.
+    local rows = Rows()
+    check("backups: an x on each backup", not rows[1].remove:IsShown() and rows[2].remove:IsShown()
+        and rows[#rows].remove:IsShown())
+    check("backups: the name stops before the x", rows[1].text.point[2] == -8 and rows[2].text.point[2] == -24)
+    tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(rows[2].remove, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("backups: the x says what it does", tip[1] == "Delete this backup" and rows[2].bg:IsShown()
+        and rows[2].remove.text.textColor == ns.scheme.invalid, tip[1])
+    Fire(rows[2].remove, "OnLeave")
+    check("backups: the x as it was", not rows[2].bg:IsShown() and rows[2].remove.text.textColor == ns.scheme.dim)
+    local backups, asked = ns.char.backups, nil
+    local newest, before = backups[#backups], #backups
+    show = StaticPopup_Show
+    StaticPopup_Show = function(which, ...)
+        asked = which
+        return show(which, ...)
+    end
+    Fire(rows[2].remove, "OnClick")
+    StaticPopup_Show = show
+    check("backups: the x deletes that one, after asking", asked == "MACROSENSE_DELETE_BACKUP"
+        and #backups == before - 1 and backups[#backups] ~= newest and not MacroSenseMenu:IsShown(), asked)
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Trash" then Fire(o, "OnClick") end
+    end
+    local xs = 0
+    for _, r in ipairs(MacroSenseMenu.rows) do
+        if r:IsShown() and r.remove:IsShown() then xs = xs + 1 end
+    end
+    MacroSenseMenu:Hide()
+    check("backups: no x in the other menus", xs == 0, xs)
+
     for _, name in ipairs({ "Bk A", "Bk A", "Bk B", "Bk C", "Bk C", "Bk New" }) do
         local index = GetMacroIndexByName(name)
         if index > 0 then DeleteMacro(index) end

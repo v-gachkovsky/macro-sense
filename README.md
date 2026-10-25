@@ -227,7 +227,7 @@ in the game's window is not taken for deleted.
 they changed, and **Back up now** makes one whenever you like (the last 10 for each character, each with
 the General macros and the character's). Pick one to restore it: its macros get their text and icon back,
 the deleted ones are made again, and the macros made since stay as they are. A backup of your macros now is
-made first, so a restore can be undone too.
+made first, so a restore can be undone too. The **x** next to a backup deletes it.
 
 ## Icons and action bars
 

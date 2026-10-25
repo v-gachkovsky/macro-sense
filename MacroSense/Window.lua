@@ -768,6 +768,13 @@ StaticPopupDialogs.MACROSENSE_RESTORE_BACKUP = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
+StaticPopupDialogs.MACROSENSE_DELETE_BACKUP = {
+    text = "Delete the backup of %s? It will be gone for good.",
+    button1 = DELETE or "Delete", button2 = CANCEL,
+    OnAccept = function(_, backup) ns.Backups.Remove(BackupList(), backup) end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
 local function BackupItems()
     local dim, list = ns.scheme.dim, BackupList()
     local function tip(row, title, text)
@@ -795,6 +802,8 @@ local function BackupItems()
         items[#items + 1] = {
             name = string.format("%s  |cff%s%d macros|r", When(b.time), dim, #b.macros),
             onClick = function() StaticPopup_Show("MACROSENSE_RESTORE_BACKUP", When(b.time), nil, b) end,
+            onRemove = function() StaticPopup_Show("MACROSENSE_DELETE_BACKUP", When(b.time), nil, b) end,
+            removeTip = "Delete this backup",
             onEnter = function(row)
                 local count = { general = 0, character = 0 }
                 local names = {}
