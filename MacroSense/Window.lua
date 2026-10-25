@@ -715,6 +715,106 @@ local function TrashItems()
 end
 
 ------------------------------------------------------------------------
+-- Backups: all the macros, to go back to (Backups.lua); kept per character
+------------------------------------------------------------------------
+local NAMES_SHOWN = 15 -- macro names in a backup's tooltip
+
+local function BackupList()
+    ns.char.backups = ns.char.backups or {}
+    return ns.char.backups
+end
+
+-- The index of macro `name` in tab `scope`, or nil: each tab may have a macro of that name.
+local function IndexIn(scope, name)
+    local first, last = MacroRange(scope)
+    for index = first, last do
+        if GetMacroInfo(index) == name then return index end
+    end
+end
+
+-- On login: the day's backup, if the macros changed since the last one.
+function Window.DailyBackup()
+    local list = BackupList()
+    if ns.Backups.Due(list, time()) then ns.Backups.Add(list, Macros(), time()) end
+end
+
+-- The macros of `backup` as they were, after a backup of them now; macros made since stay. Unsaved changes are
+-- asked about first.
+function Window.RestoreBackup(backup)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    Guard(function()
+        ns.Backups.Add(BackupList(), Macros(), time())
+        local room = {}
+        for _, s in ipairs({ "general", "character" }) do
+            local first, last, max = MacroRange(s)
+            room[s] = max - (last - first + 1)
+        end
+        local plan = ns.Backups.Plan(backup.macros, Macros(), room)
+        for _, m in ipairs(plan.back) do EditMacro(IndexIn(m.scope, m.name), m.name, m.icon, m.body) end
+        for _, m in ipairs(plan.again) do CreateMacro(m.name, m.icon or NEW_ICON, m.body, m.scope == "character") end
+        ns.History.Scan()
+        ns.Print("backup restored: %d changed back, %d made again", #plan.back, #plan.again)
+        if #plan.full > 0 then ns.Print("%d did not fit: no free slot in their tab", #plan.full) end
+        local first, last = MacroRange(state.scope)
+        Load(state.index and IndexIn(state.scope, state.name) or (last >= first and first or nil))
+    end)
+end
+
+StaticPopupDialogs.MACROSENSE_RESTORE_BACKUP = {
+    text = "Restore the backup of %s?\n\nIts macros get their text and icon back and the missing ones are made "
+        .. "again; macros made since stay. A backup of your macros now is made first.",
+    button1 = YES, button2 = NO,
+    OnAccept = function(_, backup) Window.RestoreBackup(backup) end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+local function BackupItems()
+    local dim, list = ns.scheme.dim, BackupList()
+    local function tip(row, title, text)
+        GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(title, 1, 1, 1)
+        GameTooltip:AddLine(text, 0.8, 0.8, 0.8, true)
+    end
+    local items = { {
+        name = "Back up now",
+        onClick = function()
+            local macros = Macros()
+            if #macros == 0 then return ns.Print("no macros to back up") end
+            if ns.Backups.Add(list, macros, time()) then return ns.Print("backed up %d macros", #macros) end
+            ns.Print("your macros are as in the last backup")
+        end,
+        onEnter = function(row)
+            tip(row, "Back up now", string.format("A backup of all your macros, General and Character. One is also "
+                .. "made by itself on the first login of a day when they changed; the last %d are kept, for each "
+                .. "character.", ns.Backups.LIMIT))
+            GameTooltip:Show()
+        end,
+    } }
+    for i = #list, 1, -1 do
+        local b = list[i]
+        items[#items + 1] = {
+            name = string.format("%s  |cff%s%d macros|r", When(b.time), dim, #b.macros),
+            onClick = function() StaticPopup_Show("MACROSENSE_RESTORE_BACKUP", When(b.time), nil, b) end,
+            onEnter = function(row)
+                local count = { general = 0, character = 0 }
+                local names = {}
+                for n, m in ipairs(b.macros) do
+                    count[m.scope] = count[m.scope] + 1
+                    if n <= NAMES_SHOWN then names[n] = m.name end
+                end
+                tip(row, "Backup of " .. When(b.time), string.format("General %d, Character %d. Click to restore "
+                    .. "it.", count.general, count.character))
+                local more = #b.macros > NAMES_SHOWN and string.format(" and %d more", #b.macros - NAMES_SHOWN) or ""
+                GameTooltip:AddLine(table.concat(names, ", ") .. more, 0.6, 0.6, 0.6, true)
+                GameTooltip:Show()
+            end,
+        }
+    end
+    if #list == 0 then items[2] = { name = "No backups yet", disabled = true, onClick = function() end } end
+    return items
+end
+
+------------------------------------------------------------------------
 -- Wizard: a new macro from a form, in a window of its own
 ------------------------------------------------------------------------
 -- A name no macro has, cut to fit (see FreeName).
@@ -911,6 +1011,16 @@ local function Build()
         GameTooltip:Show()
     end)
     trashBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    local backupsBtn = ns.MenuButton(side, "Backups", 64, BackupItems, true, true)
+    backupsBtn:SetPoint("BOTTOMRIGHT", -8, 8)
+    backupsBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Backups", 1, 1, 1)
+        GameTooltip:AddLine("All your macros as they were: one is made each day you log in and they changed, and "
+            .. "whenever you ask. Pick one to restore it.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    backupsBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     local newBtn = ns.Button(side, "New", 64, Window.New)
     newBtn:SetPoint("BOTTOMLEFT", 8, 36)
     deleteBtn = ns.Button(side, "Delete", 64, function()
