@@ -2962,6 +2962,30 @@ do
     NextFrame()
 end
 
+-- In combat the game doesn't let macros change: Save and Delete say so and leave the macro as it is.
+do
+    CreateMacro("Fight", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Open(GetMacroIndexByName("Fight"))
+    NextFrame()
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    InCombatLockdown = function() return true end
+    ns.Window.Save()
+    local saved = select(3, GetMacroInfo(GetMacroIndexByName("Fight")))
+    check("combat: no save", saved == "/cast Fear" and printed[#printed]:find("in combat") ~= nil, saved)
+    printed[#printed] = nil
+    ns.Window.Delete(GetMacroIndexByName("Fight"))
+    check("combat: no delete", GetMacroIndexByName("Fight") > 0 and printed[#printed]:find("in combat") ~= nil)
+    InCombatLockdown = function() return false end
+    ns.Window.Revert()
+    DeleteMacro(GetMacroIndexByName("Fight"))
+    Send("UPDATE_MACROS")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- A command the client has but its game does nothing with: /petmoveto before Cataclysm is a warning.
 do
     local function warned(raw)
