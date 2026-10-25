@@ -94,6 +94,7 @@ function Frame:SetText(t)
     end
 end
 function Frame:GetText() return self.text end
+function Frame:SetTexture(t) self.texture = t end
 function Frame:GetValue() return self.value or 0 end
 function Frame:GetVerticalScrollRange() return self.range or 0 end
 function Frame:GetVerticalScroll() return self.vscroll or 0 end
@@ -354,10 +355,12 @@ local function indexOf(m)
     for i, x in ipairs(list) do if x == m then return m.perChar and i + SLOTS.MAX_ACCOUNT_MACROS or i end end
 end
 function GetNumMacros() return #sorted(false), #sorted(true) end
+-- The icon a macro shows now (m.shown: the question mark shows the #showtooltip spell's), the one chosen.
 function GetMacroInfo(index)
     local m = byIndex(index)
-    if m then return m.name, m.icon, m.body end
+    if m then return m.name, m.shown or m.icon, m.body end
 end
+C_Macro = { GetSelectedMacroIcon = function(index) return byIndex(index) and byIndex(index).icon end }
 function CreateMacro(name, icon, body, perChar)
     local m = { name = name, icon = icon, body = body, perChar = perChar and true or false }
     macros[#macros + 1] = m
@@ -2768,6 +2771,53 @@ do
     wipe(ns.History.Trash("general"))
     wipe(ns.History.Trash("character"))
     ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- The icon chosen for a macro is kept and saved, not the one it shows now: the question mark with
+-- #showtooltip shows the spell's, and saving that would fix the macro's icon to it.
+do
+    local m = { name = "Shown", icon = 134400, body = "#showtooltip\n/cast Fireball", perChar = false, shown = 4242 }
+    macros[#macros + 1] = m
+    Send("UPDATE_MACROS")
+    local index = GetMacroIndexByName("Shown")
+    ns.Window.Open(index)
+    NextFrame()
+    local header, row
+    for _, o in ipairs(created) do
+        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then header = o.texture end
+        if o.kind == "Button" and o.index == index and o:IsShown() then row = o end
+    end
+    check("icon: the chosen one in the header", header == 134400, header)
+    check("icon: the one it shows in the list", row and row.icon.texture == 4242, row and row.icon.texture)
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    ns.Window.Save()
+    Type("\n/sit")
+    ns.Window.Save() -- after a save too
+    check("icon: saved as chosen", m.icon == 134400 and m.body:find("/sit\n/sit", 1, true) ~= nil, m.icon)
+    local share
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Share" then share = o end
+    end
+    Fire(share, "OnClick")
+    for _, r in ipairs(MacroSenseMenu.rows) do
+        if r:IsShown() and r.text.text:find("^Export the General tab") then Fire(r, "OnClick") end
+    end
+    local exported
+    for _, x in ipairs(ns.Share.Decode(ns.ShareWindow.Control("box").text)) do
+        if x.name == "Shown" then exported = x.icon end
+    end
+    ns.ShareWindow.Close()
+    check("icon: exported as chosen", exported == 134400, exported)
+    ns.Window.Delete(GetMacroIndexByName("Shown"))
+    Send("UPDATE_MACROS")
+    local trash = ns.History.Trash("general")
+    check("icon: kept as chosen in the trash", trash[#trash].name == "Shown" and trash[#trash].icon == 134400,
+        trash[#trash].icon)
+    trash[#trash] = nil
     ns.Window.Select(1)
     NextFrame()
 end

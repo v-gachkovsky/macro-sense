@@ -17,6 +17,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A macro renamed in the game's macro window keeps its earlier versions under the new name, as one renamed
   here does.
 
+### Fixed
+- The icon chosen for a macro is kept, as the game's macro window keeps it, not the one the macro shows at the
+  moment: a question mark (so `#showtooltip` shows the spell's icon) stays a question mark when the macro is
+  saved, copied, shared or brought back from the trash.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added

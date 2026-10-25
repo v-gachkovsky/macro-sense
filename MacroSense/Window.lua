@@ -344,8 +344,8 @@ end
 ------------------------------------------------------------------------
 local function Load(index)
     if index then
-        local name, icon, body = GetMacroInfo(index)
-        state.index, state.name, state.icon, state.body = index, name, icon, body or ""
+        local name, _, body = GetMacroInfo(index)
+        state.index, state.name, state.icon, state.body = index, name, ns.MacroIcon(index) or NEW_ICON, body or ""
     else
         state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, ""
     end
@@ -440,7 +440,7 @@ function Window.Save()
     -- The text it replaced is kept now, not only when the game reports the change.
     ns.History.Scan()
     state.index, state.name, state.body = index, name, body
-    state.icon = select(2, GetMacroInfo(index)) or state.icon
+    state.icon = ns.MacroIcon(index) or state.icon
     state.savedIcon = state.icon
     iconTex:SetTexture(ns.IconTexture(state.icon))
     Window.RefreshList()
@@ -549,8 +549,8 @@ local function Macros(scope)
     for _, s in ipairs(scope and { scope } or { "general", "character" }) do
         local first, last = MacroRange(s)
         for index = first, last do
-            local name, icon, body = GetMacroInfo(index)
-            if name then out[#out + 1] = { scope = s, name = name, icon = icon, body = body or "" } end
+            local name, _, body = GetMacroInfo(index)
+            if name then out[#out + 1] = { scope = s, name = name, icon = ns.MacroIcon(index), body = body or "" } end
         end
     end
     return out
