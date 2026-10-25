@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.0] - 2026-10-25
 
 ### Added
 - **Tab** or **Enter** in a macro's name goes on to its text. A new macro whose icon you haven't picked then
