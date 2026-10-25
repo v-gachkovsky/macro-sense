@@ -233,7 +233,9 @@ C_Spell = {
 function debugprofilestop() return os.clock() * 1000 end
 -- Gear: a trinket in slot 13 (no use effect, can't be equipped from the bags).
 function GetInventoryItemLink(_, slot) if slot == 13 then return "|cffa335ee|Hitem:777::|h[Lucky Charm]|h|r" end end
-local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 1 } }
+-- Action slots: kind, ID, sub type and the text the button shows. Macro 1 shows Fireball: the game gives the
+-- slot Fireball's ID, not the macro's.
+local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 133, "spell" } }
 function GetBindingKey(command) return bindings[command] end
 local picked
 function PickupMacro(index) picked = index end
@@ -1103,6 +1105,9 @@ do
         end
         return ""
     end
+    -- It shows Fireball: the game gives the slot Fireball's ID, and the button the macro's name.
+    actions[1] = { "macro", 133, "spell", text = (GetMacroInfo(1)) }
+    Send("ACTIONBAR_SLOT_CHANGED", 1)
     ns.Window.Select(1)
     NextFrame()
     edit:SetFocus()
@@ -1110,6 +1115,12 @@ do
     Type("\n/cast [mod:cmd] Fireball")
     Key("ESCAPE", "OnEscapePressed")
     check("cmd+Q warning shown", warningText():find("Cmd%+Q is a macOS shortcut") ~= nil, warningText())
+    -- An equipment set named like the macro, on the W button: not the macro (Cmd+W closes the window).
+    actions[2], bindings.ACTIONBUTTON2 = { "equipmentset", "Bar", text = (GetMacroInfo(1)) }, "W"
+    Send("ACTIONBAR_SLOT_CHANGED", 2)
+    check("only the macro's own buttons", not warningText():find("Cmd%+W"), warningText())
+    actions[2], bindings.ACTIONBUTTON2 = nil, nil
+    Send("ACTIONBAR_SLOT_CHANGED", 2)
     bindings.ACTIONBUTTON1 = "E"
     Send("UPDATE_BINDINGS")
     check("rebinding to E clears it", warningText() == "", warningText())
@@ -1851,7 +1862,8 @@ do
         return ""
     end
     ActionButton1 = New("Button", "ActionButton1")
-    ActionButton1.action = 1 -- the slot with macro 1 on it
+    ActionButton1.action = 1 -- the slot with macro 1 on it, which shows Fireball
+    actions[1] = { "macro", 133, "spell", text = (GetMacroInfo(1)) }
     BT4Button3 = New("Frame", "BT4Button3") -- not a button: not offered
     ns.Window.New()
     NextFrame()

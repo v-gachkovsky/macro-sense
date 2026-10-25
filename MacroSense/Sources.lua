@@ -376,6 +376,7 @@ local CLICK_OTHERS = {
     { "StaticPopup1Button1", "popup: first button" }, { "StaticPopup1Button2", "popup: second button" },
 }
 local ItemNameByID = C_Item and C_Item.GetItemNameByID or function(id) return GetItemInfo and (GetItemInfo(id)) end
+local GetActionText = C_ActionBar and C_ActionBar.GetActionText or GetActionText
 
 -- A button /click can click (the game checks the same). pcall: _G holds all kinds of things.
 local function clickable(frame)
@@ -394,7 +395,8 @@ local function onButton(button)
     local kind, id = GetActionInfo(slot)
     if kind == "spell" then return SpellName(id) end
     if kind == "item" then return ItemNameByID(id) end
-    if kind == "macro" then return (GetMacroInfo(id)) end
+    -- The name the button shows: for a macro that shows a spell, id is the spell's.
+    if kind == "macro" then return GetActionText(slot) end
 end
 
 local function buttonHint(pattern, i, button)

@@ -133,6 +133,7 @@ end
 Shortcuts.slotCommand = slotCommand
 
 local keyCache = {}
+local GetActionText = C_ActionBar and C_ActionBar.GetActionText or GetActionText
 
 -- Keys that run macro `index` named `name`: a direct "MACRO name" binding and standard bar buttons.
 -- Bars of addons (Bartender, ElvUI, ...) use their own bindings and are not found.
@@ -151,8 +152,8 @@ function Shortcuts.KeysFor(index, name)
     end
     add(GetBindingKey("MACRO " .. name))
     for slot = 1, 180 do
-        local kind, id = GetActionInfo(slot)
-        if kind == "macro" and id == index then
+        -- By the name its button shows: for a macro that shows a spell, the game gives the spell's ID.
+        if GetActionInfo(slot) == "macro" and GetActionText(slot) == name then
             local command = slotCommand(slot)
             if command then add(GetBindingKey(command)) end
         end
