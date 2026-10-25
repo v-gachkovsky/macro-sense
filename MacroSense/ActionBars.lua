@@ -82,7 +82,7 @@ end
 local function AddTip(tooltip, slot)
     if GetActionInfo(slot) ~= "macro" then return end
     local warning, ours = MacWarning(slot), wrapped[tooltip:GetOwner()]
-    if warning then tooltip:AddLine(warning, 1, 0.82, 0, true) end
+    if warning then tooltip:AddLine(warning, 1, 0.35, 0.35, true) end -- red, as errors in the editor's tooltips
     if ours then tooltip:AddLine(ActionBars.TIP, 0.34, 0.61, 0.84) end
     if warning or ours then tooltip:Show() end
 end
