@@ -16,7 +16,7 @@ ns.Window = Window
 -- What is being edited: scope "general" | "character", index (nil = new macro), name/body/savedIcon as saved,
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
-local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, deleteBtn, tabs
+local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
 local shortenBtn, historyBtn, copyBtn, search, noMatch
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
@@ -24,6 +24,14 @@ local function MacroRange(scope)
     local general, character = GetNumMacros()
     if scope == "general" then return 1, general, MAX_GENERAL end
     return MAX_GENERAL + 1, MAX_GENERAL + character, MAX_CHARACTER
+end
+
+-- The index of macro `name` in tab `scope`, or nil: each tab may have a macro of that name.
+local function IndexIn(scope, name)
+    local first, last = MacroRange(scope)
+    for index = first, last do
+        if GetMacroInfo(index) == name then return index end
+    end
 end
 
 local function Letters(s)
@@ -144,7 +152,6 @@ local function UpdateStatus()
     historyBtn:SetEnabled(#Versions() > 0)
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
     revertBtn:SetEnabled(dirty and state.index ~= nil)
-    deleteBtn:SetEnabled(state.index ~= nil)
     copyBtn:SetEnabled(state.index ~= nil)
     -- Mac: [mod:cmd] on a key macOS uses with Cmd (the macro's keys are the saved macro's).
     local message
@@ -245,15 +252,25 @@ local function Row(i)
     r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     r.text:SetPoint("RIGHT", -6, 0)
     r.text:SetWordWrap(false)
+    -- Lit under the mouse, faintly: the selected row is lit already.
+    local function lit(on)
+        if on and not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end
+        if not on then r.bg:SetShown(r.selected); r.bg:SetAlpha(1) end
+    end
+    -- An x at the end deletes the macro, after asking.
+    r.remove = ns.RowX(r, lit, function() return "Delete this macro" end, function()
+        StaticPopup_Show("MACROSENSE_DELETE", r.name, nil, { index = r.index, name = r.name, scope = state.scope })
+    end)
+    r.remove:SetPoint("RIGHT", -2, 0)
     -- A macro with errors gets the alert sign, as on Save.
     r.alert = r:CreateTexture(nil, "OVERLAY")
     r.alert:SetSize(14, 14)
-    r.alert:SetPoint("RIGHT", -6, 0)
+    r.alert:SetPoint("RIGHT", r.remove, "LEFT", -2, 0)
     r.alert:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
     r.alert:Hide()
     -- Hover: the issues, line by line.
     r:SetScript("OnEnter", function()
-        if not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end
+        lit(true)
         if not r.severity then return end
         GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
         GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
@@ -261,8 +278,7 @@ local function Row(i)
         GameTooltip:Show()
     end)
     r:SetScript("OnLeave", function()
-        r.bg:SetShown(r.selected)
-        r.bg:SetAlpha(1)
+        lit(false)
         GameTooltip:Hide()
     end)
     r:SetScript("OnClick", function() Window.Select(r.index) end)
@@ -309,14 +325,14 @@ function Window.RefreshList()
             n = n + 1
             rows[n] = rows[n] or Row(n)
             local r = rows[n]
-            r.index, r.selected = index, index == state.index
+            r.index, r.name, r.selected = index, name, index == state.index
             r.icon:SetTexture(ns.IconTexture(icon))
             r.text:SetText(name)
             -- Marks follow the saved text: the one being edited shows its issues in the editor.
             r.severity, r.issues = MacroIssues(body)
             local alert = r.severity == "error"
             r.alert:SetShown(alert)
-            r.text:SetPoint("RIGHT", alert and r.alert or r, alert and "LEFT" or "RIGHT", alert and -4 or -6, 0)
+            r.text:SetPoint("RIGHT", alert and r.alert or r.remove, "LEFT", alert and -4 or -2, 0)
             r:Paint()
             r.bg:SetShown(r.selected)
             r.bg:SetAlpha(1)
@@ -368,7 +384,11 @@ StaticPopupDialogs.MACROSENSE_DISCARD = {
 StaticPopupDialogs.MACROSENSE_DELETE = {
     text = "Delete macro \"%s\"?",
     button1 = DELETE or "Delete", button2 = CANCEL,
-    OnAccept = function(_, index) Window.Delete(index) end,
+    -- The macros may have moved since the x was clicked: then it is found by its name in its tab.
+    OnAccept = function(_, m)
+        local index = GetMacroInfo(m.index) == m.name and m.index or IndexIn(m.scope, m.name)
+        if index then Window.Delete(index) end
+    end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
@@ -463,11 +483,16 @@ function Window.Revert()
     if state.index then Load(state.index) end
 end
 
+-- Deletes macro `index`. The one being edited: the next one opens. Another one: the editor keeps what it shows.
 function Window.Delete(index)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     DeleteMacro(index)
     local first, last = MacroRange(state.scope)
-    Load(last >= first and math.min(index, last) or nil)
+    if index == state.index then return Load(last >= first and math.min(index, last) or nil) end
+    -- The macros after it in its tab move up one, the one being edited too.
+    if state.index and index >= first and index < state.index then state.index = state.index - 1 end
+    Window.RefreshList()
+    UpdateStatus()
 end
 
 -- `s` cut to its first `n` letters, whole ones.
@@ -651,6 +676,13 @@ StaticPopupDialogs.MACROSENSE_EMPTY_TRASH = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
+StaticPopupDialogs.MACROSENSE_FORGET_DELETED = {
+    text = "Delete \"%s\" from the trash? It will be gone for good.",
+    button1 = DELETE or "Delete", button2 = CANCEL,
+    OnAccept = function(_, d) ns.History.TakeOut(ns.History.Trash(d.scope), d.entry) end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
 -- The deleted macros of both tabs, newest first: { scope, entry }.
 local function Deleted()
     local out = {}
@@ -670,10 +702,7 @@ function Window.Undelete(scope, entry)
         local name = FreeName(entry.name)
         local index = CreateMacro(name, entry.icon or NEW_ICON, entry.body, scope == "character")
         if not index or index == 0 then return ns.Print("could not restore the macro") end
-        local trash = ns.History.Trash(scope)
-        for i, e in ipairs(trash) do
-            if e == entry then table.remove(trash, i) break end
-        end
+        ns.History.TakeOut(ns.History.Trash(scope), entry)
         ns.History.Scan()
         state.scope, ns.db.scope = scope, scope
         Load(GetMacroIndexByName(name))
@@ -690,6 +719,8 @@ local function TrashItems()
             name = string.format("%s  |cff%s%s|r", d.entry.name, dim, When(d.entry.time)),
             disabled = full,
             onClick = function() Window.Undelete(d.scope, d.entry) end,
+            onRemove = function() StaticPopup_Show("MACROSENSE_FORGET_DELETED", d.entry.name, nil, d) end,
+            removeTip = "Delete for good",
             onEnter = function(row)
                 GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(d.entry.name, 1, 1, 1)
@@ -722,14 +753,6 @@ local NAMES_SHOWN = 15 -- macro names in a backup's tooltip
 local function BackupList()
     ns.char.backups = ns.char.backups or {}
     return ns.char.backups
-end
-
--- The index of macro `name` in tab `scope`, or nil: each tab may have a macro of that name.
-local function IndexIn(scope, name)
-    local first, last = MacroRange(scope)
-    for index = first, last do
-        if GetMacroInfo(index) == name then return index end
-    end
 end
 
 -- On login: the day's backup, if the macros changed since the last one.
@@ -987,7 +1010,7 @@ local function Build()
     end)
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- Sidebar: tabs, list, New / Copy / Delete.
+    -- Sidebar: tabs, list, buttons.
     local side = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     side:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -1)
     side:SetPoint("BOTTOMLEFT", 1, 1)
@@ -1000,7 +1023,8 @@ local function Build()
     tabs.character:SetPoint("TOPLEFT", side, "TOP", 0, 0)
     tabs.character:SetPoint("TOPRIGHT", 0, 0)
 
-    -- At the bottom: Share; New / Copy / Delete over it. Their menus open above them, the list is in the way below.
+    -- At the bottom: Share / Trash / Backups; New / Copy over them. Their menus open above them, the list is in
+    -- the way below. A macro's x in the list deletes it.
     local shareBtn = ns.MenuButton(side, "Share", 64, ShareItems, true)
     shareBtn:SetPoint("BOTTOMLEFT", 8, 8)
     shareBtn:HookScript("OnEnter", function(self)
@@ -1030,14 +1054,10 @@ local function Build()
         GameTooltip:Show()
     end)
     backupsBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    local newBtn = ns.Button(side, "New", 64, Window.New)
+    local newBtn = ns.Button(side, "New", 99, Window.New)
     newBtn:SetPoint("BOTTOMLEFT", 8, 36)
-    deleteBtn = ns.Button(side, "Delete", 64, function()
-        StaticPopup_Show("MACROSENSE_DELETE", state.name, nil, state.index)
-    end)
-    deleteBtn:SetPoint("BOTTOMRIGHT", -8, 36)
-    copyBtn = ns.MenuButton(side, "Copy", 64, CopyItems, true)
-    copyBtn:SetPoint("BOTTOM", 0, 36)
+    copyBtn = ns.MenuButton(side, "Copy", 99, CopyItems, true, true)
+    copyBtn:SetPoint("BOTTOMRIGHT", -8, 36)
     copyBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine("Copy", 1, 1, 1)
@@ -1050,7 +1070,7 @@ local function Build()
     -- The wizard over them: a new macro from a form, in a window of its own.
     local wizardBtn = ns.Button(side, "New (Wizard)", 204, function() ns.WizardWindow.Toggle(state.scope) end)
     wizardBtn:SetPoint("BOTTOMLEFT", newBtn, "TOPLEFT", 0, 6)
-    wizardBtn:SetPoint("BOTTOMRIGHT", deleteBtn, "TOPRIGHT", 0, 6)
+    wizardBtn:SetPoint("BOTTOMRIGHT", copyBtn, "TOPRIGHT", 0, 6)
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine("New (Wizard)", 1, 1, 1)

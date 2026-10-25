@@ -754,6 +754,10 @@ do
     for i = 1, H.TRASH + 2 do H.Discard(trash, "M" .. i, { body = "/sit", icon = i }, i) end
     check("trash: the last ones, oldest first", #trash == H.TRASH and trash[1].name == "M3" and trash[1].icon == 3
         and trash[1].body == "/sit" and trash[1].time == 3, #trash)
+    local entry, first = trash[2], trash[1]
+    check("trash: one taken out", H.TakeOut(trash, entry) and #trash == H.TRASH - 1 and trash[2] ~= entry)
+    check("trash: only that one", not H.TakeOut(trash, { name = first.name, icon = first.icon, body = first.body,
+        time = first.time }) and #trash == H.TRASH - 1)
     -- Gone: renamed when a new name has its text (each new name once), else deleted.
     local before = { A = { body = "/cast A" }, B = { body = "/cast B" }, C = { body = "/same" }, D = { body = "/same" } }
     local after = { B = { body = "/cast B" }, A2 = { body = "/cast A" }, E = { body = "/same" } }

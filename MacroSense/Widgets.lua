@@ -126,6 +126,30 @@ function ns.Input(parent, width, maxLetters, name)
     return e
 end
 
+-- A small x at the end of a row, to remove what the row shows: dim, red under the mouse, with a tooltip line
+-- (tip()). lit(on): the row stays lit while the mouse is over the x.
+function ns.RowX(row, lit, tip, onClick)
+    local x = CreateFrame("Button", nil, row)
+    x:SetSize(20, 20)
+    x.text = ns.Text(x, 12, "dim")
+    x.text:SetPoint("CENTER")
+    x.text:SetText("x")
+    x:SetScript("OnEnter", function()
+        lit(true)
+        x.text:SetTextColor(ns.RGB(ns.scheme.invalid))
+        GameTooltip:SetOwner(x, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(tip(), 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    x:SetScript("OnLeave", function()
+        lit(false)
+        x.text:SetTextColor(ns.RGB(ns.scheme.dim))
+        GameTooltip:Hide()
+    end)
+    x:SetScript("OnClick", onClick)
+    return x
+end
+
 ------------------------------------------------------------------------
 -- Menus: one shared list frame for dropdowns and menu buttons
 ------------------------------------------------------------------------
@@ -147,30 +171,13 @@ local function MenuRow(i)
     r.text:SetPoint("LEFT", 8, 0)
     r.text:SetPoint("RIGHT", -8, 0)
     r.text:SetWordWrap(false)
-    -- An x at the end of a row whose item can be removed (item.onRemove); the row stays lit over it.
-    local x = CreateFrame("Button", nil, r)
-    x:SetSize(20, 20)
-    x:SetPoint("RIGHT")
-    x.text = ns.Text(x, 12, "dim")
-    x.text:SetPoint("CENTER")
-    x.text:SetText("x")
-    x:SetScript("OnEnter", function()
-        r.bg:SetShown(true)
-        x.text:SetTextColor(ns.RGB(ns.scheme.invalid))
-        GameTooltip:SetOwner(x, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(r.item.removeTip, 1, 1, 1)
-        GameTooltip:Show()
-    end)
-    x:SetScript("OnLeave", function()
-        r.bg:SetShown(r.current)
-        x.text:SetTextColor(ns.RGB(ns.scheme.dim))
-        GameTooltip:Hide()
-    end)
-    x:SetScript("OnClick", function()
-        menu:Hide()
-        r.item.onRemove()
-    end)
-    r.remove = x
+    -- An x at the end of a row whose item can be removed (item.onRemove).
+    r.remove = ns.RowX(r, function(on) r.bg:SetShown(on or r.current) end, function() return r.item.removeTip end,
+        function()
+            menu:Hide()
+            r.item.onRemove()
+        end)
+    r.remove:SetPoint("RIGHT")
     r:SetScript("OnEnter", function()
         r.bg:SetShown(r.current or not r.item.disabled)
         if r.item.onEnter then r.item.onEnter(r) end
