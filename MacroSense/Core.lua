@@ -98,9 +98,11 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.History.Scan()
         ns.Shortcuts.Invalidate()
         ns.Window.OnMacrosChanged()
+        ns.ActionBars.Tint()
     elseif event == "UPDATE_BINDINGS" or event == "ACTIONBAR_SLOT_CHANGED" then
         ns.Shortcuts.Invalidate()
         ns.Window.RefreshStatus()
+        ns.ActionBars.Tint()
     end
 end)
 
