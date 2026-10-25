@@ -112,7 +112,8 @@ stands out with a red name and a warning sign (only warnings: a yellow name), so
 find among dozens; hover it to see what's wrong.
 
 **Mac players:** if a macro with `[mod:cmd]` sits on a key macOS itself uses with Cmd (Cmd+Q quits the game,
-Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you.
+Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you, and so does the macro's tooltip on your
+action bar.
 
 ## Live preview
 
