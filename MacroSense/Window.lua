@@ -6,6 +6,7 @@ local MAX_GENERAL, MAX_CHARACTER = ns.MAX_GENERAL, ns.MAX_CHARACTER
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local MAX_NAME = 16 -- letters, as in the Blizzard macro window
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
+local COPY_ICON = "Interface\\AddOns\\MacroSense\\Media\\copy"
 local ROW_H = 24
 local MIN_W, MIN_H = 780, 460 -- also the first size
 local PREVIEW_EVERY = 0.1 -- seconds: modifiers, target, mouseover and pet change any time
@@ -17,7 +18,7 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
-local shortenBtn, historyBtn, copyBtn, search, noMatch
+local shortenBtn, historyBtn, search, noMatch
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
 local function MacroRange(scope)
@@ -152,7 +153,6 @@ local function UpdateStatus()
     historyBtn:SetEnabled(#Versions() > 0)
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
     revertBtn:SetEnabled(dirty and state.index ~= nil)
-    copyBtn:SetEnabled(state.index ~= nil)
     -- Mac: [mod:cmd] on a key macOS uses with Cmd (the macro's keys are the saved macro's).
     local message
     if ns.Shortcuts.Enabled() and state.index then
@@ -257,15 +257,18 @@ local function Row(i)
         if on and not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end
         if not on then r.bg:SetShown(r.selected); r.bg:SetAlpha(1) end
     end
-    -- An x at the end deletes the macro, after asking.
-    r.remove = ns.RowX(r, lit, function() return "Delete this macro" end, function()
+    -- At the end: copy (a menu: this tab or the other one) and x (delete, after asking).
+    r.remove = ns.RowButton(r, "x", "invalid", lit, function() return "Delete this macro" end, function()
         StaticPopup_Show("MACROSENSE_DELETE", r.name, nil, { index = r.index, name = r.name, scope = state.scope })
     end)
     r.remove:SetPoint("RIGHT", -2, 0)
+    r.copy = ns.RowButton(r, COPY_ICON, "text", lit, function() return "Copy this macro" end,
+        function() Window.OpenCopyMenu(r.copy, r.index) end)
+    r.copy:SetPoint("RIGHT", r.remove, "LEFT")
     -- A macro with errors gets the alert sign, as on Save.
     r.alert = r:CreateTexture(nil, "OVERLAY")
     r.alert:SetSize(14, 14)
-    r.alert:SetPoint("RIGHT", r.remove, "LEFT", -2, 0)
+    r.alert:SetPoint("RIGHT", r.copy, "LEFT", -2, 0)
     r.alert:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
     r.alert:Hide()
     -- Hover: the issues, line by line.
@@ -332,7 +335,7 @@ function Window.RefreshList()
             r.severity, r.issues = MacroIssues(body)
             local alert = r.severity == "error"
             r.alert:SetShown(alert)
-            r.text:SetPoint("RIGHT", alert and r.alert or r.remove, "LEFT", alert and -4 or -2, 0)
+            r.text:SetPoint("RIGHT", alert and r.alert or r.copy, "LEFT", alert and -4 or -2, 0)
             r:Paint()
             r.bg:SetShown(r.selected)
             r.bg:SetAlpha(1)
@@ -521,25 +524,35 @@ local function FreeName(name, also)
     end
 end
 
--- A copy of what the editor shows (name, icon, text) in `scope`, opened then; the macro copied keeps its
--- saved text.
-function Window.Copy(scope)
+-- A copy of macro `index` (the one being edited when nil) in `scope`, opened then. The one being edited is copied
+-- with what the editor shows (name, icon, text) and keeps its saved text; another one as saved, after asking
+-- about unsaved changes.
+function Window.Copy(scope, index)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
-    if not state.index then return end
+    index = index or state.index
+    if not index then return end
     local first, last, max = MacroRange(scope)
     if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    local function make(name, icon, body)
+        local copy = CreateMacro(FreeName(name), icon or NEW_ICON, body, scope == "character")
+        if not copy or copy == 0 then return ns.Print("could not copy the macro") end
+        ns.History.Scan()
+        state.scope, ns.db.scope = scope, scope
+        Load(copy)
+    end
+    if index ~= state.index then
+        return Guard(function()
+            local name, _, body = GetMacroInfo(index)
+            make(name, ns.MacroIcon(index), body or "")
+        end)
+    end
     local body = code:GetRaw()
     if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     local name = strtrim(nameBox:GetText())
-    local index = CreateMacro(FreeName(name ~= "" and name or state.name), state.icon or NEW_ICON, body,
-        scope == "character")
-    if not index or index == 0 then return ns.Print("could not copy the macro") end
-    ns.History.Scan()
-    state.scope, ns.db.scope = scope, scope
-    Load(index)
+    make(name ~= "" and name or state.name, state.icon, body)
 end
 
-local function CopyItems()
+local function CopyItems(index)
     local other = state.scope == "general" and "character" or "general"
     local function item(scope, label, tip)
         local first, last, max = MacroRange(scope)
@@ -547,7 +560,7 @@ local function CopyItems()
         return {
             name = full and string.format("%s  |cff%s(full)|r", label, ns.scheme.dim) or label,
             disabled = full,
-            onClick = function() Window.Copy(scope) end,
+            onClick = function() Window.Copy(scope, index) end,
             onEnter = function(row)
                 GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(label, 1, 1, 1)
@@ -557,13 +570,17 @@ local function CopyItems()
             end,
         }
     end
-    local same = "under a free name like \"Fear 2\". The macro copied keeps its saved text."
+    local how = index == state.index and " with what the editor shows now, under a free name like \"Fear 2\". The "
+        .. "macro copied keeps its saved text." or ", under a free name like \"Fear 2\"."
     return {
-        item(state.scope, "Duplicate", "A copy in this tab with what the editor shows now, " .. same),
-        item(other, "Copy to " .. SCOPE_NAMES[other], string.format("A copy %s with what the editor shows now, %s",
-            other == "character" and "for this character only" or "for all your characters", same)),
+        item(state.scope, "Duplicate", "A copy in this tab" .. how),
+        item(other, "Copy to " .. SCOPE_NAMES[other], string.format("A copy %s%s",
+            other == "character" and "for this character only" or "for all your characters", how)),
     }
 end
+
+-- The copy menu of macro `index`, under its copy button in the list.
+function Window.OpenCopyMenu(owner, index) ns.OpenMenu(owner, CopyItems(index), 180, false, true) end
 
 ------------------------------------------------------------------------
 -- Share: macros as a code to copy, and back (Share.lua, ShareWindow.lua)
@@ -1023,8 +1040,8 @@ local function Build()
     tabs.character:SetPoint("TOPLEFT", side, "TOP", 0, 0)
     tabs.character:SetPoint("TOPRIGHT", 0, 0)
 
-    -- At the bottom: Share / Trash / Backups; New / Copy over them. Their menus open above them, the list is in
-    -- the way below. A macro's x in the list deletes it.
+    -- At the bottom: Share / Trash / Backups; New / New (Wizard) over them. Their menus open above them, the list
+    -- is in the way below. Each macro in the list has its copy and x buttons.
     local shareBtn = ns.MenuButton(side, "Share", 64, ShareItems, true)
     shareBtn:SetPoint("BOTTOMLEFT", 8, 8)
     shareBtn:HookScript("OnEnter", function(self)
@@ -1056,21 +1073,10 @@ local function Build()
     backupsBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     local newBtn = ns.Button(side, "New", 99, Window.New)
     newBtn:SetPoint("BOTTOMLEFT", 8, 36)
-    copyBtn = ns.MenuButton(side, "Copy", 99, CopyItems, true, true)
-    copyBtn:SetPoint("BOTTOMRIGHT", -8, 36)
-    copyBtn:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Copy", 1, 1, 1)
-        GameTooltip:AddLine(self:IsEnabled() and "A copy of this macro, in this tab or the other one."
-            or "Save the macro first, then copy it.", 0.8, 0.8, 0.8, true)
-        GameTooltip:Show()
-    end)
-    copyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- The wizard over them: a new macro from a form, in a window of its own.
-    local wizardBtn = ns.Button(side, "New (Wizard)", 204, function() ns.WizardWindow.Toggle(state.scope) end)
-    wizardBtn:SetPoint("BOTTOMLEFT", newBtn, "TOPLEFT", 0, 6)
-    wizardBtn:SetPoint("BOTTOMRIGHT", copyBtn, "TOPRIGHT", 0, 6)
+    -- The wizard next to it: a new macro from a form, in a window of its own.
+    local wizardBtn = ns.Button(side, "New (Wizard)", 99, function() ns.WizardWindow.Toggle(state.scope) end)
+    wizardBtn:SetPoint("BOTTOMRIGHT", -8, 36)
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine("New (Wizard)", 1, 1, 1)
@@ -1109,7 +1115,7 @@ local function Build()
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -62)
-    list:SetPoint("BOTTOMRIGHT", -13, 94)
+    list:SetPoint("BOTTOMRIGHT", -13, 66)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)

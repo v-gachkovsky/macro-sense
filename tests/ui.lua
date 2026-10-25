@@ -135,6 +135,9 @@ function Frame:GetLeft() return self.left end
 function Frame:SetTextColor(r, g, b)
     self.textColor = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
 end
+function Frame:SetVertexColor(r, g, b)
+    self.vertexColor = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
+end
 function Frame:SetColorTexture(r, g, b)
     self.color = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
 end
@@ -1497,10 +1500,11 @@ do
     check("list: an error makes the name red", broken and broken.text.textColor == s.invalid, broken and broken.text.textColor)
     check("list: and shows the alert sign", broken and broken.alert:IsShown())
     check("list: the name makes room for the sign", broken and broken.text.point[2] == broken.alert, broken and broken.text.point[2])
+    check("list: the sign before the copy button", broken and broken.alert.point[2] == broken.copy)
     check("list: a warning makes it yellow, no sign", typo and typo.text.textColor == s.warning and not typo.alert:IsShown(),
         typo and typo.text.textColor)
     check("list: a clean macro stays plain", clean and clean.text.textColor == s.text and not clean.alert:IsShown()
-        and clean.text.point[2] == clean.remove, clean and clean.text.textColor)
+        and clean.text.point[2] == clean.copy, clean and clean.text.textColor)
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(broken, "OnEnter")
@@ -1643,11 +1647,12 @@ do
     NextFrame()
 end
 
--- Copy: a duplicate in the same tab or a copy in the other one, with what the editor shows, under a free name.
+-- Copy: the copy button of each macro in the list, a duplicate in the same tab or a copy in the other one, under
+-- a free name. The macro being edited with what the editor shows; another one as saved. There is no Copy button.
 do
-    local function button(label)
+    local function row(name)
         for _, o in ipairs(created) do
-            if o.kind == "Button" and o.label and o.label.text == label then return o end
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
         end
     end
     local function menuItem(label)
@@ -1660,20 +1665,52 @@ do
             if o.kind == "EditBox" and o.maxLetters == 16 then return o.text end
         end
     end
+    local function itemTip(label)
+        local tip = {}
+        GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+        Fire(menuItem(label), "OnEnter")
+        GameTooltip.AddLine = nil
+        return tip[2]
+    end
     local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
-    local copy = button("Copy")
+    local copyButton
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Copy" then copyButton = o end
+    end
+    check("copy: no Copy button", copyButton == nil)
     CreateMacro("Zap", 1, "/cast Fireball", false)
     Send("UPDATE_MACROS")
     ns.Window.Select(GetMacroIndexByName("Zap"))
     NextFrame()
-    check("copy: offered for a saved macro", copy and copy:IsEnabled())
+    local copy = row("Zap").copy
+    check("copy: a button on each macro, before its x", copy:IsShown() and copy.mark.texture
+        == "Interface\\AddOns\\MacroSense\\Media\\copy" and copy.point[2] == row("Zap").remove
+        and row("Zap").text.point[2] == copy)
+    check("copy: both dim", copy.mark.vertexColor == ns.scheme.dim and row("Zap").remove.mark.textColor == ns.scheme.dim)
+    local wizard
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizard = o end
+    end
+    check("copy: New and New (Wizard) in one row, the list down to it", wizard.point[1] == "BOTTOMRIGHT"
+        and wizard.point[3] == 36 and MacroSenseListScroll.point[3] == 66)
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(copy, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("copy: says what it does, lights up", tip[1] == "Copy this macro" and copy.mark.vertexColor == ns.scheme.text
+        and row("Zap").bg:IsShown(), tip[1])
+    Fire(copy, "OnLeave")
+    check("copy: dim again", copy.mark.vertexColor == ns.scheme.dim, copy.mark.vertexColor)
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/cast Frostbolt")
     Key("ESCAPE", "OnEscapePressed")
     Fire(copy, "OnClick")
-    check("copy: the menu opens above the button", MacroSenseMenu:IsShown() and MacroSenseMenu.point[1] == "BOTTOMRIGHT"
+    check("copy: the menu opens under the button", MacroSenseMenu:IsShown() and MacroSenseMenu.point[1] == "TOPRIGHT"
         and MacroSenseMenu.point[2] == copy, MacroSenseMenu.point and MacroSenseMenu.point[1])
+    check("copy: the one being edited, with what the editor shows", itemTip("Duplicate") == "A copy in this tab with "
+        .. "what the editor shows now, under a free name like \"Fear 2\". The macro copied keeps its saved text.",
+        itemTip("Duplicate"))
     Fire(menuItem("Duplicate"), "OnClick")
     NextFrame()
     check("copy: a duplicate under a free name, with the text shown", GetMacroIndexByName("Zap 2") > 0
@@ -1681,29 +1718,51 @@ do
     check("copy: the macro copied keeps its saved text", body("Zap") == "/cast Fireball", body("Zap"))
     check("copy: the copy is opened", nameText() == "Zap 2" and raw() == "/cast Fireball\n/cast Frostbolt"
         and not saveIsEnabled(), nameText())
-    Fire(copy, "OnClick")
+    Fire(row("Zap 2").copy, "OnClick")
     Fire(menuItem("Copy to Character"), "OnClick")
     NextFrame()
     local index = GetMacroIndexByName("Zap 3")
     check("copy: to the other tab, the next free name", index > SLOTS.MAX_ACCOUNT_MACROS and ns.db.scope == "character"
         and nameText() == "Zap 3", index)
-    Fire(copy, "OnClick")
+    Fire(row("Zap 3").copy, "OnClick")
     check("copy: from Character, the other tab is General", menuItem("Copy to General") ~= nil)
-    Fire(copy, "OnClick")
+    MacroSenseMenu:Hide()
+
+    -- Another macro: copied as saved, after asking about the unsaved changes here.
+    ns.Window.SetScope("general")
+    ns.Window.Select(GetMacroIndexByName("Zap"))
+    NextFrame()
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    Fire(row("Zap 2").copy, "OnClick")
+    check("copy: another one, as saved", itemTip("Duplicate") == "A copy in this tab, under a free name like "
+        .. "\"Fear 2\".", itemTip("Duplicate"))
+    local asked, show = 0, StaticPopup_Show
+    StaticPopup_Show = function(...)
+        asked = asked + 1
+        return show(...)
+    end
+    Fire(menuItem("Duplicate"), "OnClick")
+    StaticPopup_Show = show
+    NextFrame()
+    check("copy: another one, after asking", asked == 1 and body("Zap 4") == "/cast Fireball\n/cast Frostbolt"
+        and nameText() == "Zap 4" and body("Zap") == "/cast Fireball", body("Zap 4"))
+    check("copy: with its icon", select(2, GetMacroInfo(GetMacroIndexByName("Zap 4"))) == 1)
+
     -- A full tab can't take one.
     local fillers = SLOTS.MAX_CHARACTER_MACROS - select(2, GetNumMacros())
     for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", true) end
     Send("UPDATE_MACROS")
-    ns.Window.SetScope("general")
     ns.Window.Select(GetMacroIndexByName("Zap"))
     NextFrame()
-    Fire(copy, "OnClick")
+    Fire(row("Zap").copy, "OnClick")
     local full = menuItem("Copy to Character")
     check("copy: a full tab is marked", full and full.item.disabled and full.text.text:find("(full)", 1, true) ~= nil)
     local count = select(2, GetNumMacros())
     Fire(full, "OnClick")
     check("copy: and takes nothing", select(2, GetNumMacros()) == count and MacroSenseMenu:IsShown())
-    Fire(copy, "OnClick")
+    MacroSenseMenu:Hide()
     -- A long name is cut to make room for the number, a whole letter at a time.
     CreateMacro("Сімнадцять літер", 1, "/sit", false) -- 16 letters, Cyrillic: two bytes each
     Send("UPDATE_MACROS")
@@ -1719,8 +1778,9 @@ do
     InCombatLockdown = function() return false end
     ns.Window.New()
     NextFrame()
-    check("copy: not before the macro is saved", not copy:IsEnabled())
-    for _, name in ipairs({ "Zap", "Zap 2", "Zap 3", "Сімнадцять літер", "Сімнадцять літ 2" }) do
+    ns.Window.Copy("general")
+    check("copy: not before the macro is saved", select(1, GetNumMacros()) == count)
+    for _, name in ipairs({ "Zap", "Zap 2", "Zap 3", "Zap 4", "Сімнадцять літер", "Сімнадцять літ 2" }) do
         DeleteMacro(GetMacroIndexByName(name))
     end
     for i = 1, fillers do DeleteMacro(GetMacroIndexByName("Filler " .. i)) end
@@ -2840,9 +2900,9 @@ do
     Fire(row("Del A").remove, "OnEnter")
     GameTooltip.AddLine = nil
     check("list x: says what it does, the row lit", tip[1] == "Delete this macro" and row("Del A").bg:IsShown()
-        and row("Del A").remove.text.textColor == ns.scheme.invalid, tip[1])
+        and row("Del A").remove.mark.textColor == ns.scheme.invalid, tip[1])
     Fire(row("Del A").remove, "OnLeave")
-    check("list x: as it was", not row("Del A").bg:IsShown() and row("Del A").remove.text.textColor == ns.scheme.dim)
+    check("list x: as it was", not row("Del A").bg:IsShown() and row("Del A").remove.mark.textColor == ns.scheme.dim)
 
     -- Another macro, above the one being edited: its unsaved text stays, and Save saves it to its own macro.
     edit:SetFocus()
@@ -3125,9 +3185,9 @@ do
     Fire(rows[2].remove, "OnEnter")
     GameTooltip.AddLine = nil
     check("backups: the x says what it does", tip[1] == "Delete this backup" and rows[2].bg:IsShown()
-        and rows[2].remove.text.textColor == ns.scheme.invalid, tip[1])
+        and rows[2].remove.mark.textColor == ns.scheme.invalid, tip[1])
     Fire(rows[2].remove, "OnLeave")
-    check("backups: the x as it was", not rows[2].bg:IsShown() and rows[2].remove.text.textColor == ns.scheme.dim)
+    check("backups: the x as it was", not rows[2].bg:IsShown() and rows[2].remove.mark.textColor == ns.scheme.dim)
     local backups, asked = ns.char.backups, nil
     local newest, before = backups[#backups], #backups
     show = StaticPopup_Show
