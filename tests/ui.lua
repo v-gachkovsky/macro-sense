@@ -240,6 +240,9 @@ function PickupMacro(index) picked = index end
 function GetActionInfo(slot) if actions[slot] then return actions[slot][1], actions[slot][2], actions[slot][3] end end
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
 function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
+-- Icons the player put in Interface\Icons: file names.
+function GetLooseMacroIcons(t) t[#t + 1] = "My_Skull" end
+function GetLooseMacroItemIcons(t) t[#t + 1] = "My_Potion" end
 GameTooltip = New("GameTooltip")
 function GameTooltip:SetOwner(owner) self.owner = owner end
 function GameTooltip:GetOwner() return self.owner end
@@ -997,6 +1000,33 @@ do
     MacroSenseIconPicker:Hide()
     Fire(MacroSenseIconButton, "OnClick")
     check("icon names: once a session", Found("death") == "1051", Found("death"))
+    -- Your own icons from Interface\Icons: before the game's, by their file name, saved by their path.
+    local order = {}
+    Found("")
+    for i, icon in ipairs(Shown()) do order[icon] = order[icon] or i end
+    local mine, potion = "Interface\\Icons\\My_Skull", "Interface\\Icons\\My_Potion"
+    check("your icons: before the game's", order[mine] and order[1001] and order[mine] < order[1001],
+        tostring(order[mine]))
+    Fire(MacroSenseIconPicker, "OnMouseWheel", -1000) -- to the end: the items
+    local last = {}
+    for i, icon in ipairs(Shown()) do last[icon] = last[icon] or i end
+    check("your item icons: before the game's", last[1300] and last[potion] and last.INV_Sword_01
+        and last[1300] < last[potion] and last[potion] < last.INV_Sword_01, tostring(last[potion]))
+    check("your icons: by their file name", Found("my_skull") == mine, Found("my_skull"))
+    local title
+    GameTooltip.SetText = function(_, text) title = text end
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.entry and o.entry.icon == mine and o:IsShown() then Fire(o, "OnEnter") end
+    end
+    GameTooltip.SetText = nil
+    check("your icons: the file name in the tooltip", title == "My_Skull", title)
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.entry and o.entry.icon == mine and o:IsShown() then Fire(o, "OnClick") end
+    end
+    ns.Window.Save()
+    local saved
+    for _, m in ipairs(macros) do saved = saved or m.icon == mine end
+    check("your icons: saved by their path", saved)
     -- Your own spells: case doesn't count in Cyrillic either.
     book[#book + 1] = { "Чорна стріла", "" }
     Send("SPELLS_CHANGED")
