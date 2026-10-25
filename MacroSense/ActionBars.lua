@@ -1,8 +1,8 @@
 -- Shift + right-click on a macro on an action bar opens it in the editor instead of running it, and the
 -- button's tooltip says so; on a Mac it also warns when Cmd with the macro's key is a macOS shortcut, as the
--- editor's status bar does. On the game's own buttons and those made from them (Dominos), and on the buttons
--- of LibActionButton (Bartender, ElvUI). The click is caught in the game's secure code, so the buttons work
--- in combat as before and every other click goes on as it did.
+-- editor's status bar does, and such a button turns red. On the game's own buttons and those made from them
+-- (Dominos), and on the buttons of LibActionButton (Bartender, ElvUI). The click is caught in the game's
+-- secure code, so the buttons work in combat as before and every other click goes on as it did.
 local _, ns = ...
 ns = ns or {}
 
@@ -64,9 +64,51 @@ local function Wrap(button)
     wrapped[button] = button:GetScript("OnClick") ~= before
 end
 
--- A button just made may still be setting itself up: it is wrapped a frame later.
-local function Later(_, button)
-    C_Timer.After(0, function() Wrap(button) end)
+-- On a Mac, a red tint over a game button whose own key, with Cmd, is a macOS shortcut its macro uses (Cmd+Q
+-- quits the game). The key is a binding of the game's bars, so buttons of other addons' bars get none.
+local tints, tinted = {}, {} -- button -> its tint; the buttons that follow their action
+
+local function Danger(button)
+    local slot = button.action
+    local index = type(slot) == "number" and ns.Shortcuts.Enabled() and ActionBars.MacroAt(slot)
+    local command = index and ns.Shortcuts.slotCommand(slot)
+    if not command then return false end
+    local _, _, body = GetMacroInfo(index)
+    return #ns.Shortcuts.Conflicts(body or "", { GetBindingKey(command) }) > 0
+end
+
+local function Tint(button)
+    local danger, tint = Danger(button), tints[button]
+    if danger and not tint then
+        tint = button:CreateTexture(nil, "BACKGROUND", nil, 1) -- over the icon, under its border
+        tint:SetAllPoints(button.icon)
+        tint:SetColorTexture(1, 0, 0, 0.4)
+        if button.IconMask then tint:AddMaskTexture(button.IconMask) end -- the icon's round corners
+        tints[button] = tint
+    end
+    if tint then tint:SetShown(danger) end
+end
+
+-- The game calls Update when the button's action changes: a new one on it, a page, a stance.
+local function Follow(button)
+    if tinted[button] or not button.Update then return end
+    tinted[button] = true
+    hooksecurefunc(button, "Update", Tint)
+    Tint(button)
+end
+
+-- Bindings or macros changed: every button again.
+function ActionBars.Tint()
+    for button in pairs(tinted) do Tint(button) end
+end
+
+-- A button just made may still be setting itself up: it is taken a frame later. Only the game's own get the
+-- tint.
+local function Later(button, game)
+    C_Timer.After(0, function()
+        Wrap(button)
+        if game then Follow(button) end
+    end)
 end
 
 -- On a Mac: what the editor's status bar says when Cmd with the macro's keys is a macOS shortcut (Cmd+Q quits
@@ -96,16 +138,19 @@ function ActionBars.Setup()
     if not hooked then
         hooked = true
         hooksecurefunc(GameTooltip, "SetAction", AddTip)
-        if blizzard then hooksecurefunc(blizzard, "RegisterFrame", Later) end
+        if blizzard then hooksecurefunc(blizzard, "RegisterFrame", function(_, button) Later(button, true) end) end
     end
     if blizzard and blizzard.frames then
-        for _, button in pairs(blizzard.frames) do Wrap(button) end
+        for _, button in pairs(blizzard.frames) do
+            Wrap(button)
+            Follow(button)
+        end
     end
     for _, name in ipairs(LIBRARIES) do
         local lib = LibStub and LibStub(name, true)
         if lib and lib.RegisterCallback and not watched[lib] then
             watched[lib] = true
-            lib.RegisterCallback(ActionBars, "OnButtonCreated", Later)
+            lib.RegisterCallback(ActionBars, "OnButtonCreated", function(_, button) Later(button) end)
         end
         for button in pairs(lib and lib.buttonRegistry or {}) do Wrap(button) end
     end

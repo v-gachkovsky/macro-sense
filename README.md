@@ -152,7 +152,8 @@ an empty `[]` removes both.
   your pets' spells (remembered from every pet you summon), items in your bags and seen before, Retail
   mounts. A name nothing is close to stays unmarked.
 - Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game, Cmd+W,
-  Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns, and so does the macro's tooltip on the action bar.
+  Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns, and so does the macro's tooltip on the action bar;
+  the button with that key turns red.
   Keys are found from a direct `MACRO name` binding and the standard action bars; bars of addons (Bartender,
   ElvUI) are not checked.
 

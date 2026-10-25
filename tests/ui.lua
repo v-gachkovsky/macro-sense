@@ -62,7 +62,11 @@ function Frame:Hide() if self.shown then self.shown = false; Fire(self, "OnHide"
 function Frame:SetShown(v) if v then self:Show() else self:Hide() end end
 function Frame:IsShown() return self.shown end
 function Frame:IsVisible() return self.shown end
-function Frame:CreateTexture() return New("Texture") end
+function Frame:CreateTexture()
+    local t = New("Texture")
+    t.parentFrame = self
+    return t
+end
 function Frame:CreateFontString() return New("FontString") end
 function Frame:GetWidth() return 300 end
 function Frame:GetHeight() return 200 end
@@ -267,6 +271,8 @@ local function ActionButton(id, attributes, parent)
     local b = New("CheckButton")
     b.id, b.attributes, b.parent, b.ran = id, attributes, parent, 0
     b.scripts.OnClick = function(self) self.ran = self.ran + 1 end
+    b.icon = b:CreateTexture()
+    function b:Update() end -- the game's: when the button's action changes
     return b
 end
 ActionBarButtonEventsFrame = { frames = {} }
@@ -2444,6 +2450,49 @@ do
     IsMacClient = function() return false end
     check("action bars: no macOS warning on Windows", Tip(startButton, 2) == ns.ActionBars.TIP, Tip(startButton, 2))
     IsMacClient = function() return true end
+    -- And the button whose own key that is turns red, on the game's bars.
+    local function Tinted(b)
+        for _, o in ipairs(created) do
+            if o.kind == "Texture" and o.parentFrame == b and o.color == "ff0000" then return o:IsShown() end
+        end
+        return false
+    end
+    startButton.action, refused.action, labButton.action, petButton.action = 2, 6, 100, 2 -- the game keeps .action
+    Send("UPDATE_BINDINGS")
+    check("tint: the button of Cmd+Q", Tinted(startButton))
+    check("tint: not where the macro has no such key", not Tinted(refused))
+    check("tint: not on other addons' bars", not Tinted(labButton) and not Tinted(petButton))
+    -- Set up again after each combat: still one look per change of the button.
+    local looks, conflicts = 0, ns.Shortcuts.Conflicts
+    ns.Shortcuts.Conflicts = function(...)
+        looks = looks + 1
+        return conflicts(...)
+    end
+    startButton:Update()
+    ns.Shortcuts.Conflicts = conflicts
+    check("tint: once per change", looks == 1, looks)
+    bindings.ACTIONBUTTON2 = "E"
+    Send("UPDATE_BINDINGS")
+    check("tint: gone with another key", not Tinted(startButton))
+    bindings.ACTIONBUTTON2 = "Q"
+    Send("UPDATE_BINDINGS")
+    EditMacro(fear, "Bar Fear", 1, "/cast Fear")
+    Send("UPDATE_MACROS")
+    check("tint: gone without Cmd in the macro", not Tinted(startButton))
+    EditMacro(fear, "Bar Fear", 1, "/cast [mod:cmd] Fear")
+    Send("UPDATE_MACROS")
+    check("tint: back with it", Tinted(startButton))
+    actions[2] = { "spell", 5782 }
+    startButton:Update()
+    check("tint: gone with a spell on the button", not Tinted(startButton))
+    actions[2] = { "macro", 5782, "spell", text = "Bar Fear" }
+    startButton:Update()
+    check("tint: follows the button's action", Tinted(startButton))
+    IsMacClient = function() return false end
+    Send("UPDATE_BINDINGS")
+    check("tint: not on Windows", not Tinted(startButton))
+    IsMacClient = function() return true end
+    startButton.action, refused.action, labButton.action, petButton.action = nil, nil, nil, nil
     EditMacro(fear, "Bar Fear", 1, "/cast Fear")
     bindings.ACTIONBUTTON2 = nil
     Send("UPDATE_BINDINGS")
