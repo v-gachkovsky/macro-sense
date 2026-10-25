@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Shift + right-click on a macro on an action bar** opens the editor on that macro instead of running it,
+  and the button's tooltip says so. On the game's action bars and those of Bartender, Dominos and ElvUI.
+
 ## [0.2.1] - 2026-10-24
 
 ### Changed

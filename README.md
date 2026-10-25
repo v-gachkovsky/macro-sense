@@ -23,10 +23,11 @@ shows next to each line what it would do right now. The macros are the game's ow
 addons see every change. **New (Wizard)** builds them from a form: mouseover, focus, party members, modifier
 keys, trinkets and more.
 
-Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), or the **MacroSense** button in
-the title bar of the Blizzard macro window. Drag the title bar to move it and the dotted corner to resize it
-(780 x 460 at least). Drag the minimap button to move it along the edge; `/ms minimap` hides it. On Retail,
-MacroSense is in the addon menu by the minimap too.
+Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), the **MacroSense** button in
+the title bar of the Blizzard macro window, or **Shift + right-click** on a macro on an action bar, which opens
+that macro. Drag the editor's title bar to move it and the dotted corner to resize it (780 x 460 at least).
+Drag the minimap button to move it along the edge; `/ms minimap` hides it. On Retail, MacroSense is in the
+addon menu by the minimap too.
 
 **Clients:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever
 (`## Interface: 120105, 50504, 20506, 11509, 16001`).
@@ -211,7 +212,9 @@ then icons of your spells and items, then every macro icon of the game. Search m
 Drag its dotted corner to show more icons at once. It sits next to the editor; drag it by an empty spot to
 move it away, and drop it next to the editor's right edge to dock it again (its border lights up).
 
-Drag a macro from the list, or its icon from the header, onto an action bar.
+Drag a macro from the list, or its icon from the header, onto an action bar. **Shift + right-click** on it
+there opens it in the editor instead of running it, and its tooltip says so: on the game's bars and those of
+Bartender, Dominos and ElvUI.
 
 ## Commands
 
@@ -248,6 +251,8 @@ Drag a macro from the list, or its icon from the header, onto an action bar.
 - `MacroSense/WizardWindow.lua`: the wizard's window.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
+- `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
+  code, and the line in its tooltip.
 
 ### Tests
 

@@ -30,4 +30,5 @@ IconPicker.lua
 WizardWindow.lua
 Window.lua
 MinimapButton.lua
+ActionBars.lua
 Core.lua
