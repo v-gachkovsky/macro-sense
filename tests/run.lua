@@ -749,6 +749,17 @@ do
         store.New and bodies(store.New))
     H.Rename(store, "Gone", "New")
     check("history: renaming a macro without versions changes nothing", bodies(store.New) == "a | b | c")
+    -- Trash: a deleted macro goes in, the oldest go out.
+    local trash = {}
+    for i = 1, H.TRASH + 2 do H.Discard(trash, "M" .. i, { body = "/sit", icon = i }, i) end
+    check("trash: the last ones, oldest first", #trash == H.TRASH and trash[1].name == "M3" and trash[1].icon == 3
+        and trash[1].body == "/sit" and trash[1].time == 3, #trash)
+    -- Gone: renamed when a new name has its text (each new name once), else deleted.
+    local before = { A = { body = "/cast A" }, B = { body = "/cast B" }, C = { body = "/same" }, D = { body = "/same" } }
+    local after = { B = { body = "/cast B" }, A2 = { body = "/cast A" }, E = { body = "/same" } }
+    local renamed, deleted = H.Gone(before, after)
+    check("trash: a rename is no delete", renamed.A == "A2" and renamed.C == "E" and renamed.D == nil
+        and #deleted == 1 and deleted[1] == "D", table.concat(deleted, ","))
 end
 
 -- Wizard: the form as macro text.

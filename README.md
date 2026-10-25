@@ -198,8 +198,8 @@ The game keeps only the last text of a macro; MacroSense keeps the ones before i
 macro, in this editor, in the Blizzard macro window or by another addon, keeps the text it replaced (the last
 10 per macro). **History** in the header lists them with when they were saved and how long they are: hover
 one to read it, click it to put it in the editor. It is an unsaved change then: **Save** keeps it, Ctrl+Z
-(Cmd+Z on Mac) takes it back. The versions follow a macro renamed here. General macros keep theirs for the
-account, character macros for the character.
+(Cmd+Z on Mac) takes it back. The versions follow a macro renamed, here or in the game's macro window.
+General macros keep theirs for the account, character macros for the character.
 
 ## Macro list
 
@@ -217,6 +217,11 @@ anything is made, the window says what the code holds and where each macro goes.
 taken name gets a number (`Fear 2`), and a macro with no free slot in its tab is left out. The code is one
 line of letters and digits, which chat apps leave as it is, ending in a dot, so words around it don't
 matter; a code cut short or changed is refused.
+
+**Trash** next to it keeps the macros you delete, here, in the game's macro window or with another addon:
+the last 30 of each tab, General ones for the account, Character ones for the character. Hover one to
+read it, click it to bring it back into its tab, under a free name if its own is taken. A macro renamed
+in the game's window is not taken for deleted.
 
 ## Icons and action bars
 

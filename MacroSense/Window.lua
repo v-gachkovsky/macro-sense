@@ -635,6 +635,86 @@ local function ShareItems()
 end
 
 ------------------------------------------------------------------------
+-- Trash: macros deleted anywhere, to bring back (History.lua keeps them)
+------------------------------------------------------------------------
+local TRASH_SHOWN = 12 -- deleted macros in the menu: the newest
+
+StaticPopupDialogs.MACROSENSE_EMPTY_TRASH = {
+    text = "Empty the trash? Its %s deleted macros will be gone for good.",
+    button1 = YES, button2 = NO,
+    OnAccept = function()
+        for _, scope in ipairs({ "general", "character" }) do
+            local trash = ns.History.Trash(scope)
+            for i = #trash, 1, -1 do trash[i] = nil end
+        end
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+-- The deleted macros of both tabs, newest first: { scope, entry }.
+local function Deleted()
+    local out = {}
+    for _, scope in ipairs({ "general", "character" }) do
+        for _, entry in ipairs(ns.History.Trash(scope)) do out[#out + 1] = { scope = scope, entry = entry } end
+    end
+    table.sort(out, function(a, b) return a.entry.time > b.entry.time end)
+    return out
+end
+
+-- A deleted macro back in its tab, under a free name, and opened. Unsaved changes are asked about first.
+function Window.Undelete(scope, entry)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local first, last, max = MacroRange(scope)
+    if last - first + 1 >= max then return ns.Print("no free %s macro slots", scope) end
+    Guard(function()
+        local name = FreeName(entry.name)
+        local index = CreateMacro(name, entry.icon or NEW_ICON, entry.body, scope == "character")
+        if not index or index == 0 then return ns.Print("could not restore the macro") end
+        local trash = ns.History.Trash(scope)
+        for i, e in ipairs(trash) do
+            if e == entry then table.remove(trash, i) break end
+        end
+        ns.History.Scan()
+        state.scope, ns.db.scope = scope, scope
+        Load(GetMacroIndexByName(name))
+    end)
+end
+
+local function TrashItems()
+    local items, dim, deleted = {}, ns.scheme.dim, Deleted()
+    for n = 1, math.min(#deleted, TRASH_SHOWN) do
+        local d = deleted[n]
+        local first, last, max = MacroRange(d.scope)
+        local full = last - first + 1 >= max
+        items[n] = {
+            name = string.format("%s  |cff%s%s|r", d.entry.name, dim, When(d.entry.time)),
+            disabled = full,
+            onClick = function() Window.Undelete(d.scope, d.entry) end,
+            onEnter = function(row)
+                GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+                GameTooltip:AddLine(d.entry.name, 1, 1, 1)
+                GameTooltip:AddLine(full and string.format("The %s tab is full.", SCOPE_NAMES[d.scope])
+                    or string.format("Deleted from %s: %s. Click to bring it back.", SCOPE_NAMES[d.scope],
+                        When(d.entry.time)), 0.8, 0.8, 0.8, true)
+                for line in ((d.entry.body or "") .. "\n"):gmatch("([^\n]*)\n") do
+                    GameTooltip:AddLine(line ~= "" and line:gsub("|", "||") or " ", 0.6, 0.6, 0.6, true)
+                end
+                GameTooltip:Show()
+            end,
+        }
+    end
+    local noop = function() end
+    if #deleted == 0 then items[1] = { name = "No deleted macros", disabled = true, onClick = noop } end
+    if #deleted > TRASH_SHOWN then
+        items[#items + 1] = { name = string.format("%d older", #deleted - TRASH_SHOWN), disabled = true,
+            onClick = noop }
+    end
+    items[#items + 1] = { name = "Empty the trash", disabled = #deleted == 0,
+        onClick = function() StaticPopup_Show("MACROSENSE_EMPTY_TRASH", #deleted) end }
+    return items
+end
+
+------------------------------------------------------------------------
 -- Wizard: a new macro from a form, in a window of its own
 ------------------------------------------------------------------------
 -- A name no macro has, cut to fit (see FreeName).
@@ -821,6 +901,16 @@ local function Build()
         GameTooltip:Show()
     end)
     shareBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    local trashBtn = ns.MenuButton(side, "Trash", 64, TrashItems, true)
+    trashBtn:SetPoint("BOTTOM", 0, 8)
+    trashBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Trash", 1, 1, 1)
+        GameTooltip:AddLine("Macros deleted here, in the game's macro window or by another addon: pick one to bring "
+            .. "it back.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    trashBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     local newBtn = ns.Button(side, "New", 64, Window.New)
     newBtn:SetPoint("BOTTOMLEFT", 8, 36)
     deleteBtn = ns.Button(side, "Delete", 64, function()

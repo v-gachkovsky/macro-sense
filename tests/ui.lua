@@ -2650,6 +2650,128 @@ do
     NextFrame()
 end
 
+-- Trash: a macro deleted anywhere comes back with a click; a rename in the game's window is no delete.
+do
+    local trashBtn
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Trash" then trashBtn = o end
+    end
+    local function Rows()
+        if MacroSenseMenu:IsShown() then MacroSenseMenu:Hide() end
+        Fire(trashBtn, "OnClick")
+        local rows = {}
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() then rows[#rows + 1] = r end
+        end
+        return rows
+    end
+    local function Labels()
+        local out = {}
+        for i, r in ipairs(Rows()) do out[i] = ns.Highlight.Strip(r.text.text):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") end
+        MacroSenseMenu:Hide()
+        return table.concat(out, " / ")
+    end
+    local function Row(label)
+        for _, r in ipairs(Rows()) do
+            if r.text.text:sub(1, #label) == label then return r end
+        end
+    end
+    local function wipe(t) for i = #t, 1, -1 do t[i] = nil end end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    wipe(ns.History.Trash("general"))
+    wipe(ns.History.Trash("character"))
+    check("trash: empty", Labels() == "No deleted macros / Empty the trash", Labels())
+
+    CreateMacro("Trash A", 135000, "/cast Fear", false)
+    CreateMacro("Trash B", 135001, "/cast Heal", true)
+    CreateMacro("Trash C", 135002, "/cast Fire", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Delete(GetMacroIndexByName("Trash A")) -- here
+    Send("UPDATE_MACROS")
+    clock = clock + 60
+    DeleteMacro(GetMacroIndexByName("Trash B")) -- in the game's window
+    Send("UPDATE_MACROS")
+    EditMacro(GetMacroIndexByName("Trash C"), "Trash C", 135002, "/cast Fire\n/sit")
+    Send("UPDATE_MACROS")
+    EditMacro(GetMacroIndexByName("Trash C"), "Trash D", 135002, "/cast Fire\n/sit") -- renamed there
+    Send("UPDATE_MACROS")
+    check("trash: deleted here and there, newest first", Labels() == "Trash B  Today, 14:33 / Trash A  Today, "
+        .. "14:32 / Empty the trash", Labels())
+    check("trash: a rename is no delete, its versions go along", ns.History.Store("general")["Trash C"] == nil
+        and #ns.History.Store("general")["Trash D"] == 1)
+    check("trash: each tab's own", #ns.History.Trash("general") == 1 and #ns.History.Trash("character") == 1
+        and ns.db.trash[1].name == "Trash A" and ns.char.trash[1].name == "Trash B")
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(Row("Trash B"), "OnEnter")
+    GameTooltip.AddLine = nil
+    MacroSenseMenu:Hide()
+    check("trash: where from, when, the text", table.concat(tip, " / ")
+        == "Trash B / Deleted from Character: Today, 14:33. Click to bring it back. / /cast Heal", table.concat(tip, " / "))
+
+    Fire(Row("Trash A"), "OnClick")
+    check("trash: back as it was, opened", body("Trash A") == "/cast Fear"
+        and select(2, GetMacroInfo(GetMacroIndexByName("Trash A"))) == 135000 and raw() == "/cast Fear"
+        and ns.db.scope == "general", raw())
+    check("trash: and out of the trash", Labels() == "Trash B  Today, 14:33 / Empty the trash", Labels())
+    CreateMacro("Trash B", 135001, "/cast Other", true)
+    Send("UPDATE_MACROS")
+    Fire(Row("Trash B"), "OnClick")
+    check("trash: a taken name gets a number", body("Trash B 2") == "/cast Heal" and body("Trash B") == "/cast Other"
+        and ns.db.scope == "character", body("Trash B 2"))
+
+    -- A full tab: the macro waits; not in combat; unsaved changes are asked about.
+    DeleteMacro(GetMacroIndexByName("Trash A"))
+    Send("UPDATE_MACROS")
+    local fillers = SLOTS.MAX_ACCOUNT_MACROS - GetNumMacros()
+    for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", false) end
+    local full = Row("Trash A")
+    local count = GetNumMacros()
+    Fire(full, "OnClick")
+    MacroSenseMenu:Hide()
+    ns.Window.Undelete("general", ns.History.Trash("general")[#ns.History.Trash("general")])
+    check("trash: not into a full tab", full.item.disabled and GetNumMacros() == count
+        and printed[#printed]:find("no free general macro slots", 1, true) ~= nil, printed[#printed])
+    for i = 1, fillers do DeleteMacro(GetMacroIndexByName("Filler " .. i)) end
+    Send("UPDATE_MACROS")
+    wipe(ns.History.Trash("general")) -- the fillers
+    ns.History.Discard(ns.History.Trash("general"), "Trash A", { body = "/cast Fear", icon = 135000 }, clock)
+    InCombatLockdown = function() return true end
+    count = GetNumMacros()
+    ns.Window.Undelete("general", ns.History.Trash("general")[1])
+    InCombatLockdown = function() return false end
+    check("trash: not in combat", GetNumMacros() == count and printed[#printed]:find("in combat") ~= nil)
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    local asked, show = 0, StaticPopup_Show
+    StaticPopup_Show = function(...)
+        asked = asked + 1
+        return show(...)
+    end
+    Fire(Row("Trash A"), "OnClick")
+    check("trash: unsaved changes asked about", asked == 1 and body("Trash A") == "/cast Fear", asked)
+    DeleteMacro(GetMacroIndexByName("Trash A"))
+    Send("UPDATE_MACROS")
+    Fire(Row("Empty the trash"), "OnClick")
+    StaticPopup_Show = show
+    check("trash: emptied, after asking", asked == 2 and Labels() == "No deleted macros / Empty the trash", Labels())
+
+    -- A long trash: the newest in the menu, the rest counted.
+    for i = 1, 14 do ns.History.Discard(ns.History.Trash("general"), "Old " .. i, { body = "/sit", icon = 1 }, i) end
+    local rows = Rows()
+    MacroSenseMenu:Hide()
+    check("trash: the newest twelve, the rest counted", #rows == 14 and rows[1].text.text:find("^Old 14")
+        and ns.Highlight.Strip(rows[13].text.text) == "2 older" and rows[13].item.disabled, #rows)
+    for _, name in ipairs({ "Trash B", "Trash B 2", "Trash D" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    wipe(ns.History.Trash("general"))
+    wipe(ns.History.Trash("character"))
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- A command the client has but its game does nothing with: /petmoveto before Cataclysm is a warning.
 do
     local function warned(raw)
