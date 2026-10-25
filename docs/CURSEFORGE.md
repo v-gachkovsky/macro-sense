@@ -115,6 +115,11 @@ find among dozens; hover it to see what's wrong.
 Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you, and so does the macro's tooltip on your
 action bar; the button with that key turns red.
 
+![The status bar warns: Cmd+Q is a macOS shortcut](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-editor.png)
+
+![The macro's tooltip on the action bar warns too](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-tooltip.png)
+![Its button on Q turns red](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-bar.png)
+
 ## Live preview
 
 Next to every line the editor shows what it would do **right now**: which spell or item it casts and on

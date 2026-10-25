@@ -157,6 +157,10 @@ an empty `[]` removes both.
   Keys are found from a direct `MACRO name` binding and the standard action bars; bars of addons (Bartender,
   ElvUI) are not checked.
 
+<p align="center"><img src="docs/mac-shortcut-editor.png" width="720" alt="The status bar warns: Cmd+Q is a macOS shortcut"></p>
+<p align="center"><img src="docs/mac-shortcut-tooltip.png" width="340" alt="The macro's tooltip on the action bar warns too">
+<img src="docs/mac-shortcut-bar.png" width="177" alt="Its button on Q turns red"></p>
+
 ## Live preview
 
 Next to each line, a note says what it would do if you pressed the macro right now:
