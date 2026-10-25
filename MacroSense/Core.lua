@@ -61,7 +61,7 @@ end
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
     "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED", "UNIT_PET",
-    "PET_BAR_UPDATE" }) do
+    "PET_BAR_UPDATE", "PLAYER_REGEN_ENABLED" }) do
     f:RegisterEvent(e)
 end
 f:SetScript("OnEvent", function(_, event, name)
@@ -85,7 +85,11 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.RegisterActionCommands()
         ns.History.Scan()
         ns.MinimapButton.Update()
+        ns.ActionBars.Setup()
         Welcome()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        -- Action buttons can't be set up in combat: those made during it are set up now.
+        ns.ActionBars.Setup()
     elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player") then
         ns.InvalidateSources("spells")
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then

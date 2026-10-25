@@ -37,6 +37,10 @@ function Frame:__index(k)
     if k:find("^%u") then return function() end end -- every other widget method is a no-op
 end
 function Frame:SetScript(s, fn) self.scripts[s] = fn end
+function Frame:RegisterEvent(e)
+    self.events = self.events or {}
+    self.events[e] = true
+end
 function Frame:GetScript(s) return self.scripts[s] end
 function Frame:HookScript(s, fn)
     local old = self.scripts[s]
@@ -215,10 +219,80 @@ local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 1 } }
 function GetBindingKey(command) return bindings[command] end
 local picked
 function PickupMacro(index) picked = index end
-function GetActionInfo(slot) if actions[slot] then return actions[slot][1], actions[slot][2] end end
+function GetActionInfo(slot) if actions[slot] then return actions[slot][1], actions[slot][2], actions[slot][3] end end
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
 function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
 GameTooltip = New("GameTooltip")
+function GameTooltip:SetOwner(owner) self.owner = owner end
+function GameTooltip:GetOwner() return self.owner end
+function GameTooltip:SetAction(slot) return actions[slot] ~= nil end
+function hooksecurefunc(t, name, hook)
+    local original = t[name]
+    t[name] = function(...)
+        local r = table.pack(original(...))
+        hook(...)
+        return table.unpack(r, 1, r.n)
+    end
+end
+
+-- Action buttons. The game's own register with ActionBarButtonEventsFrame, those of LibActionButton (Bartender,
+-- ElvUI) are in its registry. `ran` counts the clicks that reach a button's own OnClick. A macro that shows a
+-- spell gives that spell's ID as the game does: { "macro", spellID, "spell", text = macro name }.
+C_ActionBar = { GetActionText = function(slot) return actions[slot] and actions[slot].text end }
+local barPage = 1
+local function ActionButton(id, attributes, parent)
+    local b = New("CheckButton")
+    b.id, b.attributes, b.parent, b.ran = id, attributes, parent, 0
+    b.scripts.OnClick = function(self) self.ran = self.ran + 1 end
+    return b
+end
+ActionBarButtonEventsFrame = { frames = {} }
+function ActionBarButtonEventsFrame:RegisterFrame(b) table.insert(self.frames, b) end
+local lab = { buttonRegistry = {} } -- LibActionButton-1.0; RegisterCallback keeps the function by event
+function lab.RegisterCallback(_, event, fn) lab[event] = fn end
+function LibStub(name) if name == "LibActionButton-1.0" then return lab end end
+-- The game's click wrap (SecureHandlers.lua): the snippet runs before the button's own OnClick, with handles
+-- of the button as `self` and of the header as `control`; false stops the click there.
+local function Attribute(frame, name)
+    local v = frame.attributes and frame.attributes[name]
+    if v == nil and frame.attributes and frame.attributes["useparent-" .. name] and frame.parent then
+        return Attribute(frame.parent, name)
+    end
+    return v
+end
+local function Handle(frame)
+    return {
+        GetID = function() return frame.id or 0 end,
+        GetEffectiveAttribute = function(_, name) return Attribute(frame, name) end,
+        -- Out of the secure code; the game hands its errors to the error handler.
+        CallMethod = function(_, method, ...)
+            local ok, err = pcall(frame[method], frame, ...)
+            if not ok then geterrorhandler()(err) end
+        end,
+    }
+end
+function SecureHandlerWrapScript(frame, script, header, preBody)
+    if frame.forbidden then error("Cannot use SecureHandlers API on forbidden frames") end
+    local env = {
+        IsShiftKeyDown = function() return IsShiftKeyDown() end,
+        GetActionBarPage = function() return barPage end,
+        GetActionInfo = function(slot) return GetActionInfo(slot) end,
+    }
+    local body = assert(load("local self, button, down = ...\n" .. preBody, "=PRE_CLICK", "t", env))
+    local inner = frame.scripts[script]
+    frame.scripts[script] = function(f, button, down, ...)
+        env.control = Handle(header)
+        if body(Handle(f), button, down) == false then return end
+        return inner(f, button, down, ...)
+    end
+end
+-- On the main bar from the start: its page is the game's, the button's ID is its slot on it.
+local mainBar = New("Frame")
+mainBar.attributes = {}
+local startButton = ActionButton(2, { type = "action", ["useparent-actionpage"] = true }, mainBar)
+ActionBarButtonEventsFrame:RegisterFrame(startButton)
+local labButton = ActionButton(0, { type = "action", action = 100 })
+lab.buttonRegistry[labButton] = true
 -- A round minimap 140 px wide, its center at 1000, 600 on the screen; the mouse moves in tests.
 Minimap = New("Frame", "Minimap")
 function Minimap:GetWidth() return 140 end
@@ -315,6 +389,16 @@ do
 end
 
 CreateMacro("Nuke", 1, "#showtooltip\n/cast Fireball", false)
+-- Shift + right-click on it on an action bar opens the editor, also before it was ever opened.
+actions[2] = { "macro", 133, "spell", text = "Nuke" }
+IsShiftKeyDown = function() return true end
+Fire(startButton, "OnClick", "RightButton", true)
+Fire(startButton, "OnClick", "RightButton", false)
+IsShiftKeyDown = function() return false end
+check("action bars: the editor opens on it the first time", #reported == 0 and MacroSenseFrame ~= nil
+    and MacroSenseFrame:IsShown(), reported[1])
+reported, actions[2] = {}, nil
+if MacroSenseFrame then MacroSenseFrame:Hide() end
 ns.Window.Toggle()
 -- Find the CodeBox edit: the multi-line EditBox with an OnTextChanged that strips colors.
 local edit
@@ -2069,6 +2153,147 @@ do
     ns.Window.Toggle()
 
     for _, name in ipairs({ "Burst", "Burst 2", "Polymorph" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- Shift + right-click on a macro on an action bar opens it in the editor instead of running it.
+do
+    -- Down and up, as the game sends a click; how many of them reached the button's own OnClick.
+    local function Click(b, mouse, shift)
+        IsShiftKeyDown = function() return shift end
+        local ran = b.ran
+        Fire(b, "OnClick", mouse, true)
+        Fire(b, "OnClick", mouse, false)
+        IsShiftKeyDown = function() return false end
+        return b.ran - ran
+    end
+    local function Later(b)
+        ActionBarButtonEventsFrame:RegisterFrame(b)
+        NextFrame()
+        return b
+    end
+    local errors = #reported -- the game shows them; the click itself goes on
+    CreateMacro("Bar Fear", 1, "/cast Fear", false)
+    CreateMacro("Bar Heal", 1, "/cast Heal", true)
+    Send("UPDATE_MACROS")
+    MacroSenseFrame:Hide()
+    actions[2] = { "macro", 5782, "spell", text = "Bar Fear" }
+    check("action bars: shift + right-click doesn't run the macro", Click(startButton, "RightButton", true) == 0)
+    check("action bars: it opens the editor on it", MacroSenseFrame:IsShown() and raw() == "/cast Fear", raw())
+    check("action bars: a right-click runs it", Click(startButton, "RightButton", false) == 2)
+    check("action bars: shift + left-click runs it", Click(startButton, "LeftButton", true) == 2)
+    -- A drag starts with the button down and never lets go on the button.
+    ns.Window.Open(GetMacroIndexByName("Bar Heal"))
+    IsShiftKeyDown = function() return true end
+    Fire(startButton, "OnClick", "RightButton", true)
+    IsShiftKeyDown = function() return false end
+    check("action bars: dragging the macro doesn't open it", raw() == "/cast Heal", raw())
+    -- Changed in the game's macro window while the editor was closed: it opens as it is now.
+    EditMacro(GetMacroIndexByName("Bar Fear"), "Bar Fear", 1, "/cast Fear\n/say boo")
+    Click(startButton, "RightButton", true)
+    MacroSenseFrame:Hide()
+    EditMacro(GetMacroIndexByName("Bar Fear"), "Bar Fear", 1, "/cast Fear")
+    Click(startButton, "RightButton", true)
+    check("action bars: the macro as it is now", raw() == "/cast Fear", raw())
+    actions[7] = { "equipmentset", "Bar Fear", text = "Bar Fear" } -- its button shows the set's name
+    check("action bars: only a macro's slot has a macro",
+        ns.ActionBars.MacroAt(2) ~= nil and ns.ActionBars.MacroAt(7) == nil)
+    local listens
+    for _, o in ipairs(created) do listens = listens or (o.events and o.events.PLAYER_REGEN_ENABLED) end
+    check("action bars: the end of combat is listened for", listens)
+
+    -- The slot: the button's ID on its bar's page.
+    local bottomBar = New("Frame")
+    bottomBar.attributes = { actionpage = 6 }
+    local bottom = Later(ActionButton(3, { type = "action", ["useparent-actionpage"] = true }, bottomBar))
+    actions[63] = { "macro", 2061, "spell", text = "Bar Heal" }
+    check("action bars: a button made later, on another page", Click(bottom, "RightButton", true) == 0
+        and raw() == "/cast Heal", raw())
+    check("action bars: a character macro opens in its tab", ns.db.scope == "character", ns.db.scope)
+    barPage = 2
+    actions[2], actions[14] = { "spell", 5782 }, { "macro", 5782, "spell", text = "Bar Fear" } -- 14: page 2's 2
+    check("action bars: the main bar's page", Click(startButton, "RightButton", true) == 0 and raw() == "/cast Fear",
+        raw())
+    barPage = 1
+    actions[2] = { "macro", 5782, "spell", text = "Bar Fear" }
+
+    local other = Later(ActionButton(4, { type = "action", ["useparent-actionpage"] = true }, mainBar))
+    actions[4] = { "spell", 5782 }
+    check("action bars: a spell runs on shift + right-click", Click(other, "RightButton", true) == 2)
+    actions[4] = { "macro", GetMacroIndexByName("Bar Heal"), "", text = "Bar Heal" }
+    check("action bars: a macro that shows no spell", Click(other, "RightButton", true) == 0 and raw() == "/cast Heal",
+        raw())
+    actions[4] = { "macro", 5782, "spell", text = "Gone" }
+    check("action bars: a macro not found runs nothing and opens nothing",
+        Click(other, "RightButton", true) == 0 and raw() == "/cast Heal", raw())
+
+    -- Bartender and ElvUI: the slot is the button's "action" attribute.
+    actions[100] = { "macro", 5782, "spell", text = "Bar Fear" }
+    check("action bars: LibActionButton's buttons", Click(labButton, "RightButton", true) == 0
+        and raw() == "/cast Fear", raw())
+    local petButton = ActionButton(0, { type = "action", action = 4 })
+    lab.OnButtonCreated("OnButtonCreated", petButton)
+    NextFrame()
+    check("action bars: LibActionButton's buttons made later", Click(petButton, "RightButton", true) == 0)
+    petButton.attributes.type = "pet" -- its action is a pet bar slot, not an action slot
+    check("action bars: a pet button is left alone", Click(petButton, "RightButton", true) == 2)
+
+    InCombatLockdown = function() return true end
+    actions[5] = { "macro", 5782, "spell", text = "Bar Fear" }
+    local late = Later(ActionButton(5, { type = "action", ["useparent-actionpage"] = true }, mainBar))
+    check("action bars: buttons made in combat work as usual", Click(late, "RightButton", true) == 2)
+    InCombatLockdown = function() return false end
+    Send("PLAYER_REGEN_ENABLED")
+    check("action bars: and are set up when it ends", Click(late, "RightButton", true) == 0)
+    local refused = ActionButton(6, { type = "action", ["useparent-actionpage"] = true }, mainBar)
+    refused.forbidden = true
+    actions[6] = { "macro", 5782, "spell", text = "Bar Fear" }
+    Later(refused)
+    check("action bars: a button the game won't let us set up works as usual", Click(refused, "RightButton", true) == 2)
+    -- Their slots are on bars of their own; slot 2 of the main bar has a macro.
+    local extra = ActionButton(2, { type = "action", ["useparent-actionpage"] = true }, mainBar)
+    extra.isExtra = true
+    check("action bars: the extra action button is left alone", Click(Later(extra), "RightButton", true) == 2)
+    local totem = ActionButton(2, { type = "action", ["useparent-actionpage"] = true }, mainBar)
+    totem.buttonType = "MULTICASTACTIONBUTTON"
+    check("action bars: so is the totem bar", Click(Later(totem), "RightButton", true) == 2)
+
+    -- The tooltip of a macro says so.
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    local function Tip(owner, slot)
+        tip = {}
+        GameTooltip:SetOwner(owner)
+        GameTooltip:SetAction(slot)
+        return table.concat(tip, " / ")
+    end
+    check("action bars: a macro's tooltip tells", Tip(startButton, 2) == ns.ActionBars.TIP, Tip(startButton, 2))
+    check("action bars: and on LibActionButton's", Tip(labButton, 100) == ns.ActionBars.TIP, Tip(labButton, 100))
+    actions[4] = { "spell", 5782 }
+    check("action bars: a spell's doesn't", Tip(other, 4) == "", Tip(other, 4))
+    check("action bars: nor a button not set up", Tip(refused, 6) == "", Tip(refused, 6))
+    GameTooltip.AddLine = nil
+
+    -- Unsaved changes: to another macro they are asked about, the macro's own stay.
+    local asked, show = 0, StaticPopup_Show
+    StaticPopup_Show = function(...)
+        asked = asked + 1
+        return show(...)
+    end
+    Click(startButton, "RightButton", true)
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/say hi")
+    Click(startButton, "RightButton", true)
+    check("action bars: the same macro keeps its unsaved changes", asked == 0 and raw() == "/cast Fear\n/say hi", raw())
+    Click(bottom, "RightButton", true)
+    check("action bars: another macro asks first", asked == 1 and raw() == "/cast Heal", asked .. " " .. raw())
+    StaticPopup_Show = show
+    check("action bars: no Lua errors", #reported == errors, reported[errors + 1])
+
+    for _, name in ipairs({ "Bar Fear", "Bar Heal" }) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
     ns.Window.SetScope("general")
     ns.Window.Select(1)

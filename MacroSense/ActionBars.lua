@@ -1,0 +1,102 @@
+-- Shift + right-click on a macro on an action bar opens it in the editor instead of running it, and the
+-- button's tooltip says so. On the game's own buttons and those made from them (Dominos), and on the buttons
+-- of LibActionButton (Bartender, ElvUI). The click is caught in the game's secure code, so the buttons work
+-- in combat as before and every other click goes on as it did.
+local _, ns = ...
+ns = ns or {}
+
+local ActionBars = {}
+ns.ActionBars = ActionBars
+
+ActionBars.TIP = "Shift + right-click: edit in MacroSense"
+-- The libraries Bartender and ElvUI make their buttons with.
+local LIBRARIES = { "LibActionButton-1.0", "LibActionButton-1.0-ElvUI" }
+
+local GetActionText = C_ActionBar and C_ActionBar.GetActionText or GetActionText
+
+-- The index of the macro on action slot `slot`, or nil. For a macro that shows a spell the game gives the
+-- spell's ID, not the macro's, so the macro is found by its name, which the button shows (of two macros with
+-- one name, the first, as a MACRO binding runs it).
+function ActionBars.MacroAt(slot)
+    if GetActionInfo(slot) ~= "macro" then return nil end
+    local index = GetMacroIndexByName(GetActionText(slot) or "")
+    return index and index > 0 and index or nil
+end
+
+-- Runs in the game's secure code before each click on a button (self: the button, control: our frame below).
+-- Shift + right-click on an action with a macro goes no further, and the macro opens when the mouse button is
+-- let go (a drag doesn't open it). The slot is found as the button finds it
+-- (SecureActionButtonMixin:CalculateAction): from its ID and the bar's page, or its "action" attribute.
+local PRE_CLICK = [[
+    if button ~= "RightButton" or not IsShiftKeyDown() then return end
+    if self:GetEffectiveAttribute("type", button) ~= "action" then return end
+    local slot = self:GetID()
+    if slot > 0 then
+        slot = slot + ((self:GetEffectiveAttribute("actionpage", button) or GetActionBarPage()) - 1) * 12
+    else
+        slot = self:GetEffectiveAttribute("action", button)
+    end
+    if not slot or GetActionInfo(slot) ~= "macro" then return end
+    if not down then control:CallMethod("Edit", slot) end
+    return false
+]]
+
+local header -- the secure frame PRE_CLICK belongs to; it opens the editor
+local wrapped = {} -- button -> true when its clicks go through PRE_CLICK, false when they don't
+
+local function Wrap(button)
+    if wrapped[button] ~= nil or InCombatLockdown() then return end -- after combat then
+    -- The extra action button and the totem bar find their slots on bars of their own, with no macros.
+    if button.isExtra or button.buttonType == "MULTICASTACTIONBUTTON" then
+        wrapped[button] = false
+        return
+    end
+    if not header then
+        header = CreateFrame("Frame", nil, nil, "SecureHandlerBaseTemplate")
+        function header:Edit(slot)
+            local index = ActionBars.MacroAt(slot)
+            if index then ns.Window.Open(index) end
+        end
+    end
+    local before = button:GetScript("OnClick")
+    pcall(SecureHandlerWrapScript, button, "OnClick", header, PRE_CLICK)
+    wrapped[button] = button:GetScript("OnClick") ~= before
+end
+
+-- A button just made may still be setting itself up: it is wrapped a frame later.
+local function Later(_, button)
+    C_Timer.After(0, function() Wrap(button) end)
+end
+
+local function AddTip(tooltip, slot)
+    if wrapped[tooltip:GetOwner()] and GetActionInfo(slot) == "macro" then
+        tooltip:AddLine(ActionBars.TIP, 0.34, 0.61, 0.84)
+        tooltip:Show()
+    end
+end
+
+local hooked, watched = false, {} -- watched: the LibActionButton libraries told of new buttons
+
+-- On login and after combat (buttons made during it); buttons made later are wrapped as they come.
+function ActionBars.Setup()
+    if not SecureHandlerWrapScript then return end
+    local blizzard = ActionBarButtonEventsFrame -- every button of the game's template registers with it
+    if not hooked then
+        hooked = true
+        hooksecurefunc(GameTooltip, "SetAction", AddTip)
+        if blizzard then hooksecurefunc(blizzard, "RegisterFrame", Later) end
+    end
+    if blizzard and blizzard.frames then
+        for _, button in pairs(blizzard.frames) do Wrap(button) end
+    end
+    for _, name in ipairs(LIBRARIES) do
+        local lib = LibStub and LibStub(name, true)
+        if lib and lib.RegisterCallback and not watched[lib] then
+            watched[lib] = true
+            lib.RegisterCallback(ActionBars, "OnButtonCreated", Later)
+        end
+        for button in pairs(lib and lib.buttonRegistry or {}) do Wrap(button) end
+    end
+end
+
+return ActionBars

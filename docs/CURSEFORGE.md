@@ -11,8 +11,9 @@ commands, conditions, units, spells and items as you type, colors the syntax, an
 you find them in combat. The macros stay the game's own, so the Blizzard window, your action bars and other
 addons see every change.
 
-Open it from the **minimap button** (drag it along the edge to move it), with `/ms`, or with the
-**MacroSense** button in the game's macro window. On Retail it's in the addon menu by the minimap too.
+Open it from the **minimap button** (drag it along the edge to move it), with `/ms`, with the
+**MacroSense** button in the game's macro window, or with **Shift + right-click** on a macro on your action
+bars, which opens that macro. On Retail it's in the addon menu by the minimap too.
 
 **Works on every client:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever.
 
@@ -147,6 +148,8 @@ Every change you save, here, in the game's macro window or with another addon, k
   items first, then all 27,000+ game icons. **Search** by spell or item name.
 - The icon grid can be resized, moved away from the editor and docked back.
 - **Drag** a macro from the list, or its icon from the header, straight onto an action bar.
+- **Shift + right-click** a macro on an action bar to edit it: the editor opens on it instead of the macro
+  running, and the tooltip says so. On the game's bars, Bartender, Dominos and ElvUI.
 
 ## Editing comforts
 
