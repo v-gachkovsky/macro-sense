@@ -19,6 +19,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   bottom line shows how far). Pointing at an icon shows its names, and case doesn't count in Cyrillic or
   accented names there either.
 
+### Fixed
+- The macOS shortcut warning missed most macros on action bars: for a macro that shows a spell the game gives
+  the spell's ID, not the macro's. Macros on bars are now found by the name their button shows. The same mix-up
+  left the `/click` suggestions without the name of such a macro, or showed another macro's name.
+
 ## [0.2.1] - 2026-10-24
 
 ### Changed
