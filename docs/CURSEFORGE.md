@@ -166,6 +166,8 @@ Every change you save, here, in the game's macro window or with another addon, k
 - Line, column and a length counter (macros are limited to 255 characters).
 - Asks before discarding unsaved changes.
 - **Copy** a macro: a duplicate in the same tab, or a copy in the Character / General tab.
+- **Share** macros: a code of one macro, a tab or all of them, to copy and send. **Import a code** shows what
+  it holds and where each macro goes before making them, and never replaces one of yours.
 
 ---
 

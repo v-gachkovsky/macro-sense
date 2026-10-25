@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua", "Wizard.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua", "Share.lua", "Wizard.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -1001,6 +1001,42 @@ do
     check("minimap: tricorner, the square one", at(315, "TRICORNER-TOPLEFT") == "75.0,-75.0",
         at(315, "TRICORNER-TOPLEFT"))
     check("minimap: a shape it doesn't know is round", at(45, "HEXAGON") == "53.0,53.0", at(45, "HEXAGON"))
+end
+
+-- Share: macros as a code and back, whatever a chat app does around it.
+do
+    local S = ns.Share
+    local macros = {
+        { scope = "general", icon = 136183, name = "Fear Focus", body = "#showtooltip\n/cast [@focus,harm] Fear" },
+        { scope = "character", icon = "Interface\\Icons\\My_Skull", name = "Чорна стріла", body = "/say |cffff0000hi|r" },
+        { scope = "general", icon = 134400, name = "Empty", body = "" },
+    }
+    local code = S.Encode(macros)
+    check("share: a code of letters and digits", code:match("^MacroSense1:[%w+/=]+%.$") ~= nil, code)
+    local function Same(a, b)
+        if not (a and #a == #b) then return false end
+        for i, m in ipairs(b) do
+            local x = a[i]
+            if x.scope ~= m.scope or x.icon ~= m.icon or x.name ~= m.name or x.body ~= m.body then return false end
+        end
+        return true
+    end
+    check("share: the same macros back", Same(S.Decode(code), macros))
+    for _, body in ipairs({ "a", "ab", "abc", "abcd" }) do -- each length of the last group of three
+        local one = { { scope = "general", icon = 1, name = "N", body = body } }
+        check("share: a text of " .. #body .. " letters", Same(S.Decode(S.Encode(one)), one))
+    end
+    local chat = "here: " .. code:sub(1, 30) .. "\n" .. code:sub(31, 60) .. "  " .. code:sub(61) .. " thanks!"
+    check("share: line breaks, spaces and words around", Same(S.Decode(chat), macros))
+    local function Problem(text) return select(2, S.Decode(text)) or "" end
+    check("share: not a code", Problem("/cast Fear"):find("not a MacroSense code") ~= nil, Problem("/cast Fear"))
+    check("share: cut short", Problem(code:sub(1, -12)):find("cut short") ~= nil, Problem(code:sub(1, -12)))
+    check("share: without its end", Problem(code:sub(1, -2)):find("cut short") ~= nil)
+    local i = #code - 20
+    local changed = code:sub(1, i - 1) .. (code:sub(i, i) == "A" and "B" or "A") .. code:sub(i + 1)
+    check("share: a letter changed", Problem(changed):find("changed") ~= nil, Problem(changed))
+    local nameless = S.Encode({ { scope = "general", icon = 1, name = "", body = "/sit" } })
+    check("share: a macro without a name", Problem(nameless):find("damaged") ~= nil, Problem(nameless))
 end
 
 -- Icon names: the game's spells, then its achievements, name the icons they use; looked up a part at a time.

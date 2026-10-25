@@ -21,6 +21,7 @@ Completion.lua
 Sources.lua
 Shortcuts.lua
 History.lua
+Share.lua
 Wizard.lua
 Widgets.lua
 Popup.lua
@@ -29,6 +30,7 @@ Autocomplete.lua
 IconNames.lua
 IconPicker.lua
 WizardWindow.lua
+ShareWindow.lua
 Window.lua
 MinimapButton.lua
 ActionBars.lua

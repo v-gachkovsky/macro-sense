@@ -67,7 +67,11 @@ function Frame:CreateTexture()
     t.parentFrame = self
     return t
 end
-function Frame:CreateFontString() return New("FontString") end
+function Frame:CreateFontString()
+    local fs = New("FontString")
+    fs.parentFrame = self
+    return fs
+end
 function Frame:GetWidth() return 300 end
 function Frame:GetHeight() return 200 end
 function Frame:GetFrameLevel() return 1 end
@@ -2515,6 +2519,131 @@ do
     check("action bars: no Lua errors", #reported == errors, reported[errors + 1])
 
     for _, name in ipairs({ "Bar Fear", "Bar Heal" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- Share: macros as a code to copy, and a code to import; nothing is replaced, a taken name gets a number.
+do
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and ns.Highlight.Strip(r.text.text):sub(1, #label) == label then return r end
+        end
+    end
+    local share
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Share" then share = o end
+    end
+    local function Pick(label)
+        Fire(share, "OnClick")
+        local item = menuItem(label)
+        if item then Fire(item, "OnClick") end
+        return item
+    end
+    local C = function(name) return ns.ShareWindow.Control(name) end
+    CreateMacro("Share A", 134400, "/cast Fear", false)
+    CreateMacro("Share B", 136183, "/cast Heal", true)
+    Send("UPDATE_MACROS")
+    ns.Window.Open(GetMacroIndexByName("Share A"))
+    NextFrame()
+
+    Pick("Export this macro")
+    local code = C("box").text
+    local macros = ns.Share.Decode(code)
+    check("share: this macro's code, selected", MacroSenseShare:IsShown() and C("title").text == "Export a macro"
+        and macros and #macros == 1 and macros[1].name == "Share A" and macros[1].body == "/cast Fear"
+        and macros[1].icon == 134400 and macros[1].scope == "general", code)
+    C("box"):SetText("typed over")
+    Fire(C("box"), "OnTextChanged", true)
+    check("share: the code can't be typed over", C("box").text == code)
+    local general, character = GetNumMacros()
+    Pick("Export the General tab")
+    check("share: the tab", #ns.Share.Decode(C("box").text) == general)
+    Pick("Export all macros")
+    local all = C("box").text
+    check("share: both tabs", #ns.Share.Decode(all) == general + character)
+    ns.Window.New()
+    NextFrame()
+    Fire(share, "OnClick")
+    check("share: no saved macro, nothing to export", menuItem("Export this macro").item.disabled)
+    Fire(share, "OnClick")
+
+    -- Import: what the code holds and where each macro goes.
+    Pick("Import a code")
+    check("share: an empty box to paste into", MacroSenseShare:IsShown() and C("title").text == "Import macros"
+        and C("box").text == "" and C("info").text == "" and not C("import"):IsEnabled())
+    C("box"):SetText("hello")
+    check("share: not a code", C("info").text:find("not a MacroSense code") ~= nil and not C("import"):IsEnabled(),
+        C("info").text)
+    local two = ns.Share.Encode({
+        { scope = "general", icon = 134400, name = "Share A", body = "/cast Fear\n/say boo" },
+        { scope = "character", icon = 136183, name = "Share New", body = "/cast Heal" },
+    })
+    C("box"):SetText(two)
+    local info = C("info").text
+    check("share: what goes where", info:find("2 macros in the code", 1, true)
+        and info:find("Share A: into General as \"Share A 2\" (the name is taken)", 1, true)
+        and info:find("Share New: into Character", 1, true) and C("import"):IsEnabled(), info)
+    local before = general + character
+    Fire(C("import"), "OnClick")
+    check("share: imported, nothing replaced", select(3, GetMacroInfo(GetMacroIndexByName("Share A"))) == "/cast Fear"
+        and GetMacroIndexByName("Share A 2") > 0 and GetMacroIndexByName("Share New") > SLOTS.MAX_ACCOUNT_MACROS
+        and GetNumMacros() + select(2, GetNumMacros()) == before + 2, GetMacroIndexByName("Share A 2"))
+    check("share: the first one opens, the window closes", raw() == "/cast Fear\n/say boo"
+        and not MacroSenseShare:IsShown(), raw())
+
+    -- One name twice in a code: each gets its own.
+    Pick("Import a code")
+    C("box"):SetText(ns.Share.Encode({ { scope = "general", icon = 1, name = "Share A", body = "/sit" },
+        { scope = "general", icon = 1, name = "Share A", body = "/sit" } }))
+    info = C("info").text
+    check("share: a name twice, a number each", info:find("as \"Share A 3\"", 1, true)
+        and info:find("as \"Share A 4\"", 1, true), info)
+    -- One slot left for two: the second doesn't fit.
+    local fillers = SLOTS.MAX_CHARACTER_MACROS - select(2, GetNumMacros()) - 1
+    for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", true) end
+    C("box"):SetText(ns.Share.Encode({ { scope = "character", icon = 1, name = "Last Slot", body = "/sit" },
+        { scope = "character", icon = 1, name = "No Slot", body = "/sit" } }))
+    info = C("info").text
+    check("share: the free slots are counted", info:find("Last Slot: into Character", 1, true)
+        and info:find("No Slot: no free slot in Character", 1, true), info)
+    -- A full tab, a text too long: said, not imported.
+    CreateMacro("Filler last", 1, "/sit", true)
+    fillers = fillers + 1
+    C("box"):SetText(ns.Share.Encode({ { scope = "character", icon = 1, name = "No Room", body = "/sit" },
+        { scope = "general", icon = 1, name = "Too Long", body = ("/say " .. ("x"):rep(260)) } }))
+    info = C("info").text
+    check("share: no free slot, too long", info:find("No Room: no free slot in Character", 1, true)
+        and info:find("Too Long: longer than the game allows", 1, true) and not C("import"):IsEnabled(), info)
+    for i = 1, fillers - 1 do DeleteMacro(GetMacroIndexByName("Filler " .. i)) end
+    DeleteMacro(GetMacroIndexByName("Filler last"))
+
+    -- Not in combat; unsaved changes are asked about first.
+    C("box"):SetText(two)
+    InCombatLockdown = function() return true end
+    local count = GetNumMacros()
+    Fire(C("import"), "OnClick")
+    InCombatLockdown = function() return false end
+    check("share: not in combat", GetNumMacros() == count and MacroSenseShare:IsShown()
+        and printed[#printed]:find("in combat") ~= nil)
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    local asked, show = 0, StaticPopup_Show
+    StaticPopup_Show = function(...)
+        asked = asked + 1
+        return show(...)
+    end
+    Fire(C("import"), "OnClick")
+    StaticPopup_Show = show
+    check("share: unsaved changes asked about", asked == 1 and GetMacroIndexByName("Share A 3") > 0, asked)
+
+    for _, name in ipairs({ "Share A", "Share A 2", "Share A 3", "Share B", "Share New", "Share New 2" }) do
+        local index = GetMacroIndexByName(name)
+        if index > 0 then DeleteMacro(index) end
+    end
     Send("UPDATE_MACROS")
     ns.Window.SetScope("general")
     ns.Window.Select(1)
