@@ -208,7 +208,10 @@ its saved text.
 ## Icons and action bars
 
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),
-then icons of your spells and items, then every macro icon of the game. Search matches spell and item names.
+then icons of your spells and items, then every macro icon of the game. Search matches the names of your
+spells and items, and of any spell in the game that uses an icon (achievements too, on Retail and Mists of
+Pandaria). The game has no names for its icons, so the first time the grid opens in a session they are looked
+up in the background for a few seconds; its bottom line shows how far. Point at an icon to see its names.
 Drag its dotted corner to show more icons at once. It sits next to the editor; drag it by an empty spot to
 move it away, and drop it next to the editor's right edge to dock it again (its border lights up).
 
@@ -248,6 +251,8 @@ Bartender, Dominos and ElvUI.
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
 - `MacroSense/IconPicker.lua`: icon grid.
+- `MacroSense/IconNames.lua`: names for the game's icons from its spells and achievements, looked up in
+  the background.
 - `MacroSense/WizardWindow.lua`: the wizard's window.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
@@ -257,7 +262,7 @@ Bartender, Dominos and ElvUI.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap, icon names
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 

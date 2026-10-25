@@ -1003,6 +1003,83 @@ do
     check("minimap: a shape it doesn't know is round", at(45, "HEXAGON") == "53.0,53.0", at(45, "HEXAGON"))
 end
 
+-- Icon names: the game's spells, then its achievements, name the icons they use; looked up a part at a time.
+do
+    local spells = { [3] = { 10, "Fear" }, [4] = { 10, "Howl of Terror" }, [5] = { 10, "Fear" },
+        [6] = { 11, "Shadow Bolt" }, [7] = { 99, "Fireball" }, [8] = { 12, "Страх" }, [10] = { 12, "Жах" },
+        [2600] = { 12, "Late" } }
+    for id = 20, 24 do spells[id] = { 13, "Spell " .. id } end
+    local clock, fighting = 0, false
+    C_Spell = {
+        GetSpellTexture = function(id) return spells[id] and spells[id][1] end,
+        GetSpellName = function(id) return spells[id] and spells[id][2] end,
+    }
+    InCombatLockdown = function() return fighting end
+    debugprofilestop = function() -- a millisecond later at each look at the clock
+        clock = clock + 1
+        return clock
+    end
+    -- A fresh lookup for icons 10-13: at least to spell `last`, then on until `empty` in a row are empty.
+    local function Lookup(last, empty)
+        local t = { Completion = ns.Completion }
+        assert(loadfile("MacroSense/IconNames.lua"))("MacroSense", t)
+        t.IconNames.SPELLS, t.IconNames.EMPTY = last, empty
+        t.IconNames.Want({ 10, 11, 12, 13 })
+        return t.IconNames
+    end
+    local function Names(lookup, icon)
+        local names = lookup.For(icon)
+        return names and table.concat(names, ",") or ""
+    end
+    local names = Lookup(1000, 3000)
+    check("icon names: a millisecond's worth at a time", names.Step(1) == false and names.Progress() > 0
+        and names.Progress() < 1, names.Progress())
+    fighting = true
+    local before = names.Progress()
+    check("icon names: none in combat", names.Step(1) == false and names.Progress() == before)
+    fighting = false
+    local steps = 1
+    while not names.Step(1) do steps = steps + 1 end
+    check("icon names: then the rest, step by step", steps > 1 and names.Progress() == 1, steps)
+    check("icon names: each name once", Names(names, 10) == "Fear,Howl of Terror", Names(names, 10))
+    check("icon names: only the grid's icons", names.For(99) == nil)
+    check("icon names: four at most", Names(names, 13) == "Spell 20,Spell 21,Spell 22,Spell 23", Names(names, 13))
+    check("icon names: past a long empty stretch", Names(names, 12) == "Страх,Жах,Late", Names(names, 12))
+    check("icon names: searched in small letters, a name a line", names.For(12).text == "страх\nжах\nlate",
+        names.For(12).text)
+    names = Lookup(1000, 2000)
+    while not names.Step(1000) do end
+    check("icon names: they end after that many empty in a row", Names(names, 12) == "Страх,Жах", Names(names, 12))
+    names = Lookup(3000, 100)
+    while not names.Step(1000) do end
+    check("icon names: not before the last spell to look at", Names(names, 12) == "Страх,Жах,Late",
+        Names(names, 12))
+    spells[1600] = { 11, "Shadow Bolt Volley" } -- 1575 empty before it, 999 after
+    names = Lookup(100, 1600)
+    while not names.Step(1000) do end
+    check("icon names: each spell found starts the count over", Names(names, 12) == "Страх,Жах,Late",
+        Names(names, 12))
+    spells[1600] = nil
+    -- Achievements, where the game has them: after the spells.
+    GetCategoryList = function() return { 92, 95 } end
+    GetCategoryNumAchievements = function(category) return category == 92 and 2 or 1 end
+    local read = 0
+    GetAchievementInfo = function(category, i)
+        read = read + 1
+        local icon = ({ [92] = { 11, 98 }, [95] = { 13 } })[category][i]
+        return category * 10 + i, "Achievement " .. category .. "." .. i, 10, false, nil, nil, nil, "", 0, icon
+    end
+    names = Lookup(1000, 100)
+    while not names.Step(1000) do end
+    check("icon names: achievements", Names(names, 11) == "Shadow Bolt,Achievement 92.1", Names(names, 11))
+    check("icon names: of the grid's icons only", names.For(98) == nil)
+    check("icon names: achievements keep the four", Names(names, 13) == "Spell 20,Spell 21,Spell 22,Spell 23",
+        Names(names, 13))
+    check("icon names: once done, nothing is read again", names.Step(1000) and read == 3, read)
+    C_Spell, InCombatLockdown, debugprofilestop = nil, nil, nil
+    GetCategoryList, GetCategoryNumAchievements, GetAchievementInfo = nil, nil, nil
+end
+
 -- Macro slots per tab: Forever and Retail keep them in Constants.MacroConsts, the Classic clients in globals.
 do
     local function slots(constants, general, character)

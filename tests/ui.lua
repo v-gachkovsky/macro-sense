@@ -2,6 +2,14 @@
 -- `lua tests/ui.lua` from the repo root. It catches load errors and logic bugs, not layout.
 local now, timers = 0, {} -- timers: { at = time, fn = function }
 local created = {} -- every frame, so tests can find anonymous ones (Core's event frame, the editor)
+-- Shown, and so are the frames it is in: only then the game runs its OnUpdate.
+local function Visible(o)
+    while o do
+        if not o.shown then return false end
+        o = o.parentFrame
+    end
+    return true
+end
 local function NextFrame()
     now = now + 0.016
     local due, later = {}, {}
@@ -9,7 +17,7 @@ local function NextFrame()
     timers = later
     for _, t in ipairs(due) do t.fn() end
     for _, o in ipairs(created) do
-        if o.scripts.OnUpdate and o.shown then o.scripts.OnUpdate(o, 0.016) end
+        if o.scripts.OnUpdate and Visible(o) then o.scripts.OnUpdate(o, 0.016) end
     end
 end
 
@@ -125,7 +133,11 @@ function Frame:GetTop() return self.top end
 function Frame:IsObjectType(kind) return self.kind == kind end
 function Frame:GetRight() return self.right end
 
-function CreateFrame(kind, name) return New(kind, name) end
+function CreateFrame(kind, name, parent)
+    local o = New(kind, name)
+    o.parentFrame = parent
+    return o
+end
 UIParent = New("Frame")
 
 ------------------------------------------------------------------------
@@ -206,13 +218,19 @@ C_Item = {
     IsHarmfulItem = function() return false end,
 }
 -- Whether a spell is for friends or enemies; a name the game doesn't know it refuses.
+-- The game's spells by ID, known or not (icon names): icon, name.
+local gameSpells = { [5782] = { 1050, "Fear" }, [5484] = { 1050, "Howl of Terror" }, [6789] = { 1051, "Death Coil" },
+    [9000] = { 1052, "Страх" } }
 C_Spell = {
     IsSpellHarmful = function(name)
         if name == "Divine Hymn" then error("unknown spell") end
         return name == "Fireball" or name == "Fire Blast" or name == "Frostbolt"
     end,
     IsSpellHelpful = function() return false end,
+    GetSpellTexture = function(id) return gameSpells[id] and gameSpells[id][1] end,
+    GetSpellName = function(id) return gameSpells[id] and gameSpells[id][2] end,
 }
+function debugprofilestop() return os.clock() * 1000 end
 -- Gear: a trinket in slot 13 (no use effect, can't be equipped from the bags).
 function GetInventoryItemLink(_, slot) if slot == 13 then return "|cffa335ee|Hitem:777::|h[Lucky Charm]|h|r" end end
 local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 1 } }
@@ -361,6 +379,7 @@ local ns = {}
 for line in io.lines("MacroSense/MacroSense.toc") do
     if line:match("%.lua$") then assert(loadfile("MacroSense/" .. line))("MacroSense", ns) end
 end
+ns.IconNames.SPELLS, ns.IconNames.EMPTY = 10000, 1000 -- the test game's spells end at 9000
 local function Send(name, ...)
     for _, o in ipairs(created) do Fire(o, "OnEvent", name, ...) end
 end
@@ -930,6 +949,93 @@ do
     check("docked picker stays docked after resizing", picker.point[2] == editor)
     MacroSenseIconPicker:Hide()
     check("picker closes", not MacroSenseIconPicker:IsShown())
+end
+
+-- Icon names: any spell of the game names the icons it uses, looked up while the grid is open.
+do
+    local box, footer
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.parentFrame == MacroSenseIconPicker then box = o end
+        if o.kind == "FontString" and tostring(o.text):find(" icons") then footer = o end
+    end
+    local function Shown()
+        local icons = {}
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.entry and o:IsShown() then icons[#icons + 1] = o.entry.icon end
+        end
+        return icons
+    end
+    local function Found(q)
+        box:SetText(q)
+        return table.concat(Shown(), ",")
+    end
+    Wait(1) -- the grid is closed: nothing is looked up
+    Fire(MacroSenseIconButton, "OnClick")
+    check("icon names: not before the grid opens", Found("death") == "" and footer.text:find("looking up names: 0%%"),
+        footer.text)
+    Wait(1)
+    check("icon names: a spell you don't know names its icon", Found("death") == "1051", Found("death"))
+    check("icon names: the lookup is over", not footer.text:find("looking up"), footer.text)
+    local scanner
+    for _, o in ipairs(created) do
+        if o.parentFrame == MacroSenseIconPicker and o.scripts.OnUpdate then scanner = o end
+    end
+    check("icon names: and stops looking", scanner and not scanner.shown)
+    check("icon names: by any of the names", Found("howl") == "1050" and Found("fear") == "1050", Found("fear"))
+    check("icon names: case doesn't count, in Cyrillic too", Found("страх") == "1052" and Found("СТРАХ") == "1052",
+        Found("СТРАХ"))
+    local tip = {}
+    GameTooltip.SetText = function(_, text) tip = { text } end
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Found("fear")
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.entry and o.entry.icon == 1050 and o:IsShown() then Fire(o, "OnEnter") end
+    end
+    GameTooltip.SetText, GameTooltip.AddLine = nil, nil
+    check("icon names: the tooltip has them all, by spell ID", table.concat(tip, ", ") == "Howl of Terror, Fear",
+        table.concat(tip, ", "))
+    MacroSenseIconPicker:Hide()
+    Fire(MacroSenseIconButton, "OnClick")
+    check("icon names: once a session", Found("death") == "1051", Found("death"))
+    -- Your own spells: case doesn't count in Cyrillic either.
+    book[#book + 1] = { "Чорна стріла", "" }
+    Send("SPELLS_CHANGED")
+    Fire(MacroSenseIconButton, "OnClick") -- closes it
+    Fire(MacroSenseIconButton, "OnClick")
+    check("icon names: your spells in Cyrillic", Found("чорна") == tostring(#book), Found("чорна"))
+    book[#book] = nil
+    Send("SPELLS_CHANGED")
+    MacroSenseIconPicker:Hide()
+
+    -- What the names match shows up while they are looked up, and more coming in don't move the view. A new
+    -- session's lookup, a part of the spells a frame: 100 names early, 30 late.
+    assert(loadfile("MacroSense/IconNames.lua"))("MacroSense", ns)
+    ns.IconNames.SPELLS, ns.IconNames.EMPTY = 30000, 1000
+    local late = { first = 20101, last = 20130 }
+    for i = 1, 100 do gameSpells[3000 + i] = { 1100 + i, "Shadow " .. i } end
+    for id = late.first, late.last do gameSpells[id] = { 1100 + id - 20000, "Shadow late" } end
+    local clock, ms = debugprofilestop, 0
+    debugprofilestop = function()
+        ms = ms + 5
+        return ms
+    end
+    MacroSenseIconPicker.GetWidth, MacroSenseIconPicker.GetHeight = nil, nil -- 10 x 7 again
+    Fire(MacroSenseIconPicker, "OnSizeChanged")
+    Fire(MacroSenseIconButton, "OnClick")
+    box:SetText("shadow")
+    Wait(0.55)
+    local found = Shown()
+    check("icon names: they show up while looked up", #found == 70 and footer.text:find("looking up"), #found)
+    Fire(MacroSenseIconPicker, "OnMouseWheel", -1) -- two rows down: the 21st first
+    check("icon names: scrolled", Shown()[1] == found[21], Shown()[1])
+    Wait(1)
+    check("icon names: the view stays as more come", Shown()[1] == found[21] and footer.text:find("^130 icons$"),
+        footer.text)
+    debugprofilestop = clock
+    for i = 1, 100 do gameSpells[3000 + i] = nil end
+    for id = late.first, late.last do gameSpells[id] = nil end
+    Found("")
+    MacroSenseIconPicker:Hide()
 end
 
 -- Our own scroll bar: hidden without overflow, wheel scrolls and clamps, dragging the thumb scrolls.
