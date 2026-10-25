@@ -2423,6 +2423,26 @@ do
     actions[4] = { "spell", 5782 }
     check("action bars: a spell's doesn't", Tip(other, 4) == "", Tip(other, 4))
     check("action bars: nor a button not set up", Tip(refused, 6) == "", Tip(refused, 6))
+    -- On a Mac, Cmd with the macro's key may be a macOS shortcut: its tooltip warns, first, on any button.
+    local fear = GetMacroIndexByName("Bar Fear")
+    EditMacro(fear, "Bar Fear", 1, "/cast [mod:cmd] Fear")
+    bindings.ACTIONBUTTON2 = "Q" -- the button of slot 2
+    Send("UPDATE_BINDINGS")
+    local warning = "Cmd+Q is a macOS shortcut (quits the game)"
+    check("action bars: the macOS warning", Tip(startButton, 2) == warning .. " / " .. ns.ActionBars.TIP,
+        Tip(startButton, 2))
+    local laidOut
+    GameTooltip.Show = function() laidOut = #tip end
+    check("action bars: the macOS warning where the click isn't ours", Tip(refused, 6) == warning and laidOut == 1,
+        Tip(refused, 6))
+    GameTooltip.Show = nil
+    check("action bars: not on a spell", Tip(other, 4) == "", Tip(other, 4))
+    IsMacClient = function() return false end
+    check("action bars: no macOS warning on Windows", Tip(startButton, 2) == ns.ActionBars.TIP, Tip(startButton, 2))
+    IsMacClient = function() return true end
+    EditMacro(fear, "Bar Fear", 1, "/cast Fear")
+    bindings.ACTIONBUTTON2 = nil
+    Send("UPDATE_BINDINGS")
     GameTooltip.AddLine = nil
 
     -- Unsaved changes: to another macro they are asked about, the macro's own stay.

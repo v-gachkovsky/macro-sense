@@ -9,6 +9,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 - **Shift + right-click on a macro on an action bar** opens the editor on that macro instead of running it,
   and the button's tooltip says so. On the game's action bars and those of Bartender, Dominos and ElvUI.
+- On a Mac, a macro's tooltip on the action bar warns when Cmd with its key is a macOS shortcut (Cmd+Q quits
+  the game), as the editor's status bar does.
 - The icon grid also has the icons you put in `Interface\Icons` yourself, as the game's macro window does,
   searchable by their file names.
 

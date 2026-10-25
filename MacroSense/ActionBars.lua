@@ -1,5 +1,6 @@
 -- Shift + right-click on a macro on an action bar opens it in the editor instead of running it, and the
--- button's tooltip says so. On the game's own buttons and those made from them (Dominos), and on the buttons
+-- button's tooltip says so; on a Mac it also warns when Cmd with the macro's key is a macOS shortcut, as the
+-- editor's status bar does. On the game's own buttons and those made from them (Dominos), and on the buttons
 -- of LibActionButton (Bartender, ElvUI). The click is caught in the game's secure code, so the buttons work
 -- in combat as before and every other click goes on as it did.
 local _, ns = ...
@@ -68,11 +69,22 @@ local function Later(_, button)
     C_Timer.After(0, function() Wrap(button) end)
 end
 
+-- On a Mac: what the editor's status bar says when Cmd with the macro's keys is a macOS shortcut (Cmd+Q quits
+-- the game), or nil.
+local function MacWarning(slot)
+    local index = ns.Shortcuts.Enabled() and ActionBars.MacroAt(slot)
+    if not index then return nil end
+    local name, _, body = GetMacroInfo(index)
+    return ns.Shortcuts.Message(ns.Shortcuts.Conflicts(body or "", ns.Shortcuts.KeysFor(index, name)))
+end
+
+-- A macro's tooltip: the macOS warning, on any button, then how to edit it, where the click is ours.
 local function AddTip(tooltip, slot)
-    if wrapped[tooltip:GetOwner()] and GetActionInfo(slot) == "macro" then
-        tooltip:AddLine(ActionBars.TIP, 0.34, 0.61, 0.84)
-        tooltip:Show()
-    end
+    if GetActionInfo(slot) ~= "macro" then return end
+    local warning, ours = MacWarning(slot), wrapped[tooltip:GetOwner()]
+    if warning then tooltip:AddLine(warning, 1, 0.82, 0, true) end
+    if ours then tooltip:AddLine(ActionBars.TIP, 0.34, 0.61, 0.84) end
+    if warning or ours then tooltip:Show() end
 end
 
 local hooked, watched = false, {} -- watched: the LibActionButton libraries told of new buttons
