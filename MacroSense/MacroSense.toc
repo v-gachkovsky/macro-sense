@@ -22,6 +22,7 @@ Sources.lua
 Shortcuts.lua
 History.lua
 Share.lua
+Backups.lua
 Wizard.lua
 Widgets.lua
 Popup.lua

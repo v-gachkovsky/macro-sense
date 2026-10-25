@@ -2822,6 +2822,146 @@ do
     NextFrame()
 end
 
+-- Backups: one a day by itself when the macros changed, one when asked; a restore brings their texts and the
+-- deleted ones back, and leaves the macros made since.
+do
+    local button
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Backups" then button = o end
+    end
+    local function Rows()
+        if MacroSenseMenu:IsShown() then MacroSenseMenu:Hide() end
+        Fire(button, "OnClick")
+        local rows = {}
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() then rows[#rows + 1] = r end
+        end
+        return rows
+    end
+    local function Labels()
+        local out = {}
+        for i, r in ipairs(Rows()) do out[i] = r.text.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") end
+        MacroSenseMenu:Hide()
+        return table.concat(out, " / ")
+    end
+    local function indexIn(scope, name)
+        local first = scope == "character" and SLOTS.MAX_ACCOUNT_MACROS + 1 or 1
+        local last = scope == "character" and SLOTS.MAX_ACCOUNT_MACROS + select(2, GetNumMacros()) or GetNumMacros()
+        for index = first, last do
+            if GetMacroInfo(index) == name then return index end
+        end
+    end
+    local function body(scope, name)
+        local index = indexIn(scope, name)
+        return index and select(3, GetMacroInfo(index))
+    end
+    ns.char.backups = nil
+    check("backups: none yet", Labels() == "Back up now / No backups yet", Labels())
+    CreateMacro("Bk A", 135000, "/cast Fear", false)
+    CreateMacro("Bk B", 135001, "/cast Heal", true)
+    CreateMacro("Bk C", 1, "/cast G", false) -- one name in both tabs: two macros
+    CreateMacro("Bk C", 1, "/cast C", true)
+    Send("UPDATE_MACROS")
+    Send("PLAYER_LOGIN")
+    check("backups: one on login", ns.char.backups and #ns.char.backups == 1)
+    EditMacro(GetMacroIndexByName("Bk A"), "Bk A", 135000, "/cast Fear\n/say same day")
+    Send("UPDATE_MACROS")
+    ns.Window.DailyBackup()
+    check("backups: one a day", #ns.char.backups == 1)
+    clock = clock + 86400
+    EditMacro(GetMacroIndexByName("Bk A"), "Bk A", 135000, "/cast Fear\n/say a")
+    Send("UPDATE_MACROS")
+    ns.Window.DailyBackup()
+    local count = #ns.char.backups
+    check("backups: the next day, as they changed", count == 2)
+    check("backups: newest first, with how many macros", Labels():find("^Back up now / Today, 14:3%d  %d+ macros / "
+        .. "Yesterday, 14:3%d  %d+ macros$") ~= nil, Labels())
+    Fire(Rows()[1], "OnClick")
+    check("backups: nothing new to back up", #ns.char.backups == count
+        and printed[#printed]:find("as in the last backup", 1, true) ~= nil, printed[#printed])
+    local numMacros = GetNumMacros
+    GetNumMacros = function() return 0, 0 end
+    Fire(Rows()[1], "OnClick")
+    GetNumMacros = numMacros
+    check("backups: no macros, no backup", #ns.char.backups == count
+        and printed[#printed]:find("no macros to back up", 1, true) ~= nil, printed[#printed])
+    EditMacro(GetMacroIndexByName("Bk A"), "Bk A", 135000, "/cast Fear\n/say a\n/sit")
+    Send("UPDATE_MACROS")
+    Fire(Rows()[1], "OnClick")
+    count = count + 1
+    check("backups: backed up when asked", #ns.char.backups == count
+        and printed[#printed]:find("backed up %d+ macros") ~= nil, printed[#printed])
+
+    -- Changed, deleted, made since; a macro of the same name in the other tab is another macro.
+    local backup = ns.char.backups[#ns.char.backups]
+    EditMacro(GetMacroIndexByName("Bk A"), "Bk A", 135000, "/cast Changed")
+    DeleteMacro(GetMacroIndexByName("Bk B"))
+    CreateMacro("Bk New", 1, "/sit", false)
+    CreateMacro("Bk A", 1, "/cast Other tab", true)
+    EditMacro(indexIn("character", "Bk C"), "Bk C", 1, "/cast X")
+    Send("UPDATE_MACROS")
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(Rows()[2], "OnEnter")
+    GameTooltip.AddLine = nil
+    MacroSenseMenu:Hide()
+    check("backups: what one holds", tip[1]:find("^Backup of Today") and tip[2]:find("Click to restore it", 1, true)
+        and tip[3]:find("Bk A", 1, true), table.concat(tip, " / "))
+    Fire(Rows()[2], "OnClick")
+    check("backups: texts back, the deleted made again", body("general", "Bk A") == "/cast Fear\n/say a\n/sit"
+        and body("character", "Bk B") == "/cast Heal", body("general", "Bk A"))
+    check("backups: each tab's macro of one name", body("character", "Bk C") == "/cast C"
+        and body("general", "Bk C") == "/cast G", body("general", "Bk C"))
+    check("backups: the macros made since stay", body("general", "Bk New") == "/sit"
+        and body("character", "Bk A") == "/cast Other tab")
+    check("backups: a backup of before, first", #ns.char.backups == count + 1
+        and ns.Backups.Same(ns.char.backups[#ns.char.backups].macros, backup.macros) == false)
+    check("backups: the replaced text is a version", ns.History.Versions(ns.History.Store("general"), "Bk A",
+        "/cast Fear\n/say a\n/sit")[1].body == "/cast Changed")
+
+    -- No room, combat, unsaved changes.
+    DeleteMacro(GetMacroIndexByName("Bk B"))
+    local fillers = SLOTS.MAX_CHARACTER_MACROS - select(2, GetNumMacros())
+    for i = 1, fillers do CreateMacro("Filler " .. i, 1, "/sit", true) end
+    ns.Window.RestoreBackup(backup)
+    check("backups: no free slot, said", body("character", "Bk B") == nil
+        and printed[#printed]:find("1 did not fit", 1, true) ~= nil, printed[#printed])
+    for i = 1, fillers do DeleteMacro(GetMacroIndexByName("Filler " .. i)) end
+    InCombatLockdown = function() return true end
+    local before = #ns.char.backups
+    ns.Window.RestoreBackup(backup)
+    InCombatLockdown = function() return false end
+    check("backups: not in combat", #ns.char.backups == before and printed[#printed]:find("in combat") ~= nil)
+    ns.Window.Open(GetMacroIndexByName("Bk New"))
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    local asked, show = 0, StaticPopup_Show
+    StaticPopup_Show = function(...)
+        asked = asked + 1
+        return show(...)
+    end
+    local list = ns.char.backups
+    for k = 1, #list do
+        if list[#list - k + 1] == backup then -- the menu: newest first
+            Fire(Rows()[k + 1], "OnClick")
+            break
+        end
+    end
+    StaticPopup_Show = show
+    check("backups: asked first, then unsaved changes", asked == 2 and body("character", "Bk B") == "/cast Heal", asked)
+
+    for _, name in ipairs({ "Bk A", "Bk A", "Bk B", "Bk C", "Bk C", "Bk New" }) do
+        local index = GetMacroIndexByName(name)
+        if index > 0 then DeleteMacro(index) end
+    end
+    Send("UPDATE_MACROS")
+    ns.char.backups = nil
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- A command the client has but its game does nothing with: /petmoveto before Cataclysm is a warning.
 do
     local function warned(raw)

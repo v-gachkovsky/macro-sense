@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua", "Share.lua", "Wizard.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua", "Share.lua", "Backups.lua", "Wizard.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -1048,6 +1048,46 @@ do
     check("share: a letter changed", Problem(changed):find("changed") ~= nil, Problem(changed))
     local nameless = S.Encode({ { scope = "general", icon = 1, name = "", body = "/sit" } })
     check("share: a macro without a name", Problem(nameless):find("damaged") ~= nil, Problem(nameless))
+end
+
+-- Backups: all the macros, to go back to.
+do
+    local B = ns.Backups
+    local function M(scope, name, icon, body) return { scope = scope, name = name, icon = icon, body = body } end
+    local a = { M("general", "Fear", 1, "/cast Fear"), M("character", "Heal", 2, "/cast Heal") }
+    check("backups: the same macros in any order", B.Same(a, { a[2], a[1] }))
+    check("backups: another text", not B.Same(a, { a[1], M("character", "Heal", 2, "/cast Heal!") }))
+    check("backups: another icon", not B.Same(a, { a[1], M("character", "Heal", 3, "/cast Heal") }))
+    check("backups: another tab", not B.Same(a, { a[1], M("general", "Heal", 2, "/cast Heal") }))
+    check("backups: one more", not B.Same(a, { a[1], a[2], M("general", "X", 1, "") }))
+    check("backups: one less", not B.Same(a, { a[1] }))
+    local list = {}
+    check("backups: the first one", B.Add(list, a, 100) and #list == 1)
+    check("backups: not the same again", not B.Add(list, { a[2], a[1] }, 200) and #list == 1)
+    check("backups: none of no macros", not B.Add(list, {}, 300) and #list == 1)
+    for i = 1, B.LIMIT + 1 do B.Add(list, { M("general", "N", 1, tostring(i)) }, 1000 + i) end
+    check("backups: the last ones, oldest first", #list == B.LIMIT and list[1].time == 1002
+        and list[#list].time == 1000 + B.LIMIT + 1, #list)
+    date = os.date
+    local day = os.time({ year = 2026, month = 10, day = 25, hour = 9 })
+    check("backups: due with none", B.Due({}, day))
+    check("backups: not due the same day", not B.Due({ { time = day } }, day + 3600 * 10))
+    check("backups: due the next day", B.Due({ { time = day } }, day + 86400))
+    date = nil
+    -- A restore: text and icon back, the missing made again where there is room; the rest is left as it is.
+    local backup = { M("general", "Same", 1, "/same"), M("general", "Changed", 1, "/old"), M("general", "Icon", 1, "/x"),
+        M("general", "Gone 1", 1, "/g1"), M("general", "Gone 2", 1, "/g2"), M("character", "Changed", 1, "/c") }
+    local now = { M("general", "Same", 1, "/same"), M("general", "Changed", 1, "/new"), M("general", "Icon", 2, "/x"),
+        M("general", "Made since", 1, "/n") }
+    local plan = B.Plan(backup, now, { general = 1, character = 5 })
+    local function names(l)
+        local out = {}
+        for i, m in ipairs(l) do out[i] = m.scope:sub(1, 1) .. ":" .. m.name end
+        return table.concat(out, ",")
+    end
+    check("backups: what a restore does", names(plan.same) == "g:Same" and names(plan.back) == "g:Changed,g:Icon"
+        and names(plan.again) == "g:Gone 1,c:Changed" and names(plan.full) == "g:Gone 2",
+        names(plan.back) .. " | " .. names(plan.again) .. " | " .. names(plan.full))
 end
 
 -- Icon names: the game's spells, then its achievements, name the icons they use; looked up a part at a time.

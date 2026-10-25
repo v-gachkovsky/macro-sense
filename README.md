@@ -223,6 +223,12 @@ the last 30 of each tab, General ones for the account, Character ones for the ch
 read it, click it to bring it back into its tab, under a free name if its own is taken. A macro renamed
 in the game's window is not taken for deleted.
 
+**Backups** keeps all your macros as they were: one is made by itself on your first login of a day when
+they changed, and **Back up now** makes one whenever you like (the last 10 for each character, each with
+the General macros and the character's). Pick one to restore it: its macros get their text and icon back,
+the deleted ones are made again, and the macros made since stay as they are. A backup of your macros now is
+made first, so a restore can be undone too.
+
 ## Icons and action bars
 
 Click the macro icon to choose another one: the question mark first (`#showtooltip` then picks the icon),
@@ -267,6 +273,7 @@ Bartender, Dominos and ElvUI.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
 - `MacroSense/Share.lua`: macros as a code and back. Pure Lua.
+- `MacroSense/Backups.lua`: backups of all the macros, which to keep and what a restore does. Pure Lua.
 - `MacroSense/ShareWindow.lua`: the window of a code, to export and to import.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
@@ -283,7 +290,7 @@ Bartender, Dominos and ElvUI.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap, icon names, share codes
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap, icon names, share codes, backups
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 

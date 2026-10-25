@@ -84,6 +84,7 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "PLAYER_LOGIN" then
         ns.RegisterActionCommands()
         ns.History.Scan()
+        ns.Window.DailyBackup()
         ns.MinimapButton.Update()
         ns.ActionBars.Setup()
         Welcome()
