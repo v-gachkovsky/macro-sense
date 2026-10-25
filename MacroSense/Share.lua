@@ -3,6 +3,7 @@
 -- icon, name and text, and a sum that tells a code cut short or changed. Pure Lua (5.1).
 local _, ns = ...
 ns = ns or {}
+local L = ns.L
 
 local Share = {}
 ns.Share = Share
@@ -68,15 +69,15 @@ end
 -- what is wrong with it.
 function Share.Decode(text)
     local at = text:find(PREFIX, 1, true)
-    if not at then return nil, "This is not a MacroSense code." end
+    if not at then return nil, L["This is not a MacroSense code."] end
     local digits = text:sub(at + #PREFIX):gsub("%s", ""):match("^([%w+/=]*)%.")
     local plain = digits and FromDigits(digits) -- nil: no dot, the end is missing
     local body, sum = (plain or ""):match("^(.*)" .. SUM .. "(%d+)$")
-    if not body or Sum(body) ~= sum then return nil, "The code is cut short or changed: copy all of it again." end
+    if not body or Sum(body) ~= sum then return nil, L["The code is cut short or changed: copy all of it again."] end
     local macros = {}
     for part in (body .. MACRO):gmatch("(.-)" .. MACRO) do
         local scope, icon, name, macroText = part:match("^(%a)" .. FIELD .. "(.-)" .. FIELD .. "(.-)" .. FIELD .. "(.*)$")
-        if not SCOPES[scope or ""] or name == "" then return nil, "The code is damaged." end
+        if not SCOPES[scope or ""] or name == "" then return nil, L["The code is damaged."] end
         macros[#macros + 1] = { scope = SCOPES[scope], icon = tonumber(icon) or icon, name = name, body = macroText }
     end
     return macros

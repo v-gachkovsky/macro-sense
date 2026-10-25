@@ -15,8 +15,8 @@ ns.locales.uk = {
     ["  and try to fix things as fast as I can. Type /ms bug for the details to include."] =
         "  і намагаюся все виправляти якнайшвидше. Наберіть /ms bug, щоб отримати подробиці для звіту.",
     ["  Report here: %s"] = "  Пишіть сюди: %s",
-    ["on"] = "увімк.",
-    ["off"] = "вимк.",
+    ["|cff00ff00on|r"] = "|cff00ff00увімк.|r",
+    ["|cffff0000off|r"] = "|cffff0000вимк.|r",
     ["autocomplete %s"] = "автодоповнення: %s",
     ["minimap button %s"] = "кнопка біля мінікарти: %s",
     ["bug report details:"] = "подробиці для звіту про помилку:",
@@ -213,4 +213,140 @@ ns.locales.uk = {
         "спершу збережіть макрос, а потім перетягніть його на панель дій",
     ["no free general macro slots"] = "немає вільних місць для загальних макросів",
     ["no free character macro slots"] = "немає вільних місць для макросів персонажа",
+    -- Share window
+    ["Export a macro"] = "Експортувати макрос",
+    ["Export %d macros"] = { "Експортувати %d макрос", "Експортувати %d макроси", "Експортувати %d макросів" },
+    ["Press %s to copy the code, then share it: anyone with MacroSense can import it."] =
+        "Натисніть %s, щоб скопіювати код, і поділіться ним: будь-хто з MacroSense зможе його імпортувати.",
+    ["Import macros"] = "Імпортувати макроси",
+    ["Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number."] =
+        "Вставте код MacroSense (%s). Нічого не замінюється: зайнята назва отримує номер.",
+    ["%d macros in the code:"] = { "У коді %d макрос:", "У коді %d макроси:", "У коді %d макросів:" },
+    ["%s: into %s"] = "%s: у «%s»",
+    ["%s: into %s as \"%s\" (the name is taken)"] = "%s: у «%s» як «%s» (назву вже зайнято)",
+    ["%s: longer than the game allows, not imported"] = "%s: довший, ніж дозволяє гра, не імпортовано",
+    ["%s: no free slot in %s"] = "%s: у «%s» немає вільного місця",
+    ["... and %d more"] = "... і ще %d",
+    ["Import"] = "Імпортувати",
+    ["Close"] = "Закрити",
+    ["This is not a MacroSense code."] = "Це не код MacroSense.",
+    ["The code is cut short or changed: copy all of it again."] = "Код обрізаний або змінений: скопіюйте його ще раз повністю.",
+    ["The code is damaged."] = "Код пошкоджений.",
+
+    -- Wizard window
+    ["New macro (Wizard)"] = "Новий макрос (майстер)",
+    ["Command"] = "Команда",
+    ["Name"] = "Назва",
+    ["Tab"] = "Вкладка",
+    ["Cast"] = "Заклинання",
+    ["Use"] = "Предмет",
+    ["type a spell or item"] = "заклинання чи предмет",
+    ["spell or item"] = "заклинання чи предмет",
+    ["spell"] = "заклинання",
+    ["Pick a spell or item to cast, and the macro shows here."] = "Оберіть заклинання чи предмет, і тут з'явиться макрос.",
+    ["In turn, one per press"] = "По черзі, одне за натискання",
+    ["One of these at random"] = "Одне з них навмання",
+    ["By name"] = "За ім'ям",
+    ["Targets the nearest one with this name, when none of the units above is there. Leave On empty (-) to target "
+        .. "by name only."] =
+        "Бере в ціль найближчого з цим ім'ям, коли нікого з обраних вище немає. Залиште «На кого» порожнім (-), "
+        .. "щоб брати в ціль лише за ім'ям.",
+    ["Pet"] = "Улюбленець",
+    ["On"] = "На кого",
+    ["on"] = "на кого",
+    ["Then"] = "Далі",
+    ["then"] = "далі",
+    ["Who the macro casts on. As usual: your target, or you when the game casts on you by itself (Auto Self Cast)."] =
+        "На кого макрос застосовує. «Як завжди»: на вашу ціль або на вас, коли гра сама застосовує на вас "
+        .. "(Auto Self Cast).",
+    ["When the one before is not there, or not the one asked for: this one."] =
+        "Коли попереднього немає або він не той, що потрібно: цей.",
+    ["Only"] = "Лише",
+    ["Anyone there"] = "Будь-хто",
+    ["Friends"] = "Друзі",
+    ["Enemies"] = "Вороги",
+    ["What the units above must be: friends, enemies or anyone there. Yourself, As usual and At the cursor need no "
+        .. "check. It follows the spell you pick, when the game knows what it is for."] =
+        "Ким мають бути обрані вище: друзями, ворогами чи будь-ким. «Ви самі», «Як завжди» і «Під курсором» не "
+        .. "перевіряються. Підлаштовується під обране заклинання, коли гра знає, для кого воно.",
+    ["Alive only"] = "Лише живі",
+    ["With a key held"] = "З клавішею",
+    ["same spell"] = "те саме заклинання",
+    ["On a key macOS uses with Cmd itself (Q quits the game, W, H, Tab, Space...) macOS comes first: the editor "
+        .. "warns when the macro sits on one."] =
+        "На клавіші, яку macOS сама використовує з Cmd (Q закриває гру, W, H, Tab, Space...), першою спрацьовує "
+        .. "macOS: редактор попереджає, коли макрос стоїть на такій.",
+    ["Start over"] = "Почати знову",
+    ["New target"] = "Нова ціль",
+    ["Combat ends"] = "Кінець бою",
+    ["What makes the sequence begin again from its first spell: a new target, the end of combat, a press with "
+        .. "Shift, Ctrl or Alt held, or some seconds without a press."] =
+        "Що змушує послідовність почати знову з першого заклинання: нова ціль, кінець бою, натискання з "
+        .. "утриманим Shift, Ctrl чи Alt або кілька секунд без натискань.",
+    ["After"] = "Через",
+    ["seconds without a press"] = "с без натискань",
+    ["Also"] = "Ще",
+    ["Stop your cast first"] = "Спершу перервати каст",
+    ["For an interrupt or a save: it goes off at once, even in the middle of another cast."] =
+        "Для переривання чи порятунку: спрацює одразу, навіть посеред іншого заклинання.",
+    ["Trinket 1"] = "Аксесуар 1",
+    ["Trinket 2"] = "Аксесуар 2",
+    ["Trinket %d: %s"] = "Аксесуар %d: %s",
+    ["empty"] = "порожньо",
+    ["Your trinkets go off first (/use 13, /use 14), whenever they are ready."] =
+        "Спершу спрацьовують ваші аксесуари (/use 13, /use 14), коли вони готові.",
+    ["Nearest enemy if none"] = "Найближчий ворог",
+    ["When your target is not an enemy, or is dead, the nearest enemy becomes the target first "
+        .. "(/targetenemy [noharm][dead])."] =
+        "Коли ваша ціль не ворог або мертва, спершу в ціль береться найближчий ворог (/targetenemy [noharm][dead]).",
+    ["Start auto attack"] = "Автоатака",
+    ["Leave your form first"] = "Спершу вийти з форми",
+    ["Out of a form or stance first (/cancelform): to heal out of Bear Form, say."] =
+        "Спершу вийти з форми чи стійки (/cancelform): наприклад, щоб лікувати з форми ведмедя.",
+    ["Pet attacks your target"] = "Улюбленець атакує ціль",
+    ["Off your mount first"] = "Спершу злізти з маунта",
+    ["Off the mount first (/dismount [mounted]), so the cast doesn't fail on it."] =
+        "Спершу злізти з маунта (/dismount [mounted]), щоб заклинання не зірвалося.",
+    ["Cancel a buff"] = "Скасувати бафф",
+    ["Cancel a buff first"] = "Спершу скасувати бафф",
+    ["the buff's name"] = "назва баффу",
+    ["Removes the buff before the rest (/cancelaura Ice Block): leave it empty for none."] =
+        "Знімає бафф перед рештою (/cancelaura Ice Block): залиште порожнім, щоб нічого не знімати.",
+    ["Say in chat"] = "Сказати в чат",
+    ["Said after the rest, in the channel on the left; %t is your target's name. Leave it empty to say nothing."] =
+        "Кажеться після решти, у каналі ліворуч; %t — ім'я вашої цілі. Залиште порожнім, щоб нічого не казати.",
+    ["Create macro"] = "Створити",
+    ["Macro"] = "Макрос",
+    -- Wizard: its lists (Wizard.lua)
+    ["Pet commands"] = "Команди улюбленця",
+    ["Attack"] = "Атакувати",
+    ["Follow"] = "За мною",
+    ["Stay"] = "Стояти",
+    ["Move to the cursor"] = "Іти до курсора",
+    ["Passive"] = "Пасивний",
+    ["Defensive"] = "Захисний",
+    ["Aggressive"] = "Агресивний",
+    ["Dismiss"] = "Відпустити",
+    ["Say"] = "Сказати",
+    ["Yell"] = "Крикнути",
+    ["Party"] = "Група",
+    ["Raid"] = "Рейд",
+    ["Emote"] = "Емоція",
+    ["As usual"] = "Як завжди",
+    ["Your target"] = "Ваша ціль",
+    ["Mouseover"] = "Маусовер",
+    ["Focus"] = "Фокус",
+    ["Yourself"] = "Ви самі",
+    ["Your pet"] = "Ваш улюбленець",
+    ["Party member 1"] = "Член групи 1",
+    ["Party member 2"] = "Член групи 2",
+    ["Party member 3"] = "Член групи 3",
+    ["Party member 4"] = "Член групи 4",
+    ["Target's target"] = "Ціль цілі",
+    ["Arena enemy 1"] = "Ворог на арені 1",
+    ["Arena enemy 2"] = "Ворог на арені 2",
+    ["Arena enemy 3"] = "Ворог на арені 3",
+    ["At the cursor"] = "Під курсором",
+    ["Clear focus"] = "Зняти фокус",
+    ["Clear target"] = "Зняти ціль",
 }

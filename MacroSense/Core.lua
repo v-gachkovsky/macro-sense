@@ -111,7 +111,7 @@ f:SetScript("OnEvent", function(_, event, name)
     end
 end)
 
-local function OnOff(v) return v and "|cff00ff00" .. L["on"] .. "|r" or "|cffff0000" .. L["off"] .. "|r" end
+local function OnOff(v) return v and L["|cff00ff00on|r"] or L["|cffff0000off|r"] end
 
 SLASH_MACROSENSE1 = "/macrosense"
 SLASH_MACROSENSE2 = "/ms"
