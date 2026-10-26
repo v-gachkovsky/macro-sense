@@ -3494,6 +3494,16 @@ do
     GameTooltip.AddLine = nil
     check("ukrainian: the wizard's tooltip", wizardTip[1] == "Майстер"
         and wizardTip[2]:find("^Створіть новий макрос за допомогою вбудованого майстра! Оберіть") ~= nil, wizardTip[2])
+    local shorten
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and tostring(o.label.text):find("^Shorten") then shorten = o end
+    end
+    local shortenTip = {}
+    GameTooltip.AddLine = function(_, text) shortenTip[#shortenTip + 1] = text end
+    Fire(shorten, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("ukrainian: the shorten tooltip", shortenTip[1] == "Скоротити"
+        and shortenTip[2]:find("^Спробує прибрати зайві пробіли") ~= nil, shortenTip[2])
     check("ukrainian: the live preview's tooltip", tip[1] == "Живий перегляд"
         and tip[3] == "Затискайте модифікатори (Shift, Ctrl, Alt чи Cmd), наводьте мишку, міняйте ціль — "
         .. "використовуйте все, що є в макросі, щоб побачити, яка саме здібність спрацює і в якій ситуації.", tip[3])

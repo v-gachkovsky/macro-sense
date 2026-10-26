@@ -167,10 +167,12 @@ ns.locales.uk = {
     ["click or drag the icon"] = "клацніть або перетягніть іконку",
     ["Shorten"] = "Скоротити",
     ["Shorten -%d"] = "Скоротити -%d",
-    ["The same macro in fewer characters: target= becomes @, modifier becomes mod, [pet:Imp][pet:Felhunter] "
-        .. "becomes [pet:Imp/Felhunter], [x] Fear; Fear becomes [x][]Fear, and spaces the game doesn't need go."] =
-        "Той самий макрос меншою кількістю символів: target= стає @, modifier стає mod, [pet:Imp][pet:Felhunter] "
-        .. "стає [pet:Imp/Felhunter], [x] Fear; Fear стає [x][]Fear, а зайві для гри пробіли зникають.",
+    ["Tries to remove spaces the game doesn't need, shorten constructs and make the macro shorter overall, keeping "
+        .. "everything it does. For example: target= becomes @, modifier becomes mod, [pet:Imp][pet:Felhunter] "
+        .. "becomes [pet:Imp/Felhunter], [x] Fear; Fear becomes [x][]Fear."] =
+        "Спробує прибрати зайві пробіли, скоротити конструкції й загалом зробити макрос коротшим, зберігши всю "
+        .. "його функціональність. Наприклад: target= стає @, modifier стає mod, [pet:Imp][pet:Felhunter] стає "
+        .. "[pet:Imp/Felhunter], [x] Fear; Fear стає [x][]Fear.",
     ["%s brings the old text back."] = "%s повертає попередній текст.",
     ["Nothing to shorten here."] = "Тут нічого скорочувати.",
     ["History"] = "Історія",
