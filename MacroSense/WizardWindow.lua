@@ -86,7 +86,7 @@ end
 local function Candidates()
     local spells, items = {}, {}
     for _, spell in ipairs(ns.sources.spells()) do
-        spells[#spells + 1] = { name = spell.name, icon = spell.icon, hint = L["spell"] }
+        spells[#spells + 1] = { name = spell.name, icon = spell.icon, hint = L["spell"], ranks = spell.ranks }
     end
     for _, item in ipairs(ns.sources.items()) do
         if item.usable then items[#items + 1] = { name = item.name, icon = item.icon, hint = item.hint, item = true } end
@@ -189,8 +189,19 @@ local function MatchList(box, width)
     return list
 end
 
--- set(action) takes what the box says: one of yours under its own name, any other name as a spell (one of
--- another spec, say), nil when it is empty. `candidates()`: what the list offers, your spells and items if nil.
+-- The rows of a spell's ranks: the spell itself first (the highest rank you know, also once you learn a new one),
+-- then each rank learned, the highest first.
+local function RankItems(spell)
+    local out = { { name = spell.name, icon = spell.icon, hint = L["highest rank"] } }
+    for i = #spell.ranks, 1, -1 do
+        out[#out + 1] = { name = W.Spelled({ name = spell.name, rank = spell.ranks[i] }), icon = spell.icon }
+    end
+    return out
+end
+
+-- set(action) takes what the box says: one of yours under its own name ("Shadow Bolt(Rank 3)" with a rank), any
+-- other name as a spell (one of another spec, say), nil when it is empty. `candidates()`: what the list offers,
+-- your spells and items if nil. A spell with ranks to pick from lists them once picked, unless `box.noRanks`.
 local function SpellBox(parent, width, hint, get, set, candidates)
     candidates = candidates or Candidates
     local box = ns.Input(parent, width, 60)
@@ -205,34 +216,48 @@ local function SpellBox(parent, width, hint, get, set, candidates)
         local typed = strtrim(self:GetText() or "")
         local action
         if typed ~= "" then
+            local base, rank = typed:match("^(.-)%s*%((.+)%)$") -- "Shadow Bolt(Rank 3)"
+            base = base and base:lower()
             for _, c in ipairs(candidates()) do
-                if c.name:lower() == typed:lower() then
-                    action = { name = c.name, item = c.item, label = c.label }
+                local name = c.name:lower()
+                if name == typed:lower() or (name == base and not c.item) then
+                    action = { name = c.name, item = c.item, label = c.label, ranks = c.ranks,
+                        rank = name == base and rank or nil }
                     break
                 end
             end
             action = action or { name = typed }
         end
-        self:SetText(action and action.name or "")
+        self:SetText(action and W.Spelled(action) or "")
         idle()
         local old = get()
-        if (old and old.name) == (action and action.name) and (old and old.item) == (action and action.item) then
+        if (old and W.Spelled(old)) == (action and W.Spelled(action)) and (old and old.item) == (action and action.item)
+        then
             return
         end
         set(action)
         Update()
     end
 
+    -- A name from the list: taken, and done (true); a spell with ranks to pick from is taken and lists its ranks
+    -- next, with the keys still on the box (Esc keeps the spell as it is).
     function box:Pick(item)
-        if not item then return end
+        if not item then return false end
         self:SetText(item.name)
+        if not self.noRanks and item.ranks and #item.ranks > 1 then
+            self:Commit()
+            self:SetFocus()
+            self.list:Open(RankItems(item))
+            return false
+        end
         self.list:Hide()
         self:ClearFocus()
         self:Commit()
+        return true
     end
 
     function box:Refresh()
-        self:SetText(get() and get().name or "")
+        self:SetText(get() and W.Spelled(get()) or "")
         idle()
     end
 
@@ -584,10 +609,10 @@ local function BuildSteps()
     end)
     box:SetPoint("TOPLEFT", PAD, 0)
     box:HookScript("OnTextChanged", function() controls.next:SetEnabled(Answered()) end)
+    box.noRanks = true -- the next question asks for the rank
     local pick = box.Pick
     function box:Pick(item)
-        pick(self, item)
-        if item then Go() end
+        if pick(self, item) then Go() end
     end
     controls.stepSpell = box
 

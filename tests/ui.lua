@@ -2158,7 +2158,30 @@ do
     check("wizard: your spells and the items you can use", offered(cast) == "Fire Blast, Fireball", offered(cast))
     Fire(cast, "OnArrowPressed", "DOWN")
     Fire(cast, "OnEnterPressed")
-    check("wizard: Enter takes the name the arrows picked", cast.text == "Fireball" and not cast.list:IsShown(), cast.text)
+    check("wizard: Enter takes the name the arrows picked, its ranks next", cast.text == "Fireball"
+        and offered(cast) == "Fireball, Fireball(Rank 3), Fireball(Rank 2), Fireball(Rank 1)"
+        and cast.list.rows[1].hint.text == "highest rank", offered(cast))
+    Fire(cast, "OnArrowPressed", "DOWN")
+    Fire(cast, "OnArrowPressed", "DOWN")
+    Fire(cast, "OnEnterPressed")
+    check("wizard: a rank picked", cast.text == "Fireball(Rank 2)" and not cast.list:IsShown()
+        and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball(Rank 2)", shown())
+    pick(C("command"), "/cast")
+    check("wizard: and shown with it", cast.text == "Fireball(Rank 2)", cast.text)
+    -- A click: the box loses the keys first (the game takes them away), and gets them back for the ranks.
+    TypeIn(cast, "fireball")
+    cast.list.IsMouseOver = function() return true end
+    cast:ClearFocus()
+    Fire(cast.list.rows[1], "OnClick")
+    cast.list.IsMouseOver = nil
+    check("wizard: a click on a spell with ranks: the keys stay for them", cast:HasFocus() and cast.list:IsShown()
+        and cast.list.rows[2].text.text == "Fireball(Rank 3)", cast.list.rows[2].text.text)
+    Fire(cast, "OnEscapePressed")
+    Fire(cast, "OnEscapePressed")
+    TypeIn(cast, "fireball")
+    Fire(cast, "OnEnterPressed")
+    Fire(cast, "OnEnterPressed")
+    check("wizard: the spell itself: the highest rank", cast.text == "Fireball" and not cast.list:IsShown(), cast.text)
     check("wizard: the macro shows as you choose", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball",
         shown())
     check("wizard: enemies, as the spell is for them", C("only").label.text == "Enemies", C("only").label.text)
@@ -2526,6 +2549,10 @@ do
     check("steps: a name typed lets Next go on", C("next"):IsEnabled())
     Fire(C("stepSpell"), "OnArrowPressed", "DOWN")
     Fire(C("stepSpell"), "OnEnterPressed")
+    check("steps: a spell with ranks: which one", question() == "Which rank of Fireball?"
+        and answers() == "The highest you know, Rank 3, Rank 2, Rank 1" and chosen() == "The highest you know"
+        and C("answer2").hint.text == "Fireball(Rank 3)", answers())
+    Fire(answer("The highest you know"), "OnClick")
     check("steps: a spell picked goes on", question() == "Where should Fireball go?"
         and chosen() == "On whoever is under the mouse" and answer("On whoever is under the mouse").hint.text
         == "@mouseover" and answer("Do nothing") == nil, question())
@@ -2534,8 +2561,10 @@ do
         answers())
     check("steps: the macro as it is", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", shown())
     Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
     check("steps: back to the spell picked", question() == "Which spell should the macro cast?"
         and C("stepSpell").text == "Fireball" and not C("stepSpell"):HasFocus() and C("next"):IsEnabled(), question())
+    Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
     Fire(answer("On whoever is under the mouse"), "OnClick")
     check("steps: and if nobody is under the mouse: no friends or enemies, the game says",
@@ -2584,7 +2613,7 @@ do
     Fire(C("mode"), "OnClick")
     check("steps: the questions from the first again", question() == "What should the macro do?"
         and chosen() == "Cast a spell" and shown() == burst, question())
-    for _ = 1, 9 do Fire(C("next"), "OnClick") end
+    for _ = 1, 10 do Fire(C("next"), "OnClick") end
     check("steps: Next through the answers given", question() == "Almost done: name your macro"
         and C("stepName").text == "Burst", question())
     Fire(C("stepCharacter"), "OnClick")
@@ -2670,6 +2699,7 @@ do
     Fire(C("stepShift"), "OnClick")
     Fire(C("next"), "OnClick")
     TypeIn(C("stepSpell"), "Fireball")
+    Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
     check("steps: a key's own spell, for enemies", question() == "Where should Fireball go?"
         and answer("On party member 1") == nil and answer("On arena enemy 1") ~= nil, answers())

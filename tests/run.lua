@@ -966,6 +966,22 @@ do
     for label, body in pairs(made) do
         check("wizard " .. label .. ": no issues", body and issues(body) == "", body and issues(body))
     end
+    -- Ranks: the one picked in brackets, as the game names it; the spell alone is the highest learned.
+    local ranked = { name = "Fireball", rank = "Rank 2", ranks = { "Rank 1", "Rank 2", "Rank 3" } }
+    check("wizard spelled: with a rank, without", W.Spelled(ranked) == "Fireball(Rank 2)"
+        and W.Spelled({ name = "Fireball", ranks = ranked.ranks }) == "Fireball")
+    expectText("a rank", text({ action = ranked, only = "enemies" }),
+        "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball(Rank 2)")
+    expectText("a rank: the same one goes together", text({ action = ranked, only = "enemies", on = usual,
+        keys = { shift = { action = { name = "Fireball", rank = "Rank 2" }, unit = "focus" } } }),
+        "#showtooltip\n/cast [mod:shift,@focus,harm,nodead][] Fireball(Rank 2)")
+    expectText("a rank: another one apart", text({ action = ranked, only = "enemies", on = usual,
+        keys = { shift = { action = { name = "Fireball", rank = "Rank 1" }, unit = "focus" } } }),
+        "#showtooltip\n/cast [mod:shift,@focus,harm,nodead] Fireball(Rank 1); Fireball(Rank 2)")
+    expectText("a rank in a list, and with trinkets first", text({ command = "castsequence", list = { ranked,
+        { name = "Frostbolt" } }, on = usual, trinket1 = true }),
+        "#showtooltip Fireball(Rank 2)\n/use 13\n/castsequence Fireball(Rank 2), Frostbolt")
+    check("wizard name: a spell without its rank", W.Name(form({ action = ranked })) == "Fireball")
     check("wizard name: a slot by what is in it", W.Name(form({ command = "use", action = slot })) == "Burning Talisman")
     check("wizard name: the first of a list", W.Name(form({ command = "castsequence", list = { nil, immolate } }))
         == "Immolate")
@@ -1266,6 +1282,28 @@ do
         == "Your target, if an enemy" and not find(spec, "altOn1", "party1"), find(spec, "altOn1", "target").name)
     macro("pet: follow, Alt attacks", spec, "/petfollow [nomod:alt]\n/petattack [mod:alt]")
 
+    -- Ranks (Classic): a question of their own after the spell, the macro's or a key's, when two are learned.
+    spec = W.Fresh()
+    spec.action = { name = "Fireball", ranks = { "Rank 1", "Rank 2", "Rank 3" } }
+    spec.keys.shift.active = true
+    spec.keys.shift.action = { name = "Frostbolt", ranks = { "Rank 1" } }
+    check("questions: a rank, not for one learned", steps(spec)
+        == "what,spell,rank,on1,only,on2,keys,shiftCast,shiftOn1,also,finish", steps(spec))
+    local rank = ask(spec, "rank")
+    check("questions: which rank", rank.kind == "choice" and rank.text == "Which rank of Fireball?"
+        and keys(spec, "rank") == ",Rank 3,Rank 2,Rank 1" and rank.chosen == ""
+        and rank.answers[1].name == "The highest you know" and rank.answers[1].hint == "Fireball"
+        and rank.answers[2].name == "Rank 3" and rank.answers[2].hint == "Fireball(Rank 3)", keys(spec, "rank"))
+    Q.Choose(spec, "rank", "Rank 2")
+    check("questions: a rank picked", spec.action.rank == "Rank 2" and ask(spec, "rank").chosen == "Rank 2"
+        and ask(spec, "on1").text == "Where should Fireball go?", spec.action.rank)
+    Q.Choose(spec, "rank", "")
+    check("questions: the highest again", spec.action.rank == nil)
+    spec.keys.shift.action = { name = "Fireball", ranks = { "Rank 1", "Rank 2", "Rank 3" } }
+    Q.Choose(spec, "shiftRank", "Rank 1")
+    check("questions: a key's rank", steps(spec):find("shiftCast,shiftRank,shiftOn1") ~= nil
+        and spec.keys.shift.action.rank == "Rank 1" and spec.action.rank == nil
+        and ask(spec, "shiftRank").context == "With Shift held", steps(spec))
     check("questions: the last ones", ask(spec, "also").kind == "also" and ask(spec, "finish").kind == "finish"
         and ask(spec, "finish").text == "Almost done: name your macro")
     ns.SetLanguage("uk")

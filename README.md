@@ -52,7 +52,8 @@ questions; the wizard opens as you left it.
 
 - **What should the macro do?** Cast a spell, use an item, several spells in turn, one of several at random,
   target someone, set your focus, take someone's target, command your pet.
-- Then what that needs: the spell or item (type a few letters, or pick it from the list: picked, it goes on),
+- Then what that needs: the spell or item (type a few letters, or pick it from the list: picked, it goes on) and
+  its rank when it has several (Classic),
   the spells of a list in their order and what starts a sequence over, what the pet does.
 - **Where should Flash Heal go?** On your target as usual, on whoever is under the mouse, on the ground under
   the cursor, on yourself, your focus, a party member... Each answer shows the macro's words for it
@@ -80,7 +81,9 @@ the answers kept, and **Next >** keeps the one chosen.
   what the pet does without a key (attack, on units in order, follow, stay, move to the cursor, passive,
   defensive, aggressive, dismiss), and with each key held.
 - **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words in capitals (`FB`),
-  and your spells and usable items come up; any other name works too.
+  and your spells and usable items come up; any other name works too. A spell with several learned ranks
+  (Classic) then lists them: the spell itself first (the highest rank, also after you learn a new one), then
+  each rank (`Fireball(Rank 3)`).
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
   itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
   1-3, At the cursor. When one is not there, the next one is tried.
