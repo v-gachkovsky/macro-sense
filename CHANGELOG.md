@@ -21,6 +21,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   itself first (the highest rank, also after you learn a new one); step by step it is a question of its own.
 
 ### Changed
+- The live preview names the command a line runs: `runs /startattack`, `runs /target @focus`, `runs /yell`
+  (it said only "runs"). "No match" is now "conditions not met", "nothing" is "does nothing", and a line said
+  in chat is "says it in chat".
 - The tooltip of New (Wizard) says it can ask a few simple questions.
 - In the wizard, a key's own spell is checked for what it is for, whatever the macro's spell is: with Shadow
   Bolt as the macro's spell, Flash Heal on Shift goes to friends (`help`).

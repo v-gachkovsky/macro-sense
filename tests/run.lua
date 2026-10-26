@@ -520,7 +520,8 @@ H.checkAction = nil
 -- Live preview: what each line does now, for a game state (tests/fakeparse.lua stands in for the game).
 local P = ns.Preview
 local fakeParse = dofile("tests/fakeparse.lua")
-local noteColors = { action = "aaaaaa", unit = "bbbbbb", text = "cccccc", dim = "dddddd", warning = "eeeeee" }
+local noteColors = { action = "aaaaaa", unit = "bbbbbb", text = "cccccc", dim = "dddddd", warning = "eeeeee",
+    command = "999999" }
 -- The notes without colors, " | " between lines.
 local function preview(body, state, env, skip)
     local results = P.Evaluate(body, env or { parse = fakeParse(state or {}) }, skip)
@@ -537,12 +538,12 @@ end
 local harmful = { harm = true }
 -- The author's macros: modifiers pick the line, and #showtooltip follows.
 expectPreview("demons, no modifier", fixtures.demons, {},
-    "icon: Summon Voidwalker | Summon Voidwalker | no match | no match")
+    "icon: Summon Voidwalker | Summon Voidwalker | conditions not met | conditions not met")
 expectPreview("demons, alt", fixtures.demons, { mods = { alt = true } },
-    "icon: Summon Imp | no match | Summon Imp | no match")
+    "icon: Summon Imp | conditions not met | Summon Imp | conditions not met")
 expectPreview("demons, cmd", fixtures.demons, { mods = { cmd = true } },
-    "icon: Summon Succubus | no match | no match | Summon Succubus")
-expectPreview("drains, alt", fixtures.drains, { mods = { alt = true } }, "icon: Drain Soul | no match | Drain Soul | no match")
+    "icon: Summon Succubus | conditions not met | conditions not met | Summon Succubus")
+expectPreview("drains, alt", fixtures.drains, { mods = { alt = true } }, "icon: Drain Soul | conditions not met | Drain Soul | conditions not met")
 -- @mouseover: only a living enemy under the mouse takes the first branch.
 expectPreview("agony, no mouseover", fixtures.agony, {}, "icon: Bane of Agony | Bane of Agony")
 expectPreview("agony on an enemy", fixtures.agony, { units = { mouseover = harmful } },
@@ -551,22 +552,22 @@ expectPreview("agony on a dead enemy", fixtures.agony, { units = { mouseover = {
     "icon: Bane of Agony | Bane of Agony")
 expectPreview("agony on a friend", fixtures.agony, { units = { mouseover = { harm = false } } },
     "icon: Bane of Agony | Bane of Agony")
-expectPreview("fear: stopcasting runs", fixtures.fear, {}, "icon: Fear | runs | Fear")
+expectPreview("fear: stopcasting runs", fixtures.fear, {}, "icon: Fear | runs /stopcasting | Fear")
 expectPreview("slow, alt on an enemy", fixtures.slow, { mods = { alt = true }, units = { mouseover = harmful } },
     "icon: Curse of Tongues | Curse of Tongues @mouseover")
 expectPreview("slow, alt", fixtures.slow, { mods = { alt = true } }, "icon: Curse of Tongues | Curse of Tongues")
 expectPreview("slow, no modifier", fixtures.slow, {}, "icon: Curse of Exhaustion | Curse of Exhaustion")
 -- The icon comes from the first line that casts something now.
-expectPreview("healthstone, no modifier", fixtures.healthstone, {}, "icon: Lesser Healthstone | Lesser Healthstone | no match")
+expectPreview("healthstone, no modifier", fixtures.healthstone, {}, "icon: Lesser Healthstone | Lesser Healthstone | conditions not met")
 expectPreview("healthstone, shift", fixtures.healthstone, { mods = { shift = true } },
-    "icon: Create Soulstone | no match | Create Soulstone")
+    "icon: Create Soulstone | conditions not met | Create Soulstone")
 expectPreview("healthstone, ctrl", fixtures.healthstone, { mods = { ctrl = true } },
-    "icon: Health Funnel | no match | Health Funnel")
+    "icon: Health Funnel | conditions not met | Health Funnel")
 -- The pet out decides.
 expectPreview("petCC, Felhunter", fixtures.petCC, { pet = "Felhunter" }, "icon: Spell Lock | Spell Lock")
 expectPreview("petCC, Succubus on an enemy", fixtures.petCC, { pet = "Succubus", units = { mouseover = harmful } },
     "icon: Seduction | Seduction @mouseover")
-expectPreview("petCC, no pet", fixtures.petCC, {}, "icon: ? | no match")
+expectPreview("petCC, no pet", fixtures.petCC, {}, "icon: ? | conditions not met")
 expectPreview("petSpells, Voidwalker + alt", fixtures.petSpells, { pet = "Voidwalker", mods = { alt = true } },
     "icon: Sacrifice | Sacrifice")
 expectPreview("petSpells, Voidwalker", fixtures.petSpells, { pet = "Voidwalker" }, "icon: Consume Shadows | Consume Shadows")
@@ -576,18 +577,18 @@ expectPreview("petSpells, Felhunter + alt", fixtures.petSpells, { pet = "Felhunt
 expectPreview("petSpells, Felhunter on a unit", fixtures.petSpells, { pet = "Felhunter", units = { mouseover = {} } },
     "icon: Devour Magic | Devour Magic @mouseover")
 -- Pet commands: no spell, so no icon; the line that runs says so.
-expectPreview("petControl, no modifier", fixtures.petControl, {}, "icon: ? | runs | no match | no match | no match")
+expectPreview("petControl, no modifier", fixtures.petControl, {}, "icon: ? | runs /petmoveto | conditions not met | conditions not met | conditions not met")
 expectPreview("petControl, ctrl on an enemy target", fixtures.petControl,
-    { mods = { ctrl = true }, units = { target = harmful } }, "icon: ? | no match | runs | no match | no match")
+    { mods = { ctrl = true }, units = { target = harmful } }, "icon: ? | conditions not met | runs /petattack | conditions not met | conditions not met")
 expectPreview("petControl, ctrl on an enemy mouseover", fixtures.petControl,
-    { mods = { ctrl = true }, units = { mouseover = harmful } }, "icon: ? | no match | runs @mouseover | no match | no match")
-expectPreview("petControl, shift", fixtures.petControl, { mods = { shift = true } }, "icon: ? | no match | no match | runs | no match")
-expectPreview("petControl, alt", fixtures.petControl, { mods = { alt = true } }, "icon: ? | no match | no match | no match | runs")
+    { mods = { ctrl = true }, units = { mouseover = harmful } }, "icon: ? | conditions not met | runs /petattack @mouseover | conditions not met | conditions not met")
+expectPreview("petControl, shift", fixtures.petControl, { mods = { shift = true } }, "icon: ? | conditions not met | conditions not met | runs /petstay | conditions not met")
+expectPreview("petControl, alt", fixtures.petControl, { mods = { alt = true } }, "icon: ? | conditions not met | conditions not met | conditions not met | runs /petfollow")
 expectPreview("shot: ! and an empty group", fixtures.shot, {}, "icon: Shoot | Shoot")
 expectPreview("cannibalize: the rank is not shown", fixtures.cannibalize, { mods = { alt = true } },
-    "icon: Cannibalize | no match | Cannibalize")
+    "icon: Cannibalize | conditions not met | Cannibalize")
 expectPreview("bare #showtooltip", fixtures.bh, {}, "icon: ?")
-expectPreview("emote", fixtures.kiss, {}, "runs")
+expectPreview("emote", fixtures.kiss, {}, "runs /kiss")
 expectPreview("empty macro", fixtures.yfyt, {}, "")
 -- Every macro gets a note per line without errors.
 for name, body in pairs(fixtures) do
@@ -597,7 +598,7 @@ end
 -- /stopmacro: the lines after it are not reached.
 local stop = "/stopmacro [nocombat]\n/cast Fireball\n\n/say hi\n# a comment"
 expectPreview("stopmacro stops", stop, {}, "stops here | not reached |  | not reached | ")
-expectPreview("stopmacro in combat", stop, { combat = true }, "no match | Fireball |  | chat | ")
+expectPreview("stopmacro in combat", stop, { combat = true }, "conditions not met | Fireball |  | runs /say | ")
 -- #showtooltip with a name, or with conditions of its own.
 local tip = "#showtooltip [mod:alt] Fear; Corruption\n/cast Shadow Bolt"
 expectPreview("showtooltip names the icon", tip, {}, "icon: Corruption | Shadow Bolt")
@@ -616,17 +617,23 @@ expectPreview("random", "/castrandom Fear, Howl of Terror", {}, "Fear, Howl of T
 expectPreview("equip", "/equip Fire Ring\n/equipslot 13 Healthstone", {}, "equip Fire Ring | equip Healthstone")
 expectPreview("an item by its slot", "/use 13\n/use 0 1\n/use 23", {}, "Trinket 1 | bag 0, slot 1 | slot 23")
 expectPreview("cancelaura", "/cancelaura [combat] Demon Armor; Fel Armor", {}, "cancel Fel Armor")
-expectPreview("an empty clause casts nothing", "/cast [mod:alt]; Fear", { mods = { alt = true } }, "nothing")
+expectPreview("an empty clause casts nothing", "/cast [mod:alt]; Fear", { mods = { alt = true } }, "does nothing")
 expectPreview("target with a unit", "/target party1\n/focus [@mouseover,exists]", { units = { mouseover = {} } },
-    "runs party1 | runs @mouseover")
-expectPreview("lua, chat", "/run print(1)\n/s hi\nhello", {}, "Lua | chat | chat")
+    "runs /target party1 | runs /focus @mouseover")
+expectPreview("lua, chat", "/run print(1)\n/s hi\nhello", {}, "runs /run | runs /s | says it in chat")
 expectPreview("lines with errors: no note", "/cast [harmm] Fear\n/cast Fear", {}, " | Fear", nil, { [1] = true })
 expectPreview("a failing check: no note", "/cast Fear", nil, "", { parse = function() error("no") end })
 -- Colors: the spell in the action color, the unit in the unit color, quiet notes dim.
 do
     local results = P.Evaluate("/cast [@focus] Fear\n/cast [combat] Fear", { parse = fakeParse({ units = { focus = {} } }) })
     check("note colors", P.Note(results[1], noteColors) == "|cffaaaaaaFear|r|cffbbbbbb @focus|r", P.Note(results[1], noteColors))
-    check("quiet note is dim", P.Note(results[2], noteColors) == "|cffddddddno match|r", P.Note(results[2], noteColors))
+    check("quiet note is dim", P.Note(results[2], noteColors) == "|cffddddddconditions not met|r",
+        P.Note(results[2], noteColors))
+    local runs = P.Evaluate("/startattack\n/target [@focus] \nhi", { parse = fakeParse({ units = { focus = {} } }) })
+    check("a command that runs is named, in the command's color", P.Note(runs[1], noteColors)
+        == "|cffccccccruns |r|cff999999/startattack|r" and P.Note(runs[2], noteColors)
+        == "|cffccccccruns |r|cff999999/target|r|cffbbbbbb @focus|r", P.Note(runs[2], noteColors))
+    check("a line said in chat", P.Note(runs[3], noteColors) == "|cffccccccsays it in chat|r", P.Note(runs[3], noteColors))
 end
 
 -- Shorten: the same macro in fewer characters.

@@ -1418,7 +1418,8 @@ do
     check("preview follows a held modifier", notes() == "icon: Polymorph | Polymorph | stops here | not reached", notes())
     game.mods.alt, game.combat = nil, true
     Wait(0.2)
-    check("preview follows combat", notes() == "icon: Fireball | Fireball | no match | Frostbolt", notes())
+    check("preview follows combat", notes() == "icon: Fireball | Fireball | conditions not met | Frostbolt",
+        notes())
     game.combat = nil
     Type("\n/cast [harmm] Fear")
     Key("ESCAPE", "OnEscapePressed")
@@ -1448,7 +1449,7 @@ do
     check("preview: a pet macro", notes() == "icon: Seduction | Seduction @mouseover", notes())
     game.pet, game.units.mouseover = nil, nil
     Wait(0.2)
-    check("preview: no pet, no match", notes() == "icon: ? | no match", notes())
+    check("preview: no pet, no match", notes() == "icon: ? | conditions not met", notes())
     -- A note on line 150 only (no line that far had one before); a shorter macro leaves it no trace.
     ns.Window.New()
     NextFrame()
@@ -1465,6 +1466,24 @@ do
     NextFrame()
     check("preview: no notes left from a longer macro", notes() == "Frostbolt", notes())
     ns.Window.Revert()
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- A command that runs is named in the live preview, in the color commands have in the text.
+do
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/startattack")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(0.2)
+    local note
+    for _, o in ipairs(created) do
+        if o.isNote and o:IsShown() then note = o.text end
+    end
+    check("preview: runs /startattack, the command in its color", note and ns.Highlight.Strip(note) == "runs /startattack"
+        and note:find("|cff" .. ns.TokenColors(ns.scheme).command .. "/startattack|r", 1, true) ~= nil, note)
     ns.Window.Select(1)
     NextFrame()
 end
@@ -3847,7 +3866,7 @@ do
     -- Kept in their files' locals: month names, tab names, the preview's quiet notes and verbs, hints made in
     -- Sources and Completion, what a condition's value should be, and the wizard's names for a macro.
     for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-        "General", "Character", "nothing", "no match", "not reached", "chat", "equip", "cancel", "no form", "primary",
+        "General", "Character", "does nothing", "conditions not met", "not reached", "chat", "equip", "cancel", "no form", "primary",
         "secondary", "your pet", "pet family", "equipped", "item", "extra action", "leave the vehicle",
         "popup: first button", "popup: second button", "highest", "on you now", "buff",
         "shift, ctrl, alt or a key action like SELFCAST",
