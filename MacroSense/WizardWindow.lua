@@ -222,7 +222,8 @@ local function SpellBox(parent, width, hint, get, set, candidates)
                 local name = c.name:lower()
                 if name == typed:lower() or (name == base and not c.item) then
                     action = { name = c.name, item = c.item, label = c.label, ranks = c.ranks,
-                        rank = name == base and rank or nil }
+                        rank = name == base and rank or nil,
+                        selfOnly = ns.sources.selfOnly(c.label or c.name, c.item) or nil }
                     break
                 end
             end
@@ -356,9 +357,27 @@ local function FollowReaction(action)
     spec.reaction = reaction
 end
 
+-- A spell or item that goes to nobody but you picked (Demon Armor, a potion): the units of what casts it are as
+-- usual, nobody after (Wizard.SelfOnly): the macro's, a list's, a key's.
+local function FollowSelf()
+    local function usual(on)
+        for i = 1, #on do on[i] = i == 1 and "default" or "none" end
+    end
+    if W.SelfOnly(spec) then usual(spec.on) end
+    for _, key in ipairs(W.KEYS) do
+        if W.SelfOnly(spec, key) then usual(spec.keys[key].on) end
+    end
+    -- The form's lists of units show it (the keys of this client: Cmd on a Mac).
+    for _, name in ipairs({ "on1", "on2", "on3", "shiftOn", "shiftThen", "ctrlOn", "ctrlThen", "altOn", "altThen",
+        "cmdOn", "cmdThen" }) do
+        if controls[name] then controls[name]:Refresh() end
+    end
+end
+
 -- A key's own spell picked: its units are checked for what it is for (Wizard.Only).
 local function SetKeyAction(key, action)
     spec.keys[key].action, spec.keys[key].reaction = action, ReactionOf(action)
+    FollowSelf()
 end
 
 -- And /cast or /use as it is a spell or an item (you can still choose the other).
@@ -605,6 +624,7 @@ local function BuildSteps()
             spec.action = action
             FollowReaction(action)
             FollowKind(action)
+            FollowSelf()
         end
     end)
     box:SetPoint("TOPLEFT", PAD, 0)
@@ -624,6 +644,7 @@ local function BuildSteps()
             function(action)
                 spec.list[i] = action
                 if i == 1 then FollowReaction(action) end
+                FollowSelf()
             end)
         item:SetPoint("TOPLEFT", x, y)
         item:HookScript("OnTextChanged", function() controls.next:SetEnabled(Answered()) end)
@@ -799,6 +820,7 @@ local function Build()
             spec.action = action
             FollowReaction(action)
             FollowKind(action)
+            FollowSelf()
         end)
     controls.cast:SetPoint("TOPLEFT", X, 0)
 
@@ -811,6 +833,7 @@ local function Build()
         local box = SpellBox(blocks.list, 236, L["spell or item"], function() return spec.list[i] end, function(action)
             spec.list[i] = action
             if i == 1 then FollowReaction(action) end
+            FollowSelf()
         end)
         box:SetPoint("TOPLEFT", x, y)
         controls["list" .. i] = box

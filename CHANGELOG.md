@@ -21,6 +21,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   itself first (the highest rank, also after you learn a new one); step by step it is a question of its own.
 
 ### Changed
+- In the wizard, a spell or item that goes to nobody but you (Demon Armor, Bear Form: the game says it has no
+  range) gets no units: step by step there is no "where" question for it, and the form sets On to As usual.
+  So does a key that casts it.
 - The live preview names the command a line runs: `runs /startattack`, `runs /target @focus`, `runs /yell`
   (it said only "runs"). "No match" is now "conditions not met", "nothing" is "does nothing", and a line said
   in chat is "says it in chat".

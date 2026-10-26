@@ -1311,6 +1311,33 @@ do
     check("questions: a key's rank", steps(spec):find("shiftCast,shiftRank,shiftOn1") ~= nil
         and spec.keys.shift.action.rank == "Rank 1" and spec.action.rank == nil
         and ask(spec, "shiftRank").context == "With Shift held", steps(spec))
+    -- For yourself only (Demon Armor, a potion): no units to ask about, for the macro or a key that casts it.
+    spec = W.Fresh()
+    spec.action = { name = "Demon Armor", selfOnly = true }
+    check("questions: for yourself only: no units", steps(spec) == "what,spell,keys,also,finish" and W.SelfOnly(spec),
+        steps(spec))
+    spec.keys.shift.active = true
+    check("questions: a key casting it: none either", steps(spec) == "what,spell,keys,shiftCast,also,finish"
+        and W.SelfOnly(spec, "shift"), steps(spec))
+    spec.action = { name = "Fireball" }
+    spec.keys.shift.action = { name = "Healthstone", item = true, selfOnly = true }
+    check("questions: a key's own, for yourself only", steps(spec)
+        == "what,spell,on1,only,on2,keys,shiftCast,also,finish" and not W.SelfOnly(spec), steps(spec))
+    spec.keys.shift.action = nil
+    check("questions: a key casting the macro's spell for others", steps(spec)
+        == "what,spell,on1,only,on2,keys,shiftCast,shiftOn1,also,finish", steps(spec))
+    Q.Choose(spec, "what", "castsequence")
+    spec.list = { { name = "Demon Armor", selfOnly = true }, nil, { name = "Soul Link", selfOnly = true } }
+    check("questions: a list for yourself only", steps(spec) == "what,list,reset,also,finish", steps(spec))
+    spec.list[2] = { name = "Corruption" }
+    check("questions: a list with one for others", steps(spec):find("reset,on1") ~= nil, steps(spec))
+    spec.list = {}
+    check("questions: an empty list is not for yourself", not W.SelfOnly(spec))
+    Q.Choose(spec, "what", "focus")
+    spec.keys.shift.action = { name = "Demon Armor", selfOnly = true }
+    check("questions: /focus casts nothing", not W.SelfOnly(spec) and not W.SelfOnly(spec, "shift"))
+    Q.Choose(spec, "what", "pet")
+    check("questions: nor does the pet", not W.SelfOnly(spec, "shift"))
     check("questions: the last ones", ask(spec, "also").kind == "also" and ask(spec, "finish").kind == "finish"
         and ask(spec, "finish").text == "Almost done: name your macro")
     ns.SetLanguage("uk")

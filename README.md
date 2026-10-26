@@ -58,7 +58,8 @@ questions; the wizard opens as you left it.
 - **Where should Flash Heal go?** On your target as usual, on whoever is under the mouse, on the ground under
   the cursor, on yourself, your focus, a party member... Each answer shows the macro's words for it
   (`@mouseover`), and its tooltip says what it is. When that one may not be there, the next question asks
-  who then (**And if nobody is under the mouse?**), up to three.
+  who then (**And if nobody is under the mouse?**), up to three. A spell or item that goes to nobody but you
+  (Demon Armor, Bear Form: the game says it has no range) is not asked about.
 - **Who is it for?** Friends, enemies, anyone, or friends dead or alive (for a resurrection): asked only when
   the game doesn't say what the spell is for (an item, Holy Shock). A spell for enemies is not offered for
   yourself, your pet or party members, one for friends not for arena enemies.
@@ -86,7 +87,8 @@ the answers kept, and **Next >** keeps the one chosen.
   each rank (`Fireball(Rank 3)`).
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
   itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
-  1-3, At the cursor. When one is not there, the next one is tried.
+  1-3, At the cursor. When one is not there, the next one is tried. A spell that goes to nobody but you
+  (Demon Armor) sets As usual.
 - **Only**: friends, enemies or anyone there, and **Alive only**. It follows the spell you pick, when the game
   knows what it is for; a key's own spell is checked for what it is for.
 - **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
