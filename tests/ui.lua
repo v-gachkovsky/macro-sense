@@ -3463,8 +3463,19 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(button, "OnEnter")
     GameTooltip.AddLine = nil
-    check("ukrainian: the backups' tooltip, in plain words", tip[1] == "Бекапи"
-        and tip[2]:find("^Ваші макроси зберігаються самі щодня") ~= nil, tip[2])
+    check("ukrainian: the backups' tooltip, in plain words, with the limit", tip[1] == "Бекапи"
+        and tip[2]:find("^Ваші макроси зберігаються самі щодня") ~= nil
+        and tip[2]:find("останні 10 бекапів", 1, true) ~= nil, tip[2])
+    local trash
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Trash" then trash = o end
+    end
+    tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(trash, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("ukrainian: the trash's tooltip, with its limits", tip[2]:find("останні 30 видалених макросів", 1, true)
+        and tip[2]:find("У меню видно 12 найновіших.", 1, true), tip[2])
     ns.Popup:Style(ns.scheme, "Fonts\\Code.ttf", 13)
     ns.Popup:Open(edit, { { name = "cast", hint = "cast a spell" } }, 0, 0, 14)
     local row = ns.Popup.rows[1]
