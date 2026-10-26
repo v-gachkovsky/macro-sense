@@ -166,6 +166,8 @@ ns.locales.uk = {
     -- Main window: editor
     ["Click: choose an icon"] = "Клацання: вибрати іконку",
     ["Drag: put the macro on an action bar"] = "Перетягування: поставити макрос на панель дій",
+    ["Its icon is the question mark: the macro shows the icon of the spell or item it uses."] =
+        "Його іконка — знак питання: макрос показує іконку заклинання чи предмета, яке він застосовує.",
     ["click or drag the icon"] = "клацніть або перетягніть іконку",
     ["Shorten"] = "Скоротити",
     ["Shorten -%d"] = "Скоротити -%d",

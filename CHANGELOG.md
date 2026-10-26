@@ -18,6 +18,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 - The tooltip of New (Wizard) says it can ask a few simple questions.
 
+### Fixed
+- The editor's header shows the icon the macro shows in the game, as the list and the action bars do: with the
+  question mark and `#showtooltip`, the spell's icon, also when a key held changes it (it showed the question
+  mark). The question mark is still the icon saved, and its tooltip says what it does.
+
 ## [0.6.1] - 2026-10-26
 
 ### Changed
