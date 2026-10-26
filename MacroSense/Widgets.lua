@@ -82,6 +82,43 @@ function ns.Button(parent, label, width, onClick, accent)
     return b
 end
 
+-- One answer of a few to pick from: a wide flat button with its name and, dim at its right end, a hint; framed in
+-- the accent color under the mouse and while it is the one chosen (SetChosen).
+function ns.Answer(parent, width, onClick)
+    local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    b:SetSize(width, 24)
+    b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+    b.hint = ns.Text(b, 10, "dim")
+    b.hint:SetPoint("RIGHT", -8, 0)
+    b.label = ns.Text(b, 12)
+    b.label:SetPoint("LEFT", 10, 0)
+    b.label:SetPoint("RIGHT", b.hint, "LEFT", -6, 0)
+    b.label:SetWordWrap(false)
+    local hover = false
+    local function paint()
+        local s = ns.scheme
+        if not s then return end
+        local lit = hover or b.chosen
+        b:SetBackdropColor(ns.RGB(lit and s.selection or s.panel))
+        b:SetBackdropBorderColor(ns.RGB(lit and s.accent or s.border))
+    end
+    b:SetScript("OnEnter", function()
+        hover = true
+        paint()
+    end)
+    b:SetScript("OnLeave", function()
+        hover = false
+        paint()
+    end)
+    b:SetScript("OnClick", onClick)
+    function b:SetChosen(on)
+        self.chosen = on
+        paint()
+    end
+    ns.OnStyle(paint)
+    return b
+end
+
 -- Checkbox with a label: a small square, filled with the accent color when on.
 -- getValue() -> boolean; onChange(value).
 function ns.Check(parent, label, getValue, onChange)

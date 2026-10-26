@@ -23,7 +23,8 @@ bars, which opens that macro. On Retail it's in the addon menu by the minimap to
 
 **A macro from the wizard**
 
-1. **New (Wizard)** under the macro list.
+1. **New (Wizard)** under the macro list. It asks what the macro should do, one question at a time; **All
+   options** at its top shows the whole form at once, as here.
 2. **Cast**: a few letters of the spell (or the first letters of its words, in capitals).
 3. **On**: Mouseover, then As usual. **Only**: Enemies, set from the spell.
 4. **With a key held**: Alt casts Immolate on the same units.
@@ -45,7 +46,12 @@ bars, which opens that macro. On Retail it's in the addon menu by the minimap to
 
 ## Macro wizard
 
-Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** opens a form where you pick it all:
+Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** asks a few simple questions, one at a
+time: what the macro should do, which spell, where it goes (whoever is under the mouse, yourself, the ground
+under the cursor...) and who then when that one is not there, friends or enemies, what Shift, Ctrl or Alt do,
+anything else. Each answer shows the macro's words for it, and the macro grows at the bottom as you answer.
+
+Or **All options** shows the whole form, where you pick it all at once:
 
 - **the command**: `/cast`, `/use`, `/castsequence` (with what starts it over), `/castrandom`, or `/target`,
   `/focus` and `/assist` on units (party members by key, say; `/target` by name too), or **pet commands**

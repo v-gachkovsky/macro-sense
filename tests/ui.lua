@@ -2140,6 +2140,11 @@ do
     local count, before, first = GetNumMacros(), raw(), GetMacroInfo(1)
     Fire(wizardBtn, "OnClick")
     check("wizard: a window of its own", MacroSenseWizard and MacroSenseWizard:IsShown() and raw() == before)
+    check("wizard: step by step the first time", C("mode").label.text == "All options"
+        and C("question").text == "What should the macro do?" and MacroSenseWizard.height == 510, C("question").text)
+    Fire(C("mode"), "OnClick")
+    check("wizard: the whole form", C("mode").label.text == "Step by step" and ns.db.wizardForm == true
+        and C("cancel").shown and not C("back").shown, C("mode").label.text)
     check("wizard: nothing to create yet", shown():find("Pick a spell", 1, true) ~= nil and not C("create"):IsEnabled(),
         shown())
     check("wizard: into the tab that is open", C("tab").label.text == "General", C("tab").label.text)
@@ -2444,6 +2449,224 @@ do
     ns.Window.Toggle()
 
     for _, name in ipairs({ "Burst", "Burst 2", "Polymorph" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- Step by step: the form's questions one at a time, in plain words. A click answers and goes on, a spell picked
+-- too; Back goes back with the answers kept; the last question names the macro. The form and the questions share
+-- the answers, and the window opens as it was left.
+do
+    local C = ns.WizardWindow.Control
+    local wizardBtn
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizardBtn = o end
+    end
+    local function answers()
+        local out = {}
+        for i = 1, 16 do
+            if C("answer" .. i).shown then out[#out + 1] = C("answer" .. i).label.text end
+        end
+        return table.concat(out, ", ")
+    end
+    local function answer(name)
+        for i = 1, 16 do
+            local b = C("answer" .. i)
+            if b.shown and b.label.text == name then return b end
+        end
+    end
+    local function chosen()
+        for i = 1, 16 do
+            local b = C("answer" .. i)
+            if b.shown and b.chosen then return b.label.text end
+        end
+    end
+    local function TypeIn(box, text)
+        box:SetFocus()
+        Fire(box, "OnEditFocusGained")
+        box.text = text
+        Fire(box, "OnTextChanged", true)
+    end
+    local function shown() return ns.Highlight.Strip(C("preview").text) end
+    local function question() return C("question").text end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+    local count = GetNumMacros()
+    Fire(wizardBtn, "OnClick")
+    check("steps: the window opens as it was left",
+        MacroSenseWizard:IsShown() and C("mode").label.text == "Step by step")
+    Fire(C("mode"), "OnClick")
+    check("steps: the questions from the first", ns.db.wizardForm == nil and MacroSenseWizard.height == 510
+        and question() == "What should the macro do?" and not C("back"):IsEnabled() and C("back").shown
+        and C("next").shown and not C("create").shown and not C("cancel").shown, question())
+    check("steps: what the macro does", answers() == "Cast a spell, Use an item, Several spells in turn, One of "
+        .. "several at random, Target someone, Set your focus, Take someone's target, Command your pet"
+        and chosen() == "Cast a spell" and C("answer1").hint.text == "/cast", answers())
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(answer("Several spells in turn"), "OnEnter")
+    GameTooltip.AddLine = nil
+    check("steps: an answer's tooltip says what it is", tip[1] == "Several spells in turn"
+        and tip[2]:find("^Each press casts the next spell") ~= nil, tip[2])
+
+    Fire(answer("Cast a spell"), "OnClick")
+    check("steps: a click answers and goes on", question() == "Which spell should the macro cast?"
+        and C("stepSpell"):HasFocus() and not C("next"):IsEnabled() and C("back"):IsEnabled(), question())
+    Fire(C("back"), "OnClick")
+    check("steps: Back with nothing typed", question() == "What should the macro do?" and not C("stepSpell"):HasFocus(),
+        question())
+    Fire(answer("Cast a spell"), "OnClick")
+    TypeIn(C("stepSpell"), "fire")
+    check("steps: a name typed lets Next go on", C("next"):IsEnabled())
+    Fire(C("stepSpell"), "OnArrowPressed", "DOWN")
+    Fire(C("stepSpell"), "OnEnterPressed")
+    check("steps: a spell picked goes on", question() == "Where should Fireball go?"
+        and chosen() == "On whoever is under the mouse" and answer("On whoever is under the mouse").hint.text
+        == "@mouseover" and answer("On party member 1") ~= nil and answer("Do nothing") == nil, question())
+    check("steps: the macro as it is", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", shown())
+    Fire(C("back"), "OnClick")
+    check("steps: back to the spell picked", question() == "Which spell should the macro cast?"
+        and C("stepSpell").text == "Fireball" and not C("stepSpell"):HasFocus() and C("next"):IsEnabled(), question())
+    Fire(C("next"), "OnClick")
+    Fire(answer("On whoever is under the mouse"), "OnClick")
+    check("steps: friends or enemies, as the game says", question() == "Who is Fireball for?" and chosen() == "Enemies",
+        question())
+    Fire(answer("Enemies"), "OnClick")
+    check("steps: and if nobody is under the mouse", question() == "And if nobody is under the mouse?"
+        and C("hint").text == "Or the one there is not an enemy, or is dead." and chosen() == "On your target, as usual"
+        and answer("On whoever is under the mouse") == nil and answers():find("Do nothing$") ~= nil, answers())
+    Fire(answer("On your target, as usual"), "OnClick")
+    check("steps: keys", question() == "Should the macro do something else while you hold Shift, Ctrl, Alt or Cmd?"
+        and C("stepCmd") ~= nil and C("next"):IsEnabled(), question())
+    Fire(C("stepShift"), "OnClick")
+    Fire(C("next"), "OnClick")
+    check("steps: what Shift casts", C("context").text == "With Shift held"
+        and question() == "What should the macro cast instead?" and C("stepSpell").text == ""
+        and C("stepSpell").placeholder.text == "same spell" and not C("stepSpell"):HasFocus()
+        and C("next"):IsEnabled(), question())
+    TypeIn(C("stepSpell"), "poly")
+    Fire(C("stepSpell"), "OnEnterPressed")
+    check("steps: where it goes with Shift", question() == "Where should Polymorph go?"
+        and C("context").text == "With Shift held" and chosen() == "On your target, as usual", question())
+    Fire(answer("On your focus"), "OnClick")
+    check("steps: and if there is no focus", question() == "And if you have no focus?", question())
+    Fire(answer("Do nothing"), "OnClick")
+    check("steps: anything else", question() == "Would you like to add anything else?" and C("context").text == ""
+        and C("stepTrinket1").label.text == "Trinket 1: Lucky Charm", question())
+    Fire(C("stepStopcasting"), "OnClick")
+    local burst = "#showtooltip\n/stopcasting\n/cast [mod:shift,@focus,harm,nodead] Polymorph; "
+        .. "[@mouseover,harm,nodead][] Fireball"
+    check("steps: the macro so far", shown() == burst, shown())
+    Fire(C("next"), "OnClick")
+    check("steps: the last one names the macro", question() == "Almost done: name your macro"
+        and C("stepName").text == "Fireball" and C("create").shown and C("create"):IsEnabled() and not C("next").shown
+        and C("stepGeneral").chosen and not C("stepCharacter").chosen, question())
+
+    -- Back, with the answers kept; the form with them, and the questions again from the first.
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    check("steps: Back keeps the answers", question() == "And if you have no focus?" and chosen() == "Do nothing"
+        and C("context").text == "With Shift held", question())
+    C("stepName"):SetText("Burst")
+    Fire(C("mode"), "OnClick")
+    check("steps: the form has the answers", ns.db.wizardForm == true and C("cast").text == "Fireball"
+        and C("shift").fill.shown and C("shiftCast").text == "Polymorph" and C("shiftOn").label.text == "Focus"
+        and C("stopcasting").fill.shown and C("only").label.text == "Enemies" and MacroSenseWizard.height ~= 510
+        and C("cancel").shown and C("create").shown and not C("back").shown and not C("next").shown, C("cast").text)
+    check("steps: and the name typed", C("name").text == "Burst", C("name").text)
+    Fire(C("mode"), "OnClick")
+    check("steps: the questions from the first again", question() == "What should the macro do?"
+        and chosen() == "Cast a spell" and shown() == burst, question())
+    for _ = 1, 10 do Fire(C("next"), "OnClick") end
+    check("steps: Next through the answers given", question() == "Almost done: name your macro"
+        and C("stepName").text == "Burst", question())
+    Fire(C("stepCharacter"), "OnClick")
+    check("steps: the tab in plain words", C("stepCharacter").chosen and not C("stepGeneral").chosen
+        and C("stepCharacter").label.text == "Only for this character")
+    Fire(C("stepName"), "OnEnterPressed")
+    local index = GetMacroIndexByName("Burst")
+    check("steps: Enter in the name creates the macro", index > SLOTS.MAX_ACCOUNT_MACROS and body("Burst") == burst
+        and not MacroSenseWizard:IsShown(), index)
+
+    -- /target by name; a list and what starts it over; the pet.
+    Fire(wizardBtn, "OnClick")
+    check("steps: opened again, from the first question", question() == "What should the macro do?"
+        and chosen() == "Cast a spell" and shown():find("Pick a spell", 1, true) ~= nil, question())
+    Fire(answer("Cast a spell"), "OnClick")
+    TypeIn(C("stepSpell"), "Healthstone")
+    Fire(C("next"), "OnClick")
+    check("steps: Next takes the name typed; an item is used", question() == "Where should Healthstone go?"
+        and shown() == "#showtooltip\n/use [@mouseover,help,nodead][] Healthstone" and MacroSenseWizard.height == 510,
+        shown())
+    Fire(C("back"), "OnClick")
+    TypeIn(C("stepSpell"), "")
+    Fire(C("back"), "OnClick")
+    check("steps: Back takes the box emptied", question() == "What should the macro do?"
+        and shown():find("Pick a spell", 1, true) ~= nil, shown())
+    Fire(answer("Target someone"), "OnClick")
+    check("steps: whom to target", question() == "Who should become your target?"
+        and answer("Whoever is under the mouse") ~= nil and answer("Party member 2") ~= nil, answers())
+    Fire(answer("Someone by name"), "OnClick")
+    check("steps: by name", question() == "What name should it look for?" and not C("next"):IsEnabled(), question())
+    TypeIn(C("stepByName"), "Hogger")
+    check("steps: a name lets Next go on", C("next"):IsEnabled() and shown() == "/target Hogger", shown())
+    Fire(C("stepByName"), "OnEnterPressed")
+    check("steps: Enter goes on", question():find("^Should the macro do something else") ~= nil, question())
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    Fire(answer("Several spells in turn"), "OnClick")
+    check("steps: a list", question() == "Pick the spells in the order the macro should cast them"
+        and not C("next"):IsEnabled(), question())
+    TypeIn(C("stepList1"), "fire")
+    check("steps: a name being typed in the list lets Next go on", C("next"):IsEnabled())
+    Fire(C("stepList1"), "OnArrowPressed", "DOWN")
+    Fire(C("stepList1"), "OnEnterPressed")
+    TypeIn(C("stepList2"), "frost")
+    Fire(C("stepList2"), "OnEnterPressed")
+    check("steps: a list is no single pick: it stays",
+        question() == "Pick the spells in the order the macro should cast them" and C("next"):IsEnabled(), question())
+    Fire(C("next"), "OnClick")
+    check("steps: what starts it over", question() == "When should the sequence start again from the first spell?"
+        and C("stepResetShift").label.text == "When you press it with Shift held", question())
+    Fire(C("stepResetTarget"), "OnClick")
+    Fire(C("next"), "OnClick")
+    check("steps: where these spells go: as usual, after a name", question() == "Where should these spells go?"
+        and chosen() == "On your target, as usual"
+        and shown() == "#showtooltip\n/castsequence reset=target Fireball, Frostbolt", shown())
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    Fire(answer("Command your pet"), "OnClick")
+    check("steps: the pet", question() == "What should your pet do?" and chosen() == "Attack", question())
+    Fire(answer("Follow"), "OnClick")
+    check("steps: no units to follow", question():find("^Should the macro do something else") ~= nil
+        and shown() == "/petfollow", shown())
+    Fire(C("mode"), "OnClick")
+    TypeIn(C("cancelaura"), "Ice Block")
+    Fire(C("mode"), "OnClick")
+    check("steps: what was being typed in the form is taken", question() == "What should the macro do?"
+        and shown() == "/cancelaura Ice Block\n/petfollow", shown())
+
+    -- In Ukrainian.
+    ns.WizardWindow.Close()
+    ns.SetLanguage("uk")
+    Fire(wizardBtn, "OnClick")
+    check("steps: in Ukrainian", question() == "Що має робити макрос?"
+        and C("answer1").label.text == "Застосувати заклинання", question())
+    Fire(C("answer1"), "OnClick")
+    check("steps: the next question in Ukrainian", question() == "Яке заклинання має застосовувати макрос?", question())
+    ns.WizardWindow.Close()
+    ns.SetLanguage("en")
+
+    check("steps: one macro made", GetNumMacros() == count, GetNumMacros())
+    DeleteMacro(GetMacroIndexByName("Burst"))
     Send("UPDATE_MACROS")
     ns.Window.SetScope("general")
     ns.Window.Select(1)
@@ -3575,7 +3798,8 @@ do
     Fire(wizard, "OnEnter")
     GameTooltip.AddLine = nil
     check("ukrainian: the wizard's tooltip", wizardTip[1] == "Майстер"
-        and wizardTip[2]:find("^Створіть новий макрос за допомогою вбудованого майстра! Оберіть") ~= nil, wizardTip[2])
+        and wizardTip[2]:find("^Створіть новий макрос за допомогою вбудованого майстра! Дайте відповідь") ~= nil,
+        wizardTip[2])
     local shorten
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and tostring(o.label.text):find("^Shorten") then shorten = o end

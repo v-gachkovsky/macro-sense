@@ -1135,15 +1135,15 @@ local function Build()
     local newBtn = ns.Button(side, L["New"], 99, Window.New)
     newBtn:SetPoint("BOTTOMLEFT", 8, 36)
 
-    -- The wizard next to it: a new macro from a form, in a window of its own.
+    -- The wizard next to it: a new macro from questions or a form, in a window of its own.
     local wizardBtn = ns.Button(side, L["New (Wizard)"], 99, function() ns.WizardWindow.Toggle(state.scope) end)
     wizardBtn:SetPoint("BOTTOMRIGHT", -8, 36)
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["New (Wizard)"], 1, 1, 1)
-        GameTooltip:AddLine(L["Create a new macro with the built-in wizard! Pick what to cast and on whom "
-            .. "(mouseover, focus, party members, yourself, the cursor...), other spells on Shift, Ctrl or Alt, "
-            .. "trinkets and more."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Create a new macro with the built-in wizard! Answer a few simple questions, or fill "
+            .. "in the whole form at once: what to cast and on whom (mouseover, focus, party members, yourself, the "
+            .. "cursor...), other spells on Shift, Ctrl or Alt, trinkets and more."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     wizardBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)

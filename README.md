@@ -20,8 +20,8 @@
 The Blizzard macro window is a plain text box. MacroSense opens your macros in a real editor: it suggests
 commands, conditions, units, spells and items as you type, colors the syntax, underlines mistakes and
 shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
-addons see every change. **New (Wizard)** builds them from a form: mouseover, focus, party members, modifier
-keys, trinkets and more.
+addons see every change. **New (Wizard)** builds them from a few simple questions, or from a form: mouseover,
+focus, party members, modifier keys, trinkets and more.
 
 Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), the **MacroSense** button in
 the title bar of the Blizzard macro window, or **Shift + right-click** on a macro on an action bar, which opens
@@ -43,7 +43,32 @@ repository instead.
 
 <p align="center"><img src="docs/guide-wizard.gif" width="720" alt="The macro wizard"></p>
 
-**New (Wizard)**, next to New, opens a window with a form for a new macro:
+**New (Wizard)**, next to New, opens a window for a new macro. The first time it asks **step by step**, one
+question at a time in plain words, for whoever has never written a macro. **All options** in its title bar
+shows the whole form at once instead, with the answers so far, and **Step by step** goes back to the
+questions; the wizard opens as you left it.
+
+### Step by step
+
+- **What should the macro do?** Cast a spell, use an item, several spells in turn, one of several at random,
+  target someone, set your focus, take someone's target, command your pet.
+- Then what that needs: the spell or item (type a few letters, or pick it from the list: picked, it goes on),
+  the spells of a list in their order and what starts a sequence over, what the pet does.
+- **Where should Flash Heal go?** On your target as usual, on whoever is under the mouse, on the ground under
+  the cursor, on yourself, your focus, a party member... Each answer shows the macro's words for it
+  (`@mouseover`), and its tooltip says what it is. When that one may not be there, the next question asks
+  who then (**And if nobody is under the mouse?**), up to three.
+- **Who is Flash Heal for?** after the first unit that is checked: friends, enemies, anyone, or friends dead
+  or alive (for a resurrection). The spell's own answer is chosen already when the game knows it.
+- **Shift, Ctrl, Alt** (and **Cmd** on a Mac): for each key held, what it casts instead and where.
+- **Would you like to add anything else?** The same as the form's Also.
+- Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
+  the name, saves it and opens it in the editor.
+
+The macro shows at the bottom from the first answer. A click on an answer goes on; **< Back** goes back with
+the answers kept, and **Next >** keeps the one chosen.
+
+### The form
 
 - **Command**: `/cast` or `/use` for one spell or item (it follows what you pick: an item sets `/use`),
   `/castsequence` for spells in turn, `/castrandom` for one of several at random. The form changes with it:
@@ -292,6 +317,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
 - `MacroSense/Wizard.lua`: the wizard's form as macro text. Pure Lua.
+- `MacroSense/Questions.lua`: the wizard's form as questions, one at a time. Pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
 - `MacroSense/Share.lua`: macros as a code and back. Pure Lua.
@@ -312,7 +338,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, schemes, shortcuts, minimap, icon names, share codes, backups
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, its questions, schemes, shortcuts, minimap, icon names, share codes, backups
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 
