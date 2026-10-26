@@ -1141,9 +1141,9 @@ local function Build()
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["New (Wizard)"], 1, 1, 1)
-        GameTooltip:AddLine(L["A new macro from a form: what to cast and on whom (mouseover, focus, party members, "
-            .. "yourself, the cursor...), other spells on Shift, Ctrl or Alt, trinkets and more."], 0.8, 0.8, 0.8,
-            true)
+        GameTooltip:AddLine(L["Create a new macro with the built-in wizard! Pick what to cast and on whom "
+            .. "(mouseover, focus, party members, yourself, the cursor...), other spells on Shift, Ctrl or Alt, "
+            .. "trinkets and more."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     wizardBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)

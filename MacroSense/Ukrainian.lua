@@ -89,10 +89,10 @@ ns.locales.uk = {
         "Копія для всіх ваших персонажів під вільною назвою на кшталт «Fear 2».",
     ["New"] = "Новий",
     ["New (Wizard)"] = "Майстер",
-    ["A new macro from a form: what to cast and on whom (mouseover, focus, party members, yourself, the cursor...), "
-        .. "other spells on Shift, Ctrl or Alt, trinkets and more."] =
-        "Новий макрос через форму: що застосувати й на кого (маусовер, фокус, члени групи, ви самі, курсор...), "
-        .. "інші заклинання на Shift, Ctrl чи Alt, аксесуари та інше.",
+    ["Create a new macro with the built-in wizard! Pick what to cast and on whom (mouseover, focus, party members, "
+        .. "yourself, the cursor...), other spells on Shift, Ctrl or Alt, trinkets and more."] =
+        "Створіть новий макрос за допомогою вбудованого майстра! Оберіть, що застосувати й на кого (маусовер, "
+        .. "фокус, члени групи, ви самі, курсор...), інші заклинання на Shift, Ctrl чи Alt, аксесуари та інше.",
 
     -- Main window: share, trash, backups
     ["Share"] = "Обмін",
