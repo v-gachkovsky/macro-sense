@@ -556,13 +556,11 @@ function Window.RefreshList()
             r.bg:SetShown(r.selected)
         end
     end
-    local own = n
     altHint:Hide()
     if state.scope == "character" and not notOnBars then n = AltRows(n, q) end
     for i = n + 1, #rows do rows[i]:Hide() end
     list.child:SetHeight(math.max(n * ROW_H + (altHint:IsShown() and 40 or 0), 1))
     noMatch:SetShown(n == 0 and (q ~= "" or notOnBars))
-    if own == 0 and n > 0 then noMatch:Hide() end
 
     -- While searching or filtering, the tabs say how many match.
     if q == "" and not notOnBars then
