@@ -249,14 +249,16 @@ local function MacWarning(slot)
 end
 
 -- A macro's tooltip: the macOS warning and the spells it can't cast now, on any button, then how to edit it,
--- where the click is ours.
+-- where the click is ours. A blank line first sets them apart from the game's own lines.
 local function AddTip(tooltip, slot)
     if GetActionInfo(slot) ~= "macro" then return end
     local warning, missing, ours = MacWarning(slot), Missing(slot), wrapped[tooltip:GetOwner()]
+    if not (warning or missing or ours) then return end
+    tooltip:AddLine(" ")
     if warning then tooltip:AddLine(warning, 1, 0.35, 0.35, true) end -- red, as errors in the editor's tooltips
     for _, message in ipairs(missing or {}) do tooltip:AddLine(message, 1, 0.82, 0, true) end -- yellow: warnings
     if ours then tooltip:AddLine(ns.L[ActionBars.TIP], 0.34, 0.61, 0.84) end
-    if warning or missing or ours then tooltip:Show() end
+    tooltip:Show()
 end
 
 local hooked, watched = false, {} -- watched: the LibActionButton libraries told of new buttons

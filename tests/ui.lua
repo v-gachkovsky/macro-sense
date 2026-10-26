@@ -2945,8 +2945,9 @@ do
         GameTooltip:SetAction(slot)
         return table.concat(tip, " / ")
     end
-    check("action bars: a macro's tooltip tells", Tip(startButton, 2) == ns.ActionBars.TIP, Tip(startButton, 2))
-    check("action bars: and on LibActionButton's", Tip(labButton, 100) == ns.ActionBars.TIP, Tip(labButton, 100))
+    -- After a blank line: apart from the game's own lines.
+    check("action bars: a macro's tooltip tells", Tip(startButton, 2) == "  / " .. ns.ActionBars.TIP, Tip(startButton, 2))
+    check("action bars: and on LibActionButton's", Tip(labButton, 100) == "  / " .. ns.ActionBars.TIP, Tip(labButton, 100))
     actions[4] = { "spell", 5782 }
     check("action bars: a spell's doesn't", Tip(other, 4) == "", Tip(other, 4))
     check("action bars: nor a button not set up", Tip(refused, 6) == "", Tip(refused, 6))
@@ -2956,17 +2957,18 @@ do
     bindings.ACTIONBUTTON2 = "Q" -- the button of slot 2
     Send("UPDATE_BINDINGS")
     local warning = "Cmd+Q is a macOS shortcut (quits the game)"
-    check("action bars: the macOS warning", Tip(startButton, 2) == warning .. " / " .. ns.ActionBars.TIP,
+    check("action bars: the macOS warning", Tip(startButton, 2) == "  / " .. warning .. " / " .. ns.ActionBars.TIP,
         Tip(startButton, 2))
     check("action bars: in red", colors[warning] == "1.00 0.35 0.35", colors[warning])
     local laidOut
     GameTooltip.Show = function() laidOut = #tip end
-    check("action bars: the macOS warning where the click isn't ours", Tip(refused, 6) == warning and laidOut == 1,
-        Tip(refused, 6))
+    check("action bars: the macOS warning where the click isn't ours", Tip(refused, 6) == "  / " .. warning
+        and laidOut == 2, Tip(refused, 6))
     GameTooltip.Show = nil
     check("action bars: not on a spell", Tip(other, 4) == "", Tip(other, 4))
     IsMacClient = function() return false end
-    check("action bars: no macOS warning on Windows", Tip(startButton, 2) == ns.ActionBars.TIP, Tip(startButton, 2))
+    check("action bars: no macOS warning on Windows", Tip(startButton, 2) == "  / " .. ns.ActionBars.TIP,
+        Tip(startButton, 2))
     IsMacClient = function() return true end
     -- And the button whose own key that is turns red, on the game's bars.
     local function Tinted(b)
@@ -4248,21 +4250,22 @@ do
         return table.concat(tip, " / ")
     end
     local line = "\"Death Coil\": a talent you haven't chosen, the macro can't use it now"
-    check("missing: the tooltip says why", Tip(startButton, 2) == line .. " / " .. ns.ActionBars.TIP, Tip(startButton, 2))
+    check("missing: the tooltip says why", Tip(startButton, 2) == "  / " .. line .. " / " .. ns.ActionBars.TIP,
+        Tip(startButton, 2))
     check("missing: in yellow", colors[line] == "1.00 0.82 0.00", colors[line])
-    check("missing: on LibActionButton's tooltip too", Tip(labButton, 100) == line .. " / " .. ns.ActionBars.TIP,
-        Tip(labButton, 100))
+    check("missing: on LibActionButton's tooltip too", Tip(labButton, 100) == "  / " .. line .. " / "
+        .. ns.ActionBars.TIP, Tip(labButton, 100))
     local laidOut
     GameTooltip.Show = function() laidOut = true end
-    check("missing: the tooltip line alone, laid out", Tip(New("Frame"), 2) == line and laidOut)
+    check("missing: the tooltip line alone, laid out", Tip(New("Frame"), 2) == "  / " .. line and laidOut)
     GameTooltip.Show = nil
     -- Other issues don't tint: a typo shows in the editor.
     CreateMacro("Typo", 1, "/cast Fierball", false)
     actions[8] = { "macro", 133, "spell", text = "Typo" }
     startButton.action = 8
     Send("UPDATE_MACROS")
-    check("missing: not for a typo", not Tinted(startButton, "ffd100") and Tip(startButton, 8) == ns.ActionBars.TIP,
-        Tip(startButton, 8))
+    check("missing: not for a typo", not Tinted(startButton, "ffd100") and Tip(startButton, 8) == "  / "
+        .. ns.ActionBars.TIP, Tip(startButton, 8))
     startButton.action, actions[8] = 2, nil
     DeleteMacro(GetMacroIndexByName("Typo"))
     Send("UPDATE_MACROS")
@@ -4298,7 +4301,7 @@ do
     check("missing: not before the game is done", Tinted(startButton, "ffd100"))
     Wait(0.6)
     check("missing: chosen, the tint goes", not Tinted(startButton, "ffd100") and not Tinted(labButton, "ffd100"))
-    check("missing: and the tooltip line", Tip(startButton, 2) == ns.ActionBars.TIP, Tip(startButton, 2))
+    check("missing: and the tooltip line", Tip(startButton, 2) == "  / " .. ns.ActionBars.TIP, Tip(startButton, 2))
     check("missing: and the status bar", statusText() == "", statusText())
     check("missing: and the list", row("Coil") and row("Coil").severity == nil)
     local talentEvents, refused = false, false

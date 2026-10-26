@@ -24,6 +24,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   or, for a general one, another character has counts as used. Hovering a macro in the list says where it is;
   deleting one says it in the question, and moving one those bars have asks first.
 
+### Changed
+- In a macro's tooltip on the action bars, what MacroSense adds (its warnings, Shift + right-click) comes after a
+  blank line, apart from the game's own lines.
+
 ### Fixed
 - `/castrandom` and `/userandom` lists are read name by name, as `/castsequence` ones are: a typo in one of their
   spells gets its fix (the whole list was taken for one name).
