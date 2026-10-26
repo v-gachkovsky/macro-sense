@@ -44,10 +44,12 @@ ns.locales.uk = {
     ["Paper"] = "Папір",
     ["Solarized Dark"] = "Solarized темна",
     ["Live preview"] = "Живий перегляд",
-    ["Next to each line: what it would do if you pressed the macro now."] =
-        "Біля кожного рядка: що він зробив би, якби ви натиснули макрос зараз.",
-    ["Hold %s, change your target or point at a unit to see the other branches."] =
-        "Утримуйте %s, змініть ціль або наведіть мишку на когось, щоб побачити інші гілки.",
+    ["See exactly how the macro will act: next to each line, what it would do if you pressed the macro now."] =
+        "Тут видно, як саме діятиме макрос: біля кожного рядка — що він зробить, якщо натиснути макрос зараз.",
+    ["Hold modifiers (%s), point the mouse at someone, change your target: use everything the macro checks to see "
+        .. "which ability it uses, and when."] =
+        "Затискайте модифікатори (%s), наводьте мишку, міняйте ціль — використовуйте все, що є в макросі, щоб "
+        .. "побачити, яка саме здібність спрацює і в якій ситуації.",
     ["Shift, Ctrl, Alt or Cmd"] = "Shift, Ctrl, Alt чи Cmd",
     ["Shift, Ctrl or Alt"] = "Shift, Ctrl чи Alt",
 
