@@ -3293,7 +3293,8 @@ do
 end
 
 -- The icon chosen for a macro is kept and saved, not the one it shows now: the question mark with
--- #showtooltip shows the spell's, and saving that would fix the macro's icon to it.
+-- #showtooltip shows the spell's, and saving that would fix the macro's icon to it. The header shows what the
+-- macro shows, as the list and the action bars do; an icon picked shows as picked until it is saved.
 do
     local m = { name = "Shown", icon = 134400, body = "#showtooltip\n/cast Fireball", perChar = false, shown = 4242 }
     macros[#macros + 1] = m
@@ -3301,13 +3302,38 @@ do
     local index = GetMacroIndexByName("Shown")
     ns.Window.Open(index)
     NextFrame()
-    local header, row
+    local headerTex, row
     for _, o in ipairs(created) do
-        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then header = o.texture end
+        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then headerTex = o end
         if o.kind == "Button" and o.index == index and o:IsShown() then row = o end
     end
-    check("icon: the chosen one in the header", header == 134400, header)
-    check("icon: the one it shows in the list", row and row.icon.texture == 4242, row and row.icon.texture)
+    local function header() return headerTex and headerTex.texture end
+    check("icon: the header shows what the macro shows", header() == 4242, header())
+    check("icon: so does the list", row and row.icon.texture == 4242, row and row.icon.texture)
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(MacroSenseIconButton, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("icon: the tooltip says what the question mark does", tip[3] and tip[3]:find("^Its icon is the question "
+        .. "mark") ~= nil, tip[3])
+    m.shown = 4343 -- Shift held: #showtooltip shows another spell
+    Wait(0.12)
+    check("icon: the header follows the game", header() == 4343, header())
+    m.shown = 4242
+    Fire(MacroSenseIconButton, "OnClick")
+    local grid = {}
+    for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
+    Fire(grid[2], "OnClick")
+    Wait(0.12)
+    check("icon: one picked shows as picked", header() == grid[2].entry.icon and grid[2].entry.icon ~= 4242, header())
+    tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(MacroSenseIconButton, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("icon: another icon needs no word about the question mark", #tip == 2, #tip)
+    Fire(grid[1], "OnClick")
+    MacroSenseIconPicker:Hide()
+    check("icon: the question mark again shows the spell's", header() == 4242, header())
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/sit")

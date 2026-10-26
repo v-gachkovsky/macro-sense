@@ -216,6 +216,14 @@ local function UpdateStatus()
     end
 end
 
+-- The header's icon: the one the macro shows in the game, as the list and the action bars do (the question mark
+-- shows the icon of the spell #showtooltip names, and can change with a key held). An icon picked and not saved
+-- yet shows as picked; the one saved stays the one chosen.
+local function ShowIcon()
+    local shown = state.index and state.icon == state.savedIcon and select(2, GetMacroInfo(state.index))
+    iconTex:SetTexture(ns.IconTexture(shown or state.icon))
+end
+
 ------------------------------------------------------------------------
 -- Live preview: next to each line, what it would do right now
 ------------------------------------------------------------------------
@@ -385,7 +393,7 @@ local function Load(index)
     end
     state.savedIcon, state.iconPicked = state.icon, false
     nameBox:SetText(state.name)
-    iconTex:SetTexture(ns.IconTexture(state.icon))
+    ShowIcon()
     ns.IconPicker.SetCurrent(state.icon)
     code:SetRaw(state.body, 0)
     Window.RefreshList()
@@ -488,7 +496,7 @@ function Window.Save()
     state.index, state.name, state.body = index, name, body
     state.icon = ns.MacroIcon(index) or state.icon
     state.savedIcon = state.icon
-    iconTex:SetTexture(ns.IconTexture(state.icon))
+    ShowIcon()
     Window.RefreshList()
     UpdateStatus()
 end
@@ -1201,6 +1209,10 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine(L["Click: choose an icon"], 1, 1, 1)
         GameTooltip:AddLine(L["Drag: put the macro on an action bar"], 1, 1, 1)
+        if state.icon == NEW_ICON then
+            GameTooltip:AddLine(L["Its icon is the question mark: the macro shows the icon of the spell or item it "
+                .. "uses."], 0.8, 0.8, 0.8, true)
+        end
         GameTooltip:Show()
     end)
     iconFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1210,7 +1222,7 @@ local function Build()
         if ns.IconPicker.IsShown() then return ns.IconPicker.Close() end
         ns.IconPicker.Open(frame, state.icon, function(icon)
             state.icon, state.iconPicked = icon, true
-            iconTex:SetTexture(ns.IconTexture(icon))
+            ShowIcon()
             UpdateStatus()
         end)
     end)
@@ -1229,7 +1241,7 @@ local function Build()
     local function NameDone()
         if not state.index and not state.iconPicked and not ("\n" .. code:GetRaw():lower()):find("\n%s*#show") then
             state.icon = ns.Completion.IconFor(nameBox:GetText()) or NEW_ICON
-            iconTex:SetTexture(ns.IconTexture(state.icon))
+            ShowIcon()
             ns.IconPicker.SetCurrent(state.icon)
             UpdateStatus()
         end
@@ -1396,6 +1408,7 @@ local function Build()
         if sincePreview < PREVIEW_EVERY then return end
         sincePreview = 0
         UpdatePreview()
+        ShowIcon()
     end)
 
     Window.ApplyLook()
