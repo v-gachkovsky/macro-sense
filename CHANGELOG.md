@@ -8,9 +8,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - In Ukrainian, backups are «Бекапи», as players call them (they were «Копії»).
-- The tooltips of Share, Trash, Backups and Back up now say plainly what they do and their limits: the trash
-  keeps the last 30 deleted macros of each tab and its menu shows the 12 newest; each character keeps its last
-  10 backups.
+- The tooltips of Live preview, Share, Trash, Backups and Back up now say plainly what they do, with their
+  limits: the trash keeps the last 30 deleted macros of each tab and its menu shows the 12 newest; each
+  character keeps its last 10 backups.
 
 ## [0.6.0] - 2026-10-26
 

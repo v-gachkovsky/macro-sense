@@ -1075,9 +1075,10 @@ local function Build()
         local keys = IsMacClient and IsMacClient() and L["Shift, Ctrl, Alt or Cmd"] or L["Shift, Ctrl or Alt"]
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
         GameTooltip:AddLine(L["Live preview"], 1, 1, 1)
-        GameTooltip:AddLine(L["Next to each line: what it would do if you pressed the macro now."], 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine(string.format(L["Hold %s, change your target or point at a unit to see the other "
-            .. "branches."], keys), 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["See exactly how the macro will act: next to each line, what it would do if you "
+            .. "pressed the macro now."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(string.format(L["Hold modifiers (%s), point the mouse at someone, change your target: use "
+            .. "everything the macro checks to see which ability it uses, and when."], keys), 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)

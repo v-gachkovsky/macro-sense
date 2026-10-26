@@ -3476,6 +3476,17 @@ do
     GameTooltip.AddLine = nil
     check("ukrainian: the trash's tooltip, with its limits", tip[2]:find("останні 30 видалених макросів", 1, true)
         and tip[2]:find("У меню видно 12 найновіших.", 1, true), tip[2])
+    local preview
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Live preview" then preview = o end
+    end
+    tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(preview, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("ukrainian: the live preview's tooltip", tip[1] == "Живий перегляд"
+        and tip[3] == "Затискайте модифікатори (Shift, Ctrl, Alt чи Cmd), наводьте мишку, міняйте ціль — "
+        .. "використовуйте все, що є в макросі, щоб побачити, яка саме здібність спрацює і в якій ситуації.", tip[3])
     ns.Popup:Style(ns.scheme, "Fonts\\Code.ttf", 13)
     ns.Popup:Open(edit, { { name = "cast", hint = "cast a spell" } }, 0, 0, 14)
     local row = ns.Popup.rows[1]
