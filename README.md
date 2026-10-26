@@ -64,7 +64,8 @@ repository instead.
   fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
 - **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
   none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
-  first, cancel a buff first, and say something in chat last (`%t` is your target's name).
+  first, cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
+  chat last (`%t` is your target's name).
 - **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.
 
 The macro shows under the form as you choose, with its colors and length. **Create macro** saves it under a
@@ -99,6 +100,7 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | a spell with several learned ranks (Classic) | its ranks, highest first: Tab inserts `Fireball(Rank 2)`, Esc keeps `Fireball` |
 | `/use ` | usable items from bags and gear, then spells |
 | `/equip ` / `/equipslot 13 ` | gear from bags |
+| `/cancelaura ` | the buffs on you now, then those you have had (the last 200 seen, kept for each character) |
 | `/use 1` / `/equipslot ` | equipment slots by number, with what is in them (`13` Trinket 1: ...) |
 | `/use 0 ` | the slots of that bag that hold something, with the item (`/use 0 1`) |
 | `/click ` | the buttons there are now, with what is on them: the game's bars, Bartender4, ElvUI, Dominos; then `LeftButton` ..., then `true` (a click on key press) |

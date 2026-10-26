@@ -7,6 +7,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Cancel a buff** in the wizard and `/cancelaura` in the editor offer buffs, not every spell: the buffs on you
+  now, then those you have had (MacroSense keeps the last 200 a character has had).
 - In Ukrainian, backups are «Бекапи», as players call them (they were «Копії»).
 - The tooltips of Live preview, Shorten, New (Wizard), Share, Trash, Backups and Back up now say plainly what
   they do, with their limits: the trash keeps the last 30 deleted macros of each tab and its menu shows the
