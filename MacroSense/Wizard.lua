@@ -191,8 +191,8 @@ end
 
 -- An action is { name = "Flash Heal" }, { name = "Healthstone", item = true } or a slot { name = "13", item = true,
 -- label = what is in it }. A spell may come with the ranks learned (`ranks`, "Rank 1" first) and one picked
--- (`rank`). The game takes spells and items for /cast and /use both: /cast looks for a spell first, /use for an
--- item.
+-- (`rank`); one that goes to nobody but you has `selfOnly`. The game takes spells and items for /cast and /use
+-- both: /cast looks for a spell first, /use for an item.
 
 -- How the macro names an action: "Shadow Bolt(Rank 3)" with a rank picked, "Shadow Bolt" (the highest learned)
 -- without.
@@ -245,6 +245,23 @@ local function Names(spec)
         if spec.list[i] then out[#out + 1] = spec.list[i] end
     end
     return out
+end
+
+-- Whether the units of `key` (nil: the macro's own) are no question: what they cast goes to nobody but you
+-- (`selfOnly`: Demon Armor, a potion), for a list every spell of it. A key without a spell of its own casts the
+-- macro's.
+function Wizard.SelfOnly(spec, key)
+    if Wizard.IsTarget(spec.command) or spec.command == "pet" then return false end
+    local k = key and spec.keys[key]
+    if k and k.action then return k.action.selfOnly == true end
+    if Wizard.IsList(spec.command) then
+        local names = Names(spec)
+        for _, action in ipairs(names) do
+            if not action.selfOnly then return false end
+        end
+        return #names > 0
+    end
+    return spec.action ~= nil and spec.action.selfOnly == true
 end
 
 -- Another command: what was picked comes along, the spell of /cast starting a list and the first of a list

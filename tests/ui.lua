@@ -255,6 +255,8 @@ C_Spell = {
         return name == "Fireball" or name == "Fire Blast" or name == "Frostbolt" or name == "Holy Shock"
     end,
     IsSpellHelpful = function(name) return name == "Flash Heal" or name == "Holy Shock" end,
+    -- Range "Self": it goes to nobody but you.
+    SpellHasRange = function(name) return name ~= "Demon Armor" end,
     GetSpellTexture = function(id) return gameSpells[id] and gameSpells[id][1] end,
     GetSpellName = function(id) return gameSpells[id] and gameSpells[id][2] end,
 }
@@ -2738,6 +2740,57 @@ do
     check("steps: in the form too, a key's own spell for what it is for",
         shown():find("[mod:shift,@focus,help,nodead] Healthstone", 1, true) ~= nil, shown())
     Fire(C("mode"), "OnClick")
+
+    -- A spell that goes to nobody but you (Demon Armor: no range): no units, nor a key's that casts it.
+    book[#book + 1] = { "Demon Armor", "" }
+    ns.InvalidateSources("spells")
+    check("steps: the game says it goes to nobody but you", ns.sources.selfOnly("Demon Armor") == true
+        and ns.sources.selfOnly("Fireball") == false)
+    check("steps: an item, on a client that doesn't say", ns.sources.selfOnly("Healthstone", true) == nil)
+    ns.WizardWindow.Close()
+    Fire(wizardBtn, "OnClick")
+    Fire(answer("Cast a spell"), "OnClick")
+    TypeIn(C("stepSpell"), "Demon Armor")
+    Fire(C("next"), "OnClick")
+    check("steps: for yourself only: no units", question():find("^Should the macro do something else") ~= nil
+        and shown() == "#showtooltip\n/cast Demon Armor", shown())
+    Fire(C("stepShift"), "OnClick")
+    Fire(C("next"), "OnClick")
+    Fire(C("next"), "OnClick")
+    check("steps: a key casting it: no units either", question() == "Would you like to add anything else?", question())
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    TypeIn(C("stepSpell"), "Fireball")
+    Fire(C("next"), "OnClick")
+    Fire(answer("The highest you know"), "OnClick")
+    Fire(answer("On whoever is under the mouse"), "OnClick")
+    Fire(answer("On your target, as usual"), "OnClick")
+    Fire(C("next"), "OnClick")
+    TypeIn(C("stepSpell"), "Demon Armor")
+    Fire(C("next"), "OnClick")
+    check("steps: a key's own spell for yourself only", question() == "Would you like to add anything else?"
+        and shown() == "#showtooltip\n/cast [mod:shift] Demon Armor; [@mouseover,harm,nodead][] Fireball", shown())
+    Fire(C("mode"), "OnClick")
+    TypeIn(C("cast"), "Demon Armor")
+    Fire(C("cast"), "OnEnterPressed")
+    check("steps: the form too: as usual, nobody after", C("on1").label.text == "As usual"
+        and C("on2").label.text == "-" and shown() == "#showtooltip\n/cast [mod:shift][] Demon Armor", shown())
+    TypeIn(C("shiftCast"), "fireball")
+    Fire(C("shiftCast"), "OnEnterPressed")
+    Fire(C("shiftCast"), "OnEnterPressed")
+    Fire(C("shiftOn"), "OnClick")
+    for _, r in ipairs(MacroSenseMenu.rows) do
+        if r:IsShown() and r.text.text == "Focus" then Fire(r, "OnClick") end
+    end
+    local focused = C("shiftOn").label.text
+    TypeIn(C("shiftCast"), "Demon Armor")
+    Fire(C("shiftCast"), "OnEnterPressed")
+    check("steps: a key's spell for yourself only: its units as usual", focused == "Focus"
+        and C("shiftOn").label.text == "As usual", C("shiftOn").label.text)
+    Fire(C("mode"), "OnClick")
+    book[#book] = nil
+    ns.InvalidateSources("spells")
 
     -- In Ukrainian.
     ns.WizardWindow.Close()

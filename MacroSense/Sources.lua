@@ -288,6 +288,19 @@ function ns.sources.reaction(name, item)
     if harm ~= help then return harm and "enemies" or "friends" end
 end
 
+-- Whether a spell or item of yours goes to nobody but you: it has no range (Demon Armor, Bear Form, a potion).
+-- Nil when the game doesn't say (a client without ItemHasRange).
+local SpellHasRange = C_Spell and C_Spell.SpellHasRange or SpellHasRange
+local ItemHasRange = C_Item and C_Item.ItemHasRange or ItemHasRange
+function ns.sources.selfOnly(name, item)
+    local hasRange = SpellHasRange
+    if item then hasRange = ItemHasRange end
+    if not hasRange then return nil end
+    local ok, ranged = pcall(hasRange, name)
+    if not ok or ranged == nil then return nil end
+    return not ranged
+end
+
 -- The slots of a bag that hold something, with its name: "/use 0 1".
 function ns.sources.bagSlots(bag)
     local out = {}

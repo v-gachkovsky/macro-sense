@@ -27,9 +27,10 @@ end
 -- The questions for the form as it is, in order: "what" the macro does; "spell" (/cast, /use; "rank" when it has
 -- ranks to pick from), "list" (and "reset" for /castsequence) or "pet"; on whom, "on1" to "on3", each while the one
 -- before may not be there, then "byName" when /target goes by name; "keys", and for each key held "shiftCast" (and
--- "shiftRank") or "shiftPet", "shiftOn1", "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the first unit checked for it, unless the
--- game says what the spell is for (a key's own spell too); the pet attacks enemies. `keys`: the keys of this client
--- (Cmd on a Mac).
+-- "shiftRank") or "shiftPet", "shiftOn1", "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the
+-- first unit checked for it, unless the game says what the spell is for (a key's own spell too); the pet attacks
+-- enemies. A spell that goes to nobody but you (Demon Armor) asks for no units. `keys`: the keys of this client (Cmd
+-- on a Mac).
 function Questions.Steps(spec, keys)
     local command = spec.command
     local list, target, pet = W.IsList(command), W.IsTarget(command), command == "pet"
@@ -54,7 +55,7 @@ function Questions.Steps(spec, keys)
         add("spell")
         if Ranked(spec.action) then add("rank") end
     end
-    if not pet or spec.pet == "attack" then units("on", spec.on, 3) end
+    if (not pet or spec.pet == "attack") and not W.SelfOnly(spec) then units("on", spec.on, 3) end
     if not list then
         add("keys")
         for _, key in ipairs(keys) do
@@ -67,7 +68,9 @@ function Questions.Steps(spec, keys)
                     if Ranked(k.action) then add(key .. "Rank") end
                 end
                 local own = not target and k.action ~= nil and k.reaction ~= nil
-                if not pet or k.pet == "attack" then units(key .. "On", k.on, 2, own) end
+                if (not pet or k.pet == "attack") and not W.SelfOnly(spec, key) then
+                    units(key .. "On", k.on, 2, own)
+                end
             end
         end
     end
