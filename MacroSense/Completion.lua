@@ -36,7 +36,7 @@ end
 
 local function actions(cmd)
     if cmd == "equip" or cmd == "equipslot" then return items("equippable") end
-    if cmd == "cancelaura" then return source("spells") end
+    if cmd == "cancelaura" then return source("buffs") end
     if cmd == "use" or cmd == "userandom" then return concat(items("usable"), source("spells")) end
     return concat(source("spells"), items("usable"))
 end

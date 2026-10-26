@@ -505,6 +505,7 @@ function ns.KnownActions()
     for _, item in ipairs(ns.sources.items()) do add(item.name, true) end
     for name in pairs(ns.db and ns.db.itemNames or {}) do add(name, true) end
     for _, name in ipairs(mountNames()) do add(name) end
+    for name in pairs(ns.char and ns.char.buffs or {}) do add(name) end
     table.sort(list)
     table.sort(items)
     knownCache, guesses = { set = set, list = list, items = items }, {}
@@ -538,6 +539,61 @@ function ns.Highlight.checkAction(name, command)
         short = string.format(L["did you mean \"%s\"?"], guess),
         fix = guess,
     }
+end
+
+------------------------------------------------------------------------
+-- Buffs for /cancelaura: those on you now, then those you have had (kept for each character)
+------------------------------------------------------------------------
+local GetAura = C_UnitAuras and C_UnitAuras.GetAuraDataByIndex
+ns.BUFFS_KEPT = 200 -- buff names kept for a character: the ones seen last
+
+-- The buffs on you now: { name = icon }. Retail may hide aura data from addons (a secret value): those are left out.
+local function BuffsNow()
+    local out = {}
+    if not GetAura then return out end
+    for i = 1, 40 do
+        local ok, aura = pcall(GetAura, "player", i, "HELPFUL")
+        if not ok or not aura then break end
+        local name, icon = aura.name, aura.icon
+        local secret = issecretvalue and (issecretvalue(name) or issecretvalue(icon))
+        if type(name) == "string" and name ~= "" and not secret then out[name] = icon end
+    end
+    return out
+end
+
+-- Keeps the buffs in `now` with when they were seen, and forgets the oldest past BUFFS_KEPT.
+local function Remember(now)
+    local kept = ns.char and ns.char.buffs
+    if not kept then return end
+    local seen, added = time(), false
+    for name, icon in pairs(now) do
+        added = added or kept[name] == nil
+        kept[name] = { icon = icon, seen = seen }
+    end
+    if added then ns.InvalidateSources("buffs") end -- the typo check knows them as names
+    local names = {}
+    for name in pairs(kept) do names[#names + 1] = name end
+    if #names <= ns.BUFFS_KEPT then return end
+    table.sort(names, function(a, b) return kept[a].seen > kept[b].seen end)
+    for i = ns.BUFFS_KEPT + 1, #names do kept[names[i]] = nil end
+end
+
+function ns.RememberBuffs() Remember(BuffsNow()) end
+
+-- What /cancelaura takes: the buffs on you now, then those you have had, each group by name.
+function ns.sources.buffs()
+    local now = BuffsNow()
+    Remember(now)
+    local onYou, had = {}, {}
+    for name, icon in pairs(now) do onYou[#onYou + 1] = { name = name, icon = icon, hint = "on you now" } end
+    for name, b in pairs(ns.char and ns.char.buffs or {}) do
+        if not now[name] then had[#had + 1] = { name = name, icon = b.icon, hint = "buff" } end
+    end
+    local function byName(a, b) return a.name < b.name end
+    table.sort(onYou, byName)
+    table.sort(had, byName)
+    for _, b in ipairs(had) do onYou[#onYou + 1] = b end
+    return onYou
 end
 
 function ns.InvalidateSources(what)

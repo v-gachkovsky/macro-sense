@@ -112,7 +112,7 @@ local function MatchList(box, width)
             if item then
                 r.icon:SetTexture(item.icon and ns.IconTexture(item.icon) or nil)
                 r.text:SetText(item.name)
-                r.hint:SetText(item.hint or "")
+                r.hint:SetText(item.hint and L[item.hint] or "")
                 r.bg:SetShown(self.offset + i == self.selected)
             end
         end
@@ -175,8 +175,9 @@ local function MatchList(box, width)
 end
 
 -- set(action) takes what the box says: one of yours under its own name, any other name as a spell (one of
--- another spec, say), nil when it is empty.
-local function SpellBox(parent, width, hint, get, set)
+-- another spec, say), nil when it is empty. `candidates()`: what the list offers, your spells and items if nil.
+local function SpellBox(parent, width, hint, get, set, candidates)
+    candidates = candidates or Candidates
     local box = ns.Input(parent, width, 60)
     box.list = MatchList(box, width)
     local placeholder = ns.Text(box, 12, "dim")
@@ -188,7 +189,7 @@ local function SpellBox(parent, width, hint, get, set)
         local typed = strtrim(self:GetText() or "")
         local action
         if typed ~= "" then
-            for _, c in ipairs(Candidates()) do
+            for _, c in ipairs(candidates()) do
                 if c.name:lower() == typed:lower() then
                     action = { name = c.name, item = c.item, label = c.label }
                     break
@@ -221,11 +222,11 @@ local function SpellBox(parent, width, hint, get, set)
 
     box:SetScript("OnTextChanged", function(self, userInput)
         idle()
-        if userInput then self.list:Open(ns.Completion.Match(Candidates(), self:GetText())) end
+        if userInput then self.list:Open(ns.Completion.Match(candidates(), self:GetText())) end
     end)
     box:HookScript("OnEditFocusGained", function(self)
         idle()
-        self.list:Open(ns.Completion.Match(Candidates(), self:GetText()))
+        self.list:Open(ns.Completion.Match(candidates(), self:GetText()))
     end)
     box:HookScript("OnEditFocusLost", function(self)
         if self.list:IsShown() and self.list:IsMouseOver() then return end -- a click on a name picks it
@@ -599,10 +600,10 @@ local function Build()
     -- A buff to cancel first, and what to say in chat last.
     Low(Text(frame, L["Cancel a buff"], 0, 0), PAD, 214)
     controls.cancelaura = SpellBox(frame, 200, L["the buff's name"], function() return spec.cancelaura end,
-        function(action) spec.cancelaura = action end)
+        function(action) spec.cancelaura = action end, ns.sources.buffs)
     Low(controls.cancelaura, PAD + 120, 218)
     Tip(controls.cancelaura, L["Cancel a buff first"], L["Removes the buff before the rest (/cancelaura Ice Block): "
-        .. "leave it empty for none."])
+        .. "leave it empty for none. It offers the buffs on you now and those you have had."])
     Low(Text(frame, L["Say in chat"], 0, 0), PAD, 182)
     Low(Choice(frame, "channel", 100, W.channels, function() return spec.channel end,
         function(key) spec.channel = key end), PAD + 120, 185)

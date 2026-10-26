@@ -61,12 +61,24 @@ local function AddMacroFrameButton()
     ns.macroFrameButton = b
 end
 
+-- The buffs on you are kept for /cancelaura a second after they change, at most once a second.
+local buffsDue
+local function RememberBuffsSoon()
+    if buffsDue then return end
+    buffsDue = true
+    C_Timer.After(1, function()
+        buffsDue = false
+        ns.RememberBuffs()
+    end)
+end
+
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
     "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED", "UNIT_PET",
     "PET_BAR_UPDATE", "PLAYER_REGEN_ENABLED" }) do
     f:RegisterEvent(e)
 end
+f:RegisterUnitEvent("UNIT_AURA", "player")
 f:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" then
         if name == ADDON then
@@ -78,6 +90,7 @@ f:SetScript("OnEvent", function(_, event, name)
             ns.SetLanguage(ns.db.language)
             MacroSenseCharDB = MacroSenseCharDB or {}
             MacroSenseCharDB.petSpells = MacroSenseCharDB.petSpells or {}
+            MacroSenseCharDB.buffs = MacroSenseCharDB.buffs or {}
             ns.char = MacroSenseCharDB
             if IsLoaded("Blizzard_MacroUI") then AddMacroFrameButton() end
         elseif name == "Blizzard_MacroUI" then
@@ -89,9 +102,12 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.RegisterActionCommands()
         ns.History.Scan()
         ns.Window.DailyBackup()
+        ns.RememberBuffs()
         ns.MinimapButton.Update()
         ns.ActionBars.Setup()
         Welcome()
+    elseif event == "UNIT_AURA" then
+        RememberBuffsSoon()
     elseif event == "PLAYER_REGEN_ENABLED" then
         -- Action buttons can't be set up in combat: those made during it are set up now.
         ns.ActionBars.Setup()

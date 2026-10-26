@@ -49,6 +49,10 @@ function Frame:RegisterEvent(e)
     self.events = self.events or {}
     self.events[e] = true
 end
+function Frame:RegisterUnitEvent(e, unit)
+    self.unitEvents = self.unitEvents or {}
+    self.unitEvents[e] = unit
+end
 function Frame:GetScript(s) return self.scripts[s] end
 function Frame:HookScript(s, fn)
     local old = self.scripts[s]
@@ -167,6 +171,15 @@ function ReloadUI() reloads = reloads + 1 end
 C_AddOns = { IsAddOnLoaded = function() return false end, GetAddOnMetadata = function() return "@project-version@" end }
 function GetBuildInfo() return "12.1.5", "60000", "Oct 1 2026", 120105 end
 C_Timer = { After = function(delay, fn) timers[#timers + 1] = { at = now + delay, fn = fn } end }
+-- The player's buffs, and the values Retail hides from addons.
+local auras, auraReads, secret = {}, 0, {}
+C_UnitAuras = {
+    GetAuraDataByIndex = function(unit, i, filter)
+        auraReads = auraReads + 1
+        if unit == "player" and filter == "HELPFUL" then return auras[i] end
+    end,
+}
+function issecretvalue(v) return secret[v] == true end
 local function Wait(seconds)
     local stop = now + seconds
     while now < stop do NextFrame() end
@@ -3317,6 +3330,74 @@ do
     check("petmoveto: fine where the version is not known", warned("/petmoveto") == nil)
 end
 
+-- Cancel a buff and /cancelaura offer buffs, not spells: those on you now, then those you have had, kept for the
+-- character (the last 200 seen), a second after they change. Data Retail hides from addons is left out.
+do
+    local watched
+    for _, o in ipairs(created) do
+        if o.unitEvents and o.unitEvents.UNIT_AURA then watched = o.unitEvents.UNIT_AURA end
+    end
+    check("buffs: the player's are watched", watched == "player", watched)
+    ns.char.buffs = {}
+    auras[1], auras[2], auras[3] = { name = "Ice Block", icon = 101 }, { name = "Arcane Intellect", icon = 102 },
+        { name = "Hidden", icon = 103 }
+    secret.Hidden = true
+    local reads = auraReads
+    Send("UNIT_AURA", "player")
+    Send("UNIT_AURA", "player")
+    check("buffs: not at once", ns.char.buffs["Ice Block"] == nil)
+    Wait(1.1)
+    check("buffs: kept a second later, read once", ns.char.buffs["Ice Block"] and ns.char.buffs["Ice Block"].icon == 101
+        and ns.char.buffs["Arcane Intellect"] and auraReads - reads == 4, auraReads - reads)
+    check("buffs: hidden ones left out", ns.char.buffs.Hidden == nil)
+    check("buffs: known names for the typo check", ns.KnownActions().set["ice block"] == true)
+    auras[1], auras[2], auras[3] = { name = "Arcane Intellect", icon = 102 }, nil, nil
+    local names = {}
+    for i, b in ipairs(ns.sources.buffs()) do names[i] = b.name .. ":" .. b.hint end
+    check("buffs: on you now first, then those you had", table.concat(names, ",")
+        == "Arcane Intellect:on you now,Ice Block:buff", table.concat(names, ","))
+    ns.char.buffs["Arcane Intellect"].seen = 0 -- seen long ago, and on you again now
+    for i = 1, ns.BUFFS_KEPT do ns.char.buffs["Old " .. i] = { icon = 1, seen = i } end
+    ns.RememberBuffs()
+    local n = 0
+    for _ in pairs(ns.char.buffs) do n = n + 1 end
+    check("buffs: the last ones seen", n == ns.BUFFS_KEPT and ns.char.buffs["Ice Block"] and ns.char.buffs["Old 1"] == nil
+        and ns.char.buffs["Old 3"] ~= nil and ns.char.buffs["Arcane Intellect"] ~= nil, n)
+    for i = 1, ns.BUFFS_KEPT do ns.char.buffs["Old " .. i] = nil end
+
+    -- The wizard's box lists buffs only; so does /cancelaura in the editor.
+    ns.WizardWindow.Open("general")
+    local box = ns.WizardWindow.Control("cancelaura")
+    Fire(box, "OnEditFocusGained")
+    names = {}
+    for i, item in ipairs(box.list.items) do names[i] = item.name end
+    check("buffs: the wizard's box offers buffs only", table.concat(names, ",") == "Arcane Intellect,Ice Block",
+        table.concat(names, ","))
+    ns.SetLanguage("uk")
+    Fire(box, "OnEditFocusGained")
+    ns.SetLanguage("en")
+    check("buffs: its hints in the chosen language", box.list.rows[1].hint.text == "зараз на вас"
+        and box.list.rows[2].hint.text == "бафф", box.list.rows[1].hint.text)
+    box:SetText("ice")
+    Fire(box, "OnTextChanged", true)
+    check("buffs: found as typed", box.list.items[1] and box.list.items[1].name == "Ice Block")
+    Fire(box, "OnEscapePressed")
+    ns.WizardWindow.Close()
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    Type("/cancelaura ")
+    names = {}
+    for i, item in ipairs(ns.Popup.items) do names[i] = item.name end
+    check("buffs: /cancelaura offers them", ns.Popup:IsShown() and table.concat(names, ",") == "Arcane Intellect,Ice Block",
+        table.concat(names, ","))
+    Key("ESCAPE", "OnEscapePressed")
+    ns.Window.Select(1)
+    NextFrame()
+    auras[1], secret.Hidden = nil, nil
+    ns.char.buffs = {}
+end
+
 -- Every text MacroSense shows has a Ukrainian translation, and every translation is of a text it shows: the
 -- texts in the code (L["..."], ns.Print("..."), ns.Plural(n, "...", "..."), the dialogs) and those of its lists.
 do
@@ -3408,7 +3489,8 @@ do
     for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         "General", "Character", "nothing", "no match", "not reached", "chat", "equip", "cancel", "no form", "primary",
         "secondary", "your pet", "pet family", "equipped", "item", "extra action", "leave the vehicle",
-        "popup: first button", "popup: second button", "highest", "shift, ctrl, alt or a key action like SELFCAST",
+        "popup: first button", "popup: second button", "highest", "on you now", "buff",
+        "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "a bar page 1-6", "a form number, 0 = no form",
         "a specialization number", "Target", "Focus", "Assist", "Pet" }) do add(text) end
     local SAME = { Mac = true, Retail = true, Monokai = true, ["-"] = true, ["1-5"] = true } -- the same in Ukrainian

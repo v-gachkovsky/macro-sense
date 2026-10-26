@@ -324,8 +324,10 @@ ns.locales.uk = {
     ["Cancel a buff"] = "Скасувати бафф",
     ["Cancel a buff first"] = "Спершу скасувати бафф",
     ["the buff's name"] = "назва баффу",
-    ["Removes the buff before the rest (/cancelaura Ice Block): leave it empty for none."] =
-        "Знімає бафф перед рештою (/cancelaura Ice Block): залиште порожнім, щоб нічого не знімати.",
+    ["Removes the buff before the rest (/cancelaura Ice Block): leave it empty for none. It offers the buffs on you "
+        .. "now and those you have had."] =
+        "Знімає бафф перед рештою (/cancelaura Ice Block): залиште порожнім, щоб нічого не знімати. Підказує баффи, "
+        .. "які зараз на вас і які були раніше.",
     ["Say in chat"] = "Сказати в чат",
     ["Said after the rest, in the channel on the left; %t is your target's name. Leave it empty to say nothing."] =
         "Кажеться після решти, у каналі ліворуч; %t — ім'я вашої цілі. Залиште порожнім, щоб нічого не казати.",
@@ -568,4 +570,6 @@ ns.locales.uk = {
     ["extra action"] = "додаткова дія",
     ["popup: first button"] = "вікно: перша кнопка",
     ["popup: second button"] = "вікно: друга кнопка",
+    ["on you now"] = "зараз на вас",
+    ["buff"] = "бафф",
 }
