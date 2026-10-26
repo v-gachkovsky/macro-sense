@@ -24,17 +24,20 @@ end
 -- The questions for the form as it is, in order: "what" the macro does; "spell" (/cast, /use), "list" (and
 -- "reset" for /castsequence) or "pet"; on whom, "on1" to "on3", each while the one before may not be there, then
 -- "byName" when /target goes by name; "keys", and for each key held "shiftCast" (or "shiftPet"), "shiftOn1",
--- "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the first unit it is checked for; the pet
--- attacks enemies. `keys`: the keys of this client (Cmd on a Mac).
+-- "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the first unit checked for it, unless the
+-- game says what the spell is for (a key's own spell too); the pet attacks enemies. `keys`: the keys of this client
+-- (Cmd on a Mac).
 function Questions.Steps(spec, keys)
     local command = spec.command
     local list, target, pet = W.IsList(command), W.IsTarget(command), command == "pet"
     local out, only = { "what" }, nil
+    local ask = not pet and (target or not spec.reaction)
     local function add(step) out[#out + 1] = step end
-    local function units(prefix, on, n)
+    -- `own`: a key's own spell the game says what it is for: its units are checked for that.
+    local function units(prefix, on, n, own)
         for i = 1, n do
             add(prefix .. i)
-            if not only and not pet and W.Checked(on[i]) then only = #out end
+            if ask and not own and not only and W.Checked(on[i]) then only = #out end
             if prefix == "on" and command == "target" and on[i] == "none" and spec.byName then return add("byName") end
             if Last(on[i]) then return end
         end
@@ -54,7 +57,8 @@ function Questions.Steps(spec, keys)
             local k = spec.keys[key]
             if k.active then
                 if pet then add(key .. "Pet") elseif not target then add(key .. "Cast") end
-                if not pet or k.pet == "attack" then units(key .. "On", k.on, 2) end
+                local own = not target and k.action ~= nil and k.reaction ~= nil
+                if not pet or k.pet == "attack" then units(key .. "On", k.on, 2, own) end
             end
         end
     end
@@ -88,14 +92,29 @@ local function Units(spec, key)
     return key and spec.keys[key].on or spec.on
 end
 
+-- What the spell of a step is for, when the game says: a key's own spell's, or the macro's. The pet attacks
+-- enemies; /target, /focus and /assist cast nothing.
+local function Reaction(spec, key)
+    if spec.command == "pet" then return "enemies" end
+    if W.IsTarget(spec.command) then return nil end
+    local k = key and spec.keys[key]
+    if k and k.action then return k.reaction end
+    return spec.reaction
+end
+
+-- Whom a spell for enemies never goes to, and one for friends.
+local NOT_FOR = {
+    enemies = { player = true, pet = true, party1 = true, party2 = true, party3 = true, party4 = true },
+    friends = { arena1 = true, arena2 = true, arena3 = true },
+}
+
 -- How an answer names a unit. A cast goes "On whoever is under the mouse"; /target, /focus, /assist and the pet
--- take "Whoever is under the mouse". Your target, next to As usual, is the one that is checked.
-local function Name(spec, unit, cast)
+-- take "Whoever is under the mouse". Your target, next to As usual, is the one checked for `only`.
+local function Name(spec, unit, cast, only)
     local party, arena = unit:match("^party(%d)$"), unit:match("^arena(%d)$")
     if party then return string.format(cast and L["On party member %d"] or L["Party member %d"], tonumber(party)) end
     if arena then return string.format(cast and L["On arena enemy %d"] or L["Arena enemy %d"], tonumber(arena)) end
     if unit == "target" and not W.IsTarget(spec.command) then
-        local only = spec.only
         if cast then
             return only == "friends" and L["On your target, if a friend"] or only == "enemies"
                 and L["On your target, if an enemy"] or L["On your target, if there is one"]
@@ -127,18 +146,20 @@ local function UnitTip(unit)
         targettarget = L["Whoever your target has targeted: the one a boss attacks, say."] })[unit]
 end
 
--- The units a step offers: those the command takes there, but none asked about before it in the same order;
--- then /target by name, clearing the target or the focus, nobody.
+-- The units a step offers: those the command takes there, but none asked about before it in the same order, nor
+-- one the spell never goes to (yourself for Shadow Bolt); then /target by name, clearing the target or the focus,
+-- nobody.
 local function UnitAnswers(spec, key, i)
     local on, place = Units(spec, key), i > 1 and "then" or key and "key" or "first"
-    local cast = not (W.IsTarget(spec.command) or spec.command == "pet")
+    local cast, only = not (W.IsTarget(spec.command) or spec.command == "pet"), W.Only(spec, key)
     local used, out, last = {}, {}, {}
     for j = 1, i - 1 do used[on[j]] = true end
+    for unit in pairs(NOT_FOR[Reaction(spec, key)] or {}) do used[unit] = true end
     for _, u in ipairs(W.Units(spec.command, place)) do
         if u.key == "clear" then
             last[#last + 1] = { key = "clear", name = L[u.name] }
         elseif u.key ~= "none" and not used[u.key] then
-            out[#out + 1] = { key = u.key, name = Name(spec, u.key, cast),
+            out[#out + 1] = { key = u.key, name = Name(spec, u.key, cast, only),
                 tip = (cast or u.key ~= "default") and UnitTip(u.key) or nil,
                 hint = (u.key ~= "default" and u.key ~= "target") and "@" .. u.key or nil }
         end
@@ -160,11 +181,12 @@ local function Missing(unit)
 end
 
 -- Or the one there doesn't do: not a friend, not an enemy, dead.
-local function NotThere(spec)
-    if spec.only == "friends" then
+local function NotThere(spec, key)
+    local only = W.Only(spec, key)
+    if only == "friends" then
         return spec.alive and L["Or the one there is not a friend, or is dead."]
             or L["Or the one there is not a friend."]
-    elseif spec.only == "enemies" then
+    elseif only == "enemies" then
         return spec.alive and L["Or the one there is not an enemy, or is dead."]
             or L["Or the one there is not an enemy."]
     end
@@ -252,7 +274,7 @@ function Questions.Ask(spec, step, keys)
         local chosen = on[i]
         if not key and spec.command == "target" and chosen == "none" and spec.byName then chosen = "byName" end
         return { kind = "choice", key = key, context = context,
-            text = i == 1 and OnWhom(spec, key) or Missing(on[i - 1]), hint = i > 1 and NotThere(spec) or nil,
+            text = i == 1 and OnWhom(spec, key) or Missing(on[i - 1]), hint = i > 1 and NotThere(spec, key) or nil,
             answers = UnitAnswers(spec, key, i), chosen = chosen }
     elseif step == "only" then
         local text = L["Friends or enemies?"]

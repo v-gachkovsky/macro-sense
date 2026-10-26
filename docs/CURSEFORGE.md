@@ -48,8 +48,8 @@ bars, which opens that macro. On Retail it's in the addon menu by the minimap to
 
 Don't want to type `[@mouseover,help,nodead]` by hand? **New (Wizard)** asks a few simple questions, one at a
 time: what the macro should do, which spell, where it goes (whoever is under the mouse, yourself, the ground
-under the cursor...) and who then when that one is not there, friends or enemies, what Shift, Ctrl or Alt do,
-anything else. Each answer shows the macro's words for it, and the macro grows at the bottom as you answer.
+under the cursor...) and who then when that one is not there, friends or enemies (only when the game doesn't
+say), what Shift, Ctrl or Alt do, anything else. Each answer shows the macro's words for it, and the macro grows at the bottom as you answer.
 
 Or **All options** shows the whole form, where you pick it all at once:
 

@@ -9,14 +9,20 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 - **Step by step** in the wizard: one question at a time, in plain words, for players new to macros. What the
   macro should do, the spell or item, where it goes and who then when that one is not there, friends or
-  enemies (friends dead or alive, for a resurrection), what Shift, Ctrl or Alt (Cmd on a Mac) do, anything
-  else, the name and who keeps the macro. Each answer shows the macro's words for it (`@mouseover`), the macro
+  enemies (asked only when the game doesn't say what the spell is for; friends dead or alive, for a
+  resurrection), what Shift, Ctrl or Alt (Cmd on a Mac) do, anything else, the name and who keeps the macro. A
+  spell for enemies is not offered for yourself, your pet or party members, one for friends not for arena
+  enemies. Each answer shows the macro's words for it (`@mouseover`), the macro
   shows at the bottom from the first answer, and Back goes back with the answers kept. The wizard asks step by
   step the first time; **All options** shows the whole form with the answers so far, **Step by step** goes
   back, and the wizard opens as you left it. In English and Ukrainian.
 
 ### Changed
 - The tooltip of New (Wizard) says it can ask a few simple questions.
+- In the wizard, a key's own spell is checked for what it is for, whatever the macro's spell is: with Shadow
+  Bolt as the macro's spell, Flash Heal on Shift goes to friends (`help`).
+- A spell the game says is for friends and for enemies alike (Holy Shock) no longer sets the wizard's Only to
+  Enemies. Picking a spell the game says nothing about after one it did sets it back to Anyone there.
 
 ### Fixed
 - The editor's header shows the icon the macro shows in the game, as the list and the action bars do: with the

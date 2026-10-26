@@ -252,9 +252,9 @@ local gameSpells = { [5782] = { 1050, "Fear" }, [5484] = { 1050, "Howl of Terror
 C_Spell = {
     IsSpellHarmful = function(name)
         if name == "Divine Hymn" then error("unknown spell") end
-        return name == "Fireball" or name == "Fire Blast" or name == "Frostbolt"
+        return name == "Fireball" or name == "Fire Blast" or name == "Frostbolt" or name == "Holy Shock"
     end,
-    IsSpellHelpful = function() return false end,
+    IsSpellHelpful = function(name) return name == "Flash Heal" or name == "Holy Shock" end,
     GetSpellTexture = function(id) return gameSpells[id] and gameSpells[id][1] end,
     GetSpellName = function(id) return gameSpells[id] and gameSpells[id][2] end,
 }
@@ -2528,17 +2528,18 @@ do
     Fire(C("stepSpell"), "OnEnterPressed")
     check("steps: a spell picked goes on", question() == "Where should Fireball go?"
         and chosen() == "On whoever is under the mouse" and answer("On whoever is under the mouse").hint.text
-        == "@mouseover" and answer("On party member 1") ~= nil and answer("Do nothing") == nil, question())
+        == "@mouseover" and answer("Do nothing") == nil, question())
+    check("steps: a spell for enemies goes to no friend", answer("On arena enemy 1") ~= nil
+        and answer("On party member 1") == nil and answer("On yourself") == nil and answer("On your pet") == nil,
+        answers())
     check("steps: the macro as it is", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", shown())
     Fire(C("back"), "OnClick")
     check("steps: back to the spell picked", question() == "Which spell should the macro cast?"
         and C("stepSpell").text == "Fireball" and not C("stepSpell"):HasFocus() and C("next"):IsEnabled(), question())
     Fire(C("next"), "OnClick")
     Fire(answer("On whoever is under the mouse"), "OnClick")
-    check("steps: friends or enemies, as the game says", question() == "Who is Fireball for?" and chosen() == "Enemies",
-        question())
-    Fire(answer("Enemies"), "OnClick")
-    check("steps: and if nobody is under the mouse", question() == "And if nobody is under the mouse?"
+    check("steps: and if nobody is under the mouse: no friends or enemies, the game says",
+        question() == "And if nobody is under the mouse?"
         and C("hint").text == "Or the one there is not an enemy, or is dead." and chosen() == "On your target, as usual"
         and answer("On whoever is under the mouse") == nil and answers():find("Do nothing$") ~= nil, answers())
     Fire(answer("On your target, as usual"), "OnClick")
@@ -2583,7 +2584,7 @@ do
     Fire(C("mode"), "OnClick")
     check("steps: the questions from the first again", question() == "What should the macro do?"
         and chosen() == "Cast a spell" and shown() == burst, question())
-    for _ = 1, 10 do Fire(C("next"), "OnClick") end
+    for _ = 1, 9 do Fire(C("next"), "OnClick") end
     check("steps: Next through the answers given", question() == "Almost done: name your macro"
         and C("stepName").text == "Burst", question())
     Fire(C("stepCharacter"), "OnClick")
@@ -2653,6 +2654,41 @@ do
     Fire(C("mode"), "OnClick")
     check("steps: what was being typed in the form is taken", question() == "What should the macro do?"
         and shown() == "/cancelaura Ice Block\n/petfollow", shown())
+
+    -- What the game says a spell is for: nothing when it says both; a key's own spell for itself; anyone there
+    -- again when the spell picked next is one it says nothing about.
+    check("steps: what a spell is for", ns.sources.reaction("Fireball") == "enemies"
+        and ns.sources.reaction("Flash Heal") == "friends" and ns.sources.reaction("Holy Shock") == nil
+        and ns.sources.reaction("Polymorph") == nil and ns.sources.reaction("Healthstone", true) == "friends")
+    ns.WizardWindow.Close()
+    Fire(wizardBtn, "OnClick")
+    Fire(answer("Use an item"), "OnClick")
+    TypeIn(C("stepSpell"), "Healthstone")
+    Fire(C("next"), "OnClick")
+    Fire(answer("On whoever is under the mouse"), "OnClick")
+    Fire(answer("On your target, as usual"), "OnClick")
+    Fire(C("stepShift"), "OnClick")
+    Fire(C("next"), "OnClick")
+    TypeIn(C("stepSpell"), "Fireball")
+    Fire(C("next"), "OnClick")
+    check("steps: a key's own spell, for enemies", question() == "Where should Fireball go?"
+        and answer("On party member 1") == nil and answer("On arena enemy 1") ~= nil, answers())
+    Fire(answer("On your focus"), "OnClick")
+    check("steps: and if not there, for that spell", C("hint").text == "Or the one there is not an enemy, or is dead.",
+        C("hint").text)
+    Fire(answer("Do nothing"), "OnClick")
+    check("steps: each spell checked for what it is for", shown() == "#showtooltip\n"
+        .. "/use [mod:shift,@focus,harm,nodead] Fireball; [@mouseover,help,nodead][] Healthstone", shown())
+    Fire(C("mode"), "OnClick")
+    TypeIn(C("cast"), "poly")
+    Fire(C("cast"), "OnEnterPressed")
+    check("steps: anyone there again for a spell the game says nothing about", C("only").label.text == "Anyone there"
+        and shown():find("[@mouseover,exists,nodead][] Polymorph", 1, true) ~= nil, shown())
+    TypeIn(C("shiftCast"), "Healthstone")
+    Fire(C("shiftCast"), "OnEnterPressed")
+    check("steps: in the form too, a key's own spell for what it is for",
+        shown():find("[mod:shift,@focus,help,nodead] Healthstone", 1, true) ~= nil, shown())
+    Fire(C("mode"), "OnClick")
 
     -- In Ukrainian.
     ns.WizardWindow.Close()

@@ -284,9 +284,11 @@ ns.locales.uk = {
     ["Friends"] = "Друзі",
     ["Enemies"] = "Вороги",
     ["What the units above must be: friends, enemies or anyone there. Yourself, As usual and At the cursor need no "
-        .. "check. It follows the spell you pick, when the game knows what it is for."] =
+        .. "check. It follows the spell you pick, when the game knows what it is for; a key's own spell is checked for "
+        .. "what it is for."] =
         "Ким мають бути обрані вище: друзями, ворогами чи будь-ким. «Ви самі», «Як завжди» і «Під курсором» не "
-        .. "перевіряються. Підлаштовується під обране заклинання, коли гра знає, для кого воно.",
+        .. "перевіряються. Підлаштовується під обране заклинання, коли гра знає, для кого воно; власне заклинання "
+        .. "клавіші перевіряється за тим, для кого воно.",
     ["Alive only"] = "Лише живі",
     ["With a key held"] = "З клавішею",
     ["same spell"] = "те саме заклинання",
