@@ -3459,6 +3459,12 @@ do
     check("ukrainian: a menu, with a count", rows[1] == "Зробити бекап зараз"
         and rows[2]:find("^Сьогодні, %d%d:%d%d  2 макроси$") ~= nil, table.concat(rows, " / "))
     ns.char.backups = nil
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(button, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("ukrainian: the backups' tooltip, in plain words", tip[1] == "Бекапи"
+        and tip[2]:find("^Ваші макроси зберігаються самі щодня") ~= nil, tip[2])
     ns.Popup:Style(ns.scheme, "Fonts\\Code.ttf", 13)
     ns.Popup:Open(edit, { { name = "cast", hint = "cast a spell" } }, 0, 0, 14)
     local row = ns.Popup.rows[1]

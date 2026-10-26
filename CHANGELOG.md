@@ -8,6 +8,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - In Ukrainian, backups are «Бекапи», as players call them (they were «Копії»).
+- The tooltips of Backups and Back up now say more plainly when backups are made and how many are kept.
 
 ## [0.6.0] - 2026-10-26
 
