@@ -1245,9 +1245,10 @@ local function Build()
         local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:AddLine(L["Shorten"], 1, 1, 1)
-        GameTooltip:AddLine(L["The same macro in fewer characters: target= becomes @, modifier becomes mod, "
-            .. "[pet:Imp][pet:Felhunter] becomes [pet:Imp/Felhunter], [x] Fear; Fear becomes [x][]Fear, "
-            .. "and spaces the game doesn't need go."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Tries to remove spaces the game doesn't need, shorten constructs and make the macro "
+            .. "shorter overall, keeping everything it does. For example: target= becomes @, modifier becomes mod, "
+            .. "[pet:Imp][pet:Felhunter] becomes [pet:Imp/Felhunter], [x] Fear; Fear becomes [x][]Fear."], 0.8, 0.8,
+            0.8, true)
         GameTooltip:AddLine(self:IsEnabled() and string.format(L["%s brings the old text back."], undo)
             or L["Nothing to shorten here."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
