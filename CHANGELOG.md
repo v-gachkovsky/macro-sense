@@ -25,6 +25,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   Enemies. Picking a spell the game says nothing about after one it did sets it back to Anyone there.
 
 ### Fixed
+- Deleting the macro being edited opens the next one, or the one before after the last: its text no longer
+  stays in the editor as an unsaved new macro that asks to be discarded when you open another one.
 - The editor's header shows the icon the macro shows in the game, as the list and the action bars do: with the
   question mark and `#showtooltip`, the spell's icon, also when a key held changes it (it showed the question
   mark). The question mark is still the icon saved, and its tooltip says what it does.

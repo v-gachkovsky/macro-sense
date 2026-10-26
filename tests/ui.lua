@@ -3314,6 +3314,51 @@ do
     ns.Window.SetScope("general")
     NextFrame()
 
+    -- The game reports the change while it deletes (UPDATE_MACROS): the next one opens all the same, or the one
+    -- before after the last; nothing is left to discard. Another one: the one being edited stays itself.
+    local deleteMacro, ask = DeleteMacro, ns.Ask
+    DeleteMacro = function(index)
+        deleteMacro(index)
+        Send("UPDATE_MACROS")
+    end
+    local discards = 0
+    ns.Ask = function(which, ...)
+        if which == "MACROSENSE_DISCARD" then discards = discards + 1 end
+        return ask(which, ...)
+    end
+    ns.Window.SetScope("character")
+    NextFrame()
+    for _, name in ipairs({ "Last A", "Last B", "Last C" }) do CreateMacro(name, 1, "/cast " .. name:sub(-1), true) end
+    Send("UPDATE_MACROS")
+    ns.Window.Open(GetMacroIndexByName("Last B"))
+    NextFrame()
+    Fire(row("Last B").remove, "OnClick")
+    check("list x: told at once, the next one opens", raw() == "/cast C" and row("Last C").selected
+        and not saveIsEnabled(), raw())
+    Fire(row("Last C").remove, "OnClick")
+    check("list x: after the last, the one before", raw() == "/cast A" and row("Last A").selected
+        and not saveIsEnabled(), raw())
+    CreateMacro("Last M", 1, "/cast M", true)
+    CreateMacro("Last Z", 1, "/cast Z", true)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Last Z"))
+    check("list x: nothing to discard after it", discards == 0 and raw() == "/cast Z", discards)
+    edit:SetFocus()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    Fire(row("Last A").remove, "OnClick")
+    ns.Window.Save()
+    check("list x: told at once, another one: the edited one stays itself", body("Last Z") == "/cast Z\n/sit"
+        and body("Last M") == "/cast M" and row("Last Z").selected and discards == 0, body("Last Z"))
+    Fire(row("Last Z").remove, "OnClick")
+    check("list x: told at once, the last one deleted: nothing to save", GetMacroIndexByName("Last Z") == 0
+        and raw() ~= "/cast Z\n/sit" and not saveIsEnabled(), raw())
+    ns.Ask, DeleteMacro = ask, deleteMacro
+    DeleteMacro(GetMacroIndexByName("Last M"))
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    NextFrame()
+
     -- Not in combat.
     CreateMacro("Del E", 1, "/sit", false)
     Send("UPDATE_MACROS")

@@ -517,14 +517,17 @@ function Window.Revert()
     if state.index then Load(state.index) end
 end
 
--- Deletes macro `index`. The one being edited: the next one opens. Another one: the editor keeps what it shows.
+-- Deletes macro `index`. The one being edited: the next one opens, or the one before when it was the last. Another
+-- one: the editor keeps what it shows. Which one it was is known before: the game may report the change while it
+-- deletes (UPDATE_MACROS), and the one being edited, looked up by its name, is gone then.
 function Window.Delete(index)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local editing = state.index
     DeleteMacro(index)
     local first, last = MacroRange(state.scope)
-    if index == state.index then return Load(last >= first and math.min(index, last) or nil) end
+    if index == editing then return Load(last >= first and math.min(index, last) or nil) end
     -- The macros after it in its tab move up one, the one being edited too.
-    if state.index and index >= first and index < state.index then state.index = state.index - 1 end
+    if editing and index >= first and index < editing then state.index = editing - 1 end
     Window.RefreshList()
     UpdateStatus()
 end
