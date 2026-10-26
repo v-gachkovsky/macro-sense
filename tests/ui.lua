@@ -3937,12 +3937,13 @@ do
         end
     end
     for _, what in pairs(ns.Shortcuts.MAC) do add(what) end
+    for _, text in ipairs(ns.Explain.Texts()) do add(text) end
     add(ns.ActionBars.TIP)
     -- Kept in their files' locals: month names, tab names, the preview's quiet notes and verbs, hints made in
     -- Sources and Completion, what a condition's value should be, and the wizard's names for a macro.
     for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         "General", "Character", "does nothing", "conditions not met", "not reached", "chat", "equip", "cancel", "no form", "primary",
-        "secondary", "your pet", "pet family", "equipped", "item", "extra action", "leave the vehicle",
+        "secondary", "your pet's name", "pet family", "equipped", "item", "extra action", "leave the vehicle",
         "popup: first button", "popup: second button", "highest", "on you now", "buff",
         "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "a bar page 1-6", "a form number, 0 = no form",
@@ -4762,6 +4763,82 @@ do
     RAID_CLASS_COLORS = nil
     ns.Window.SetScope("general")
     NextFrame()
+end
+
+-- Explained: the mouse over a line's number or note, the tooltip says in plain words what the line does; over the
+-- text, or off the editor, it goes.
+do
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    ns.Window.Revert()
+    ns.Window.New()
+    NextFrame()
+    SLASH_TARGET2, SLASH_DISMOUNT1, SLASH_DISMOUNT2 = "/ziel", "/dismount", "/absitzen" -- the client's: German
+    ns.Window.Restore("/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt\n/startattack\n"
+        .. "/cast [@mouseover,help][] Heal\n/cast [form:1] Maul; [spec:2] Wrath\n/ziel [@focus]\n/absitzen")
+    edit:ClearFocus()
+    NextFrame()
+    NextFrame()
+    local scroll = MacroSenseCodeScroll
+    local over = true
+    scroll.IsMouseOver = function() return over end
+    scroll.left, scroll.right, edit.top = 100, 700, 500
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    local function at(x, line) -- the middle of a line's first row
+        tip = {}
+        cursorX, cursorY = x, 500 - 4 - 14 * (line - 1) - 7
+        Wait(0.2)
+        return table.concat(tip, " / ")
+    end
+    check("explained: over a line's number", at(102, 2) == "Line 2 / • starts auto attack", at(102, 2))
+    check("explained: by the editor", GameTooltip:GetOwner() == scroll and GameTooltip:IsShown())
+    check("explained: every branch", at(695, 1) == "Line 1 / • with Shift held: Polymorph on your focus, if it is an "
+        .. "enemy and alive / • otherwise: Frostbolt", at(695, 1))
+    check("explained: once while the mouse stays", at(696, 1) == "", at(696, 1))
+    check("explained: the next unit tried, under the first", at(102, 3) == "Line 3 / • Heal on the unit under the "
+        .. "mouse, if it is a friend /      if not, on your target", at(102, 3))
+    -- The game's names of your forms and specializations, and the commands of the client's language.
+    GetNumShapeshiftForms, GetShapeshiftFormInfo = function() return 1 end, function() return 1, "Bear Form" end
+    GetNumSpecializations = function() return 2 end
+    GetSpecializationInfo = function(i) return 100 + i, ({ "Balance", "Feral" })[i], "", 1 end
+    check("explained: with the game's names", at(102, 4) == "Line 4 / • in Bear Form: Maul / • otherwise, in "
+        .. "specialization Feral: Wrath", at(102, 4))
+    check("explained: a command of the client's language", at(102, 5) == "Line 5 / • targets your focus"
+        and at(102, 6) == "Line 6 / • gets off your mount", at(102, 6))
+    GetNumShapeshiftForms, GetShapeshiftFormInfo, GetNumSpecializations, GetSpecializationInfo = nil, nil, nil, nil
+    at(400, 1)
+    check("explained: not over the text", not GameTooltip:IsShown())
+    at(102, 2)
+    over = false
+    at(102, 2)
+    check("explained: gone off the editor", not GameTooltip:IsShown())
+    over = true
+    check("explained: below the last line, nothing", at(102, 7) == "" and not GameTooltip:IsShown(), at(102, 7))
+    -- Without the live preview there is no notes column: the line numbers still explain.
+    local previewCheck
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Live preview" then previewCheck = o end
+    end
+    Fire(previewCheck, "OnClick")
+    NextFrame()
+    NextFrame()
+    GameTooltip:Hide()
+    check("explained: no notes column without the live preview", at(695, 1) == "" and at(700, 1) == ""
+        and not GameTooltip:IsShown() and not ns.db.preview)
+    check("explained: the line numbers still", at(102, 1):find("^Line 1 / ") ~= nil, at(102, 1))
+    Fire(previewCheck, "OnClick")
+    NextFrame()
+    check("explained: the live preview's tooltip says how", (function()
+        tip = {}
+        Fire(previewCheck, "OnEnter")
+        return table.concat(tip, " "):find("Point at a line's number or its note", 1, true) ~= nil
+    end)())
+    GameTooltip.AddLine = nil
+    scroll.IsMouseOver = nil
+    over = false
+    SLASH_TARGET2, SLASH_DISMOUNT1, SLASH_DISMOUNT2 = nil, nil, nil
+    ns.Window.Revert()
 end
 
 -- Theme switch recolors without touching the text.

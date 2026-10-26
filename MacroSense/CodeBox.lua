@@ -341,6 +341,29 @@ function CodeBox:HighlightLineNumber()
     end
 end
 
+-- The number of the line the mouse is on, when it is over the line numbers or the notes column (not the text):
+-- nil elsewhere.
+function CodeBox:HoveredLine()
+    local tops = self.lineTops
+    if not self.scroll:IsMouseOver() or #tops == 0 then return nil end
+    local left, right, top = self.scroll:GetLeft(), self.scroll:GetRight(), self.edit:GetTop()
+    if not (left and right and top) then return nil end
+    local scale = self.edit:GetEffectiveScale() or 1
+    local x, y = GetCursorPosition()
+    x, y = x / scale, y / scale
+    local onNumbers = x <= left + (self.gutterWidth or 0)
+    local onNotes = self.notesShown and x >= right - (self.notesWidth or 0)
+    if not (onNumbers or onNotes) then return nil end
+    local down = y - top -- from the top of the text, so below it is negative
+    local lines = {}
+    for l in (self:GetRaw() .. "\n"):gmatch("([^\n]*)\n") do lines[#lines + 1] = l end
+    for i = 1, #tops do
+        local bottom = tops[i + 1] or (tops[i] - self:Rows(lines[i] or "") * (self.rowHeight or 14))
+        if down <= tops[i] and down > bottom then return i end
+    end
+    return nil
+end
+
 -- Where the cursor would be at raw position `pos`, asking the game: { x, y, h } or nil when the game
 -- does not report it right away.
 function CodeBox:MeasureByCursor(pos)
