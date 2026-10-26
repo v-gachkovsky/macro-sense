@@ -3484,6 +3484,16 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(preview, "OnEnter")
     GameTooltip.AddLine = nil
+    local wizard
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizard = o end
+    end
+    local wizardTip = {}
+    GameTooltip.AddLine = function(_, text) wizardTip[#wizardTip + 1] = text end
+    Fire(wizard, "OnEnter")
+    GameTooltip.AddLine = nil
+    check("ukrainian: the wizard's tooltip", wizardTip[1] == "Майстер"
+        and wizardTip[2]:find("^Створіть новий макрос за допомогою вбудованого майстра! Оберіть") ~= nil, wizardTip[2])
     check("ukrainian: the live preview's tooltip", tip[1] == "Живий перегляд"
         and tip[3] == "Затискайте модифікатори (Shift, Ctrl, Alt чи Cmd), наводьте мишку, міняйте ціль — "
         .. "використовуйте все, що є в макросі, щоб побачити, яка саме здібність спрацює і в якій ситуації.", tip[3])
