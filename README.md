@@ -256,6 +256,12 @@ being edited is copied with what the editor shows (name, icon, text) and keeps i
 copied as saved. **x** deletes the macro, after asking; the macro being edited stays open when another one
 goes.
 
+Your other characters' own macros are in the **Character** tab too, under your macros: each character's name (your
+realm first), and a click shows its macros, as they were when you last played it with MacroSense. Hover one to
+read it; a click, or its copy button, copies it into this character's tab or General, under a free name. The search
+finds them too. The **x** next to a character forgets it: its macros and action bars are no longer shown or
+counted, until you log in with it again.
+
 **Move to Character** / **Move to General** in the same menu moves the macro into the other tab, which the game's
 macro window can't do: its buttons on your action bars stay, its history goes along, and it doesn't land in the
 trash. It keeps its name, unless the other tab has a macro of that name (then `Fear 2`).
