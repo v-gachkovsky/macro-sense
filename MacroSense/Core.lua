@@ -9,6 +9,19 @@ function ns.Print(text, ...) print(PREFIX .. string.format(L[text], ...)) end
 -- Where players report bugs.
 ns.ISSUES_URL = "https://github.com/v-gachkovsky/macro-sense/issues"
 
+-- This character among the account's characters (ns.db.characters, by "Name-Realm"): its name, realm and class,
+-- and what is kept for it there (the action bars of each specialization, see ActionBars.lua).
+local me
+function ns.Character()
+    if me then return me end
+    local name, realm = UnitName("player"), GetRealmName()
+    ns.db.characters = ns.db.characters or {}
+    me = ns.db.characters[name .. "-" .. realm] or {}
+    me.name, me.realm, me.class = name, realm, select(2, UnitClass("player"))
+    ns.db.characters[name .. "-" .. realm] = me
+    return me
+end
+
 local Metadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
 local function Version()
     local v = Metadata(ADDON, "Version")

@@ -256,6 +256,17 @@ being edited is copied with what the editor shows (name, icon, text) and keeps i
 copied as saved. **x** deletes the macro, after asking; the macro being edited stays open when another one
 goes.
 
+**Move to Character** / **Move to General** in the same menu moves the macro into the other tab, which the game's
+macro window can't do: its buttons on your action bars stay, its history goes along, and it doesn't land in the
+trash. It keeps its name, unless the other tab has a macro of that name (then `Fear 2`).
+
+Hover a macro to see where it is on the action bars: `On 2 buttons of your action bars`, `On the bars of
+Destruction, Alt`. The game shows only the bars of the specialization you are in, so MacroSense remembers those of
+each of your specializations and characters as it last saw them (each specialization has bars of its own, and
+general macros are every character's). **Not on action bars** under the search keeps only the macros on no bar,
+handy when a tab is full. Deleting a macro says where it is before it asks, and moving one that the bars of
+another specialization or character have asks first: there it will be gone.
+
 **Share** under the list makes a code of the macro, of the tab or of all your macros: copy it and send it
 (Discord, a forum), and anyone with MacroSense makes the macros with **Share > Import a code**. Before
 anything is made, the window says what the code holds and where each macro goes. Nothing is replaced: a

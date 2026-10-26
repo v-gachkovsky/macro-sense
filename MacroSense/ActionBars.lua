@@ -25,6 +25,93 @@ function ActionBars.MacroAt(slot)
     return index and index > 0 and index or nil
 end
 
+------------------------------------------------------------------------
+-- Where macros are on the action bars. The game shows the bars of this character's specialization now; those of
+-- its other specializations (each has bars of its own) and of your other characters (general macros are theirs
+-- too) are kept as last seen: ns.Character().bars = { [specialization] = { label, names = { [macro] = buttons } } }.
+------------------------------------------------------------------------
+local MAX_SLOT = 180
+local nowCache -- the macros on the bars now, until they change (ActionBars.Tint)
+local ready -- after login: this character is known
+
+-- The macros on the bars now: name -> buttons; and whether the bars have anything on them at all.
+local function OnBarsNow()
+    if not nowCache then
+        local names, any = {}, false
+        for slot = 1, MAX_SLOT do
+            local kind = GetActionInfo(slot)
+            any = any or kind ~= nil
+            local name = kind == "macro" and GetActionText(slot)
+            if name then names[name] = (names[name] or 0) + 1 end
+        end
+        nowCache = { names = names, any = any }
+    end
+    return nowCache.names, nowCache.any
+end
+
+-- The specialization the bars are of now: a key and its name. Retail and WoW Forever keep bars for each
+-- specialization, the Classic clients for each talent group (dual specialization).
+local function Spec()
+    local S = C_SpecializationInfo or {}
+    local group = S.GetActiveSpecGroup and S.GetActiveSpecGroup() or 1
+    local index = S.GetSpecialization and S.GetSpecialization()
+    local id, name
+    if index and index > 0 and S.GetSpecializationInfo then id, name = S.GetSpecializationInfo(index) end
+    local key = C_ClassTalents and id and id ~= 0 and ("spec" .. id) or ("group" .. group)
+    return key, name or string.format(ns.L["Specialization %d"], group)
+end
+
+-- What is on the bars now, kept for this character's specialization. Bars with nothing at all on them are not
+-- kept: the game may not have shown them yet.
+function ActionBars.Remember()
+    local names, any = OnBarsNow()
+    if not ready or not any then return end
+    local key, label = Spec()
+    local c = ns.Character()
+    c.bars = c.bars or {}
+    c.bars[key] = { label = label, names = names }
+end
+
+-- Where macro `name` of tab `scope` is on action bars: the buttons of the bars now, and where else it was when last
+-- seen: your other specializations and, for a general macro, other characters (their names), each once.
+function ActionBars.Uses(scope, name)
+    local here = OnBarsNow()[name] or 0
+    if not ready then return here, {} end
+    local mine, spec = ns.Character(), Spec()
+    local places, seen = {}, {}
+    local function add(place)
+        if not seen[place] then places[#places + 1], seen[place] = place, true end
+    end
+    for _, c in pairs(ns.db.characters or {}) do
+        for key, bars in pairs(c.bars or {}) do
+            if bars.names[name] and c == mine and key ~= spec then add(bars.label) end
+            if bars.names[name] and c ~= mine and scope == "general" then
+                add(c.realm == mine.realm and c.name or (c.name .. "-" .. c.realm))
+            end
+        end
+    end
+    table.sort(places)
+    return here, places
+end
+
+-- The action slots of the bars now with macro `name` on them.
+function ActionBars.SlotsOf(name)
+    local out = {}
+    for slot = 1, MAX_SLOT do
+        if GetActionInfo(slot) == "macro" and GetActionText(slot) == name then out[#out + 1] = slot end
+    end
+    return out
+end
+
+-- Macro `index` on each of `slots` (out of combat).
+function ActionBars.Place(index, slots)
+    for _, slot in ipairs(slots) do
+        PickupMacro(index)
+        PlaceAction(slot)
+        ClearCursor()
+    end
+end
+
 -- Runs in the game's secure code before each click on a button (self: the button, control: our frame below).
 -- Shift + right-click on an action with a macro goes no further, and the macro opens when the mouse button is
 -- let go (a drag doesn't open it). The slot is found as the button finds it
@@ -129,10 +216,19 @@ local function FollowLab(button)
     Tint(button)
 end
 
--- Bindings, macros, action bars, spells or talents changed: every button again.
+-- Bindings, macros, action bars, spells or talents changed: every button again, and what is on the bars is kept a
+-- moment later (the game changes many slots at once, a specialization all of them).
+local rememberDue
 function ActionBars.Tint()
-    missingCache = {}
+    missingCache, nowCache = {}, nil
     for button in pairs(tinted) do Tint(button) end
+    if rememberDue then return end
+    rememberDue = true
+    C_Timer.After(1, function()
+        rememberDue = false
+        ActionBars.Remember()
+        ns.Window.BarsChanged()
+    end)
 end
 
 -- A button just made may still be setting itself up: it is taken a frame later.
@@ -167,6 +263,7 @@ local hooked, watched = false, {} -- watched: the LibActionButton libraries told
 
 -- On login and after combat (buttons made during it); buttons made later are wrapped as they come.
 function ActionBars.Setup()
+    ready = true
     if not SecureHandlerWrapScript then return end
     local blizzard = ActionBarButtonEventsFrame -- every button of the game's template registers with it
     if not hooked then

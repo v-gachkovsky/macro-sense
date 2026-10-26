@@ -67,6 +67,37 @@ ns.locales.uk = {
     ["Duplicate"] = "Дублювати",
     ["Copy to Character"] = "Копіювати в «Персонаж»",
     ["Copy to General"] = "Копіювати в «Загальні»",
+    ["Move to Character"] = "Перенести в «Персонаж»",
+    ["Move to General"] = "Перенести в «Загальні»",
+    ["Into the Character tab, for this character only. Its buttons on your action bars stay, and its history goes "
+        .. "with it."] =
+        "У вкладку «Персонаж», лише для цього персонажа. Його кнопки на ваших панелях дій лишаються, а історія "
+        .. "переходить разом із ним.",
+    ["Into the General tab, for all your characters. Its buttons on your action bars stay, and its history goes "
+        .. "with it."] =
+        "У вкладку «Загальні», для всіх ваших персонажів. Його кнопки на ваших панелях дій лишаються, а історія "
+        .. "переходить разом із ним.",
+    ["Move \"%s\" to the General tab?%s"] = "Перенести «%s» у вкладку «Загальні»?%s",
+    ["Move \"%s\" to the Character tab?%s"] = "Перенести «%s» у вкладку «Персонаж»?%s",
+    ["It will be gone from the bars of %s."] = "З панелей %s він зникне.",
+    ["Move"] = "Перенести",
+    ["could not move the macro"] = "не вдалося перенести макрос",
+    -- where a macro is on the action bars
+    ["Not on action bars"] = "Не на панелях дій",
+    ["Only the macros you have put on no action bar: handy to free slots. MacroSense remembers the bars of each of "
+        .. "your specializations and characters as it last saw them, so a general macro an alt uses counts as used."] =
+        "Лише макроси, яких немає на жодній панелі дій: зручно, щоб звільнити слоти. MacroSense пам'ятає панелі "
+        .. "кожної вашої спеціалізації та кожного персонажа такими, якими бачив їх востаннє, тож загальний макрос, "
+        .. "яким користується альт, теж вважається потрібним.",
+    ["On %d buttons of your action bars"] = { "На %d кнопці ваших панелей дій", "На %d кнопках ваших панелей дій",
+        "На %d кнопках ваших панелей дій" },
+    ["Not on your action bars now"] = "Зараз його немає на ваших панелях дій",
+    ["On the bars of %s"] = "На панелях: %s",
+    ["It is on %d buttons of your action bars."] = { "Він стоїть на %d кнопці ваших панелей дій.",
+        "Він стоїть на %d кнопках ваших панелей дій.", "Він стоїть на %d кнопках ваших панелей дій." },
+    ["It is on the bars of %s too."] = "Він є і на панелях: %s.",
+    ["It is on the bars of %s."] = "Він є на панелях: %s.",
+    ["Specialization %d"] = "Спеціалізація %d",
     ["(full)"] = "(заповнена)",
     ["The %s tab is full."] = "Вкладка «%s» заповнена.",
     ["A copy in this tab with what the editor shows now, under a free name like \"Fear 2\". The macro copied keeps "
@@ -214,7 +245,7 @@ ns.locales.uk = {
     [" (+%d more)"] = " (+ще %d)",
     ["Click to use \"%s\""] = "Клацніть, щоб вставити «%s»",
     ["Discard unsaved changes to this macro?"] = "Відкинути незбережені зміни цього макросу?",
-    ["Delete macro \"%s\"?"] = "Видалити макрос «%s»?",
+    ["Delete macro \"%s\"?%s"] = "Видалити макрос «%s»?%s",
     ["Yes"] = "Так",
     ["No"] = "Ні",
     ["Delete"] = "Видалити",

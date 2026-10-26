@@ -279,6 +279,15 @@ local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 133, "spel
 function GetBindingKey(command) return bindings[command] end
 local picked
 function PickupMacro(index) picked = index end
+-- The macro on the cursor goes onto the slot it is dropped on; what was there is left on the cursor.
+function PlaceAction(slot)
+    if picked then actions[slot] = { "macro", 0, nil, text = (GetMacroInfo(picked)) } end
+end
+function ClearCursor() picked = nil end
+-- This character.
+function UnitName(unit) if unit == "player" then return "Tester" end end
+function GetRealmName() return "Realm" end
+function UnitClass(unit) if unit == "player" then return "Warlock", "WARLOCK" end end
 function GetActionInfo(slot) if actions[slot] then return actions[slot][1], actions[slot][2], actions[slot][3] end end
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
 function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
@@ -1557,7 +1566,8 @@ do
     Fire(broken, "OnEnter")
     Fire(clean, "OnEnter")
     GameTooltip.AddLine = nil
-    check("list: hover lists the issues", table.concat(tip, "\n") == 'Zap broken\nLine 1: unknown condition "harmm"',
+    check("list: hover lists the issues, and where it is on the bars", table.concat(tip, "\n")
+        == 'Zap broken\nLine 1: unknown condition "harmm"\nNot on your action bars now\nZap clean\nNot on your action bars now',
         table.concat(tip, " / "))
     -- Fixed elsewhere (the Blizzard window): the mark goes.
     EditMacro(broken.index, "Zap broken", 1, "/cast [harm] Fireball")
@@ -4371,6 +4381,267 @@ do
     C_SpellBook, GetNumSpellTabs, GetSpellTabInfo, GetSpellBookItemInfo = retail, nil, nil, nil
     GetSpellBookItemName, GetSpellBookItemTexture, IsPassiveSpell = nil, nil, nil
     ns.InvalidateSources("spells")
+end
+
+-- Where macros are on the action bars: the bars now, those of your other specializations and, for general macros,
+-- of your other characters, as last seen. The list can show only the macros on no bar; deleting one says where it
+-- is; a macro moves into the other tab with its buttons, its history and no trip to the trash.
+do
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    local Spec = C_SpecializationInfo
+    local talents, spec = C_ClassTalents, 1
+    C_ClassTalents = { GetActiveConfigID = function() return nil end } -- Retail: bars for each specialization
+    Spec.GetSpecialization = function() return spec end
+    Spec.GetSpecializationInfo = function(i) return ({ 265, 266 })[i], ({ "Affliction", "Demonology" })[i] end
+    ns.Character().bars = {}
+    for _, name in ipairs({ "Bar A", "Bar B", "Loose", "Twin" }) do CreateMacro(name, 1, "/cast Fear", false) end
+    CreateMacro("Char C", 1, "/cast Fear", true)
+    CreateMacro("Twin", 1, "/cast Fireball", true)
+    Send("UPDATE_MACROS")
+    local function bars(list) -- slot -> macro name
+        for slot = 30, 34 do actions[slot] = list[slot] and { "macro", 0, nil, text = list[slot] } or nil end
+        Send("ACTIONBAR_SLOT_CHANGED", 0)
+        Wait(1.1)
+    end
+    bars({ [30] = "Bar A", [31] = "Bar A", [32] = "Char C" })
+    -- An equipment set on a bar shows its name too: no macro.
+    actions[33] = { "equipmentset", 0, nil, text = "Loose" }
+    Send("ACTIONBAR_SLOT_CHANGED", 33)
+    Wait(1.1)
+    local function uses(scope, name)
+        local here, elsewhere = ns.ActionBars.Uses(scope, name)
+        return here .. " " .. table.concat(elsewhere, ", ")
+    end
+    check("bars: the buttons now", uses("general", "Bar A") == "2 " and uses("character", "Char C") == "1 ",
+        uses("general", "Bar A"))
+    check("bars: only macros", uses("general", "Loose") == "0 ", uses("general", "Loose"))
+    actions[33] = nil
+    check("bars: kept for the specialization", ns.Character().bars.spec265.names["Bar A"] == 2
+        and ns.Character().bars.spec265.label == "Affliction")
+    spec = 2
+    bars({ [30] = "Bar B" })
+    check("bars: another specialization's, as last seen", uses("general", "Bar A") == "0 Affliction"
+        and uses("character", "Char C") == "0 Affliction" and uses("general", "Bar B") == "1 ", uses("general", "Bar A"))
+    ns.db.characters["Alt-Realm"] = { name = "Alt", realm = "Realm", class = "MAGE",
+        bars = { spec62 = { label = "Arcane", names = { Loose = 1, ["Char C"] = 1 } },
+            spec63 = { label = "Fire", names = { Loose = 1 } } } }
+    ns.db.characters["Far-Other"] = { name = "Far", realm = "Other", bars = { group1 = { label = "Specialization 1",
+        names = { Loose = 1 } } } }
+    check("bars: a general macro on other characters' bars, each once", uses("general", "Loose") == "0 Alt, Far-Other",
+        uses("general", "Loose"))
+    for _, name in ipairs({ "Zed", "Mid", "Bob", "Kay" }) do
+        ns.db.characters[name .. "-Realm"] = { name = name, realm = "Realm", bars = { x = { label = "", names = { Twin = 1 } } } }
+    end
+    check("bars: in order", uses("general", "Twin") == "0 Bob, Kay, Mid, Zed", uses("general", "Twin"))
+    for _, name in ipairs({ "Zed", "Mid", "Bob", "Kay" }) do ns.db.characters[name .. "-Realm"] = nil end
+    check("bars: a character macro is this character's only", uses("character", "Char C") == "0 Affliction",
+        uses("character", "Char C"))
+    -- Bars with nothing on them are not kept: the game may not have shown them yet.
+    local saved = {}
+    for slot, a in pairs(actions) do saved[slot] = a end
+    for slot in pairs(saved) do actions[slot] = nil end
+    Send("ACTIONBAR_SLOT_CHANGED", 0)
+    Wait(1.1)
+    check("bars: empty bars are not kept", ns.Character().bars.spec266.names["Bar B"] == 1)
+    for slot, a in pairs(saved) do actions[slot] = a end
+    Send("ACTIONBAR_SLOT_CHANGED", 0)
+    Wait(1.1)
+
+    -- The list: the tooltip says where, the filter keeps the macros on no bar.
+    ns.Window.SetScope("general")
+    NextFrame()
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
+        end
+    end
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    local function hover(name)
+        tip = {}
+        Fire(row(name), "OnEnter")
+        return table.concat(tip, " / ")
+    end
+    check("bars: the tooltip, on the bars now", hover("Bar B") == "Bar B / On 1 button of your action bars", hover("Bar B"))
+    check("bars: and elsewhere", hover("Bar A") == "Bar A / Not on your action bars now / On the bars of Affliction",
+        hover("Bar A"))
+    check("bars: a general one on other characters' bars", hover("Loose")
+        == "Loose / Not on your action bars now / On the bars of Alt, Far-Other", hover("Loose"))
+    GameTooltip.AddLine = nil
+    local filter
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Not on action bars" then filter = o end
+    end
+    CreateMacro("Unused One", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    Fire(filter, "OnClick")
+    check("bars: the filter keeps the macros on no bar", row("Unused One") and not row("Bar A") and not row("Bar B")
+        and not row("Loose"))
+    local general = 0
+    for index = 1, select(1, GetNumMacros()) do
+        local name = GetMacroInfo(index)
+        local here, elsewhere = ns.ActionBars.Uses("general", name)
+        if here == 0 and #elsewhere == 0 then general = general + 1 end
+    end
+    local tabLabel
+    for _, o in ipairs(created) do
+        if o.kind == "FontString" and tostring(o.text):find("^General  %(") then tabLabel = o.text end
+    end
+    check("bars: the General tab says how many", tabLabel == string.format("General  (%d)", general), tabLabel)
+    bars({ [30] = "Bar B", [33] = "Unused One" })
+    check("bars: the list follows the bars", not row("Unused One"))
+    -- A tab with every macro on some bar: the list says nothing matches.
+    local noMatch
+    for _, o in ipairs(created) do
+        if o.kind == "FontString" and o.text == "No macros match" then noMatch = o end
+    end
+    local all = {}
+    for index = SLOTS.MAX_ACCOUNT_MACROS + 1, SLOTS.MAX_ACCOUNT_MACROS + select(2, GetNumMacros()) do
+        all[GetMacroInfo(index)] = 1
+    end
+    ns.Character().bars.spec999 = { label = "Other", names = all }
+    ns.Window.SetScope("character")
+    NextFrame()
+    check("bars: nothing matches", noMatch:IsShown())
+    ns.Character().bars.spec999 = nil
+    ns.Window.SetScope("general")
+    NextFrame()
+    MacroSenseFrame:Hide()
+    MacroSenseFrame:Show()
+    check("bars: the filter is off when the editor opens again", row("Bar A") and row("Unused One")
+        and not filter.fill:IsShown())
+    bars({ [30] = "Bar B" })
+
+    -- Deleting one says where it is.
+    local asked, data, which
+    local show = StaticPopup_Show
+    StaticPopup_Show = function(w, a1, a2, d)
+        which, data = w, d
+        asked = string.format(StaticPopupDialogs[w].text, a1 or "", a2 or "")
+    end
+    Fire(row("Bar B").remove, "OnClick")
+    check("bars: deleting one on the bars", asked == "Delete macro \"Bar B\"?\n\nIt is on 1 button of your action bars.",
+        asked)
+    Fire(row("Bar A").remove, "OnClick")
+    check("bars: deleting one on other bars", asked == "Delete macro \"Bar A\"?\n\nIt is on the bars of Affliction.",
+        asked)
+    bars({ [30] = "Bar B", [31] = "Bar A" })
+    Fire(row("Bar A").remove, "OnClick")
+    check("bars: on both", asked == "Delete macro \"Bar A\"?\n\nIt is on 1 button of your action bars. It is on the "
+        .. "bars of Affliction too.", asked)
+    Fire(row("Unused One").remove, "OnClick")
+    check("bars: on none", asked == "Delete macro \"Unused One\"?", asked)
+    StaticPopup_Show = show
+
+    -- Moving one: into the other tab, back on its buttons, with its history, not into the trash.
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and ns.Highlight.Strip(r.text.text):sub(1, #label) == label then return r end
+        end
+    end
+    bars({ [30] = "Bar B", [31] = "Loose", [32] = "Bar B" })
+    ns.History.Store("general")["Bar B"] = { { body = "/cast Fireball", time = 5 } }
+    local trashed = #ns.History.Trash("general")
+    local placed, place, dialogs = {}, PlaceAction, 0
+    PlaceAction = function(slot)
+        placed[#placed + 1] = slot
+        place(slot)
+    end
+    StaticPopup_Show = function(w, ...)
+        if w:find("^MACROSENSE_MOVE") then dialogs = dialogs + 1 end
+        return show(w, ...)
+    end
+    Fire(row("Bar B").copy, "OnClick")
+    Fire(menuItem("Move to Character"), "OnClick")
+    NextFrame()
+    PlaceAction, StaticPopup_Show = place, show
+    check("move: not asked when no bars lose it", dialogs == 0, dialogs)
+    check("move: put on its buttons, the others left alone", table.concat(placed, ",") == "30,32"
+        and actions[31].text == "Loose", table.concat(placed, ","))
+    local moved = GetMacroIndexByName("Bar B")
+    check("move: into the other tab", moved > SLOTS.MAX_ACCOUNT_MACROS and ns.db.scope == "character", moved)
+    check("move: gone from this one", select(1, GetNumMacros()) > 0 and not (function()
+        for index = 1, select(1, GetNumMacros()) do if GetMacroInfo(index) == "Bar B" then return true end end
+    end)())
+    check("move: back on its buttons", actions[30] and actions[30].text == "Bar B" and actions[32].text == "Bar B"
+        and picked == nil)
+    check("move: its history along", ns.History.Store("character")["Bar B"] and ns.History.Store("general")["Bar B"] == nil)
+    check("move: not into the trash", #ns.History.Trash("general") == trashed, #ns.History.Trash("general"))
+    check("move: opened there", raw() == "/cast Fear")
+    -- A name the other tab has: a free one.
+    ns.Window.SetScope("general")
+    NextFrame()
+    Fire(row("Twin").copy, "OnClick")
+    Fire(menuItem("Move to Character"), "OnClick")
+    NextFrame()
+    check("move: a free name when that tab has it", GetMacroIndexByName("Twin 2") > SLOTS.MAX_ACCOUNT_MACROS)
+    -- On the bars of another specialization: asked first, those lose it.
+    ns.Window.SetScope("general")
+    NextFrame()
+    StaticPopup_Show = function(w, a1, a2, d)
+        which, data = w, d
+        asked = string.format(StaticPopupDialogs[w].text, a1 or "", a2 or "")
+    end
+    Fire(row("Bar A").copy, "OnClick")
+    Fire(menuItem("Move to Character"), "OnClick")
+    check("move: asked when other bars lose it", which == "MACROSENSE_MOVE_CHARACTER" and asked == "Move \"Bar A\" to "
+        .. "the Character tab?\n\nIt will be gone from the bars of Affliction.", asked)
+    StaticPopup_Show = show
+    -- The macros may have moved while it asked: found by its name.
+    CreateMacro("AAA First", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    StaticPopupDialogs[which].OnAccept(nil, data)
+    NextFrame()
+    check("move: then moved", GetMacroIndexByName("Bar A") > SLOTS.MAX_ACCOUNT_MACROS
+        and GetMacroIndexByName("AAA First") <= SLOTS.MAX_ACCOUNT_MACROS)
+    -- No free slot in the other tab: nothing moves.
+    local fillers = {}
+    while select(2, GetNumMacros()) < SLOTS.MAX_CHARACTER_MACROS do
+        fillers[#fillers + 1] = "Filler " .. #fillers
+        CreateMacro(fillers[#fillers], 1, "", true)
+    end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    NextFrame()
+    Fire(row("Loose").copy, "OnClick")
+    local full = menuItem("Move to Character")
+    check("move: the full tab says so", full and full.text.text:find("(full)", 1, true) ~= nil)
+    MacroSenseMenu:Hide()
+    ns.Window.Move(GetMacroIndexByName("Loose"))
+    check("move: not into a full tab", GetMacroIndexByName("Loose") <= SLOTS.MAX_ACCOUNT_MACROS
+        and printed[#printed]:find("no free character macro slots", 1, true) ~= nil, printed[#printed])
+    for _, name in ipairs(fillers) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("character")
+    NextFrame()
+    Fire(row("Bar A").copy, "OnClick")
+    check("move: back into General from Character", menuItem("Move to General") ~= nil)
+    MacroSenseMenu:Hide()
+    InCombatLockdown = function() return true end
+    ns.Window.Move(GetMacroIndexByName("Bar A"))
+    InCombatLockdown = function() return false end
+    check("move: not in combat", GetMacroIndexByName("Bar A") > SLOTS.MAX_ACCOUNT_MACROS
+        and printed[#printed]:find("cannot be changed in combat", 1, true) ~= nil)
+
+    -- The Classic clients keep bars for each talent group, whatever specialization it has.
+    C_ClassTalents = nil
+    spec = 1
+    bars({ [30] = "Loose" })
+    spec = 2
+    bars({ [30] = "Loose", [31] = "Twin" })
+    local groups = {}
+    for key in pairs(ns.Character().bars) do if key:find("^group") then groups[#groups + 1] = key end end
+    check("bars: Classic, by talent group", #groups == 1 and ns.Character().bars.group1.names.Twin == 1
+        and ns.Character().bars.group1.label == "Demonology", table.concat(groups, ","))
+    for _, name in ipairs({ "Bar A", "Bar B", "Loose", "Twin", "Twin 2", "Char C", "Unused One", "AAA First" }) do
+        while GetMacroIndexByName(name) > 0 do DeleteMacro(GetMacroIndexByName(name)) end
+    end
+    for slot = 30, 34 do actions[slot] = nil end
+    Send("UPDATE_MACROS")
+    ns.db.characters["Alt-Realm"], ns.db.characters["Far-Other"] = nil, nil
+    C_ClassTalents, Spec.GetSpecialization, Spec.GetSpecializationInfo = talents, nil, nil
+    ns.Window.SetScope("general")
+    NextFrame()
 end
 
 -- Theme switch recolors without touching the text.

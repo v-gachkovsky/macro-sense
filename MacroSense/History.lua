@@ -22,10 +22,9 @@ function History.Add(store, name, body, time)
     store[name] = list
 end
 
--- The macro got a new name: its versions go with it, in time order with any kept under that name before.
-function History.Rename(store, old, new)
-    if old == new or not store[old] then return end
-    local a, b, list, i, j = store[new] or {}, store[old], {}, 1, 1
+-- Two lists of versions as one, in time order: the last LIMIT.
+local function Merge(a, b)
+    local list, i, j = {}, 1, 1
     while a[i] or b[j] do
         if not b[j] or (a[i] and a[i].time <= b[j].time) then
             list[#list + 1], i = a[i], i + 1
@@ -34,7 +33,13 @@ function History.Rename(store, old, new)
         end
     end
     while #list > History.LIMIT do table.remove(list, 1) end
-    store[new], store[old] = list, nil
+    return list
+end
+
+-- The macro got a new name: its versions go with it, in time order with any kept under that name before.
+function History.Rename(store, old, new)
+    if old == new or not store[old] then return end
+    store[new], store[old] = Merge(store[new] or {}, store[old]), nil
 end
 
 -- trash: { { name, icon, body, time }, ... }, oldest first. A deleted macro goes in, the oldest go out.
@@ -138,6 +143,14 @@ function History.Scan()
         end
     end
     known = now
+end
+
+-- This editor moves a macro into the other tab: its versions and its last text go along, so it is not taken for
+-- deleted. Before the one in `from` is deleted.
+function History.Moved(from, to, old, new)
+    local source, target = History.Store(from), History.Store(to)
+    if source[old] then target[new], source[old] = Merge(target[new] or {}, source[old]), nil end
+    if known and known[from][old] then known[to][new], known[from][old] = known[from][old], nil end
 end
 
 -- This editor is about to rename a macro: its versions and its last text go with the name.
