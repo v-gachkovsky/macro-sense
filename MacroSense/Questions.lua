@@ -13,6 +13,9 @@ local W = ns.Wizard
 -- Whether nothing is asked after a unit: it always holds, or it is nobody, or clears the target.
 local function Last(unit) return unit == "none" or unit == "clear" or W.Always(unit) end
 
+-- Whether a spell has ranks to pick from: two learned at least (Classic; Retail has none).
+local function Ranked(action) return action ~= nil and action.ranks ~= nil and #action.ranks > 1 end
+
 -- A key's step ("shiftCast", "shiftPet", "shiftOn2"): the key and what is asked about it.
 local function KeyStep(step)
     for _, key in ipairs(W.KEYS) do
@@ -21,10 +24,10 @@ local function KeyStep(step)
     end
 end
 
--- The questions for the form as it is, in order: "what" the macro does; "spell" (/cast, /use), "list" (and
--- "reset" for /castsequence) or "pet"; on whom, "on1" to "on3", each while the one before may not be there, then
--- "byName" when /target goes by name; "keys", and for each key held "shiftCast" (or "shiftPet"), "shiftOn1",
--- "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the first unit checked for it, unless the
+-- The questions for the form as it is, in order: "what" the macro does; "spell" (/cast, /use; "rank" when it has
+-- ranks to pick from), "list" (and "reset" for /castsequence) or "pet"; on whom, "on1" to "on3", each while the one
+-- before may not be there, then "byName" when /target goes by name; "keys", and for each key held "shiftCast" (and
+-- "shiftRank") or "shiftPet", "shiftOn1", "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the first unit checked for it, unless the
 -- game says what the spell is for (a key's own spell too); the pet attacks enemies. `keys`: the keys of this client
 -- (Cmd on a Mac).
 function Questions.Steps(spec, keys)
@@ -49,6 +52,7 @@ function Questions.Steps(spec, keys)
         add("pet")
     elseif not target then
         add("spell")
+        if Ranked(spec.action) then add("rank") end
     end
     if not pet or spec.pet == "attack" then units("on", spec.on, 3) end
     if not list then
@@ -56,7 +60,12 @@ function Questions.Steps(spec, keys)
         for _, key in ipairs(keys) do
             local k = spec.keys[key]
             if k.active then
-                if pet then add(key .. "Pet") elseif not target then add(key .. "Cast") end
+                if pet then
+                    add(key .. "Pet")
+                elseif not target then
+                    add(key .. "Cast")
+                    if Ranked(k.action) then add(key .. "Rank") end
+                end
                 local own = not target and k.action ~= nil and k.reaction ~= nil
                 if not pet or k.pet == "attack" then units(key .. "On", k.on, 2, own) end
             end
@@ -234,6 +243,16 @@ local function PetAnswers()
     return out
 end
 
+-- The ranks of a spell: the one that follows what you learn first, then each one learned, the highest first.
+local function RankAnswers(action)
+    local out = { { key = "", name = L["The highest you know"], hint = action.name } }
+    for i = #action.ranks, 1, -1 do
+        local rank = action.ranks[i]
+        out[#out + 1] = { key = rank, name = rank, hint = W.Spelled({ name = action.name, rank = rank }) }
+    end
+    return out
+end
+
 local function OnlyAnswers()
     return { { key = "friends", name = L["Friends"] }, { key = "enemies", name = L["Enemies"] },
         { key = "any", name = L["Anyone there"] },
@@ -255,6 +274,11 @@ function Questions.Ask(spec, step, keys)
     elseif rest == "Cast" then
         return { kind = "spell", key = key, context = context, text = L["What should the macro cast instead?"],
             hint = L["Leave it empty for the same one, on someone else."] }
+    elseif step == "rank" or rest == "Rank" then
+        local action = key and spec.keys[key].action or spec.action
+        return { kind = "choice", key = key, context = context, text = string.format(L["Which rank of %s?"], action.name),
+            hint = L["Usually the highest you know: it follows when you learn a new one."],
+            answers = RankAnswers(action), chosen = action.rank or "" }
     elseif step == "list" then
         if spec.command == "castsequence" then
             return { kind = "list", text = L["Pick the spells in the order the macro should cast them"],
@@ -309,6 +333,9 @@ function Questions.Choose(spec, step, answer)
     if step == "what" then
         W.Switch(spec, answer)
         if answer == "pet" and spec.pet == "attack" then spec.only = "enemies" end
+    elseif step == "rank" or rest == "Rank" then
+        local action = key and spec.keys[key].action or spec.action
+        action.rank = answer ~= "" and answer or nil
     elseif step == "pet" or rest == "Pet" then
         if key then spec.keys[key].pet = answer else spec.pet = answer end
         if answer == "attack" then spec.only = "enemies" end

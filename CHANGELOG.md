@@ -17,6 +17,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   step the first time; **All options** shows the whole form with the answers so far, **Step by step** goes
   back, and the wizard opens as you left it. In English and Ukrainian.
 
+- **Spell ranks** in the wizard (Classic): a spell with several learned ranks lists them once picked, the spell
+  itself first (the highest rank, also after you learn a new one); step by step it is a question of its own.
+
 ### Changed
 - The tooltip of New (Wizard) says it can ask a few simple questions.
 - In the wizard, a key's own spell is checked for what it is for, whatever the macro's spell is: with Shadow

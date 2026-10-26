@@ -459,6 +459,11 @@ ns.locales.uk = {
     ["With %s held"] = "Із затиснутим %s",
     ["Would you like to add anything else?"] = "Бажаєте додати ще щось?",
     ["Pick any of these, or none."] = "Оберіть що завгодно з цього або нічого.",
+    ["Which rank of %s?"] = "Який ранг «%s»?",
+    ["The highest you know"] = "Найвищий, який ви знаєте",
+    ["Usually the highest you know: it follows when you learn a new one."] =
+        "Зазвичай найвищий, який ви знаєте: він сам оновиться, коли ви вивчите новий.",
+    ["highest rank"] = "найвищий ранг",
     ["Almost done: name your macro"] = "Майже готово: назвіть макрос",
     ["Then drag its icon from the editor onto an action bar."] =
         "Потім перетягніть його іконку з редактора на панель дій.",

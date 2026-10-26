@@ -190,8 +190,15 @@ local function Chain(units)
 end
 
 -- An action is { name = "Flash Heal" }, { name = "Healthstone", item = true } or a slot { name = "13", item = true,
--- label = what is in it }. The game takes spells and items for /cast and /use both: /cast looks for a spell
--- first, /use for an item.
+-- label = what is in it }. A spell may come with the ranks learned (`ranks`, "Rank 1" first) and one picked
+-- (`rank`). The game takes spells and items for /cast and /use both: /cast looks for a spell first, /use for an
+-- item.
+
+-- How the macro names an action: "Shadow Bolt(Rank 3)" with a rank picked, "Shadow Bolt" (the highest learned)
+-- without.
+function Wizard.Spelled(action)
+    return action.rank and action.name .. "(" .. action.rank .. ")" or action.name
+end
 
 -- The clauses of a /cast or /use line: the keys held with their units, then the units in order, those casting the
 -- same next to each other as one ("[mod:alt,@party4][@party1] Flash Heal").
@@ -199,7 +206,7 @@ local function Clauses(spec)
     local out = {}
     local function add(group, action)
         local last = out[#out]
-        if last and last.action.name == action.name and last.action.item == action.item then
+        if last and Wizard.Spelled(last.action) == Wizard.Spelled(action) and last.action.item == action.item then
             last.groups = last.groups .. group
         else
             out[#out + 1] = { groups = group, action = action }
@@ -226,7 +233,7 @@ local function CastLine(spec)
     for i, c in ipairs(clauses) do
         -- A last clause that always holds needs no brackets: "; Frostbolt".
         local groups = (i == #clauses and c.groups == "[]") and "" or (c.groups .. " ")
-        parts[i] = groups .. c.action.name
+        parts[i] = groups .. Wizard.Spelled(c.action)
     end
     return "/" .. spec.command .. " " .. table.concat(parts, "; ")
 end
@@ -266,7 +273,7 @@ end
 -- "/castsequence [@mouseover,harm,nodead][] reset=target Corruption, Immolate": the units hold for the whole list.
 local function ListLine(spec)
     local names = {}
-    for i, action in ipairs(Names(spec)) do names[i] = action.name end
+    for i, action in ipairs(Names(spec)) do names[i] = Wizard.Spelled(action) end
     if #names == 0 then return nil end
     local groups = ""
     for _, unit in ipairs(Chain(spec.on)) do groups = groups .. Group(spec, unit) end
@@ -359,7 +366,7 @@ function Wizard.Text(spec)
     local lines = {}
     if not target or #uses > 0 then
         local first = First(spec)
-        lines[1] = #uses > 0 and first and ("#showtooltip " .. first.name) or "#showtooltip"
+        lines[1] = #uses > 0 and first and ("#showtooltip " .. Wizard.Spelled(first)) or "#showtooltip"
     end
     local pet = spec.command == "pet"
     if not pet then
