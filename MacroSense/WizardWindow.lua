@@ -192,10 +192,9 @@ end
 -- The rows of a spell's ranks: the spell itself first (the highest rank you know, also once you learn a new one),
 -- then each rank learned, the highest first.
 local function RankItems(spell)
-    local out = { { name = spell.name, icon = spell.icon, hint = L["highest rank"], rankOf = spell } }
+    local out = { { name = spell.name, icon = spell.icon, hint = L["highest rank"] } }
     for i = #spell.ranks, 1, -1 do
-        out[#out + 1] = { name = W.Spelled({ name = spell.name, rank = spell.ranks[i] }), icon = spell.icon,
-            rankOf = spell }
+        out[#out + 1] = { name = W.Spelled({ name = spell.name, rank = spell.ranks[i] }), icon = spell.icon }
     end
     return out
 end
@@ -245,7 +244,7 @@ local function SpellBox(parent, width, hint, get, set, candidates)
     function box:Pick(item)
         if not item then return false end
         self:SetText(item.name)
-        if not self.noRanks and not item.rankOf and item.ranks and #item.ranks > 1 then
+        if not self.noRanks and item.ranks and #item.ranks > 1 then
             self:Commit()
             self:SetFocus()
             self.list:Open(RankItems(item))

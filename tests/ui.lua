@@ -2166,6 +2166,18 @@ do
     Fire(cast, "OnEnterPressed")
     check("wizard: a rank picked", cast.text == "Fireball(Rank 2)" and not cast.list:IsShown()
         and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball(Rank 2)", shown())
+    pick(C("command"), "/cast")
+    check("wizard: and shown with it", cast.text == "Fireball(Rank 2)", cast.text)
+    -- A click: the box loses the keys first (the game takes them away), and gets them back for the ranks.
+    TypeIn(cast, "fireball")
+    cast.list.IsMouseOver = function() return true end
+    cast:ClearFocus()
+    Fire(cast.list.rows[1], "OnClick")
+    cast.list.IsMouseOver = nil
+    check("wizard: a click on a spell with ranks: the keys stay for them", cast:HasFocus() and cast.list:IsShown()
+        and cast.list.rows[2].text.text == "Fireball(Rank 3)", cast.list.rows[2].text.text)
+    Fire(cast, "OnEscapePressed")
+    Fire(cast, "OnEscapePressed")
     TypeIn(cast, "fireball")
     Fire(cast, "OnEnterPressed")
     Fire(cast, "OnEnterPressed")
