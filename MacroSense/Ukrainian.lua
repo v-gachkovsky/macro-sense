@@ -94,8 +94,10 @@ ns.locales.uk = {
 
     -- Main window: share, trash, backups
     ["Share"] = "Обмін",
-    ["Macros as a code to copy and send, and codes from others to import."] =
-        "Макроси як код, щоб скопіювати й надіслати, і коди від інших, щоб імпортувати.",
+    ["Share your macros with other players: just pass them the code made for them. Or add someone else's macros "
+        .. "to yours, if you have their code."] =
+        "Діліться своїми макросами з іншими гравцями: просто передайте їм згенерований код. Або додайте собі "
+        .. "чужі макроси, якщо маєте їхній код.",
     ["Export this macro"] = "Експортувати цей макрос",
     ["Its code, as saved, to copy and share."] = "Його код (як збережений), щоб скопіювати й поділитися.",
     ["Save the macro first, then export it."] = "Спершу збережіть макрос, потім експортуйте його.",
@@ -109,8 +111,12 @@ ns.locales.uk = {
         "Вставте код, щоб створити його макроси. Нічого не замінюється: зайнята назва отримує номер, як «Fear 2».",
     ["imported %d of %d macros"] = "імпортовано макросів: %d з %d",
     ["Trash"] = "Кошик",
-    ["Macros deleted here, in the game's macro window or by another addon: pick one to bring it back."] =
-        "Макроси, видалені тут, у стандартному вікні макросів чи іншим аддоном: оберіть, щоб повернути.",
+    ["Macros deleted by this addon, by any other or in the game's macro window land here, and you can bring them "
+        .. "back. The trash keeps the last %d deleted macros of each tab; older ones are deleted by themselves. The "
+        .. "menu shows the %d newest."] =
+        "Макроси, видалені цим аддоном, будь-яким іншим чи стандартним вікном макросів, потрапляють сюди, і ви "
+        .. "можете їх відновити. Кошик тримає останні %d видалених макросів кожної вкладки, старіші видаляються "
+        .. "самі. У меню видно %d найновіших.",
     ["Deleted from %s: %s. Click to bring it back."] = "Видалено з вкладки «%s»: %s. Клацніть, щоб повернути.",
     ["Delete for good"] = "Видалити назавжди",
     ["No deleted macros"] = "Видалених макросів немає",
@@ -122,10 +128,11 @@ ns.locales.uk = {
     ["could not restore the macro"] = "не вдалося повернути макрос",
     ["Backups"] = "Бекапи",
     ["Your macros are saved by themselves the first time you log in each day, if they changed since. You can also "
-        .. "make a backup yourself, any time. To get your macros back as they were, just pick a backup."] =
+        .. "make a backup yourself, any time. To get your macros back as they were, just pick a backup. Each "
+        .. "character keeps its last %d backups; older ones are deleted by themselves."] =
         "Ваші макроси зберігаються самі щодня, коли ви вперше заходите в гру, якщо з минулого разу вони "
         .. "змінилися. Бекап можна зробити й самому, будь-коли. Щоб повернути макроси такими, якими вони були, "
-        .. "просто оберіть бекап.",
+        .. "просто оберіть бекап. Для кожного персонажа лишаються останні %d бекапів, старіші видаляються самі.",
     ["Back up now"] = "Зробити бекап зараз",
     ["Saves all your macros now, General and this character's. Each character keeps its last %d backups; older "
         .. "ones are deleted by themselves."] =

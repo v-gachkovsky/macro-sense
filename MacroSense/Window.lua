@@ -1102,8 +1102,8 @@ local function Build()
     shareBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Share"], 1, 1, 1)
-        GameTooltip:AddLine(L["Macros as a code to copy and send, and codes from others to import."], 0.8, 0.8, 0.8,
-            true)
+        GameTooltip:AddLine(L["Share your macros with other players: just pass them the code made for them. Or add "
+            .. "someone else's macros to yours, if you have their code."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     shareBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1112,8 +1112,10 @@ local function Build()
     trashBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Trash"], 1, 1, 1)
-        GameTooltip:AddLine(L["Macros deleted here, in the game's macro window or by another addon: pick one to "
-            .. "bring it back."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(string.format(L["Macros deleted by this addon, by any other or in the game's macro "
+            .. "window land here, and you can bring them back. The trash keeps the last %d deleted macros of each "
+            .. "tab; older ones are deleted by themselves. The menu shows the %d newest."], ns.History.TRASH,
+            TRASH_SHOWN), 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     trashBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1122,9 +1124,10 @@ local function Build()
     backupsBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Backups"], 1, 1, 1)
-        GameTooltip:AddLine(L["Your macros are saved by themselves the first time you log in each day, if they "
-            .. "changed since. You can also make a backup yourself, any time. To get your macros back as they "
-            .. "were, just pick a backup."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(string.format(L["Your macros are saved by themselves the first time you log in each day, "
+            .. "if they changed since. You can also make a backup yourself, any time. To get your macros back as "
+            .. "they were, just pick a backup. Each character keeps its last %d backups; older ones are deleted by "
+            .. "themselves."], ns.Backups.LIMIT), 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     backupsBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
