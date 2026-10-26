@@ -532,6 +532,16 @@ ns.locales.uk = {
     ["unknown name \"%s\", did you mean \"%s\"?"] = "невідома назва «%s», можливо, «%s»?",
     ["unknown mouse button \"%s\", did you mean \"%s\"?"] = "невідома кнопка миші «%s», можливо, «%s»?",
     ["did you mean \"%s\"?"] = "можливо, «%s»?",
+    -- a spell of yours the game can't cast now (Sources.lua)
+    ["\"%s\": a talent you haven't chosen, the macro can't use it now"] =
+        "«%s»: талант не вибрано, макрос зараз не може його використати",
+    ["talent not chosen"] = "талант не вибрано",
+    ["\"%s\" belongs to %s: you are in another specialization now"] =
+        "«%s» належить до %s: зараз у вас інша спеціалізація",
+    ["%s only"] = "лише для %s",
+    ["\"%s\": you learn it at level %d"] = "«%s»: ви вивчите його на %d рівні",
+    ["\"%s\": you haven't learned it yet"] = "«%s»: ви його ще не вивчили",
+    ["not learned yet"] = "ще не вивчено",
     ["the game reads \"%s\" as no: true clicks on key press"] =
         "гра читає «%s» як «ні»: true натискає при натисканні клавіші",
     ["no button \"%s\" now (an addon may make it later)"] = "зараз немає кнопки «%s» (аддон може створити її пізніше)",

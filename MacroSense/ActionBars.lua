@@ -1,8 +1,9 @@
 -- Shift + right-click on a macro on an action bar opens it in the editor instead of running it, and the
 -- button's tooltip says so; on a Mac it also warns when Cmd with the macro's key is a macOS shortcut, as the
--- editor's status bar does, and such a button turns red. On the game's own buttons and those made from them
--- (Dominos), and on the buttons of LibActionButton (Bartender, ElvUI). The click is caught in the game's
--- secure code, so the buttons work in combat as before and every other click goes on as it did.
+-- editor's status bar does, and such a button turns red. A macro with a spell you don't have now (a talent not
+-- chosen, another specialization's spell) turns yellow, and its tooltip says which. On the game's own buttons and
+-- those made from them (Dominos), and on the buttons of LibActionButton (Bartender, ElvUI). The click is caught in
+-- the game's secure code, so the buttons work in combat as before and every other click goes on as it did.
 local _, ns = ...
 ns = ns or {}
 
@@ -65,8 +66,11 @@ local function Wrap(button)
 end
 
 -- On a Mac, a red tint over a game button whose own key, with Cmd, is a macOS shortcut its macro uses (Cmd+Q
--- quits the game). The key is a binding of the game's bars, so buttons of other addons' bars get none.
-local tints, tinted = {}, {} -- button -> its tint; the buttons that follow their action
+-- quits the game). The key is a binding of the game's bars, so buttons of other addons' bars get none. A yellow
+-- one over a macro with a spell you don't have now, on any button.
+-- tints: button -> its tint; tinted: the buttons that follow their action (true; "lab": LibActionButton's).
+local tints, tinted = {}, {}
+local RED, YELLOW = { 1, 0, 0, 0.4 }, { 1, 0.82, 0, 0.4 }
 
 local function Danger(button)
     local slot = button.action
@@ -77,16 +81,38 @@ local function Danger(button)
     return #ns.Shortcuts.Conflicts(body or "", { GetBindingKey(command) }) > 0
 end
 
+-- What the macro on action slot `slot` says, as saved, about spells the game can't cast now (the editor's
+-- warnings), or nil. Kept by text until the next ActionBars.Tint.
+local missingCache = {}
+local function Missing(slot)
+    local index = type(slot) == "number" and ActionBars.MacroAt(slot)
+    if not index then return nil end
+    local _, _, body = GetMacroInfo(index)
+    body = body or ""
+    local found = missingCache[body]
+    if not found then
+        found = {}
+        for _, e in ipairs(ns.Highlight.Errors(body)) do
+            if e.missing then found[#found + 1] = e.message end
+        end
+        missingCache[body] = found
+    end
+    return #found > 0 and found or nil
+end
+
 local function Tint(button)
-    local danger, tint = Danger(button), tints[button]
-    if danger and not tint then
+    local color = tinted[button] ~= "lab" and Danger(button) and RED or Missing(button.action) and YELLOW or nil
+    local tint = tints[button]
+    if color and not tint then
         tint = button:CreateTexture(nil, "BACKGROUND", nil, 1) -- over the icon, under its border
         tint:SetAllPoints(button.icon)
-        tint:SetColorTexture(1, 0, 0, 0.4)
         if button.IconMask then tint:AddMaskTexture(button.IconMask) end -- the icon's round corners
         tints[button] = tint
     end
-    if tint then tint:SetShown(danger) end
+    if tint then
+        if color then tint:SetColorTexture(color[1], color[2], color[3], color[4]) end
+        tint:SetShown(color ~= nil)
+    end
 end
 
 -- The game calls Update when the button's action changes: a new one on it, a page, a stance.
@@ -97,17 +123,23 @@ local function Follow(button)
     Tint(button)
 end
 
--- Bindings or macros changed: every button again.
+-- LibActionButton tells when its button's action changes; such a button gets the yellow tint only.
+local function FollowLab(button)
+    tinted[button] = tinted[button] or "lab"
+    Tint(button)
+end
+
+-- Bindings, macros, action bars, spells or talents changed: every button again.
 function ActionBars.Tint()
+    missingCache = {}
     for button in pairs(tinted) do Tint(button) end
 end
 
--- A button just made may still be setting itself up: it is taken a frame later. Only the game's own get the
--- tint.
+-- A button just made may still be setting itself up: it is taken a frame later.
 local function Later(button, game)
     C_Timer.After(0, function()
         Wrap(button)
-        if game then Follow(button) end
+        if game then Follow(button) else FollowLab(button) end
     end)
 end
 
@@ -120,13 +152,15 @@ local function MacWarning(slot)
     return ns.Shortcuts.Message(ns.Shortcuts.Conflicts(body or "", ns.Shortcuts.KeysFor(index, name)))
 end
 
--- A macro's tooltip: the macOS warning, on any button, then how to edit it, where the click is ours.
+-- A macro's tooltip: the macOS warning and the spells it can't cast now, on any button, then how to edit it,
+-- where the click is ours.
 local function AddTip(tooltip, slot)
     if GetActionInfo(slot) ~= "macro" then return end
-    local warning, ours = MacWarning(slot), wrapped[tooltip:GetOwner()]
+    local warning, missing, ours = MacWarning(slot), Missing(slot), wrapped[tooltip:GetOwner()]
     if warning then tooltip:AddLine(warning, 1, 0.35, 0.35, true) end -- red, as errors in the editor's tooltips
+    for _, message in ipairs(missing or {}) do tooltip:AddLine(message, 1, 0.82, 0, true) end -- yellow: warnings
     if ours then tooltip:AddLine(ns.L[ActionBars.TIP], 0.34, 0.61, 0.84) end
-    if warning or ours then tooltip:Show() end
+    if warning or missing or ours then tooltip:Show() end
 end
 
 local hooked, watched = false, {} -- watched: the LibActionButton libraries told of new buttons
@@ -151,8 +185,12 @@ function ActionBars.Setup()
         if lib and lib.RegisterCallback and not watched[lib] then
             watched[lib] = true
             lib.RegisterCallback(ActionBars, "OnButtonCreated", function(_, button) Later(button) end)
+            lib.RegisterCallback(ActionBars, "OnButtonUpdate", function(_, button) FollowLab(button) end)
         end
-        for button in pairs(lib and lib.buttonRegistry or {}) do Wrap(button) end
+        for button in pairs(lib and lib.buttonRegistry or {}) do
+            Wrap(button)
+            FollowLab(button)
+        end
     end
 end
 
