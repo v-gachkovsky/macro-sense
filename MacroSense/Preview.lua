@@ -49,8 +49,8 @@ end
 -- One "/command options" line.
 local function command(name, rest, env)
     local P = ns.Parser
-    if P.luaCommands[name] then return { kind = "lua" } end
-    if P.chatCommands[name] then return { kind = "chat" } end
+    if P.luaCommands[name] then return { kind = "runs", command = name } end
+    if P.chatCommands[name] then return { kind = "runs", command = name } end
     local ok, action, unit = pcall(env.parse, rest)
     if not ok then return nil end
     if action == nil then return { kind = "nomatch" } end
@@ -58,7 +58,7 @@ local function command(name, rest, env)
     action = trim(action)
     if P.stopCommands[name] then return { kind = "stop" } end
     local base = P.actionCommands[name]
-    if not base then return { kind = "runs", arg = action ~= "" and action or nil, unit = unit } end
+    if not base then return { kind = "runs", command = name, arg = action ~= "" and action or nil, unit = unit } end
     if action == "" then return { kind = "nothing" } end
     if base == "castsequence" then return sequence(action, unit, env) end
     if base == "castrandom" or base == "userandom" then
@@ -75,12 +75,12 @@ end
 -- Per line (1 .. results.n): what it does now, or nil for an empty line, a comment or a line in `skip`
 -- (lines with syntax errors: how the game reads those is anyone's guess).
 --   { kind = "cast", name, unit?, verb?, step?, steps?, icon? }  casts, uses, equips (verb) or cancels
---   { kind = "runs", arg?, unit? }  another command that runs
+--   { kind = "runs", command, arg?, unit? }  another command that runs: "startattack", chat, Lua
 --   { kind = "nothing" }            a clause matches, but it names no spell or item
 --   { kind = "nomatch" }            no clause matches: the line does nothing
 --   { kind = "stop" }, { kind = "unreached" }  /stopmacro stops here; the lines after it
 --   { kind = "icon", name? }        #showtooltip / #show: the icon shown now (nil: the question mark)
---   { kind = "lua" }, { kind = "chat" }
+--   { kind = "chat" }               a line without a command: it is said in chat
 -- env.parse(options) -> action, unit: the game's SecureCmdOptionParse.
 -- env.sequenceStep(sequence) -> index of the next step: the game's QueryCastSequence (optional).
 function Preview.Evaluate(raw, env, skip)
@@ -128,9 +128,10 @@ function Preview.Evaluate(raw, env, skip)
     return results
 end
 
-local QUIET = { nothing = "nothing", nomatch = "no match", unreached = "not reached", lua = "Lua", chat = "chat" }
+local QUIET = { nothing = "does nothing", nomatch = "conditions not met", unreached = "not reached" }
 
--- The note for one result, with color codes. c = { action, unit, text, dim, warning } ("rrggbb").
+-- The note for one result, with color codes. c = { action, unit, command, text, dim, warning } ("rrggbb"). A
+-- command that runs is named: "runs /startattack", "runs /target @focus".
 function Preview.Note(r, c)
     if not r then return "" end
     local function paint(color, s) return "|cff" .. color .. s .. "|r" end
@@ -140,7 +141,10 @@ function Preview.Note(r, c)
         if r.step then s = s .. paint(c.dim, string.format(" (%d/%d)", r.step, r.steps)) end
         return s .. unit
     elseif r.kind == "runs" then
-        return paint(c.text, L["runs"]) .. (r.arg and " " .. paint(c.action, r.arg) or "") .. unit
+        return paint(c.text, L["runs"] .. " ") .. paint(c.command or c.text, "/" .. r.command)
+            .. (r.arg and " " .. paint(c.action, r.arg) or "") .. unit
+    elseif r.kind == "chat" then
+        return paint(c.text, L["says it in chat"])
     elseif r.kind == "icon" then
         return paint(c.dim, L["icon: "]) .. (r.name and paint(c.action, r.name) or paint(c.dim, "?"))
     elseif r.kind == "stop" then

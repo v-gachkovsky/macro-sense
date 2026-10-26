@@ -976,8 +976,8 @@ function Window.ApplyLook()
     code:SetScheme(scheme)
     ns.Popup:Style(scheme, font.path, ns.db.fontSize)
     local tokens = ns.TokenColors(scheme)
-    noteColors = { action = tokens.action, unit = tokens.unit, text = scheme.text, dim = scheme.dim,
-        warning = scheme.warning }
+    noteColors = { action = tokens.action, unit = tokens.unit, command = tokens.command, text = scheme.text,
+        dim = scheme.dim, warning = scheme.warning }
     UpdatePreview()
     if frame:IsShown() then UpdateStatus() end
 end
