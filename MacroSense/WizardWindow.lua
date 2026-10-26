@@ -315,13 +315,25 @@ local function Block(height)
     return b
 end
 
--- The main spell picked: friends or enemies, when the game says which it is for.
+-- What the game says a spell or item is for: "friends", "enemies" or nil.
+local function ReactionOf(action)
+    return action and ns.sources.reaction(action.name, action.item) or nil
+end
+
+-- The macro's spell picked: friends or enemies, when the game says which it is for; anyone there again when the
+-- game said it for the spell before and doesn't for this one.
 local function FollowReaction(action)
-    local only = action and ns.sources.reaction(action.name, action.item)
-    if only then
-        spec.only = only
+    local reaction = ReactionOf(action)
+    if reaction or spec.reaction then
+        spec.only = reaction or "any"
         controls.only:Refresh()
     end
+    spec.reaction = reaction
+end
+
+-- A key's own spell picked: its units are checked for what it is for (Wizard.Only).
+local function SetKeyAction(key, action)
+    spec.keys[key].action, spec.keys[key].reaction = action, ReactionOf(action)
 end
 
 -- And /cast or /use as it is a spell or an item (you can still choose the other).
@@ -563,7 +575,7 @@ local function BuildSteps()
     end, function(action)
         local key = keyOf()
         if key then
-            spec.keys[key].action = action
+            SetKeyAction(key, action)
         else
             spec.action = action
             FollowReaction(action)
@@ -821,7 +833,8 @@ local function Build()
         function() return spec.only end, function(key) spec.only = key end)
     only:SetPoint("TOPLEFT", X, -35)
     Tip(only, L["Only"], L["What the units above must be: friends, enemies or anyone there. Yourself, As usual and "
-        .. "At the cursor need no check. It follows the spell you pick, when the game knows what it is for."])
+        .. "At the cursor need no check. It follows the spell you pick, when the game knows what it is for; a key's "
+        .. "own spell is checked for what it is for."])
     Check(blocks.on, "alive", L["Alive only"], function() return spec.alive end, function(on) spec.alive = on end)
         :SetPoint("TOPLEFT", X + 136, -35)
 
@@ -834,7 +847,7 @@ local function Build()
         Check(blocks.keys, key, KEY_NAMES[key], function() return spec.keys[key].active end,
             function(on) spec.keys[key].active = on end):SetPoint("TOPLEFT", PAD, y - 1)
         local box = SpellBox(blocks.keys, 150, L["same spell"], function() return spec.keys[key].action end,
-            function(action) spec.keys[key].action = action end)
+            function(action) SetKeyAction(key, action) end)
         box:SetPoint("TOPLEFT", X, y)
         controls[key .. "Cast"] = box
         local row = { y = y, box = box, word = Text(blocks.keys, L["then"], X + 284, y - 5, "dim") }

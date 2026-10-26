@@ -273,7 +273,8 @@ function ns.sources.equipped(slot)
     return linkName(link), link ~= nil and ItemSpell(link) ~= nil
 end
 
--- Whether a spell or item is for friends or enemies, when the game knows: "friends", "enemies" or nil.
+-- Whether a spell or item is for friends or enemies, when the game knows: "friends", "enemies" or nil. Nil too when
+-- it says both (Holy Shock heals friends and hurts enemies).
 local IsHelpful = C_Spell and C_Spell.IsSpellHelpful or IsHelpfulSpell
 local IsHarmful = C_Spell and C_Spell.IsSpellHarmful or IsHarmfulSpell
 local IsHelpfulItem = C_Item and C_Item.IsHelpfulItem or IsHelpfulItem
@@ -283,8 +284,8 @@ function ns.sources.reaction(name, item)
     if item then helpful, harmful = IsHelpfulItem, IsHarmfulItem end
     -- pcall: a name the game doesn't know (a spell of another spec) may be refused.
     local function says(fn) return fn ~= nil and select(2, pcall(fn, name)) == true end
-    if says(harmful) then return "enemies" end
-    if says(helpful) then return "friends" end
+    local harm, help = says(harmful), says(helpful)
+    if harm ~= help then return harm and "enemies" or "friends" end
 end
 
 -- The slots of a bag that hold something, with its name: "/use 0 1".

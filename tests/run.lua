@@ -778,7 +778,7 @@ do
                 for key, row in pairs(v) do
                     local k = spec.keys[key]
                     k.active, k.on = true, row.on or { row.unit or "default", "none" }
-                    k.action, k.pet = row.action, row.pet or k.pet
+                    k.action, k.pet, k.reaction = row.action, row.pet or k.pet, row.reaction
                 end
             else
                 spec[k] = v
@@ -823,6 +823,19 @@ do
         on = { "party1", "none", "none" }, keys = { shift = { unit = "party2" }, ctrl = { unit = "party3" },
         alt = { unit = "party4" } } }), "#showtooltip\n/cast [mod:shift,@party2,help,nodead]"
         .. "[mod:ctrl,@party3,help,nodead][mod:alt,@party4,help,nodead][@party1,help,nodead] Flash Heal")
+    expectText("keys: a spell of its own is checked for what it is for", text({ action = bolt, only = "enemies",
+        reaction = "enemies", keys = { shift = { action = heal, reaction = "friends", unit = "mouseover" },
+        alt = { action = sheep, unit = "focus" } } }), "#showtooltip\n/cast [mod:shift,@mouseover,help,nodead] "
+        .. "Flash Heal; [mod:alt,@focus,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Frostbolt")
+    expectText("keys: the same spell, the form's choice", text({ action = bolt, only = "enemies",
+        keys = { shift = { reaction = "friends", unit = "focus" } } }),
+        "#showtooltip\n/cast [mod:shift,@focus,harm,nodead][@mouseover,harm,nodead][] Frostbolt")
+    check("wizard only: what a key's units are checked for", W.Only(form({ only = "any",
+        keys = { shift = { action = heal, reaction = "friends" } } }), "shift") == "friends"
+        and W.Only(form({ only = "any", keys = { shift = { action = heal } } }), "shift") == "any"
+        and W.Only(form({ command = "focus", only = "enemies",
+            keys = { shift = { action = heal, reaction = "friends" } } }), "shift") == "enemies"
+        and W.Only(form({ only = "friends" }), nil) == "friends")
     expectText("keys: Shift on yourself", text({ action = heal, only = "friends", keys = { shift = { unit = "player" } } }),
         "#showtooltip\n/cast [mod:shift,@player][@mouseover,help,nodead][] Flash Heal")
     local fire = { name = "Fireball" }
@@ -1062,6 +1075,39 @@ do
     spec.alive = true
     Q.Choose(spec, "on1", "player")
     check("questions: nothing after yourself", steps(spec) == "what,spell,on1,keys,also,finish", steps(spec))
+    -- The game says what the spell is for: no question about it, and no unit the spell never goes to.
+    local bolt = W.Fresh()
+    bolt.action, bolt.only, bolt.reaction = { name = "Shadow Bolt" }, "enemies", "enemies"
+    check("questions: the game says it is for enemies: not asked", steps(bolt) == "what,spell,on1,on2,keys,also,finish",
+        steps(bolt))
+    check("questions: a spell for enemies goes to no friend", find(bolt, "on1", "arena1") ~= nil
+        and not find(bolt, "on1", "player") and not find(bolt, "on1", "pet") and not find(bolt, "on1", "party1")
+        and find(bolt, "on1", "focus") ~= nil and find(bolt, "on2", "targettarget") ~= nil, keys(bolt, "on1"))
+    bolt.action, bolt.only, bolt.reaction = { name = "Flash Heal" }, "friends", "friends"
+    check("questions: a spell for friends goes to no enemy", find(bolt, "on1", "party1") ~= nil
+        and find(bolt, "on1", "player") ~= nil and not find(bolt, "on1", "arena1"), keys(bolt, "on1"))
+    bolt.keys.shift.active = true
+    bolt.keys.shift.action, bolt.keys.shift.reaction = { name = "Shadow Bolt" }, "enemies"
+    Q.Choose(bolt, "shiftOn1", "mouseover")
+    check("questions: a key's own spell for what it is for", steps(bolt)
+        == "what,spell,on1,on2,keys,shiftCast,shiftOn1,shiftOn2,also,finish"
+        and find(bolt, "shiftOn1", "arena2") ~= nil and not find(bolt, "shiftOn1", "party2")
+        and ask(bolt, "shiftOn2").hint == "Or the one there is not an enemy, or is dead."
+        and find(bolt, "shiftOn2", "target").name == "On your target, if an enemy"
+        and find(bolt, "on2", "target").name == "On your target, if a friend", steps(bolt))
+    bolt.keys.shift.reaction = nil
+    check("questions: a key's spell the game says nothing about: every unit", find(bolt, "shiftOn1", "party2") ~= nil
+        and find(bolt, "shiftOn1", "arena2") ~= nil and steps(bolt):find("only") == nil, keys(bolt, "shiftOn1"))
+    bolt.reaction = nil
+    check("questions: asked when the game says nothing", steps(bolt)
+        == "what,spell,on1,only,on2,keys,shiftCast,shiftOn1,shiftOn2,also,finish", steps(bolt))
+    bolt.keys.shift.reaction = "enemies"
+    Q.Choose(bolt, "on1", "player")
+    check("questions: not for a key's own spell the game says", steps(bolt)
+        == "what,spell,on1,keys,shiftCast,shiftOn1,shiftOn2,also,finish", steps(bolt))
+    bolt.reaction, bolt.keys.shift.action, bolt.keys.shift.reaction = "enemies", nil, "friends"
+    check("questions: a key casting the macro's spell, for what that is for", not find(bolt, "shiftOn1", "party2")
+        and find(bolt, "shiftOn1", "arena2") ~= nil, keys(bolt, "shiftOn1"))
     check("questions: Next and Back", Q.Next(spec, KEYS, "what") == "spell" and Q.Next(spec, KEYS, "on1") == "keys"
         and Q.Next(spec, KEYS, "keys", true) == "on1" and Q.Next(spec, KEYS, "what", true) == nil
         and Q.Next(spec, KEYS, "finish") == nil and Q.Next(spec, KEYS, "on3") == "what")
@@ -1130,8 +1176,10 @@ do
 
     -- /target: who, friends or enemies, someone by name; nobody ends it, and the name with it.
     spec = W.Fresh()
+    spec.reaction = "enemies" -- what the game said for a spell picked before
     Q.Choose(spec, "what", "target")
     check("questions: /target", steps(spec) == "what,on1,only,on2,keys,also,finish"
+        and find(spec, "on1", "party1") ~= nil and find(spec, "on1", "arena1") ~= nil
         and ask(spec, "on1").text == "Who should become your target?"
         and ask(spec, "only").text == "Friends or enemies?"
         and keys(spec, "on1") == "mouseover,focus,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,"
@@ -1155,6 +1203,13 @@ do
     check("questions: a key's target, or none", steps(spec):find("keys,shiftOn1,also") ~= nil
         and find(spec, "shiftOn1", "clear").name == "Clear target" and keys(spec, "shiftOn1"):find(",clear$") ~= nil
         and not keys(spec, "shiftOn1"):find("byName"), keys(spec, "shiftOn1"))
+    spec.keys.shift.action, spec.keys.shift.reaction = { name = "Shadow Bolt" }, "enemies" -- from a /cast before
+    Q.Choose(spec, "on1", "player")
+    Q.Choose(spec, "shiftOn1", "focus")
+    check("questions: /target keys take no spell of their own", steps(spec)
+        == "what,on1,keys,shiftOn1,only,shiftOn2,also,finish", steps(spec))
+    spec.keys.shift.action, spec.keys.shift.reaction = nil, nil
+    Q.Choose(spec, "on1", "mouseover")
     Q.Choose(spec, "shiftOn1", "clear")
     check("questions: nothing after clearing", steps(spec) == "what,on1,only,on2,keys,shiftOn1,also,finish",
         steps(spec))
@@ -1191,6 +1246,8 @@ do
         and ask(spec, "pet").text == "What should your pet do?" and ask(spec, "pet").chosen == "attack"
         and keys(spec, "pet") == "attack,follow,stay,moveto,passive,defensive,aggressive,dismiss"
         and find(spec, "pet", "follow").hint == "/petfollow", steps(spec))
+    check("questions: the pet attacks no friend",
+        not find(spec, "on1", "party1") and find(spec, "on1", "arena1") ~= nil)
     check("questions: whom it attacks", ask(spec, "on1").text == "Who should your pet attack?"
         and find(spec, "on1", "target").name == "Your target, if an enemy"
         and find(spec, "on1", "default").name == "Your target, as usual" and find(spec, "on1", "default").tip == nil
@@ -1204,6 +1261,9 @@ do
     Q.Choose(spec, "altPet", "attack")
     check("questions: a key's attack, on enemies", steps(spec) == "what,pet,keys,altPet,altOn1,also,finish"
         and spec.only == "enemies", steps(spec))
+    spec.keys.alt.action, spec.keys.alt.reaction = { name = "Flash Heal" }, "friends" -- from a /cast before
+    check("questions: the pet's keys cast nothing of their own", find(spec, "altOn1", "target").name
+        == "Your target, if an enemy" and not find(spec, "altOn1", "party1"), find(spec, "altOn1", "target").name)
     macro("pet: follow, Alt attacks", spec, "/petfollow [nomod:alt]\n/petattack [mod:alt]")
 
     check("questions: the last ones", ask(spec, "also").kind == "also" and ask(spec, "finish").kind == "finish"

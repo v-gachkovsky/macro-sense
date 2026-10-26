@@ -140,7 +140,8 @@ end
 
 -- A fresh form: /cast on Mouseover, then as usual (the macro players make most); no keys held, nothing else. A
 -- key held has its own units in order, two of them. A sequence starts over after 10 seconds once that is asked;
--- the pet attacks without a key; the chat is the party's.
+-- the pet attacks without a key; the chat is the party's. What the game says a spell is for comes with it:
+-- `reaction` for the macro's, a key's own for its spell ("friends", "enemies" or nil).
 function Wizard.Fresh()
     local spec = { command = "cast", on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {},
         list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party" }
@@ -150,15 +151,27 @@ function Wizard.Fresh()
     return spec
 end
 
+-- Friends, enemies or anyone: what the units of `key` (nil: the macro's own) are checked for. A key's own spell is
+-- checked for what the game says it is for (its `reaction`), the rest for the form's choice.
+function Wizard.Only(spec, key)
+    local k = key and spec.keys[key]
+    if k and k.action and k.reaction and not Wizard.IsTarget(spec.command) and spec.command ~= "pet" then
+        return k.reaction
+    end
+    return spec.only
+end
+
 -- "[mod:shift,@mouseover,help,nodead]": the key (`mod`, "mod:shift" or "nomod:shift/ctrl"), the unit, then
--- what it must be. A unit that may not be there without a check is asked for ([@focus,exists]), so the cast goes
--- on to the next one. A cast needs no "@target" (it goes to the target anyway); /focus and /assist do (`named`).
-local function Group(spec, unit, mod, named)
+-- what it must be (`only`: friends or enemies, the form's choice if nil). A unit that may not be there without a
+-- check is asked for ([@focus,exists]), so the cast goes on to the next one. A cast needs no "@target" (it goes to
+-- the target anyway); /focus and /assist do (`named`).
+local function Group(spec, unit, mod, named, only)
     local conds = {}
+    only = only or spec.only
     if mod then conds[#conds + 1] = mod end
     if unit ~= "default" and (named or unit ~= "target") then conds[#conds + 1] = "@" .. unit end
     if filtered[unit] then
-        conds[#conds + 1] = spec.only == "friends" and "help" or spec.only == "enemies" and "harm" or "exists"
+        conds[#conds + 1] = only == "friends" and "help" or only == "enemies" and "harm" or "exists"
         if spec.alive then conds[#conds + 1] = "nodead" end
     end
     return "[" .. table.concat(conds, ",") .. "]"
@@ -196,7 +209,8 @@ local function Clauses(spec)
         local k = spec.keys[key]
         local action = k.active and (k.action or spec.action)
         if action then
-            for _, unit in ipairs(Chain(k.on)) do add(Group(spec, unit, "mod:" .. key), action) end
+            local only = Wizard.Only(spec, key)
+            for _, unit in ipairs(Chain(k.on)) do add(Group(spec, unit, "mod:" .. key, nil, only), action) end
         end
     end
     if spec.action then
