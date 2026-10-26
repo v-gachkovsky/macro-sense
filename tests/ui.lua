@@ -3456,7 +3456,7 @@ do
         if r:IsShown() then rows[#rows + 1] = r.text.text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "") end
     end
     MacroSenseMenu:Hide()
-    check("ukrainian: a menu, with a count", rows[1] == "Зробити копію зараз"
+    check("ukrainian: a menu, with a count", rows[1] == "Зробити бекап зараз"
         and rows[2]:find("^Сьогодні, %d%d:%d%d  2 макроси$") ~= nil, table.concat(rows, " / "))
     ns.char.backups = nil
     ns.Popup:Style(ns.scheme, "Fonts\\Code.ttf", 13)
