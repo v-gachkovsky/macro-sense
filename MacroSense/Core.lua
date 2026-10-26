@@ -26,6 +26,7 @@ ns.defaults = {
     minimapButton = true,
     minimapAngle = 250, -- where on the minimap's edge, in degrees (0 = right, 90 = up)
     language = "en", -- "uk": Ukrainian (Locale.lua)
+    wizardForm = nil, -- the wizard opens on its whole form, not its questions one at a time
     welcomeSeen = nil, -- version the early-development note was shown for
 }
 

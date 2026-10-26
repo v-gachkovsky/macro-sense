@@ -1,30 +1,40 @@
--- The macro wizard: a window with a form. Pick the command, what it casts or uses, on whom and in what order,
--- what Shift, Ctrl, Alt (Cmd on a Mac) do instead, and what else the macro does; the macro shows under the form
--- as you choose, and Create macro saves it and opens it in the editor. The text comes from Wizard.lua.
+-- The macro wizard: a window with a form, or with its questions one at a time (Step by step: for players new to
+-- macros, and what it shows the first time). Pick the command, what it casts or uses, on whom and in what order,
+-- what Shift, Ctrl, Alt (Cmd on a Mac) do instead, and what else the macro does; the macro shows at the bottom as
+-- you choose, and Create macro saves it and opens it in the editor. The text comes from Wizard.lua, the questions
+-- from Questions.lua.
 local _, ns = ...
 local L = ns.L
 
 local WizardWindow = {}
 ns.WizardWindow = WizardWindow
 
-local W = ns.Wizard
+local W, Q = ns.Wizard, ns.Questions
 local WIDTH, PAD, LABEL, ROW = 600, 14, 70, 32
 local X = PAD + LABEL -- where the controls of a row start
 local TOP = 84 -- the title bar and the command row
 local BOTTOM = 322 -- Also, the macro and the buttons, at the bottom whatever the command
+local STEPS_H = 510 -- the window step by step, whatever the question
+local STEP_TOP = 124 -- where the answers start, under a question and a hint of two lines and one
+local ANSWERS, ANSWER_W = 16, 280 -- the answers a question shows: two columns of eight at most
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
 local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
 
 local frame, preview, counter, createBtn
+local form, steps -- the form's parts and the questions': one of them is shown
 local blocks = {} -- parts of the form, one under another: what (one / list / name / pet), on whom, the rest
 local keyRows = {} -- per key: its spell box, pet command and unit lists, placed by Arrange
+local panels = {} -- the answers of a question, by its kind (Questions.Ask): a choice, a spell box, checks...
 local controls = {} -- by name: what the tests drive and what starts over with each new form
 local spec -- the answers so far
 local scope -- the tab the macro goes into
 local suggested -- the name the form put in the name box, until someone types another
-local Arrange
+local keys -- the keys a macro checks here: Cmd only on a Mac
+local stepsShown -- the questions are shown, not the form
+local step, asked -- the question shown (Questions.Steps) and what it asks (Questions.Ask)
+local Arrange, Answered, Go
 
 local function Letters(s)
     return select(2, s:gsub("[^\128-\191]", ""))
@@ -47,13 +57,17 @@ local function Tip(owner, title, text)
     owner:HookScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
--- The answers changed: the macro under the form, its length, a name while none was typed.
+-- The name box shown: the form's, or the last question's.
+local function NameBox() return stepsShown and controls.stepName or controls.name end
+
+-- The answers changed: the macro at the bottom, its length, a name while none was typed, Next.
 local function Update()
     local text, name = W.Text(spec), W.Name(spec)
-    local typed = strtrim(controls.name:GetText())
+    local box = NameBox()
+    local typed = strtrim(box:GetText())
     if name and (typed == "" or typed == suggested) then
         suggested = ns.Window.FreeName(name)
-        controls.name:SetText(suggested)
+        box:SetText(suggested)
     end
     local s = ns.scheme
     preview:SetText(text and ns.Highlight.Colorize(text, ns.TokenColors(s))
@@ -61,6 +75,7 @@ local function Update()
     local letters = text and Letters(text) or 0
     counter:SetText(string.format("|cff%s%d / %d|r", letters > MAX_BODY and s.invalid or s.dim, letters, MAX_BODY))
     createBtn:SetEnabled(text ~= nil and letters <= MAX_BODY)
+    if stepsShown and asked then controls.next:SetEnabled(Answered()) end
 end
 
 ------------------------------------------------------------------------
@@ -183,6 +198,7 @@ local function SpellBox(parent, width, hint, get, set, candidates)
     local placeholder = ns.Text(box, 12, "dim")
     placeholder:SetPoint("LEFT", 6, 0)
     placeholder:SetText(hint)
+    box.placeholder = placeholder
     local function idle() placeholder:SetShown(box:GetText() == "" and not box:HasFocus()) end
 
     function box:Commit()
@@ -292,17 +308,11 @@ end
 
 -- A part of the form: as wide as the window, `height` tall, placed by Arrange.
 local function Block(height)
-    local b = CreateFrame("Frame", nil, frame)
+    local b = CreateFrame("Frame", nil, form)
     b:SetSize(WIDTH, height)
     b.height = height
     b:Hide()
     return b
-end
-
-local function FirstOf(list)
-    for i = 1, W.LIST do
-        if list[i] then return list[i] end
-    end
 end
 
 -- The main spell picked: friends or enemies, when the game says which it is for.
@@ -324,17 +334,9 @@ local function FollowKind(action)
     end
 end
 
--- Another command: what was picked comes along, the spell of /cast starting a list and the first of a list
--- becoming the spell.
+-- Another command: what was picked comes along (Wizard.Switch).
 local function SwitchTo(command)
-    local wasList = W.IsList(spec.command)
-    spec.command = command
-    if W.IsList(command) and not wasList and spec.action and not FirstOf(spec.list) then
-        spec.list[1] = spec.action
-    elseif not W.IsList(command) and wasList and not spec.action then
-        spec.action = FirstOf(spec.list)
-    end
-    W.Fit(spec) -- units the command doesn't take become ones it does
+    W.Switch(spec, command)
     for _, control in pairs(controls) do
         if control.Refresh then control:Refresh() end
     end
@@ -385,15 +387,302 @@ function Arrange()
         b:Show()
         y = y - b.height
     end
-    frame:SetHeight(-y + BOTTOM)
+    if not stepsShown then frame:SetHeight(-y + BOTTOM) end
     controls.castLabel:SetText(spec.command == "use" and L["Use"] or L["Cast"])
     controls.listTitle:SetText(spec.command == "castsequence" and L["In turn, one per press"]
         or spec.command == "castrandom" and L["One of these at random"] or "")
 end
 
+-- What else the macro does, in three columns of yes / no, then a buff to cancel first and what to say in chat last:
+-- in the form, and as a question. `prefix` names the controls: "" the form's ("stopcasting"), "step" the
+-- question's ("stepStopcasting").
+local function BuildAlso(parent, prefix)
+    local function named(name) return prefix == "" and name or prefix .. (name:gsub("^%l", string.upper)) end
+    -- By name and by place from the top left.
+    local also = {
+        { "stopcasting", L["Stop your cast first"], L["For an interrupt or a save: it goes off at once, even in the "
+            .. "middle of another cast."] },
+        { "trinket1", L["Trinket 1"] },
+        { "nearest", L["Nearest enemy if none"], L["When your target is not an enemy, or is dead, the nearest enemy "
+            .. "becomes the target first (/targetenemy [noharm][dead])."] },
+        { "startattack", L["Start auto attack"] },
+        { "trinket2", L["Trinket 2"], L["Your trinkets go off first (/use 13, /use 14), whenever they are ready."] },
+        { "cancelform", L["Leave your form first"], L["Out of a form or stance first (/cancelform): to heal out of "
+            .. "Bear Form, say."] },
+        { "petattack", L["Pet attacks your target"] },
+        { "dismount", L["Off your mount first"], L["Off the mount first (/dismount [mounted]), so the cast doesn't "
+            .. "fail on it."] },
+    }
+    for i, c in ipairs(also) do
+        local name = c[1]
+        local check = Check(parent, named(name), c[2], function() return spec[name] end,
+            function(on) spec[name] = on end)
+        check:SetPoint("TOPLEFT", PAD + (i - 1) % 3 * 192, -math.floor((i - 1) / 3) * 24)
+        if c[3] then Tip(check, c[2], c[3]) end
+    end
+    Text(parent, L["Cancel a buff"], PAD, -78)
+    local buff = SpellBox(parent, 200, L["the buff's name"], function() return spec.cancelaura end,
+        function(action) spec.cancelaura = action end, ns.sources.buffs)
+    buff:SetPoint("TOPLEFT", PAD + 120, -74)
+    controls[named("cancelaura")] = buff
+    Tip(buff, L["Cancel a buff first"], L["Removes the buff before the rest (/cancelaura Ice Block): leave it empty "
+        .. "for none. It offers the buffs on you now and those you have had."])
+    Text(parent, L["Say in chat"], PAD, -110)
+    Choice(parent, named("channel"), 100, W.channels, function() return spec.channel end,
+        function(key) spec.channel = key end):SetPoint("TOPLEFT", PAD + 120, -107)
+    local say = ns.Input(parent, 344, 255)
+    say:SetPoint("TOPLEFT", PAD + 228, -106)
+    say:SetScript("OnTextChanged", function(self, userInput)
+        if not userInput then return end
+        spec.say = self:GetText()
+        Update()
+    end)
+    function say:Refresh() self:SetText(spec.say or "") end
+    Tip(say, L["Say in chat"], L["Said after the rest, in the channel on the left; %t is your target's name. Leave "
+        .. "it empty to say nothing."])
+    controls[named("say")] = say
+end
+
+-- Cmd on a key macOS keeps for itself: what it does there.
+local function CmdTip(check)
+    Tip(check, "Cmd", L["On a key macOS uses with Cmd itself (Q quits the game, W, H, Tab, Space...) macOS comes "
+        .. "first: the editor warns when the macro sits on one."])
+end
+
+------------------------------------------------------------------------
+-- Step by step: the form's questions one at a time (Questions.lua)
+------------------------------------------------------------------------
+-- Whether the question has its answer: a spell for the macro (a key's may stay empty: it casts the macro's), one
+-- in the list, a name to look for. What is being typed counts: Next takes it.
+function Answered()
+    local kind = asked and asked.kind
+    local function typed(box) return strtrim(box:GetText() or "") ~= "" end
+    if kind == "spell" then return spec.action ~= nil or typed(controls.stepSpell) end
+    if kind == "list" then
+        for i = 1, W.LIST do
+            if spec.list[i] or typed(controls["stepList" .. i]) then return true end
+        end
+        return false
+    end
+    if kind == "byName" then return strtrim(spec.byName or "") ~= "" end
+    return true
+end
+
+-- The question of `step`: what it asks and its answers; Back, and Next or at the end Create macro.
+local function ShowStep()
+    asked = Q.Ask(spec, step, keys)
+    controls.context:SetText(asked.context or "")
+    controls.question:SetText(asked.text or "")
+    controls.hint:SetText(asked.hint or "")
+    for kind, panel in pairs(panels) do panel:SetShown(kind == asked.kind) end
+    for i = 1, ANSWERS do
+        local b, answer = controls["answer" .. i], asked.answers and asked.answers[i]
+        b:SetShown(answer ~= nil)
+        if answer then
+            b.key, b.tip = answer.key, answer.tip
+            b.label:SetText(answer.name)
+            b.hint:SetText(answer.hint or "")
+            b:SetChosen(answer.key == asked.chosen)
+        end
+    end
+    for _, control in pairs(controls) do
+        if control.Refresh then control:Refresh() end
+    end
+    -- A key casts the macro's spell unless it has one of its own.
+    local box = controls.stepSpell
+    box.placeholder:SetText(asked.key and L["same spell"] or L["type a spell or item"])
+    if asked.kind == "spell" and not asked.key and not spec.action then box:SetFocus() end
+    controls.stepGeneral:SetChosen(scope == "general")
+    controls.stepCharacter:SetChosen(scope == "character")
+    controls.back:SetEnabled(Q.Next(spec, keys, step, true) ~= nil)
+    controls.next:SetShown(asked.kind ~= "finish")
+    controls.next:SetEnabled(Answered())
+    createBtn:SetShown(asked.kind == "finish")
+end
+
+-- What is being typed is taken, as if Enter was pressed.
+local function TakeTyped()
+    for _, control in pairs(controls) do
+        if control.HasFocus and control:HasFocus() then control:ClearFocus() end
+    end
+end
+
+-- On to the next question, or back to the one before. What is being typed is taken first.
+function Go(back)
+    TakeTyped()
+    if not back and not Answered() then return end
+    step = Q.Next(spec, keys, step, back) or step
+    ShowStep()
+end
+
+-- The question, what it is about (a key held) and a hint over it; under them the answers of its kind.
+local function BuildSteps()
+    steps = CreateFrame("Frame", nil, frame)
+    steps:SetAllPoints()
+    controls.context = ns.Text(steps, 12, "dim")
+    controls.context:SetPoint("TOPLEFT", PAD, -44)
+    controls.question = ns.Text(steps, 14)
+    controls.question:SetPoint("TOPLEFT", PAD, -60)
+    controls.question:SetWidth(WIDTH - 2 * PAD)
+    controls.hint = ns.Text(steps, 12, "dim")
+    controls.hint:SetPoint("TOPLEFT", controls.question, "BOTTOMLEFT", 0, -6)
+    controls.hint:SetWidth(WIDTH - 2 * PAD)
+    for _, kind in ipairs({ "choice", "spell", "list", "reset", "byName", "keys", "also", "finish" }) do
+        local panel = CreateFrame("Frame", nil, steps)
+        panel:SetPoint("TOPLEFT", 0, -STEP_TOP)
+        panel:SetSize(WIDTH, STEPS_H - STEP_TOP - 150)
+        panel:Hide()
+        panels[kind] = panel
+    end
+
+    -- A choice: a click answers and goes on. The hint says the macro's words for it, the tooltip what it is.
+    for i = 1, ANSWERS do
+        local b = ns.Answer(panels.choice, ANSWER_W, function(self)
+            Q.Choose(spec, step, self.key)
+            Update()
+            Go()
+        end)
+        b:SetPoint("TOPLEFT", PAD + (i - 1) % 2 * (ANSWER_W + 12), -math.floor((i - 1) / 2) * 28)
+        b:HookScript("OnEnter", function(self)
+            if not self.tip then return end
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(self.label:GetText(), 1, 1, 1)
+            GameTooltip:AddLine(self.tip, 0.8, 0.8, 0.8, true)
+            GameTooltip:Show()
+        end)
+        b:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        controls["answer" .. i] = b
+    end
+
+    -- A spell or item: the macro's, or a key's. Picked from the list, it goes on.
+    local function keyOf() return asked and asked.key end
+    local box = SpellBox(panels.spell, 400, L["type a spell or item"], function()
+        local key = keyOf()
+        if key then return spec.keys[key].action end
+        return spec.action
+    end, function(action)
+        local key = keyOf()
+        if key then
+            spec.keys[key].action = action
+        else
+            spec.action = action
+            FollowReaction(action)
+            FollowKind(action)
+        end
+    end)
+    box:SetPoint("TOPLEFT", PAD, 0)
+    box:HookScript("OnTextChanged", function() controls.next:SetEnabled(Answered()) end)
+    local pick = box.Pick
+    function box:Pick(item)
+        pick(self, item)
+        if item then Go() end
+    end
+    controls.stepSpell = box
+
+    -- A list, in two columns read across.
+    for i = 1, W.LIST do
+        local x, y = PAD + 16 + (i - 1) % 2 * 272, -math.floor((i - 1) / 2) * ROW
+        Text(panels.list, tostring(i), x - 16, y - 5, "dim")
+        local item = SpellBox(panels.list, 236, L["spell or item"], function() return spec.list[i] end,
+            function(action)
+                spec.list[i] = action
+                if i == 1 then FollowReaction(action) end
+            end)
+        item:SetPoint("TOPLEFT", x, y)
+        item:HookScript("OnTextChanged", function() controls.next:SetEnabled(Answered()) end)
+        controls["stepList" .. i] = item
+    end
+
+    -- What starts a sequence over: one a line.
+    local y = 0
+    for _, what in ipairs(W.RESETS) do
+        local label = what == "target" and L["When you take a new target"] or what == "combat"
+            and L["When combat ends"] or string.format(L["When you press it with %s held"], KEY_NAMES[what])
+        Check(panels.reset, "stepReset" .. what:gsub("^%l", string.upper), label,
+            function() return spec.reset[what] end, function(on) spec.reset[what] = on end):SetPoint("TOPLEFT", PAD, y)
+        y = y - 26
+    end
+    local timed = Check(panels.reset, "stepResetTimed", L["After"], function() return spec.reset.timed end,
+        function(on) spec.reset.timed = on end)
+    timed:SetPoint("TOPLEFT", PAD, y)
+    local seconds = ns.Stepper(panels.reset, 1, 60, function() return spec.reset.seconds end, function(v)
+        spec.reset.seconds = v
+        Update()
+    end)
+    seconds:SetPoint("LEFT", timed, "RIGHT", 8, 0)
+    controls.stepResetSeconds = seconds
+    local secondsText = ns.Text(panels.reset, 12, "dim")
+    secondsText:SetPoint("LEFT", seconds, "RIGHT", 8, 0)
+    secondsText:SetText(L["seconds without a press"])
+
+    -- /target by name. Enter goes on.
+    local name = ns.Input(panels.byName, 240, 60)
+    name:SetPoint("TOPLEFT", PAD, 0)
+    name:SetScript("OnTextChanged", function(self, userInput)
+        if not userInput then return end
+        spec.byName = self:GetText()
+        Update()
+    end)
+    name:SetScript("OnEnterPressed", function() Go() end)
+    function name:Refresh() self:SetText(spec.byName or "") end
+    controls.stepByName = name
+
+    -- The keys held: what each one does comes next.
+    for i, key in ipairs(keys) do
+        Check(panels.keys, "step" .. KEY_NAMES[key], KEY_NAMES[key], function() return spec.keys[key].active end,
+            function(on) spec.keys[key].active = on end):SetPoint("TOPLEFT", PAD, -(i - 1) * 26)
+    end
+    if controls.stepCmd then CmdTip(controls.stepCmd) end
+
+    BuildAlso(panels.also, "step")
+
+    -- The name and the tab. Enter in the name creates the macro.
+    Text(panels.finish, L["Name"], PAD, -5)
+    controls.stepName = ns.Input(panels.finish, 200, 16)
+    controls.stepName:SetPoint("TOPLEFT", PAD + 60, 0)
+    controls.stepName:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+        WizardWindow.Create()
+    end)
+    local tabs = { { "general", L["For all your characters"] }, { "character", L["Only for this character"] } }
+    for i, tab in ipairs(tabs) do
+        local b = ns.Answer(panels.finish, ANSWER_W, function(self)
+            scope = self.key
+            controls.stepGeneral:SetChosen(scope == "general")
+            controls.stepCharacter:SetChosen(scope == "character")
+        end)
+        b.key = tab[1]
+        b.label:SetText(tab[2])
+        b:SetPoint("TOPLEFT", PAD + (i - 1) * (ANSWER_W + 12), -40)
+        controls[i == 1 and "stepGeneral" or "stepCharacter"] = b
+    end
+end
+
+-- The form or its questions, as chosen last: the questions the first time. They start from the first one.
+local function ShowMode()
+    stepsShown = not ns.db.wizardForm
+    form:SetShown(not stepsShown)
+    steps:SetShown(stepsShown)
+    controls.mode.label:SetText(stepsShown and L["All options"] or L["Step by step"])
+    controls.cancel:SetShown(not stepsShown)
+    controls.back:SetShown(stepsShown)
+    if stepsShown then
+        step = "what"
+        frame:SetHeight(STEPS_H)
+        return ShowStep()
+    end
+    asked = nil
+    controls.next:Hide()
+    createBtn:Show()
+    for _, control in pairs(controls) do
+        if control.Refresh then control:Refresh() end
+    end
+    Arrange()
+end
+
 local function Build()
     -- Cmd is a key only on a Mac.
-    local keys = {}
+    keys = {}
     for _, key in ipairs(W.KEYS) do
         if key ~= "cmd" or (IsMacClient and IsMacClient()) then keys[#keys + 1] = key end
     end
@@ -432,16 +721,37 @@ local function Build()
     titleText:SetText(L["New macro (Wizard)"])
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
+    -- The form or its questions: the answers and the name typed stay.
+    local mode = ns.Button(title, "", 110, function()
+        TakeTyped()
+        local name = NameBox():GetText()
+        ns.db.wizardForm = stepsShown or nil
+        ShowMode()
+        NameBox():SetText(name)
+        Update()
+    end)
+    mode:SetPoint("RIGHT", close, "LEFT", -6, 0)
+    mode:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine(self.label:GetText(), 1, 1, 1)
+        GameTooltip:AddLine(stepsShown and L["The whole form at once, with what you chose so far."]
+            or L["One question at a time, in plain words. What you chose stays."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    mode:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    controls.mode = mode
 
+    form = CreateFrame("Frame", nil, frame)
+    form:SetAllPoints()
     -- The command, the name, the tab.
-    Text(frame, L["Command"], PAD, -55)
-    Choice(frame, "command", 130, W.commands, function() return spec.command end, SwitchTo)
+    Text(form, L["Command"], PAD, -55)
+    Choice(form, "command", 130, W.commands, function() return spec.command end, SwitchTo)
         :SetPoint("TOPLEFT", X, -51)
-    Text(frame, L["Name"], X + 144, -55)
-    controls.name = ns.Input(frame, 140, 16)
+    Text(form, L["Name"], X + 144, -55)
+    controls.name = ns.Input(form, 140, 16)
     controls.name:SetPoint("TOPLEFT", X + 186, -50)
-    Text(frame, L["Tab"], X + 338, -55)
-    Choice(frame, "tab", 110, { { key = "general", name = "General" }, { key = "character", name = "Character" } },
+    Text(form, L["Tab"], X + 338, -55)
+    Choice(form, "tab", 110, { { key = "general", name = "General" }, { key = "character", name = "Character" } },
         function() return scope end, function(key) scope = key end):SetPoint("TOPLEFT", X + 392, -51)
 
     -- One spell or item: /cast, /use.
@@ -541,10 +851,7 @@ local function Build()
         end
         keyRows[key] = row
     end
-    if controls.cmd then
-        Tip(controls.cmd, "Cmd", L["On a key macOS uses with Cmd itself (Q quits the game, W, H, Tab, Space...) "
-            .. "macOS comes first: the editor warns when the macro sits on one."])
-    end
+    if controls.cmd then CmdTip(controls.cmd) end
 
     -- What starts a sequence over (/castsequence).
     blocks.reset = Block(8 + 22 + 2 * 26)
@@ -575,48 +882,13 @@ local function Build()
 
     -- Also, the macro, the buttons: at the bottom, from the bottom up.
     local function Low(region, x, y) region:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", x, y) end
-    Low(Text(frame, L["Also"], 0, 0, "dim"), PAD, 314)
-    -- Three columns of yes / no, by name and by place from the top left.
-    local also = {
-        { "stopcasting", L["Stop your cast first"], L["For an interrupt or a save: it goes off at once, even in the "
-            .. "middle of another cast."] },
-        { "trinket1", L["Trinket 1"] },
-        { "nearest", L["Nearest enemy if none"], L["When your target is not an enemy, or is dead, the nearest enemy "
-            .. "becomes the target first (/targetenemy [noharm][dead])."] },
-        { "startattack", L["Start auto attack"] },
-        { "trinket2", L["Trinket 2"], L["Your trinkets go off first (/use 13, /use 14), whenever they are ready."] },
-        { "cancelform", L["Leave your form first"], L["Out of a form or stance first (/cancelform): to heal out of "
-            .. "Bear Form, say."] },
-        { "petattack", L["Pet attacks your target"] },
-        { "dismount", L["Off your mount first"], L["Off the mount first (/dismount [mounted]), so the cast doesn't "
-            .. "fail on it."] },
-    }
-    for i, c in ipairs(also) do
-        local name = c[1]
-        Low(Check(frame, name, c[2], function() return spec[name] end, function(on) spec[name] = on end),
-            PAD + (i - 1) % 3 * 192, 292 - math.floor((i - 1) / 3) * 24)
-        if c[3] then Tip(controls[name], c[2], c[3]) end
-    end
-    -- A buff to cancel first, and what to say in chat last.
-    Low(Text(frame, L["Cancel a buff"], 0, 0), PAD, 214)
-    controls.cancelaura = SpellBox(frame, 200, L["the buff's name"], function() return spec.cancelaura end,
-        function(action) spec.cancelaura = action end, ns.sources.buffs)
-    Low(controls.cancelaura, PAD + 120, 218)
-    Tip(controls.cancelaura, L["Cancel a buff first"], L["Removes the buff before the rest (/cancelaura Ice Block): "
-        .. "leave it empty for none. It offers the buffs on you now and those you have had."])
-    Low(Text(frame, L["Say in chat"], 0, 0), PAD, 182)
-    Low(Choice(frame, "channel", 100, W.channels, function() return spec.channel end,
-        function(key) spec.channel = key end), PAD + 120, 185)
-    controls.say = ns.Input(frame, 344, 255)
-    Low(controls.say, PAD + 228, 186)
-    controls.say:SetScript("OnTextChanged", function(self, userInput)
-        if not userInput then return end
-        spec.say = self:GetText()
-        Update()
-    end)
-    function controls.say:Refresh() self:SetText(spec.say or "") end
-    Tip(controls.say, L["Say in chat"], L["Said after the rest, in the channel on the left; %t is your target's name. "
-        .. "Leave it empty to say nothing."])
+    Low(Text(form, L["Also"], 0, 0, "dim"), PAD, 314)
+    local also = CreateFrame("Frame", nil, form)
+    also:SetSize(WIDTH, 140)
+    Low(also, 0, 292)
+    BuildAlso(also, "")
+
+    BuildSteps()
 
     local box = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     box:SetPoint("BOTTOMLEFT", PAD, 50)
@@ -638,33 +910,39 @@ local function Build()
     controls.create = createBtn
     local cancel = ns.Button(frame, L["Cancel"], 80, function() frame:Hide() end)
     cancel:SetPoint("RIGHT", createBtn, "LEFT", -6, 0)
+    controls.cancel = cancel
+    -- Step by step: Next where Create macro is, Back where Cancel is.
+    controls.next = ns.Button(frame, L["Next >"], 110, function() Go() end, true)
+    controls.next:SetPoint("BOTTOMRIGHT", -PAD, PAD)
+    controls.back = ns.Button(frame, L["< Back"], 80, function() Go(true) end)
+    controls.back:SetPoint("RIGHT", createBtn, "LEFT", -6, 0)
 end
 
 -- The macro goes into the tab chosen, under the name in the box (a free one: "Fear 2" when "Fear" is taken).
 function WizardWindow.Create()
     local text = W.Text(spec)
     if not text then return end
-    local name = strtrim(controls.name:GetText())
+    local name = strtrim(NameBox():GetText())
     if name == "" then name = W.Name(spec) or L["Macro"] end
     ns.Window.CreateFromWizard(name, text, scope)
 end
 
--- A fresh form, for a macro in `tab`.
+-- A fresh form, for a macro in `tab`: the questions from the first, or the form.
 function WizardWindow.Open(tab)
     spec, scope, suggested = W.Fresh(), tab or "general", nil -- before the form: its controls read them
     if not frame then Build() end
     controls.name:SetText("")
+    controls.stepName:SetText("")
     -- The editor's font, when it is one of ours (not one from another addon).
     local font = ns.FindByKey(ns.fonts, ns.db.font)
     preview:SetFont(font and font.path or ns.UIFont(), 12, "")
-    for slot, check in pairs({ [13] = controls.trinket1, [14] = controls.trinket2 }) do
+    for slot = 13, 14 do
         local name = ns.sources.equipped(slot)
-        check:SetLabel(string.format(L["Trinket %d: %s"], slot - 12, name and Short(name, 14) or L["empty"]))
+        local label = string.format(L["Trinket %d: %s"], slot - 12, name and Short(name, 14) or L["empty"])
+        controls["trinket" .. (slot - 12)]:SetLabel(label)
+        controls["stepTrinket" .. (slot - 12)]:SetLabel(label)
     end
-    for _, control in pairs(controls) do
-        if control.Refresh then control:Refresh() end
-    end
-    Arrange()
+    ShowMode()
     Update()
     frame:Show()
     frame:Raise()
@@ -683,5 +961,7 @@ end
 
 -- A control of the form by name: "command", "cast", "list1", "byName", "on1", "shift", "shiftCast", "shiftOn", "shiftThen",
 -- "resetTarget", "resetTimed", "resetSeconds", "pet", "shiftPet", "trinket1", "cancelaura", "channel", "say",
--- "create", ... (the tests fill the form through it).
+-- "create", ...; of the questions: "mode", "question", "hint", "context", "answer1", "stepSpell", "stepList1",
+-- "stepResetTarget", "stepByName", "stepShift", "stepStopcasting", "stepName", "stepGeneral", "back", "next"... (the
+-- tests fill the form through it).
 function WizardWindow.Control(name) return controls[name] end

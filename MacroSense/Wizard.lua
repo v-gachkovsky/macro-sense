@@ -90,6 +90,10 @@ end
 -- After these nothing is asked: they always hold.
 local ALWAYS = { default = true, player = true, cursor = true }
 
+-- Whether a unit always holds (nothing after it is tried), and whether it is checked (friends / enemies / alive).
+function Wizard.Always(unit) return ALWAYS[unit] == true end
+function Wizard.Checked(unit) return filtered[unit] == true end
+
 -- Whether a command takes a unit: a cast any; /target, /focus and /assist neither As usual nor the cursor,
 -- /target not your target (the game would target nothing) and /focus not the focus; the pet attacks neither
 -- the cursor, you nor itself.
@@ -220,6 +224,19 @@ local function Names(spec)
         if spec.list[i] then out[#out + 1] = spec.list[i] end
     end
     return out
+end
+
+-- Another command: what was picked comes along, the spell of /cast starting a list and the first of a list
+-- becoming the spell; units it doesn't take become ones it does.
+function Wizard.Switch(spec, command)
+    local wasList = Wizard.IsList(spec.command)
+    spec.command = command
+    if Wizard.IsList(command) and not wasList and spec.action and not Names(spec)[1] then
+        spec.list[1] = spec.action
+    elseif not Wizard.IsList(command) and wasList and not spec.action then
+        spec.action = Names(spec)[1]
+    end
+    Wizard.Fit(spec)
 end
 
 -- "reset=10/target/combat " for what starts a sequence over, "" for nothing.

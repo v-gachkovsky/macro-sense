@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Step by step** in the wizard: one question at a time, in plain words, for players new to macros. What the
+  macro should do, the spell or item, where it goes and who then when that one is not there, friends or
+  enemies (friends dead or alive, for a resurrection), what Shift, Ctrl or Alt (Cmd on a Mac) do, anything
+  else, the name and who keeps the macro. Each answer shows the macro's words for it (`@mouseover`), the macro
+  shows at the bottom from the first answer, and Back goes back with the answers kept. The wizard asks step by
+  step the first time; **All options** shows the whole form with the answers so far, **Step by step** goes
+  back, and the wizard opens as you left it. In English and Ukrainian.
+
+### Changed
+- The tooltip of New (Wizard) says it can ask a few simple questions.
+
 ## [0.6.1] - 2026-10-26
 
 ### Changed

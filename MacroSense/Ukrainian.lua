@@ -89,10 +89,12 @@ ns.locales.uk = {
         "Копія для всіх ваших персонажів під вільною назвою на кшталт «Fear 2».",
     ["New"] = "Новий",
     ["New (Wizard)"] = "Майстер",
-    ["Create a new macro with the built-in wizard! Pick what to cast and on whom (mouseover, focus, party members, "
-        .. "yourself, the cursor...), other spells on Shift, Ctrl or Alt, trinkets and more."] =
-        "Створіть новий макрос за допомогою вбудованого майстра! Оберіть, що застосувати й на кого (маусовер, "
-        .. "фокус, члени групи, ви самі, курсор...), інші заклинання на Shift, Ctrl чи Alt, аксесуари та інше.",
+    ["Create a new macro with the built-in wizard! Answer a few simple questions, or fill in the whole form at "
+        .. "once: what to cast and on whom (mouseover, focus, party members, yourself, the cursor...), other spells on "
+        .. "Shift, Ctrl or Alt, trinkets and more."] =
+        "Створіть новий макрос за допомогою вбудованого майстра! Дайте відповідь на кілька простих питань або "
+        .. "заповніть одразу всю форму: що застосувати й на кого (маусовер, фокус, члени групи, ви самі, курсор...), "
+        .. "інші заклинання на Shift, Ctrl чи Alt, аксесуари та інше.",
 
     -- Main window: share, trash, backups
     ["Share"] = "Обмін",
@@ -333,6 +335,131 @@ ns.locales.uk = {
         "Кажеться після решти, у каналі ліворуч; %t — ім'я вашої цілі. Залиште порожнім, щоб нічого не казати.",
     ["Create macro"] = "Створити",
     ["Macro"] = "Макрос",
+    -- Wizard: step by step (Questions.lua)
+    ["Step by step"] = "Покроково",
+    ["All options"] = "Усі параметри",
+    ["One question at a time, in plain words. What you chose stays."] =
+        "По одному питанню за раз, простими словами. Те, що ви вже обрали, лишається.",
+    ["The whole form at once, with what you chose so far."] = "Уся форма одразу, з тим, що ви вже обрали.",
+    ["< Back"] = "< Назад",
+    ["Next >"] = "Далі >",
+    ["What should the macro do?"] = "Що має робити макрос?",
+    ["Cast a spell"] = "Застосувати заклинання",
+    ["Use an item"] = "Використати предмет",
+    ["A potion, a healthstone, a toy... or a trinket you wear."] =
+        "Зілля, камінь здоров'я, іграшку... або аксесуар, який ви носите.",
+    ["Several spells in turn"] = "Кілька заклинань по черзі",
+    ["Each press casts the next spell of the list: the first press the first spell, the next press the second, and "
+        .. "so on."] =
+        "Кожне натискання застосовує наступне заклинання зі списку: перше натискання — перше, наступне — друге і "
+        .. "так далі.",
+    ["One of several at random"] = "Одне з кількох навмання",
+    ["Each press casts one of the spells at random: a random mount, say."] =
+        "Кожне натискання застосовує одне із заклинань навмання: наприклад, випадковий маунт.",
+    ["Target someone"] = "Взяти когось у ціль",
+    ["Set your focus"] = "Задати фокус",
+    ["Your focus is a second target to keep an eye on: to interrupt it or keep it crowd controlled while you fight "
+        .. "another."] =
+        "Фокус — це друга ціль, за якою ви стежите: щоб перебити її каст чи тримати під контролем, поки б'єтеся з "
+        .. "іншою.",
+    ["Take someone's target"] = "Взяти чужу ціль",
+    ["Your target becomes the target of someone else: the tank's, say."] =
+        "Вашою ціллю стає ціль когось іншого: наприклад, танка.",
+    ["Command your pet"] = "Керувати улюбленцем",
+    ["Tell your pet to attack, follow you, stay..."] = "Накажіть улюбленцю атакувати, іти за вами, стояти...",
+    ["Which spell should the macro cast?"] = "Яке заклинання має застосовувати макрос?",
+    ["Which item should the macro use?"] = "Який предмет має використовувати макрос?",
+    ["Start typing its name, or pick it from the list."] = "Почніть вводити назву або оберіть зі списку.",
+    ["What should the macro cast instead?"] = "Що макрос має застосовувати замість цього?",
+    ["Leave it empty for the same one, on someone else."] =
+        "Залиште порожнім, щоб застосовувати те саме, але на когось іншого.",
+    ["Pick the spells in the order the macro should cast them"] =
+        "Оберіть заклинання в тому порядку, в якому макрос має їх застосовувати",
+    ["One per press: the first press casts the first spell, the next press the second, and so on."] =
+        "По одному за натискання: перше натискання — перше заклинання, наступне — друге і так далі.",
+    ["Pick the spells the macro chooses from"] = "Оберіть заклинання, з яких макрос вибиратиме",
+    ["Each press casts one of them at random."] = "Кожне натискання — одне з них навмання.",
+    ["When should the sequence start again from the first spell?"] =
+        "Коли послідовність має починатися знову з першого заклинання?",
+    ["Pick any of these, or none: then it starts again only after the last spell."] =
+        "Оберіть що завгодно з цього або нічого: тоді вона почнеться знову лише після останнього заклинання.",
+    ["When you take a new target"] = "Коли ви берете нову ціль",
+    ["When combat ends"] = "Коли закінчується бій",
+    ["When you press it with %s held"] = "Коли натискаєте його із затиснутим %s",
+    ["What should your pet do?"] = "Що має робити ваш улюбленець?",
+    ["Where should %s go?"] = "На кого чи куди застосувати «%s»?",
+    ["Where should these spells go?"] = "На кого чи куди застосовувати ці заклинання?",
+    ["Who should become your target?"] = "Хто має стати вашою ціллю?",
+    ["Who should become your focus?"] = "Хто має стати вашим фокусом?",
+    ["Whose target should you take?"] = "Хто вибирає ціль для вас?",
+    ["Who should your pet attack?"] = "Хто має стати ціллю вашого улюбленця?",
+    ["Friends or enemies?"] = "Друзі чи вороги?",
+    ["Who is %s for?"] = "Для кого «%s»?",
+    ["Who are these spells for?"] = "Для кого ці заклинання?",
+    ["Friends, dead or alive"] = "Друзі, живі чи мертві",
+    ["For a resurrection."] = "Для воскресіння.",
+    ["On your target, as usual"] = "На вашу ціль, як завжди",
+    ["On your target, if a friend"] = "На вашу ціль, якщо це друг",
+    ["On your target, if an enemy"] = "На вашу ціль, якщо це ворог",
+    ["On your target, if there is one"] = "На вашу ціль, якщо вона є",
+    ["On whoever is under the mouse"] = "На того, хто під мишею",
+    ["On the ground under the cursor"] = "На землю під курсором",
+    ["On yourself"] = "На себе",
+    ["On your focus"] = "На ваш фокус",
+    ["On your pet"] = "На вашого улюбленця",
+    ["On your target's target"] = "На ціль вашої цілі",
+    ["On party member %d"] = "На члена групи %d",
+    ["On arena enemy %d"] = "На ворога на арені %d",
+    ["Your target, as usual"] = "Ваша ціль, як завжди",
+    ["Your target, if a friend"] = "Ваша ціль, якщо це друг",
+    ["Your target, if an enemy"] = "Ваша ціль, якщо це ворог",
+    ["Your target, if there is one"] = "Ваша ціль, якщо вона є",
+    ["Whoever is under the mouse"] = "Той, хто під мишею",
+    ["Your focus"] = "Ваш фокус",
+    ["Your target's target"] = "Ціль вашої цілі",
+    ["Party member %d"] = "Член групи %d",
+    ["Arena enemy %d"] = "Ворог на арені %d",
+    ["Do nothing"] = "Нічого не робити",
+    ["Someone by name"] = "Хтось за ім'ям",
+    ["The game's own choice: your target, or you when the game casts on you by itself (Auto Self Cast)."] =
+        "Як вирішить гра: на вашу ціль або на вас, коли гра сама застосовує на вас (Auto Self Cast).",
+    ["The one your mouse points at, in the world or on a frame (party, raid). Your target stays as it is."] =
+        "Той, на кого вказує миша, у світі чи на рамці (група, рейд). Ваша ціль при цьому не змінюється.",
+    ["For spells cast on the ground, like Blizzard: it lands under the cursor at once, with no circle to place."] =
+        "Для заклинань на землю, як Blizzard: воно впаде під курсор одразу, без кола, яке треба ставити.",
+    ["A second target you keep an eye on; /focus sets it."] = "Друга ціль, за якою ви стежите; її задає /focus.",
+    ["Whoever your target has targeted: the one a boss attacks, say."] =
+        "Той, кого взяла в ціль ваша ціль: наприклад, той, кого б'є бос.",
+    ["Your party members, as your party frames list them from the top."] =
+        "Члени вашої групи в тому порядку, як їх показують рамки групи згори.",
+    ["The enemies of an arena match, in the order of their frames."] = "Вороги на арені в порядку їхніх рамок.",
+    ["And if nobody is under the mouse?"] = "А якщо під мишею нікого немає?",
+    ["And if you have no target?"] = "А якщо у вас немає цілі?",
+    ["And if you have no focus?"] = "А якщо у вас немає фокуса?",
+    ["And if your pet is not out?"] = "А якщо улюбленця немає поруч?",
+    ["And if your target has no target?"] = "А якщо у вашої цілі немає цілі?",
+    ["And if party member %d is not there?"] = "А якщо члена групи %d немає?",
+    ["And if arena enemy %d is not there?"] = "А якщо ворога на арені %d немає?",
+    ["Or the one there is not a friend, or is dead."] = "Або той, хто там є, не друг чи мертвий.",
+    ["Or the one there is not a friend."] = "Або той, хто там є, не друг.",
+    ["Or the one there is not an enemy, or is dead."] = "Або той, хто там є, не ворог чи мертвий.",
+    ["Or the one there is not an enemy."] = "Або той, хто там є, не ворог.",
+    ["Or the one there is dead."] = "Або той, хто там є, мертвий.",
+    ["What name should it look for?"] = "Яке ім'я шукати?",
+    ["The nearest one with this name becomes your target: a rare, say."] =
+        "Вашою ціллю стане найближчий з таким ім'ям: наприклад, рідкісний монстр.",
+    ["Should the macro do something else while you hold %s?"] =
+        "Чи має макрос робити щось інше, поки ви тримаєте %s?",
+    ["Pick the keys, or none: for each one, the next questions ask what it does."] =
+        "Оберіть клавіші або жодної: для кожної далі буде питання, що вона робить.",
+    ["With %s held"] = "Із затиснутим %s",
+    ["Would you like to add anything else?"] = "Бажаєте додати ще щось?",
+    ["Pick any of these, or none."] = "Оберіть що завгодно з цього або нічого.",
+    ["Almost done: name your macro"] = "Майже готово: назвіть макрос",
+    ["Then drag its icon from the editor onto an action bar."] =
+        "Потім перетягніть його іконку з редактора на панель дій.",
+    ["For all your characters"] = "Для всіх ваших персонажів",
+    ["Only for this character"] = "Лише для цього персонажа",
     -- Wizard: its lists (Wizard.lua)
     ["Pet commands"] = "Команди улюбленця",
     ["Attack"] = "Атакувати",
