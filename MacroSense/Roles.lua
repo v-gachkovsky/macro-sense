@@ -119,18 +119,26 @@ end
 local told = {} -- the texts too long to write, said once
 local shown -- the names last told on the screen: { tank = "Bob" }; nil before the first look of a session
 
-local function NoticeText(tag)
+-- The texts told, in the language MacroSense is in now.
+local function Put(tag)
     if tag == "tank" then return L["MacroSense: your group's new tank is %s"] end
     return L["MacroSense: your group's new healer is %s"]
 end
+local function Failed(tag)
+    if tag == "tank" then
+        return L["MacroSense: could not set your group's new tank, %s: the macro would be too long"]
+    end
+    return L["MacroSense: could not set your group's new healer, %s: the macro would be too long"]
+end
 
--- A tank or healer new since the last look, now in a macro, is told in red mid-screen, as the game's errors are.
--- The first look of a session only learns them.
-local function Notice(names, used)
+-- A tank or healer new since the last look is told in red mid-screen, as the game's errors are: put into the
+-- macros with its tag, or not, one of them too long then. The first look of a session only learns them.
+local function Notice(names, put, failed)
     if shown then
         for _, tag in ipairs({ "tank", "heal" }) do
-            if used[tag] and names[tag] and names[tag] ~= shown[tag] then
-                UIErrorsFrame:AddMessage(NoticeText(tag):format(names[tag]), 1, 0.1, 0.1, 1)
+            if names[tag] and names[tag] ~= shown[tag] then
+                if put[tag] then UIErrorsFrame:AddMessage(Put(tag):format(names[tag]), 1, 0.1, 0.1, 1) end
+                if failed[tag] then UIErrorsFrame:AddMessage(Failed(tag):format(names[tag]), 1, 0.1, 0.1, 1) end
             end
         end
     end
@@ -142,7 +150,7 @@ end
 -- changed: after it.
 function Roles.Update()
     if InCombatLockdown() then return end
-    local names, used = Roles.Names(), {}
+    local names, put, failed = Roles.Names(), {}, {}
     for _, scope in ipairs({ "general", "character" }) do
         local store = Store(scope)
         local list = {}
@@ -156,6 +164,7 @@ function Roles.Update()
                 store[now] = entry
                 local text = ns.Conditions.Fill(entry.text, names)
                 if Letters(text) > MAX_BODY then
+                    for tag in pairs(ns.Conditions.Tags(entry.text)) do failed[tag] = true end
                     if not told[text] then
                         told[text] = true
                         ns.Print("could not put your group's new names into \"%s\": it would be longer than %d "
@@ -167,12 +176,12 @@ function Roles.Update()
                     ns.History.Rewritten(scope, now, entry.written)
                 end
                 if entry.written == text then
-                    for tag in pairs(ns.Conditions.Tags(entry.text)) do used[tag] = true end
+                    for tag in pairs(ns.Conditions.Tags(entry.text)) do put[tag] = true end
                 end
             end
         end
     end
-    Notice(names, used)
+    Notice(names, put, failed)
 end
 
 -- The group or its roles changed, or combat ended: a second later (the game tells it several times at once), the

@@ -5275,7 +5275,9 @@ do
     check("roles: too long with the new names: as it was, said once", body("Long") == ann and #printed == said + 1
         and printed[#printed]:find("could not put your group's new names into \"Long\": it would be longer than "
         .. "255 characters", 1, true) ~= nil, printed[#printed])
-    check("roles: a name not put in is not told", #onScreen == seen, onScreen[#onScreen].text)
+    check("roles: a name too long to put in: told in red, once", #onScreen == seen + 1
+        and onScreen[#onScreen].text == "MacroSense: could not set your group's new healer, " .. long.name
+        .. ": the macro would be too long" and onScreen[#onScreen].r == 1, onScreen[#onScreen].text)
 
     -- Moved into the Character tab: kept up to date there.
     regroup({ ANN })
