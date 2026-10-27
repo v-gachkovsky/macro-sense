@@ -64,6 +64,8 @@ Wizard.units = {
     { key = "target", name = "Your target", filters = true },
     { key = "mouseover", name = "Mouseover", filters = true },
     { key = "focus", name = "Focus", filters = true },
+    { key = "tank", name = "Group's tank", filters = true },
+    { key = "healer", name = "Group's healer", filters = true },
     { key = "player", name = "Yourself" },
     { key = "pet", name = "Your pet", filters = true },
     { key = "party1", name = "Party member 1", filters = true },
@@ -89,6 +91,14 @@ local function ByName(spec)
 end
 -- After these nothing is asked: they always hold.
 local ALWAYS = { default = true, player = true, cursor = true }
+-- Units by the role in your group: the macro has the name of the one with it (spec.roles, filled in by the game's
+-- side), and MacroSense writes it again when the group changes (Roles.lua).
+local ROLES = { tank = true, healer = true }
+Wizard.ROLES = ROLES
+
+-- The name of your group's tank or healer, nil while nobody has the role.
+function Wizard.RoleName(spec, unit) return spec.roles and spec.roles[unit] end
+local RoleName = Wizard.RoleName
 
 -- Whether a unit always holds (nothing after it is tried), and whether it is checked (friends / enemies / alive).
 function Wizard.Always(unit) return ALWAYS[unit] == true end
@@ -98,7 +108,7 @@ function Wizard.Checked(unit) return filtered[unit] == true end
 -- /target not your target (the game would target nothing) and /focus not the focus; the pet attacks neither
 -- the cursor, you nor itself.
 local function Takes(command, unit)
-    if command == "pet" then return unit ~= "cursor" and unit ~= "player" and unit ~= "pet" end
+    if command == "pet" then return unit ~= "cursor" and unit ~= "player" and unit ~= "pet" and not ROLES[unit] end
     if not Wizard.IsTarget(command) then return true end
     if unit == "default" or unit == "cursor" then return false end
     return not (command == "target" and unit == "target" or command == "focus" and unit == "focus")
@@ -169,7 +179,8 @@ local function Group(spec, unit, mod, named, only)
     local conds = {}
     only = only or spec.only
     if mod then conds[#conds + 1] = mod end
-    if unit ~= "default" and (named or unit ~= "target") then conds[#conds + 1] = "@" .. unit end
+    local who = ROLES[unit] and (RoleName(spec, unit) or "none") or unit
+    if unit ~= "default" and (named or unit ~= "target") then conds[#conds + 1] = "@" .. who end
     if filtered[unit] then
         conds[#conds + 1] = only == "friends" and "help" or only == "enemies" and "harm" or "exists"
         if spec.alive then conds[#conds + 1] = "nodead" end
@@ -177,16 +188,37 @@ local function Group(spec, unit, mod, named, only)
     return "[" .. table.concat(conds, ",") .. "]"
 end
 
--- Units in order, "none" left out, up to the first one that always holds: nothing after it is ever tried.
-local function Chain(units)
-    local out = {}
+-- Units in order, "none" left out, up to the first one that always holds: nothing after it is ever tried. The
+-- tank or the healer is left out while your group has none, unless nothing else is there: then it stays as
+-- "@none", which holds for nobody, and the macro is there to be filled in once someone has the role.
+local function Chain(spec, units)
+    local out, missing = {}, nil
     for _, unit in ipairs(units) do
         if unit ~= "none" then
-            out[#out + 1] = unit
-            if ALWAYS[unit] then break end
+            if ROLES[unit] and not RoleName(spec, unit) then
+                missing = unit
+            else
+                out[#out + 1] = unit
+                if ALWAYS[unit] then break end
+            end
         end
     end
+    if #out == 0 and missing then out[1] = missing end
     return out
+end
+
+-- Whether the macro goes to your group's tank or healer somewhere: then MacroSense keeps the name up to date.
+function Wizard.UsesRoles(spec)
+    local function any(units)
+        for _, unit in ipairs(units) do if ROLES[unit] then return true end end
+        return false
+    end
+    if any(spec.on) then return true end
+    for _, key in ipairs(Wizard.KEYS) do
+        local k = spec.keys[key]
+        if k.active and any(k.on) then return true end
+    end
+    return false
 end
 
 -- An action is { name = "Flash Heal" }, { name = "Healthstone", item = true } or a slot { name = "13", item = true,
@@ -217,11 +249,11 @@ local function Clauses(spec)
         local action = k.active and (k.action or spec.action)
         if action then
             local only = Wizard.Only(spec, key)
-            for _, unit in ipairs(Chain(k.on)) do add(Group(spec, unit, "mod:" .. key, nil, only), action) end
+            for _, unit in ipairs(Chain(spec, k.on)) do add(Group(spec, unit, "mod:" .. key, nil, only), action) end
         end
     end
     if spec.action then
-        for _, unit in ipairs(Chain(spec.on)) do add(Group(spec, unit), spec.action) end
+        for _, unit in ipairs(Chain(spec, spec.on)) do add(Group(spec, unit), spec.action) end
     end
     return out
 end
@@ -293,7 +325,7 @@ local function ListLine(spec)
     for i, action in ipairs(Names(spec)) do names[i] = Wizard.Spelled(action) end
     if #names == 0 then return nil end
     local groups = ""
-    for _, unit in ipairs(Chain(spec.on)) do groups = groups .. Group(spec, unit) end
+    for _, unit in ipairs(Chain(spec, spec.on)) do groups = groups .. Group(spec, unit) end
     if groups == "[]" then groups = "" end -- as usual alone: no brackets
     local reset = spec.command == "castsequence" and Reset(spec.reset) or ""
     return "/" .. spec.command .. " " .. (groups ~= "" and groups .. " " or "") .. reset .. table.concat(names, ", ")
@@ -309,10 +341,10 @@ local function TargetLines(spec)
         if k.active and k.on[1] == "clear" then
             clears[#clears + 1] = key
         elseif k.active then
-            for _, unit in ipairs(Chain(k.on)) do groups = groups .. Group(spec, unit, "mod:" .. key, true) end
+            for _, unit in ipairs(Chain(spec, k.on)) do groups = groups .. Group(spec, unit, "mod:" .. key, true) end
         end
     end
-    for _, unit in ipairs(Chain(spec.on)) do groups = groups .. Group(spec, unit, nil, true) end
+    for _, unit in ipairs(Chain(spec, spec.on)) do groups = groups .. Group(spec, unit, nil, true) end
     local before = {}
     if #clears > 0 then
         local mods = "[mod:" .. table.concat(clears, "/") .. "]"
@@ -328,7 +360,7 @@ end
 local function PetLine(spec, action, units, mod)
     local groups = ""
     if action == "attack" then
-        for _, unit in ipairs(Chain(units)) do groups = groups .. Group(spec, unit, mod) end
+        for _, unit in ipairs(Chain(spec, units)) do groups = groups .. Group(spec, unit, mod) end
     elseif action == "moveto" then
         groups = "[" .. (mod and mod .. "," or "") .. "@cursor]"
     elseif mod then

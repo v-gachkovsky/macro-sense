@@ -290,6 +290,8 @@ ns.locales.uk = {
     ["macro is longer than %d characters"] = "макрос довший за %d символів",
     ["could not save the macro"] = "не вдалося зберегти макрос",
     ["could not copy the macro"] = "не вдалося скопіювати макрос",
+    ["could not put your group's new names into \"%s\": it would be longer than %d characters"] =
+        "не вдалося вписати нові імена вашої групи в «%s»: макрос був би довшим за %d символів",
     ["save the macro first, then drag it to an action bar"] =
         "спершу збережіть макрос, а потім перетягніть його на панель дій",
     ["no free general macro slots"] = "немає вільних місць для загальних макросів",
@@ -342,6 +344,10 @@ ns.locales.uk = {
     ["Who the macro casts on. As usual: your target, or you when the game casts on you by itself (Auto Self Cast)."] =
         "На кого макрос застосовує. «Як завжди»: на вашу ціль або на вас, коли гра сама застосовує на вас "
         .. "(Auto Self Cast).",
+    ["Group's tank or healer: the one with the role now, by name; MacroSense puts in the new one when your group "
+        .. "changes."] =
+        "«Танк групи» чи «Хілер групи»: той, хто має цю роль зараз, на ім'я; коли група зміниться, MacroSense сам "
+        .. "впише нове.",
     ["When the one before is not there, or not the one asked for: this one."] =
         "Коли попереднього немає або він не той, що потрібно: цей.",
     ["Only"] = "Лише",
@@ -477,6 +483,8 @@ ns.locales.uk = {
     ["On your focus"] = "На ваш фокус",
     ["On your pet"] = "На вашого улюбленця",
     ["On your target's target"] = "На ціль вашої цілі",
+    ["On your group's tank"] = "На танка вашої групи",
+    ["On your group's healer"] = "На хілера вашої групи",
     ["On party member %d"] = "На члена групи %d",
     ["On arena enemy %d"] = "На ворога на арені %d",
     ["Your target, as usual"] = "Ваша ціль, як завжди",
@@ -486,6 +494,10 @@ ns.locales.uk = {
     ["Whoever is under the mouse"] = "Той, хто під мишею",
     ["Your focus"] = "Ваш фокус",
     ["Your target's target"] = "Ціль вашої цілі",
+    ["Your group's tank"] = "Танк вашої групи",
+    ["Your group's healer"] = "Хілер вашої групи",
+    ["no tank now"] = "танка зараз немає",
+    ["no healer now"] = "хілера зараз немає",
     ["Party member %d"] = "Член групи %d",
     ["Arena enemy %d"] = "Ворог на арені %d",
     ["Do nothing"] = "Нічого не робити",
@@ -501,12 +513,22 @@ ns.locales.uk = {
         "Той, кого взяла в ціль ваша ціль: наприклад, той, кого б'є бос.",
     ["Your party members, as your party frames list them from the top."] =
         "Члени вашої групи в тому порядку, як їх показують рамки групи згори.",
+    ["The one with the tank role in your party or raid, other than you."] =
+        "Той, хто має роль танка у вашій групі чи рейді, окрім вас.",
+    ["The one with the healer role in your party or raid, other than you."] =
+        "Той, хто має роль хілера у вашій групі чи рейді, окрім вас.",
+    ["The macro has their name, and MacroSense writes in the new one when your group changes (out of combat), until "
+        .. "you edit the macro yourself."] =
+        "У макросі буде ім'я цього гравця, а коли група зміниться, MacroSense сам впише нове (поза боєм), доки ви не "
+        .. "зміните макрос власноруч.",
     ["The enemies of an arena match, in the order of their frames."] = "Вороги на арені в порядку їхніх рамок.",
     ["And if nobody is under the mouse?"] = "А якщо під мишею нікого немає?",
     ["And if you have no target?"] = "А якщо у вас немає цілі?",
     ["And if you have no focus?"] = "А якщо у вас немає фокуса?",
     ["And if your pet is not out?"] = "А якщо улюбленця немає поруч?",
     ["And if your target has no target?"] = "А якщо у вашої цілі немає цілі?",
+    ["And if your group has no tank?"] = "А якщо у вашій групі немає танка?",
+    ["And if your group has no healer?"] = "А якщо у вашій групі немає хілера?",
     ["And if party member %d is not there?"] = "А якщо члена групи %d немає?",
     ["And if arena enemy %d is not there?"] = "А якщо ворога на арені %d немає?",
     ["Or the one there is not a friend, or is dead."] = "Або той, хто там є, не друг чи мертвий.",
@@ -560,6 +582,8 @@ ns.locales.uk = {
     ["Party member 3"] = "Член групи 3",
     ["Party member 4"] = "Член групи 4",
     ["Target's target"] = "Ціль цілі",
+    ["Group's tank"] = "Танк групи",
+    ["Group's healer"] = "Хілер групи",
     ["Arena enemy 1"] = "Ворог на арені 1",
     ["Arena enemy 2"] = "Ворог на арені 2",
     ["Arena enemy 3"] = "Ворог на арені 3",

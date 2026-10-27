@@ -20,6 +20,8 @@ Highlight.checkClick = nil
 -- Set by Sources: function(name) -> nil, or why a command this client has does nothing in its game (message,
 -- short form). A warning.
 Highlight.checkCommand = nil
+-- Set by Roles: function(name) -> true when a player of that name is in your group: "@Bob" is no unknown unit.
+Highlight.isMember = nil
 
 local UNIT_ARGS = { target = true, tar = true, focus = true, assist = true, a = true }
 local LUA_KEYWORDS = {}
@@ -74,10 +76,11 @@ local function luaSpans(s, base, add)
     end
 end
 
--- A unit after "@" / "target=". Not a unit id: may still be a player's name, so only a warning.
+-- A unit after "@" / "target=". Not a unit id: may still be a player's name, so only a warning; none for a name in
+-- your group (isMember).
 local function unitSpan(unit, from, add)
     local to = from + #unit - 1
-    if ns.Conditions and not ns.Conditions.IsUnit(unit) then
+    if ns.Conditions and not ns.Conditions.IsUnit(unit) and not (Highlight.isMember and Highlight.isMember(unit)) then
         add(from, to, "unit", string.format(L["unknown unit \"%s\" (fine if it is a player's name)"], unit), "warning")
     else
         add(from, to, "unit")

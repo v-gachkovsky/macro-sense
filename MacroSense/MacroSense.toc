@@ -28,6 +28,7 @@ Share.lua
 Backups.lua
 Wizard.lua
 Questions.lua
+Roles.lua
 Widgets.lua
 Popup.lua
 CodeBox.lua

@@ -31,6 +31,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the bars of each of your specializations and characters as it last saw them, so a macro another specialization
   or, for a general one, another character has counts as used. Hovering a macro in the list says where it is;
   deleting one says it in the question, and moving one those bars have asks first.
+- **Your group's tank and healer** in the wizard, next to Mouseover and Focus: the macro has the name of the one
+  with the role, other than you, a raid's main tank first (`/cast [@Bob,help,nodead][@pet,help,nodead]
+  Misdirection`). When your group changes, MacroSense writes the new name in by itself, out of combat; while
+  nobody has the role, the macro goes on to its next unit, or to nobody when that was its only one. A macro you
+  rename is followed; one you change yourself stays as you made it. Step by step, the answer shows who it is now
+  (`@Bob`, or that there is none), and the next question asks what if your group has no tank.
 
 ### Changed
 - The wizard puts `/startattack` right before the spell: after `/stopcasting`, trinkets and the lines that leave
@@ -38,6 +44,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   they leave (it came last).
 - In a macro's tooltip on the action bars, what MacroSense adds (its warnings, Shift + right-click) comes after a
   blank line, apart from the game's own lines.
+- The macro open in the editor shows as it is saved when it changes elsewhere (the Blizzard window, another addon,
+  MacroSense itself), unless you have unsaved changes in it.
+- The name of a player in your group is no unknown unit: `[@Bob]` gets no warning while Bob is in it.
 
 ### Fixed
 - `/castrandom` and `/userandom` lists are read name by name, as `/castsequence` ones are: a typo in one of their

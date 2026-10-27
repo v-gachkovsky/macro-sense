@@ -850,6 +850,7 @@ function Window.Move(index)
         local made = CreateMacro(moved, icon or NEW_ICON, body or "", to == "character")
         if not made or made == 0 then return ns.Print("could not move the macro") end
         ns.History.Moved(from, to, name, moved)
+        ns.Roles.Moved(from, to, name, moved)
         DeleteMacro(IndexIn(from, name))
         ns.ActionBars.Place(IndexIn(to, moved), slots)
         ns.History.Scan()
@@ -1236,8 +1237,9 @@ end
 -- A name no macro has, cut to fit (see FreeName).
 function Window.FreeName(name) return FreeName(FirstLetters(name, MAX_NAME)) end
 
--- The wizard's macro: saved in the tab `scope` under a free name, then opened in the editor.
-function Window.CreateFromWizard(name, body, scope)
+-- The wizard's macro: saved in the tab `scope` under a free name, then opened in the editor. With the wizard's
+-- answers `spec`: one for your group's tank or healer is kept up to date (Roles.lua).
+function Window.CreateFromWizard(name, body, scope, spec)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local first, last, max = MacroRange(scope)
     if last - first + 1 >= max then return NoRoom(scope) end
@@ -1245,6 +1247,8 @@ function Window.CreateFromWizard(name, body, scope)
     Guard(function()
         local index = CreateMacro(Window.FreeName(name), NEW_ICON, body, scope == "character")
         if not index or index == 0 then return ns.Print("could not save the macro") end
+        local saved, _, written = GetMacroInfo(index)
+        ns.Roles.Register(scope, saved, spec, written)
         ns.History.Scan()
         state.scope, ns.db.scope = scope, scope
         ns.WizardWindow.Close()
@@ -1252,7 +1256,8 @@ function Window.CreateFromWizard(name, body, scope)
     end)
 end
 
--- The macro list changed elsewhere (Blizzard UI, another addon): keep our selection by name.
+-- The macro list changed elsewhere (Blizzard UI, another addon): keep our selection by name. The macro shown,
+-- changed there and not here (MacroSense wrote in your group's new tank, say), shows as it is saved now.
 function Window.OnMacrosChanged()
     if not frame or not frame:IsShown() then return end
     if state.index then
@@ -1261,6 +1266,9 @@ function Window.OnMacrosChanged()
             local index = GetMacroIndexByName(state.name)
             state.index = index and index > 0 and index or nil
         end
+    end
+    if state.index and not IsDirty() and select(3, GetMacroInfo(state.index)) ~= state.body then
+        return Load(state.index)
     end
     Window.RefreshList()
     UpdateStatus()

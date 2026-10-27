@@ -284,9 +284,36 @@ function PlaceAction(slot)
     if picked then actions[slot] = { "macro", 0, nil, text = (GetMacroInfo(picked)) } end
 end
 function ClearCursor() picked = nil end
--- This character.
-function UnitName(unit) if unit == "player" then return "Tester" end end
+-- This character, and the group it is in: none, unless a test fills `group` ({ raid = true in a raid, members =
+-- { { name, realm, role = "TANK", mainTank = true } }, me = your role }). In a raid you are raid1, the members after
+-- you.
+local group = { members = {} }
+local function Member(unit)
+    local kind, i = unit:match("^(%a+)(%d+)$")
+    i = tonumber(i)
+    if kind == "party" and not group.raid then return group.members[i] end
+    if kind == "raid" and group.raid then return i == 1 and "player" or group.members[i - 1] end
+end
+function UnitName(unit)
+    if unit == "player" or Member(unit) == "player" then return "Tester" end
+    local m = Member(unit)
+    if m then return m.name, m.realm end
+end
+function IsInRaid() return group.raid == true end
+function GetNumGroupMembers() return #group.members > 0 and #group.members + 1 or 0 end
+function GetNumSubgroupMembers() return #group.members end
+function UnitIsUnit(a, b) return a == b or (b == "player" and Member(a) == "player") end
+function UnitGroupRolesAssigned(unit)
+    local m = Member(unit)
+    if unit == "player" or m == "player" then return group.me or "NONE" end
+    return type(m) == "table" and m.role or "NONE"
+end
+function GetPartyAssignment(assignment, unit)
+    local m = Member(unit)
+    return assignment == "MAINTANK" and type(m) == "table" and m.mainTank == true
+end
 function GetRealmName() return "Realm" end
+UNKNOWNOBJECT = "Unknown" -- a player's name before the game knows it
 function UnitClass(unit) if unit == "player" then return "Warlock", "WARLOCK" end end
 function GetActionInfo(slot) if actions[slot] then return actions[slot][1], actions[slot][2], actions[slot][3] end end
 function GetMacroIcons(t) for i = 1, 300 do t[#t + 1] = 1000 + i end end
@@ -406,9 +433,10 @@ function CreateMacro(name, icon, body, perChar)
     macros[#macros + 1] = m
     return indexOf(m)
 end
+-- Like the game: nil keeps the name, the icon or the text as it is.
 function EditMacro(index, name, icon, body)
     local m = byIndex(index)
-    m.name, m.icon, m.body = name, icon, body
+    m.name, m.icon, m.body = name or m.name, icon or m.icon, body or m.body
     return indexOf(m)
 end
 function DeleteMacro(index)
@@ -443,6 +471,7 @@ local function Send(name, ...)
 end
 Send("ADDON_LOADED", "MacroSense")
 Send("PLAYER_LOGIN")
+Send("PLAYER_ENTERING_WORLD")
 
 -- The early-development note shows once per version.
 local function printedWith(text)
@@ -2182,7 +2211,7 @@ do
     Fire(wizardBtn, "OnClick")
     check("wizard: a window of its own", MacroSenseWizard and MacroSenseWizard:IsShown() and raw() == before)
     check("wizard: step by step the first time", C("mode").label.text == "All options"
-        and C("question").text == "What should the macro do?" and MacroSenseWizard.height == 510, C("question").text)
+        and C("question").text == "What should the macro do?" and MacroSenseWizard.height == 538, C("question").text)
     Fire(C("mode"), "OnClick")
     check("wizard: the whole form", C("mode").label.text == "Step by step" and ns.db.wizardForm == true
         and C("cancel").shown and not C("back").shown, C("mode").label.text)
@@ -2530,19 +2559,19 @@ do
     end
     local function answers()
         local out = {}
-        for i = 1, 16 do
+        for i = 1, 18 do
             if C("answer" .. i).shown then out[#out + 1] = C("answer" .. i).label.text end
         end
         return table.concat(out, ", ")
     end
     local function answer(name)
-        for i = 1, 16 do
+        for i = 1, 18 do
             local b = C("answer" .. i)
             if b.shown and b.label.text == name then return b end
         end
     end
     local function chosen()
-        for i = 1, 16 do
+        for i = 1, 18 do
             local b = C("answer" .. i)
             if b.shown and b.chosen then return b.label.text end
         end
@@ -2566,7 +2595,7 @@ do
     check("steps: the window opens as it was left",
         MacroSenseWizard:IsShown() and C("mode").label.text == "Step by step")
     Fire(C("mode"), "OnClick")
-    check("steps: the questions from the first", ns.db.wizardForm == nil and MacroSenseWizard.height == 510
+    check("steps: the questions from the first", ns.db.wizardForm == nil and MacroSenseWizard.height == 538
         and question() == "What should the macro do?" and not C("back"):IsEnabled() and C("back").shown
         and C("next").shown and not C("create").shown and not C("cancel").shown, question())
     check("steps: what the macro does", answers() == "Cast a spell, Use an item, Several spells in turn, One of "
@@ -2673,7 +2702,7 @@ do
     TypeIn(C("stepSpell"), "Healthstone")
     Fire(C("next"), "OnClick")
     check("steps: Next takes the name typed; an item is used", question() == "Where should Healthstone go?"
-        and shown() == "#showtooltip\n/use [@mouseover,help,nodead][] Healthstone" and MacroSenseWizard.height == 510,
+        and shown() == "#showtooltip\n/use [@mouseover,help,nodead][] Healthstone" and MacroSenseWizard.height == 538,
         shown())
     Fire(C("back"), "OnClick")
     TypeIn(C("stepSpell"), "")
@@ -5020,6 +5049,199 @@ do
     for _, name in ipairs({ "Link Me", "Also Me" }) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
     C_ChatInfo, ChatFrameUtil, EventRegistry, GetNormalizedRealmName = nil, nil, nil, nil
+end
+
+-- Your group's tank and healer: the wizard's macro names them, and is written again for the group as it changes,
+-- out of combat; one renamed is followed, one changed by you or deleted is let go. The editor shows it as written,
+-- unless you are changing it; the history keeps no version of it.
+do
+    local C = ns.WizardWindow.Control
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    local function pick(dropdown, label)
+        Fire(dropdown, "OnClick")
+        Fire(menuItem(label), "OnClick")
+    end
+    local function answer(label)
+        for i = 1, 18 do
+            local b = C("answer" .. i)
+            if b.shown and b.label.text == label then return b end
+        end
+    end
+    local function TypeIn(box, text)
+        box:SetFocus()
+        Fire(box, "OnEditFocusGained")
+        box.text = text
+        Fire(box, "OnTextChanged", true)
+    end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local function preview() return ns.Highlight.Strip(C("preview").text) end
+    -- The group changes: a second later the macros follow, and the game reports the macros changed.
+    local function regroup(members, raid)
+        group.members, group.raid = members, raid
+        Send("GROUP_ROSTER_UPDATE")
+        Wait(1.1)
+        Send("UPDATE_MACROS")
+    end
+    local BOB, CARL = { name = "Bob", realm = "", role = "TANK" }, { name = "Carl", role = "TANK" }
+    local ANN, DEE = { name = "Ann", realm = "Other", role = "HEALER" }, { name = "Dee", role = "DAMAGER" }
+
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    group.members = { BOB, ANN, DEE }
+    ns.db.wizardForm = true
+    ns.WizardWindow.Open("general")
+    TypeIn(C("cast"), "Flash Heal")
+    C("cast"):ClearFocus()
+    pick(C("on1"), "Group's tank")
+    pick(C("on2"), "Your pet")
+    C("name"):SetText("Tank Heal")
+    local bob = "#showtooltip\n/cast [@Bob,help,nodead][@pet,help,nodead] Flash Heal"
+    check("roles: the wizard names your group's tank", preview() == bob, preview())
+    regroup({ CARL, ANN, DEE })
+    check("roles: and follows the group while open", preview():find("@Carl", 1, true) ~= nil, preview())
+    regroup({ BOB, ANN, DEE })
+    Fire(C("create"), "OnClick")
+    local kept = ns.db.roleMacros["Tank Heal"]
+    check("roles: made, and kept up to date", body("Tank Heal") == bob and kept and kept.written == bob
+        and kept.spec.roles == nil and kept.spec.on[1] == "tank" and raw() == bob, body("Tank Heal"))
+
+    regroup({ CARL, ANN, DEE })
+    local carl = "#showtooltip\n/cast [@Carl,help,nodead][@pet,help,nodead] Flash Heal"
+    check("roles: the new tank written in", body("Tank Heal") == carl and kept.written == carl, body("Tank Heal"))
+    check("roles: the editor shows it as saved, the history keeps no version of it", raw() == carl
+        and #ns.History.Versions(ns.History.Store("general"), "Tank Heal", carl) == 0, raw())
+    edit:SetCursorPosition(#edit.text)
+    Send("UPDATE_MACROS")
+    check("roles: the editor loads it again only when it changed", edit:GetCursorPosition() == #edit.text)
+    local events
+    for _, o in ipairs(created) do
+        if o.events and o.events.GROUP_ROSTER_UPDATE then events = o.events end
+    end
+    check("roles: told of the group, its roles, a new zone and the end of combat", events
+        and events.PLAYER_ROLES_ASSIGNED and events.PLAYER_ENTERING_WORLD and events.PLAYER_REGEN_ENABLED)
+    ns.Window.Restore(carl .. "\n/sit")
+    regroup({ ANN, DEE })
+    local pet = "#showtooltip\n/cast [@pet,help,nodead] Flash Heal"
+    check("roles: no tank, the pet; what you are typing stays", body("Tank Heal") == pet
+        and raw() == carl .. "\n/sit", body("Tank Heal"))
+    ns.Window.Revert()
+
+    InCombatLockdown = function() return true end
+    regroup({ BOB, DEE })
+    local inCombat = body("Tank Heal")
+    InCombatLockdown = function() return false end
+    Send("PLAYER_REGEN_ENABLED")
+    Wait(1.1)
+    check("roles: in combat not, after it", inCombat == pet and body("Tank Heal") == bob, inCombat)
+
+    EditMacro(GetMacroIndexByName("Tank Heal"), "Heal Tank")
+    Send("UPDATE_MACROS")
+    regroup({ CARL, DEE })
+    check("roles: renamed, followed", body("Heal Tank") == carl and ns.db.roleMacros["Heal Tank"] == kept
+        and ns.db.roleMacros["Tank Heal"] == nil, body("Heal Tank"))
+    EditMacro(GetMacroIndexByName("Heal Tank"), nil, nil, carl .. "\n/say Healing %t")
+    Send("UPDATE_MACROS")
+    regroup({ BOB, DEE })
+    check("roles: changed by you, it stays as you made it and is let go", body("Heal Tank") == carl
+        .. "\n/say Healing %t" and ns.db.roleMacros["Heal Tank"] == nil, body("Heal Tank"))
+
+    -- Only a macro that names them is kept, and the wizard's answers as they were; one deleted is let go.
+    local spec = ns.Wizard.Fresh()
+    spec.action, spec.on, spec.roles = { name = "Flash Heal" }, { "healer", "default", "none" }, { healer = "Ann" }
+    ns.Roles.Register("general", "Plain", ns.Wizard.Fresh(), "/cast Flash Heal")
+    ns.Roles.Register("general", "Gone", spec, "/cast [@Ann-Other,exists,nodead][] Flash Heal")
+    check("roles: only one that names them", ns.db.roleMacros.Plain == nil and ns.db.roleMacros.Gone ~= nil
+        and ns.db.roleMacros.Gone.spec ~= spec and spec.roles.healer == "Ann")
+    ns.Roles.Update()
+    check("roles: deleted, let go", ns.db.roleMacros.Gone == nil)
+
+    -- Two with the same text, one renamed: each followed.
+    local twin, onTank = "#showtooltip\n/cast [@Bob,exists,nodead][] Flash Heal", ns.Wizard.Fresh()
+    onTank.action, onTank.on = { name = "Flash Heal" }, { "tank", "default", "none" }
+    for _, name in ipairs({ "Twin A", "Twin B" }) do
+        CreateMacro(name, 1, twin, false)
+        ns.Roles.Register("general", name, onTank, twin)
+    end
+    EditMacro(GetMacroIndexByName("Twin A"), "Twin 0") -- before the other one in the list
+    regroup({ CARL })
+    check("roles: the same text twice, one renamed", ns.db.roleMacros["Twin B"] ~= nil
+        and ns.db.roleMacros["Twin 0"] ~= nil and body("Twin 0"):find("@Carl", 1, true) ~= nil, body("Twin 0"))
+    for _, name in ipairs({ "Twin B", "Twin 0" }) do DeleteMacro(GetMacroIndexByName(name)) end
+
+    -- Names that would make it too long: it stays, and that is said once.
+    local long = { name = string.rep("A", 250), role = "HEALER" }
+    spec.roles = { healer = "Ann-Other" }
+    local ann = ns.Wizard.Text(spec)
+    CreateMacro("Long", 1, ann, false)
+    ns.Roles.Register("general", "Long", spec, ann)
+    local said = #printed
+    regroup({ long })
+    regroup({ long, DEE })
+    check("roles: too long with the new names: as it was, said once", body("Long") == ann and #printed == said + 1
+        and printed[#printed]:find("could not put your group's new names into \"Long\": it would be longer than "
+        .. "255 characters", 1, true) ~= nil, printed[#printed])
+    check("roles: kept with the names of the moment", ns.db.roleMacros.Long.spec.roles == nil)
+
+    -- Moved into the Character tab: kept up to date there.
+    regroup({ ANN })
+    ns.Window.Move(GetMacroIndexByName("Long"))
+    regroup({ { name = "Eve", role = "HEALER" } })
+    check("roles: moved, followed in the other tab", ns.char.roleMacros.Long ~= nil and ns.db.roleMacros.Long == nil
+        and body("Long") == "#showtooltip\n/cast [@Eve,exists,nodead][] Flash Heal", body("Long"))
+    DeleteMacro(GetMacroIndexByName("Long"))
+    DeleteMacro(GetMacroIndexByName("Heal Tank"))
+    Send("UPDATE_MACROS")
+
+    -- In a raid: its main tank first; never you; what the game hides from addons is nobody.
+    group.raid, group.me = true, "TANK"
+    group.members = { { name = "Xan", role = "TANK" }, { name = "Yul", role = "DAMAGER", mainTank = true },
+        { name = "Zia", role = "HEALER" } }
+    table.insert(group.members, { name = "Wes", role = "TANK", mainTank = true })
+    local names = ns.Roles.Names()
+    check("roles: a raid's main tank first", names.tank == "Yul" and names.healer == "Zia", names.tank)
+    group.members[2].mainTank, group.members[4].mainTank = nil, nil
+    check("roles: else the first tank, not you", ns.Roles.Names().tank == "Xan", ns.Roles.Names().tank)
+    group.members[1].name = "Unknown"
+    check("roles: a name the game doesn't know yet: the next one", ns.Roles.Names().tank == "Wes",
+        ns.Roles.Names().tank)
+    secret.TANK, secret.Zia = true, true
+    names = ns.Roles.Names()
+    check("roles: a role or a name the game hides: nobody", names.tank == nil and names.healer == nil, names.tank)
+    secret.TANK, secret.Zia, group.me = nil, nil, nil
+
+    -- The editor takes the names in your group for units, as it is now.
+    regroup({ BOB, ANN })
+    check("roles: a name in your group is no unknown unit", #ns.Highlight.Errors("/cast [@Bob][@Ann-Other][@ann] X")
+        == 0 and #ns.Highlight.Errors("/cast [@Zed] X") == 1)
+    regroup({ ANN })
+    check("roles: one gone is", #ns.Highlight.Errors("/cast [@Bob] X") == 1)
+
+    -- Step by step: the answers name them, and follow the group while you answer.
+    group.members = { BOB }
+    ns.db.wizardForm = nil
+    ns.WizardWindow.Open("general")
+    Fire(answer("Cast a spell"), "OnClick")
+    TypeIn(C("stepSpell"), "Flash Heal")
+    Fire(C("stepSpell"), "OnEnterPressed")
+    Fire(C("next"), "OnClick")
+    check("roles: step by step, by name", answer("On your group's tank").hint.text == "@Bob"
+        and answer("On your group's healer").hint.text == "no healer now", C("question").text)
+    regroup({ CARL, ANN })
+    check("roles: the answers follow the group", answer("On your group's tank").hint.text == "@Carl"
+        and answer("On your group's healer").hint.text == "@Ann-Other", answer("On your group's tank").hint.text)
+    Fire(answer("On your group's tank"), "OnClick")
+    check("roles: and if there is no tank", C("question").text == "And if your group has no tank?"
+        and preview() == "#showtooltip\n/cast [@Carl,help,nodead][] Flash Heal", preview())
+    regroup({ BOB })
+    check("roles: the macro being made follows", preview() == "#showtooltip\n/cast [@Bob,help,nodead][] Flash Heal",
+        preview())
+    ns.WizardWindow.Close()
+    group.members = {}
+    Send("GROUP_ROSTER_UPDATE")
 end
 
 -- Theme switch recolors without touching the text.

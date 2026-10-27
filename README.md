@@ -60,9 +60,14 @@ questions; the wizard opens as you left it.
   (`@mouseover`), and its tooltip says what it is. When that one may not be there, the next question asks
   who then (**And if nobody is under the mouse?**), up to three. A spell or item that goes to nobody but you
   (Demon Armor, Bear Form: the game says it has no range) is not asked about.
+- **On your group's tank** and **On your group's healer** (Group's tank and Group's healer in the form): the
+  macro has the name of the one with the role now, other than you, a raid's main tank first, and the answer
+  shows it (`@Bob`, or that there is none now). When your group changes, MacroSense writes the new name in by
+  itself, out of combat; while nobody has the role, that unit is skipped (the macro goes to nobody when it was
+  its only one). A macro you rename is followed; once you change it yourself, it stays as you made it.
 - **Who is it for?** Friends, enemies, anyone, or friends dead or alive (for a resurrection): asked only when
   the game doesn't say what the spell is for (an item, Holy Shock). A spell for enemies is not offered for
-  yourself, your pet or party members, one for friends not for arena enemies.
+  yourself, your pet, party members or your group's tank and healer, one for friends not for arena enemies.
 - **Shift, Ctrl, Alt** (and **Cmd** on a Mac): for each key held, what it casts instead and where.
 - **Would you like to add anything else?** The same as the form's Also.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
@@ -86,8 +91,8 @@ the answers kept, and **Next >** keeps the one chosen.
   (Classic) then lists them: the spell itself first (the highest rank, also after you learn a new one), then
   each rank (`Fireball(Rank 3)`).
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
-  itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
-  1-3, At the cursor. When one is not there, the next one is tried. A spell that goes to nobody but you
+  itself), Your target, Mouseover, Focus, Group's tank, Group's healer (by name, kept up to date), Yourself, Your
+  pet, Party member 1-4, Target's target, Arena enemy 1-3, At the cursor. When one is not there, the next one is tried. A spell that goes to nobody but you
   (Demon Armor) sets As usual.
 - **Only**: friends, enemies or anyone there, and **Alive only**. It follows the spell you pick, when the game
   knows what it is for; a key's own spell is checked for what it is for.
@@ -369,6 +374,9 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Share.lua`: macros as a code and back. Pure Lua.
 - `MacroSense/Backups.lua`: backups of all the macros, which to keep and what a restore does. Pure Lua.
 - `MacroSense/ShareWindow.lua`: the window of a code, to export and to import.
+- `MacroSense/Links.lua`: macros linked in chat. The text of a link and the parts of a code are pure Lua.
+- `MacroSense/Roles.lua`: your group's tank and healer, and the wizard's macros that name them, written again as
+  the group changes.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.
