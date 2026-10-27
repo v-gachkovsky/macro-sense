@@ -1,8 +1,10 @@
 -- Your group's tank and healer: @tank and @heal in a macro. The game doesn't know them, so the macro it keeps has the
 -- name of the one with the role ("/cast [@Bob,help,nodead] Misdirection"), and MacroSense keeps the text with the
 -- tags: the editor shows and saves that, and when your group changes MacroSense writes the game's macro again for
--- the names then, out of combat. A macro changed outside MacroSense since is let go. Needs the game.
+-- the names then, out of combat, and says a new name on the screen. A macro changed outside MacroSense since is let
+-- go. Needs the game.
 local _, ns = ...
+local L = ns.L
 
 local Roles = {}
 ns.Roles = Roles
@@ -115,13 +117,32 @@ local function Find(scope, name, written, store)
 end
 
 local told = {} -- the texts too long to write, said once
+local shown -- the names last told on the screen: { tank = "Bob" }; nil before the first look of a session
+
+local function NoticeText(tag)
+    if tag == "tank" then return L["MacroSense: your group's new tank is %s"] end
+    return L["MacroSense: your group's new healer is %s"]
+end
+
+-- A tank or healer new since the last look, now in a macro, is told in red mid-screen, as the game's errors are.
+-- The first look of a session only learns them.
+local function Notice(names, used)
+    if shown then
+        for _, tag in ipairs({ "tank", "heal" }) do
+            if used[tag] and names[tag] and names[tag] ~= shown[tag] then
+                UIErrorsFrame:AddMessage(NoticeText(tag):format(names[tag]), 1, 0.1, 0.1, 1)
+            end
+        end
+    end
+    shown = names
+end
 
 -- Each macro still as MacroSense wrote it gets the names of your group now; one changed or deleted since is let go,
 -- one renamed is followed. A text the new names make too long stays as it was. Not in combat, when macros can't be
 -- changed: after it.
 function Roles.Update()
     if InCombatLockdown() then return end
-    local names = Roles.Names()
+    local names, used = Roles.Names(), {}
     for _, scope in ipairs({ "general", "character" }) do
         local store = Store(scope)
         local list = {}
@@ -145,9 +166,13 @@ function Roles.Update()
                     entry.written = select(3, GetMacroInfo(index))
                     ns.History.Rewritten(scope, now, entry.written)
                 end
+                if entry.written == text then
+                    for tag in pairs(ns.Conditions.Tags(entry.text)) do used[tag] = true end
+                end
             end
         end
     end
+    Notice(names, used)
 end
 
 -- The group or its roles changed, or combat ended: a second later (the game tells it several times at once), the

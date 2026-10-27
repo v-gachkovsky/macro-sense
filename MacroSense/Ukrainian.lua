@@ -290,6 +290,8 @@ ns.locales.uk = {
     ["macro is longer than %d characters"] = "макрос довший за %d символів",
     ["could not save the macro"] = "не вдалося зберегти макрос",
     ["could not copy the macro"] = "не вдалося скопіювати макрос",
+    ["MacroSense: your group's new tank is %s"] = "MacroSense: новий танк групи — %s",
+    ["MacroSense: your group's new healer is %s"] = "MacroSense: новий хілер групи — %s",
     ["could not put your group's new names into \"%s\": it would be longer than %d characters"] =
         "не вдалося вписати нові імена вашої групи в «%s»: макрос був би довшим за %d символів",
     ["save the macro first, then drag it to an action bar"] =

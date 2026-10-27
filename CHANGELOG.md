@@ -34,7 +34,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **`@tank` and `@heal`**: your group's tank and healer as units, other than you, a raid's main tank first
   (`/cast [@tank,help,nodead][@pet,help,nodead] Misdirection`). The game doesn't know them, so its macro has the
   name of the one with the role (`@Bob`), or `@none` while nobody has it; MacroSense writes the new name in when
-  your group changes, out of combat. The editor shows and saves the macro with `@tank`, so you can change it and
+  your group changes, out of combat, and a new tank or healer in your macros is said in red mid-screen
+  (`MacroSense: your group's new tank is Bob`). The editor shows and saves the macro with `@tank`, so you can change it and
   it keeps working; the live preview, the explanations and the suggestions know them. The wizard offers them next
   to Mouseover and Focus (Group's tank, Group's healer). A macro changed outside MacroSense (the Blizzard window)
   is no longer kept up to date.

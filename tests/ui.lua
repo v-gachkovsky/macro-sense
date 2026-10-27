@@ -191,6 +191,8 @@ function IsControlKeyDown() return false end
 function IsShiftKeyDown() return false end
 function IsMouseButtonDown() return false end
 function InCombatLockdown() return false end
+local onScreen = {} -- UIErrorsFrame's messages: { text, r, g, b }
+UIErrorsFrame = { AddMessage = function(_, text, r, g, b) onScreen[#onScreen + 1] = { text = text, r = r, g = g, b = b } end }
 function strtrim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 local printed = {}
 function print(s) printed[#printed + 1] = s end
@@ -5112,6 +5114,37 @@ do
     check("roles: the game's macro has the name, the editor @tank", body("Tank Heal") == named("Bob") and kept
         and kept.text == tagged and kept.written == named("Bob") and raw() == tagged, body("Tank Heal"))
 
+    local seen = #onScreen
+    regroup({ CARL, ANN, DEE })
+    local said = onScreen[seen + 1]
+    check("roles: the new tank told on the screen, in red, once", #onScreen == seen + 1 and said
+        and said.text == "MacroSense: your group's new tank is Carl" and said.r == 1 and said.g < 0.2, said and said.text)
+    seen = #onScreen
+    regroup({ CARL, ANN })
+    check("roles: the same tank and healer: nothing told", #onScreen == seen)
+    regroup({ CARL, { name = "Fay", role = "HEALER" } })
+    check("roles: a new healer no macro has: nothing told", #onScreen == seen, onScreen[#onScreen].text)
+    regroup({ CARL })
+    regroup({ BOB })
+    check("roles: no tank, then one: only the new one told", #onScreen == seen + 1
+        and onScreen[#onScreen].text:find("is Bob$") ~= nil, onScreen[#onScreen].text)
+    ns.SetLanguage("uk")
+    regroup({ CARL })
+    check("roles: told in the addon's language", onScreen[#onScreen].text == "MacroSense: новий танк групи — Carl",
+        onScreen[#onScreen].text)
+    ns.SetLanguage("en")
+    -- A new session (a /reload) in a group: its tank isn't new.
+    for _, o in ipairs(created) do
+        if o.events and o.events.GROUP_ROSTER_UPDATE and o.events.PLAYER_ROLES_ASSIGNED then
+            o:SetScript("OnEvent", nil)
+        end
+    end
+    assert(loadfile("MacroSense/Roles.lua"))("MacroSense", ns)
+    seen = #onScreen
+    regroup({ CARL })
+    check("roles: the first look of a session tells nothing", #onScreen == seen, onScreen[#onScreen].text)
+    regroup({ BOB })
+    check("roles: and after it a new one is told", #onScreen == seen + 1, #onScreen - seen)
     regroup({ CARL, ANN, DEE })
     check("roles: the new tank written in", body("Tank Heal") == named("Carl") and kept.written == named("Carl"),
         body("Tank Heal"))
@@ -5236,12 +5269,13 @@ do
     local ann = "#showtooltip\n/cast [@Ann-Other,exists,nodead][] Flash Heal"
     CreateMacro("Long", 1, ann, false)
     ns.Roles.Saved("general", nil, "Long", "#showtooltip\n/cast [@heal,exists,nodead][] Flash Heal", ann)
-    said = #printed
+    said, seen = #printed, #onScreen
     regroup({ long })
     regroup({ long, DEE })
     check("roles: too long with the new names: as it was, said once", body("Long") == ann and #printed == said + 1
         and printed[#printed]:find("could not put your group's new names into \"Long\": it would be longer than "
         .. "255 characters", 1, true) ~= nil, printed[#printed])
+    check("roles: a name not put in is not told", #onScreen == seen, onScreen[#onScreen].text)
 
     -- Moved into the Character tab: kept up to date there.
     regroup({ ANN })
