@@ -239,7 +239,8 @@ local function UpdatePreview()
     for _, e in ipairs(code.errors or {}) do
         if e.severity == "error" then skip[e.line] = true end
     end
-    local results = ns.Preview.Evaluate(code:GetRaw(), ns.previewEnv, skip)
+    -- As the game would run it: with the names of your group's tank and healer.
+    local results = ns.Preview.Evaluate(ns.Roles.Fill(code:GetRaw()), ns.previewEnv, skip)
     local notes = {}
     for i = 1, results.n do notes[i] = ns.Preview.Note(results[i], noteColors) end
     code:SetLineNotes(notes)
@@ -622,7 +623,8 @@ end
 local function Load(index)
     if index then
         local name, _, body = GetMacroInfo(index)
-        state.index, state.name, state.icon, state.body = index, name, ns.MacroIcon(index) or NEW_ICON, body or ""
+        local text = ns.Roles.Text(index > MAX_GENERAL and "character" or "general", name, body or "")
+        state.index, state.name, state.icon, state.body = index, name, ns.MacroIcon(index) or NEW_ICON, text
     else
         state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, ""
     end
@@ -711,21 +713,24 @@ function Window.Save()
         nameBox:SetFocus()
         return ns.Print("the macro needs a name")
     end
-    if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
+    -- The game's macro has the names of your group's tank and healer for @tank and @heal.
+    local written = ns.Roles.Fill(body)
+    if Letters(written) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     local index
     -- Earlier versions follow a new name.
     local renamed = state.index and name ~= state.name
     if renamed then ns.History.Renamed(state.scope, state.name, name) end
     if state.index then
         -- The game keeps macros sorted by name, so the index may change.
-        index = EditMacro(state.index, name, state.icon, body)
+        index = EditMacro(state.index, name, state.icon, written)
     else
-        index = CreateMacro(name, state.icon or NEW_ICON, body, state.scope == "character")
+        index = CreateMacro(name, state.icon or NEW_ICON, written, state.scope == "character")
     end
     if not index or index == 0 then
         if renamed then ns.History.Renamed(state.scope, name, state.name) end
         return ns.Print("could not save the macro")
     end
+    ns.Roles.Saved(state.scope, state.index and state.name, name, body, select(3, GetMacroInfo(index)))
     -- The text it replaced is kept now, not only when the game reports the change.
     ns.History.Scan()
     state.index, state.name, state.body = index, name, body
@@ -814,9 +819,12 @@ function Window.Copy(scope, index)
     if not index then return end
     local first, last, max = MacroRange(scope)
     if last - first + 1 >= max then return NoRoom(scope) end
+    -- `body` as MacroSense shows it: @tank and @heal stay in the copy.
     local function make(name, icon, body)
-        local copy = CreateMacro(FreeName(name), icon or NEW_ICON, body, scope == "character")
+        local copy = CreateMacro(FreeName(name), icon or NEW_ICON, ns.Roles.Fill(body), scope == "character")
         if not copy or copy == 0 then return ns.Print("could not copy the macro") end
+        local made, _, written = GetMacroInfo(copy)
+        ns.Roles.Saved(scope, nil, made, body, written)
         ns.History.Scan()
         state.scope, ns.db.scope = scope, scope
         Load(copy)
@@ -824,11 +832,12 @@ function Window.Copy(scope, index)
     if index ~= state.index then
         return Guard(function()
             local name, _, body = GetMacroInfo(index)
-            make(name, ns.MacroIcon(index), body or "")
+            make(name, ns.MacroIcon(index), ns.Roles.Text(index > MAX_GENERAL and "character" or "general", name,
+                body or ""))
         end)
     end
     local body = code:GetRaw()
-    if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
+    if Letters(ns.Roles.Fill(body)) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     local name = strtrim(nameBox:GetText())
     make(name ~= "" and name or state.name, state.icon, body)
 end
@@ -1237,18 +1246,19 @@ end
 -- A name no macro has, cut to fit (see FreeName).
 function Window.FreeName(name) return FreeName(FirstLetters(name, MAX_NAME)) end
 
--- The wizard's macro: saved in the tab `scope` under a free name, then opened in the editor. With the wizard's
--- answers `spec`: one for your group's tank or healer is kept up to date (Roles.lua).
-function Window.CreateFromWizard(name, body, scope, spec)
+-- The wizard's macro: saved in the tab `scope` under a free name, then opened in the editor. @tank and @heal in it
+-- are the names of your group's tank and healer in the game's macro, kept up to date (Roles.lua).
+function Window.CreateFromWizard(name, body, scope)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local first, last, max = MacroRange(scope)
     if last - first + 1 >= max then return NoRoom(scope) end
-    if Letters(body) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
+    local filled = ns.Roles.Fill(body)
+    if Letters(filled) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     Guard(function()
-        local index = CreateMacro(Window.FreeName(name), NEW_ICON, body, scope == "character")
+        local index = CreateMacro(Window.FreeName(name), NEW_ICON, filled, scope == "character")
         if not index or index == 0 then return ns.Print("could not save the macro") end
         local saved, _, written = GetMacroInfo(index)
-        ns.Roles.Register(scope, saved, spec, written)
+        ns.Roles.Saved(scope, nil, saved, body, written)
         ns.History.Scan()
         state.scope, ns.db.scope = scope, scope
         ns.WizardWindow.Close()
@@ -1257,7 +1267,8 @@ function Window.CreateFromWizard(name, body, scope, spec)
 end
 
 -- The macro list changed elsewhere (Blizzard UI, another addon): keep our selection by name. The macro shown,
--- changed there and not here (MacroSense wrote in your group's new tank, say), shows as it is saved now.
+-- changed there and not here, shows as it is saved now (the names MacroSense writes in for @tank and @heal are no
+-- change to it).
 function Window.OnMacrosChanged()
     if not frame or not frame:IsShown() then return end
     if state.index then
@@ -1267,7 +1278,8 @@ function Window.OnMacrosChanged()
             state.index = index and index > 0 and index or nil
         end
     end
-    if state.index and not IsDirty() and select(3, GetMacroInfo(state.index)) ~= state.body then
+    local saved = state.index and ns.Roles.Text(state.scope, state.name, select(3, GetMacroInfo(state.index)) or "")
+    if saved and not IsDirty() and saved ~= state.body then
         return Load(state.index)
     end
     Window.RefreshList()

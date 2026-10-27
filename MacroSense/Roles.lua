@@ -1,7 +1,7 @@
--- Your group's tank and healer in the wizard's macros. A macro has the name of the one with the role ("/cast
--- [@Bob,help,nodead] Misdirection"), and the wizard's answers are kept with it: when your group changes, MacroSense
--- writes the macro again for the names then, out of combat. One changed since it was written stays as it is and is
--- let go. Needs the game.
+-- Your group's tank and healer: @tank and @heal in a macro. The game doesn't know them, so the macro it keeps has the
+-- name of the one with the role ("/cast [@Bob,help,nodead] Misdirection"), and MacroSense keeps the text with the
+-- tags: the editor shows and saves that, and when your group changes MacroSense writes the game's macro again for
+-- the names then, out of combat. A macro changed outside MacroSense since is let go. Needs the game.
 local _, ns = ...
 
 local Roles = {}
@@ -33,13 +33,13 @@ local function Others()
     return out
 end
 
--- Your group's tank and healer now, other than you: { tank = "Bob", healer = "Ann-Realm" }, the first of each in
--- the group's order; a raid's main tank comes first.
+-- Your group's tank and healer now, other than you: { tank = "Bob", heal = "Ann-Realm" }, the first of each in the
+-- group's order; a raid's main tank comes first.
 function Roles.Names()
     local out, main = {}, nil
     for _, unit in ipairs(Others()) do
         local role = UnitGroupRolesAssigned(unit)
-        local key = not Secret(role) and (role == "TANK" and "tank" or role == "HEALER" and "healer")
+        local key = not Secret(role) and (role == "TANK" and "tank" or role == "HEALER" and "heal")
         if key and not out[key] then out[key] = FullName(unit) end
         if not main and GetPartyAssignment("MAINTANK", unit) then main = FullName(unit) end
     end
@@ -61,28 +61,30 @@ end
 ------------------------------------------------------------------------
 -- The macros kept up to date
 ------------------------------------------------------------------------
--- The wizard's macros that name the tank or the healer, by name: { spec = the wizard's answers, written = the text
--- MacroSense gave the macro last }. General macros are the account's, character macros this character's.
+-- The macros with @tank or @heal, by name: { text = with the tags, written = the text the game's macro was given
+-- last }. General macros are the account's, character macros this character's.
 local function Store(scope)
     local db = scope == "character" and ns.char or ns.db
     db.roleMacros = db.roleMacros or {}
     return db.roleMacros
 end
 
-local function Copy(t)
-    if type(t) ~= "table" then return t end
-    local out = {}
-    for k, v in pairs(t) do out[k] = Copy(v) end
-    return out
+-- `text` as the game takes it: the names of your group now for @tank and @heal.
+function Roles.Fill(text) return ns.Conditions.Fill(text, Roles.Names()) end
+
+-- What MacroSense shows of macro `name` in tab `scope`, saved as `body`: its text with the tags, while the game's
+-- macro is as MacroSense wrote it.
+function Roles.Text(scope, name, body)
+    local kept = Store(scope)[name]
+    return kept and kept.written == body and kept.text or body
 end
 
--- A macro the wizard just made in tab `scope`, as `written`: kept up to date from now on, if it names the tank or
--- the healer.
-function Roles.Register(scope, name, spec, written)
-    if not ns.Wizard.UsesRoles(spec) then return end
-    local kept = Copy(spec)
-    kept.roles = nil -- the names of now: those of the moment it is written go in
-    Store(scope)[name] = { spec = kept, written = written }
+-- MacroSense saved macro `name` (`old` before, when renamed) as `text`, the game's as `written`: kept up to date
+-- while it has a tag, else let go.
+function Roles.Saved(scope, old, name, text, written)
+    local store = Store(scope)
+    if old then store[old] = nil end
+    store[name] = text ~= written and { text = text, written = written } or nil
 end
 
 -- This editor moves a macro into the other tab: it is kept up to date there.
@@ -131,9 +133,7 @@ function Roles.Update()
             store[name] = nil
             if index then
                 store[now] = entry
-                entry.spec.roles = names
-                local text = ns.Wizard.Text(entry.spec)
-                entry.spec.roles = nil
+                local text = ns.Conditions.Fill(entry.text, names)
                 if Letters(text) > MAX_BODY then
                     if not told[text] then
                         told[text] = true
@@ -151,14 +151,13 @@ function Roles.Update()
 end
 
 -- The group or its roles changed, or combat ended: a second later (the game tells it several times at once), the
--- wizard and the macros follow.
+-- macros follow.
 local soon
 local function Soon()
     if soon then return end
     soon = true
     C_Timer.After(1, function()
         soon = false
-        ns.WizardWindow.RolesChanged()
         Roles.Update()
     end)
 end

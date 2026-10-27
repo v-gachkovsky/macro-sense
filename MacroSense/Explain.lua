@@ -47,7 +47,7 @@ end
 local UNITS = {
     target = "your target", focus = "your focus", mouseover = "the unit under the mouse", player = "yourself",
     pet = "your pet", vehicle = "your vehicle", targettarget = "your target's target", none = "whoever you click",
-    npc = "the one you are talking to",
+    npc = "the one you are talking to", tank = "your group's tank", heal = "your group's healer",
 }
 local NUMBERED = {
     party = "party member %d", partypet = "the pet of party member %d", raid = "raid member %d",

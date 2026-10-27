@@ -344,10 +344,10 @@ ns.locales.uk = {
     ["Who the macro casts on. As usual: your target, or you when the game casts on you by itself (Auto Self Cast)."] =
         "На кого макрос застосовує. «Як завжди»: на вашу ціль або на вас, коли гра сама застосовує на вас "
         .. "(Auto Self Cast).",
-    ["Group's tank or healer: the one with the role now, by name; MacroSense puts in the new one when your group "
-        .. "changes."] =
-        "«Танк групи» чи «Хілер групи»: той, хто має цю роль зараз, на ім'я; коли група зміниться, MacroSense сам "
-        .. "впише нове.",
+    ["Group's tank or healer: @tank and @heal, the name of the one with the role in the game's macro, kept up to "
+        .. "date."] =
+        "«Танк групи» чи «Хілер групи»: @tank і @heal; у макросі гри там буде ім'я того, хто має цю роль, і "
+        .. "MacroSense сам його оновлює.",
     ["When the one before is not there, or not the one asked for: this one."] =
         "Коли попереднього немає або він не той, що потрібно: цей.",
     ["Only"] = "Лише",
@@ -496,8 +496,6 @@ ns.locales.uk = {
     ["Your target's target"] = "Ціль вашої цілі",
     ["Your group's tank"] = "Танк вашої групи",
     ["Your group's healer"] = "Хілер вашої групи",
-    ["no tank now"] = "танка зараз немає",
-    ["no healer now"] = "хілера зараз немає",
     ["Party member %d"] = "Член групи %d",
     ["Arena enemy %d"] = "Ворог на арені %d",
     ["Do nothing"] = "Нічого не робити",
@@ -517,10 +515,9 @@ ns.locales.uk = {
         "Той, хто має роль танка у вашій групі чи рейді, окрім вас.",
     ["The one with the healer role in your party or raid, other than you."] =
         "Той, хто має роль хілера у вашій групі чи рейді, окрім вас.",
-    ["The macro has their name, and MacroSense writes in the new one when your group changes (out of combat), until "
-        .. "you edit the macro yourself."] =
-        "У макросі буде ім'я цього гравця, а коли група зміниться, MacroSense сам впише нове (поза боєм), доки ви не "
-        .. "зміните макрос власноруч.",
+    ["MacroSense puts in the name of the one with the role now, and a new one when your group changes (out of "
+        .. "combat)."] =
+        "MacroSense вписує в макрос ім'я того, хто має цю роль зараз, а коли група зміниться — нове (поза боєм).",
     ["The enemies of an arena match, in the order of their frames."] = "Вороги на арені в порядку їхніх рамок.",
     ["And if nobody is under the mouse?"] = "А якщо під мишею нікого немає?",
     ["And if you have no target?"] = "А якщо у вас немає цілі?",
@@ -733,6 +730,8 @@ ns.locales.uk = {
     ["your vehicle"] = "ваш транспорт",
     ["your target's target"] = "ціль вашої цілі",
     ["whoever you click"] = "того, на кого ви клацнете",
+    ["your group's tank"] = "танка вашої групи",
+    ["your group's healer"] = "хілера вашої групи",
     ["the one you are talking to"] = "того, з ким ви говорите",
     ["party member %d"] = "члена групи %d",
     ["the pet of party member %d"] = "улюбленця члена групи %d",
@@ -965,6 +964,8 @@ ns.locales.uk = {
     ["Tabard"] = "Гербова накидка",
     ["ground at cursor"] = "земля під курсором",
     ["no target"] = "без цілі",
+    ["group's tank"] = "танк групи",
+    ["group's healer"] = "хілер групи",
     ["NPC you talk to"] = "NPC, з яким ви говорите",
     ["highest"] = "найвищий",
     ["equipped"] = "вдягнено",

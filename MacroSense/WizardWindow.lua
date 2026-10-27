@@ -872,8 +872,8 @@ local function Build()
         d:SetPoint("TOPLEFT", X + (i - 1) * 158, -1)
         if i > 1 then Text(blocks.on, L["then"], X + (i - 1) * 158 - 32, -5, "dim") end
         Tip(d, i == 1 and L["On"] or L["Then"], i == 1 and (L["Who the macro casts on. As usual: your target, or "
-            .. "you when the game casts on you by itself (Auto Self Cast)."] .. " " .. L["Group's tank or healer: the "
-            .. "one with the role now, by name; MacroSense puts in the new one when your group changes."])
+            .. "you when the game casts on you by itself (Auto Self Cast)."] .. " " .. L["Group's tank or healer: "
+            .. "@tank and @heal, the name of the one with the role in the game's macro, kept up to date."])
             or L["When the one before is not there, or not the one asked for: this one."])
     end
     Text(blocks.on, L["Only"], PAD, -39)
@@ -986,13 +986,12 @@ function WizardWindow.Create()
     if not text then return end
     local name = strtrim(NameBox():GetText())
     if name == "" then name = W.Name(spec) or L["Macro"] end
-    ns.Window.CreateFromWizard(name, text, scope, spec)
+    ns.Window.CreateFromWizard(name, text, scope)
 end
 
 -- A fresh form, for a macro in `tab`: the questions from the first, or the form.
 function WizardWindow.Open(tab)
     spec, scope, suggested = W.Fresh(), tab or "general", nil -- before the form: its controls read them
-    spec.roles = ns.Roles.Names() -- the names of your group's tank and healer
     if not frame then Build() end
     controls.name:SetText("")
     controls.stepName:SetText("")
@@ -1016,14 +1015,6 @@ function WizardWindow.Close()
 end
 
 function WizardWindow.IsShown() return frame ~= nil and frame:IsShown() end
-
--- Your group or its roles changed: the tank's and the healer's names follow, in the macro and in the answers.
-function WizardWindow.RolesChanged()
-    if not WizardWindow.IsShown() then return end
-    spec.roles = ns.Roles.Names()
-    if stepsShown and asked.kind == "choice" then ShowStep() end
-    Update()
-end
 
 function WizardWindow.Toggle(tab)
     if WizardWindow.IsShown() then return WizardWindow.Close() end

@@ -67,6 +67,18 @@ function Conditions.IsUnit(unit)
     return max ~= nil and n:sub(1, 1) ~= "0" and tonumber(n) <= max and suffixesOnly(rest)
 end
 
+-- MacroSense's own units: your group's tank and healer. The game doesn't know them, so the macro it keeps has the
+-- name of the one with the role in their place (Roles.lua); the text MacroSense shows keeps @tank and @heal.
+Conditions.TAGS = { tank = true, heal = true }
+
+-- `text` with @tank and @heal (target=tank too) as the names in `names` ({ tank = "Bob", heal = "Ann-Realm" }), or
+-- as nobody (@none) for a role no one has. Only in small letters: a player's name starts with a capital.
+function Conditions.Fill(text, names)
+    return (text:gsub("([@=])(%l+)", function(lead, tag)
+        if Conditions.TAGS[tag] then return lead .. (names[tag] or "none") end
+    end))
+end
+
 ------------------------------------------------------------------------
 -- Values
 ------------------------------------------------------------------------

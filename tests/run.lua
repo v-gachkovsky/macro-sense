@@ -708,6 +708,8 @@ do
         { "/stopmacro [mod:shift]", "with Shift held: the macro stops here" },
         { "/startattack", "starts auto attack" },
         { "/startattack [@focus]", "starts auto attack on your focus" },
+        { "/cast [@tank,help][@heal] Misdirection", "Misdirection on your group's tank, if it is a friend |   if "
+            .. "not, on your group's healer" },
         { "/target [@mouseover,exists][@focus]", "targets the unit under the mouse, if there is one |   if not, targets "
             .. "your focus" },
         { "/target Rare Elite", "targets Rare Elite" },
@@ -1142,7 +1144,7 @@ do
     check("wizard units: a cast goes anywhere", keys(W.Units("cast", "first")):find("^default,target,mouseover") ~= nil
         and keys(W.Units("cast", "then")):find("^none,default,target") ~= nil, keys(W.Units("cast", "first")))
     check("wizard units: /target, by name or units, not your target", keys(W.Units("target", "first"))
-        == "none,mouseover,focus,tank,healer,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
+        == "none,mouseover,focus,tank,heal,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
         keys(W.Units("target", "first")))
     check("wizard pet: Move To only from Cataclysm on (Classic Era 0, TBC 1)", not keys(W.PetActions(1)):find("moveto")
         and keys(W.PetActions(3)):find("moveto") ~= nil and keys(W.PetActions(nil)):find("moveto") ~= nil
@@ -1151,7 +1153,7 @@ do
         == "default,target,mouseover,focus,party1,party2,party3,party4,targettarget,arena1,arena2,arena3",
         keys(W.Units("pet", "first")))
     check("wizard units: /focus keys clear it, no focus to focus", keys(W.Units("focus", "key"))
-        :find("^clear,target,mouseover,tank,healer,player,") ~= nil and W.Units("focus", "key")[1].name == "Clear focus",
+        :find("^clear,target,mouseover,tank,heal,player,") ~= nil and W.Units("focus", "key")[1].name == "Clear focus",
         keys(W.Units("focus", "key")))
     local fitted = form({ command = "focus", on = { "mouseover", "default", "none" },
         keys = { shift = { on = { "cursor", "default" } } } })
@@ -1175,39 +1177,27 @@ do
     for label, body in pairs(made) do
         check("wizard " .. label .. ": no issues", body and issues(body) == "", body and issues(body))
     end
-    -- Your group's tank and healer go by name, as the game side found them (spec.roles). One the group has not is
-    -- left out, or stays as nobody ("@none") when no unit is left: the name goes in once someone has the role.
-    local function withRoles(set, roles)
-        local spec = form(set)
-        spec.roles = roles
-        return W.Text(spec)
-    end
-    local roles, md = { tank = "Bob", healer = "Ann-Other" }, { name = "Misdirection" }
-    local misdirect = { action = md, only = "friends", on = { "tank", "pet", "none" } }
-    check("wizard roles: the tank by name, then the pet", withRoles(misdirect, roles)
-        == "#showtooltip\n/cast [@Bob,help,nodead][@pet,help,nodead] Misdirection", withRoles(misdirect, roles))
-    check("wizard roles: no tank, the pet", withRoles(misdirect, {})
-        == "#showtooltip\n/cast [@pet,help,nodead] Misdirection", withRoles(misdirect, {}))
-    local alone = withRoles({ action = md, only = "friends", on = { "tank", "none", "none" } }, {})
-    check("wizard roles: the tank alone, and none: nobody", alone == "#showtooltip\n/cast [@none,help,nodead] Misdirection"
-        and issues(alone) == "", alone)
-    local heals = { action = heal, only = "friends", on = { "mouseover", "healer", "default" },
-        keys = { shift = { unit = "tank" } } }
-    check("wizard roles: a key on the tank, the healer in order, from another realm", withRoles(heals, roles)
-        == "#showtooltip\n/cast [mod:shift,@Bob,help,nodead][@mouseover,help,nodead][@Ann-Other,help,nodead][] "
-        .. "Flash Heal", withRoles(heals, roles))
-    check("wizard roles: neither: the key's tank is nobody, the healer left out", withRoles(heals, nil)
-        == "#showtooltip\n/cast [mod:shift,@none,help,nodead][@mouseover,help,nodead][] Flash Heal",
-        withRoles(heals, nil))
-    check("wizard roles: /assist the tank", withRoles({ command = "assist", on = { "tank", "none", "none" } }, roles)
-        == "/assist [@Bob,exists,nodead]")
-    local inactive = form({})
-    inactive.keys.alt.on = { "healer", "none" }
-    check("wizard roles: what names them", W.UsesRoles(form({ on = { "focus", "tank", "none" } }))
-        and W.UsesRoles(form({ keys = { ctrl = { unit = "healer" } } })) and not W.UsesRoles(inactive)
-        and not W.UsesRoles(form({})))
+    -- Your group's tank and healer: MacroSense's own @tank and @heal, checked like any unit; the pet attacks neither.
+    local md = { name = "Misdirection" }
+    local misdirect = text({ action = md, only = "friends", on = { "tank", "pet", "none" } })
+    check("wizard roles: @tank, then the pet", misdirect
+        == "#showtooltip\n/cast [@tank,help,nodead][@pet,help,nodead] Misdirection" and issues(misdirect) == "", misdirect)
+    local heals = text({ action = heal, only = "friends", on = { "mouseover", "heal", "default" },
+        keys = { shift = { unit = "tank" } } })
+    check("wizard roles: a key on the tank, the healer in order", heals
+        == "#showtooltip\n/cast [mod:shift,@tank,help,nodead][@mouseover,help,nodead][@heal,help,nodead][] Flash Heal",
+        heals)
+    check("wizard roles: /assist the tank", text({ command = "assist", on = { "tank", "none", "none" } })
+        == "/assist [@tank,exists,nodead]")
     check("wizard roles: the pet attacks neither", not keys(W.Units("pet", "first")):find("tank")
-        and not keys(W.Units("pet", "then")):find("healer"))
+        and not keys(W.Units("pet", "then")):find("heal"))
+    -- The game's macro: their names for the tags, nobody for a role no one has; a capital is a player's name.
+    local C = ns.Conditions
+    check("roles fill: the names", C.Fill("/cast [@tank,help][target=heal][@heal] X", { tank = "Bob", heal = "Ann-R" })
+        == "/cast [@Bob,help][target=Ann-R][@Ann-R] X", C.Fill("/cast [@tank,help][target=heal][@heal] X",
+        { tank = "Bob", heal = "Ann-R" }))
+    check("roles fill: nobody, and not other words", C.Fill("/cast [@tank][@Tank][@tanker][@heal] X", {})
+        == "/cast [@none][@Tank][@tanker][@none] X", C.Fill("/cast [@tank][@Tank][@tanker][@heal] X", {}))
     -- Ranks: the one picked in brackets, as the game names it; the spell alone is the highest learned.
     local ranked = { name = "Fireball", rank = "Rank 2", ranks = { "Rank 1", "Rank 2", "Rank 3" } }
     check("wizard spelled: with a rank, without", W.Spelled(ranked) == "Fireball(Rank 2)"
@@ -1294,7 +1284,7 @@ do
     check("questions: where it goes, by the spell's name", on1.text == "Where should Flash Heal go?"
         and on1.chosen == "mouseover" and on1.hint == nil, on1.text)
     check("questions: a cast goes anywhere, nobody is no first answer", keys(spec, "on1") == "default,target,mouseover,"
-        .. "focus,tank,healer,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,arena3,cursor",
+        .. "focus,tank,heal,player,pet,party1,party2,party3,party4,targettarget,arena1,arena2,arena3,cursor",
         keys(spec, "on1"))
     local mouse, party = find(spec, "on1", "mouseover"), find(spec, "on1", "party2")
     local usual = find(spec, "on1", "default")
@@ -1345,31 +1335,25 @@ do
     bolt.action, bolt.only, bolt.reaction = { name = "Flash Heal" }, "friends", "friends"
     check("questions: a spell for friends goes to no enemy", find(bolt, "on1", "party1") ~= nil
         and find(bolt, "on1", "player") ~= nil and not find(bolt, "on1", "arena1"), keys(bolt, "on1"))
-    -- Your group's tank and healer: by name in the hint, or that the group has none now; a spell for enemies goes
-    -- to neither.
-    bolt.roles = { tank = "Bob" }
-    local tank, healer = find(bolt, "on1", "tank"), find(bolt, "on1", "healer")
-    check("questions: your group's tank and healer", tank.name == "On your group's tank" and tank.hint == "@Bob"
+    -- Your group's tank and healer: in plain words, @tank and @heal as the hint; a spell for enemies goes to neither.
+    local tank, healer = find(bolt, "on1", "tank"), find(bolt, "on1", "heal")
+    check("questions: your group's tank and healer", tank.name == "On your group's tank" and tank.hint == "@tank"
         and tank.tip:find("^The one with the tank role in your party or raid") ~= nil
-        and tank.tip:find("until you edit the macro yourself%.$") ~= nil and healer.name == "On your group's healer"
-        and healer.hint == "no healer now" and healer.tip:find("^The one with the healer role") ~= nil, tank.tip)
-    bolt.roles = { healer = "Ann-Other" }
-    check("questions: the healer by name, no tank now", find(bolt, "on1", "healer").hint == "@Ann-Other"
-        and find(bolt, "on1", "tank").hint == "no tank now")
+        and tank.tip:find("when your group changes %(out of combat%)%.$") ~= nil and healer.name == "On your group's healer"
+        and healer.hint == "@heal" and healer.tip:find("^The one with the healer role") ~= nil, tank.tip)
     Q.Choose(bolt, "on1", "tank")
     check("questions: and if your group has no tank", ask(bolt, "on2").text == "And if your group has no tank?")
-    Q.Choose(bolt, "on1", "healer")
+    Q.Choose(bolt, "on1", "heal")
     check("questions: and if it has no healer", ask(bolt, "on2").text == "And if your group has no healer?")
     Q.Choose(bolt, "on1", "mouseover")
-    bolt.roles = nil
     local enemies = W.Fresh()
     enemies.action, enemies.only, enemies.reaction = { name = "Shadow Bolt" }, "enemies", "enemies"
     check("questions: a spell for enemies goes to neither", not find(enemies, "on1", "tank")
-        and not find(enemies, "on1", "healer"), keys(enemies, "on1"))
+        and not find(enemies, "on1", "heal"), keys(enemies, "on1"))
     local assist = W.Fresh()
     W.Switch(assist, "assist")
     check("questions: whose target: your group's tank", find(assist, "on1", "tank").name == "Your group's tank"
-        and find(assist, "on1", "healer").name == "Your group's healer", find(assist, "on1", "tank").name)
+        and find(assist, "on1", "heal").name == "Your group's healer", find(assist, "on1", "tank").name)
     bolt.keys.shift.active = true
     bolt.keys.shift.action, bolt.keys.shift.reaction = { name = "Shadow Bolt" }, "enemies"
     Q.Choose(bolt, "shiftOn1", "mouseover")
@@ -1466,7 +1450,7 @@ do
         and find(spec, "on1", "party1") ~= nil and find(spec, "on1", "arena1") ~= nil
         and ask(spec, "on1").text == "Who should become your target?"
         and ask(spec, "only").text == "Friends or enemies?"
-        and keys(spec, "on1") == "mouseover,focus,tank,healer,player,pet,party1,party2,party3,party4,targettarget,arena1,"
+        and keys(spec, "on1") == "mouseover,focus,tank,heal,player,pet,party1,party2,party3,party4,targettarget,arena1,"
         .. "arena2,arena3,byName" and find(spec, "on1", "mouseover").name == "Whoever is under the mouse"
         and find(spec, "on1", "party1").name == "Party member 1", keys(spec, "on1"))
     Q.Choose(spec, "on1", "byName")

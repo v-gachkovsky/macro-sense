@@ -76,11 +76,12 @@ local function luaSpans(s, base, add)
     end
 end
 
--- A unit after "@" / "target=". Not a unit id: may still be a player's name, so only a warning; none for a name in
--- your group (isMember).
+-- A unit after "@" / "target=". Not a unit id: may still be a player's name, so only a warning; none for
+-- MacroSense's @tank and @heal, or a name in your group (isMember).
 local function unitSpan(unit, from, add)
     local to = from + #unit - 1
-    if ns.Conditions and not ns.Conditions.IsUnit(unit) and not (Highlight.isMember and Highlight.isMember(unit)) then
+    local C = ns.Conditions
+    if C and not C.IsUnit(unit) and not C.TAGS[unit] and not (Highlight.isMember and Highlight.isMember(unit)) then
         add(from, to, "unit", string.format(L["unknown unit \"%s\" (fine if it is a player's name)"], unit), "warning")
     else
         add(from, to, "unit")

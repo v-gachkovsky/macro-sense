@@ -117,7 +117,7 @@ end
 -- Whom a spell for enemies never goes to, and one for friends.
 local NOT_FOR = {
     enemies = { player = true, pet = true, party1 = true, party2 = true, party3 = true, party4 = true, tank = true,
-        healer = true },
+        heal = true },
     friends = { arena1 = true, arena2 = true, arena3 = true },
 }
 
@@ -139,12 +139,12 @@ local function Name(spec, unit, cast, only)
         return ({ default = L["On your target, as usual"], mouseover = L["On whoever is under the mouse"],
             cursor = L["On the ground under the cursor"], player = L["On yourself"], focus = L["On your focus"],
             pet = L["On your pet"], targettarget = L["On your target's target"], tank = L["On your group's tank"],
-            healer = L["On your group's healer"] })[unit]
+            heal = L["On your group's healer"] })[unit]
     end
     return ({ default = L["Your target, as usual"], target = L["Your target"],
         mouseover = L["Whoever is under the mouse"], player = L["Yourself"], focus = L["Your focus"],
         pet = L["Your pet"], targettarget = L["Your target's target"], tank = L["Your group's tank"],
-        healer = L["Your group's healer"] })[unit]
+        heal = L["Your group's healer"] })[unit]
 end
 
 -- What a unit is, for whoever doesn't know the word.
@@ -154,8 +154,8 @@ local function UnitTip(unit)
     if W.ROLES[unit] then
         return (unit == "tank" and L["The one with the tank role in your party or raid, other than you."]
             or L["The one with the healer role in your party or raid, other than you."]) .. " "
-            .. L["The macro has their name, and MacroSense writes in the new one when your group changes (out of "
-                .. "combat), until you edit the macro yourself."]
+            .. L["MacroSense puts in the name of the one with the role now, and a new one when your group changes "
+                .. "(out of combat)."]
     end
     return ({ default = L["The game's own choice: your target, or you when the game casts on you by itself "
             .. "(Auto Self Cast)."],
@@ -165,16 +165,6 @@ local function UnitTip(unit)
             .. "to place."],
         focus = L["A second target you keep an eye on; /focus sets it."],
         targettarget = L["Whoever your target has targeted: the one a boss attacks, say."] })[unit]
-end
-
--- The macro's words for a unit, "@mouseover"; your group's tank by name ("@Bob"), or that there is none now. Your
--- target and As usual need none.
-local function UnitHint(spec, unit)
-    if unit == "default" or unit == "target" then return nil end
-    if not W.ROLES[unit] then return "@" .. unit end
-    local name = W.RoleName(spec, unit)
-    if name then return "@" .. name end
-    return unit == "tank" and L["no tank now"] or L["no healer now"]
 end
 
 -- The units a step offers: those the command takes there, but none asked about before it in the same order, nor
@@ -191,7 +181,8 @@ local function UnitAnswers(spec, key, i)
             last[#last + 1] = { key = "clear", name = L[u.name] }
         elseif u.key ~= "none" and not used[u.key] then
             out[#out + 1] = { key = u.key, name = Name(spec, u.key, cast, only),
-                tip = (cast or u.key ~= "default") and UnitTip(u.key) or nil, hint = UnitHint(spec, u.key) }
+                tip = (cast or u.key ~= "default") and UnitTip(u.key) or nil,
+                hint = (u.key ~= "default" and u.key ~= "target") and "@" .. u.key or nil }
         end
     end
     if not key and spec.command == "target" then out[#out + 1] = { key = "byName", name = L["Someone by name"] } end
@@ -208,7 +199,7 @@ local function Missing(unit)
     return ({ mouseover = L["And if nobody is under the mouse?"], target = L["And if you have no target?"],
         focus = L["And if you have no focus?"], pet = L["And if your pet is not out?"],
         targettarget = L["And if your target has no target?"], tank = L["And if your group has no tank?"],
-        healer = L["And if your group has no healer?"] })[unit]
+        heal = L["And if your group has no healer?"] })[unit]
 end
 
 -- Or the one there doesn't do: not a friend, not an enemy, dead.
