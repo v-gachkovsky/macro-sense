@@ -1036,9 +1036,9 @@ do
     expectText("stop the cast, attack, the pet too", text({ action = bolt, only = "enemies", stopcasting = true,
         startattack = true, petattack = true }),
         "#showtooltip\n/stopcasting\n/startattack\n/cast [@mouseover,harm,nodead][] Frostbolt\n/petattack")
-    expectText("attack once the nearest enemy is targeted, before trinkets", text({ action = bolt, only = "enemies",
+    expectText("attack right before the spell, after trinkets", text({ action = bolt, only = "enemies",
         on = usual, stopcasting = true, nearest = true, startattack = true, trinket1 = true }),
-        "#showtooltip Frostbolt\n/stopcasting\n/targetenemy [noharm][dead]\n/startattack\n/use 13\n/cast Frostbolt")
+        "#showtooltip Frostbolt\n/stopcasting\n/targetenemy [noharm][dead]\n/use 13\n/startattack\n/cast Frostbolt")
     expectText("an item", text({ command = "use", action = { name = "Wool Bandage", item = true }, only = "friends",
         on = { "mouseover", "player", "none" } }), "#showtooltip\n/use [@mouseover,help,nodead][@player] Wool Bandage")
     -- Other commands: a slot for /use; a list for /castsequence (with what starts it over) and /castrandom.
