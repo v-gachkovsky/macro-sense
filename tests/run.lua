@@ -1035,7 +1035,10 @@ do
     expectText("a trinket alone", text({ trinket2 = true }), "#showtooltip\n/use 14")
     expectText("stop the cast, attack, the pet too", text({ action = bolt, only = "enemies", stopcasting = true,
         startattack = true, petattack = true }),
-        "#showtooltip\n/stopcasting\n/cast [@mouseover,harm,nodead][] Frostbolt\n/startattack\n/petattack")
+        "#showtooltip\n/stopcasting\n/startattack\n/cast [@mouseover,harm,nodead][] Frostbolt\n/petattack")
+    expectText("attack right before the spell, after trinkets", text({ action = bolt, only = "enemies",
+        on = usual, stopcasting = true, nearest = true, startattack = true, trinket1 = true }),
+        "#showtooltip Frostbolt\n/stopcasting\n/targetenemy [noharm][dead]\n/use 13\n/startattack\n/cast Frostbolt")
     expectText("an item", text({ command = "use", action = { name = "Wool Bandage", item = true }, only = "friends",
         on = { "mouseover", "player", "none" } }), "#showtooltip\n/use [@mouseover,help,nodead][@player] Wool Bandage")
     -- Other commands: a slot for /use; a list for /castsequence (with what starts it over) and /castrandom.
@@ -1092,7 +1095,7 @@ do
     expectText("also: what goes first and what is said", text({ action = bolt, on = usual, cancelform = true,
         dismount = true, cancelaura = { name = "Ice Block" }, say = " Casting on %t ", channel = "party",
         startattack = true }), "#showtooltip\n/cancelform\n/dismount [mounted]\n/cancelaura Ice Block\n"
-        .. "/cast Frostbolt\n/startattack\n/party Casting on %t")
+        .. "/startattack\n/cast Frostbolt\n/party Casting on %t")
     expectText("also: nothing to say, no line", text({ action = bolt, on = usual, say = "  ", channel = "yell" }),
         "#showtooltip\n/cast Frostbolt")
     check("wizard: a name only for /target", text({ command = "focus", byName = "Hogger", on = { "mouseover", "none",

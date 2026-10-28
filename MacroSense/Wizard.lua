@@ -395,11 +395,12 @@ function Wizard.Text(spec)
     if spec.cancelaura then lines[#lines + 1] = "/cancelaura " .. spec.cancelaura.name end
     if spec.nearest then lines[#lines + 1] = "/targetenemy [noharm][dead]" end
     for _, use in ipairs(uses) do lines[#lines + 1] = use end
+    -- Auto attack right before the spell: on the target the lines before it may have changed (the nearest enemy).
+    if spec.startattack then lines[#lines + 1] = "/startattack" end
     if pet then
         for _, l in ipairs(before) do lines[#lines + 1] = l end
     end
     if line then lines[#lines + 1] = line end
-    if spec.startattack then lines[#lines + 1] = "/startattack" end
     if spec.petattack then lines[#lines + 1] = "/petattack" end
     local say = spec.say and Trim(spec.say) or ""
     if say ~= "" then lines[#lines + 1] = "/" .. spec.channel .. " " .. say end

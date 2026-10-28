@@ -29,6 +29,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   deleting one says it in the question, and moving one those bars have asks first.
 
 ### Changed
+- The wizard puts `/startattack` right before the spell: after `/stopcasting`, trinkets and the lines that leave
+  your form, get you off your mount, cancel a buff or target the nearest enemy, so the attack goes to the target
+  they leave (it came last).
 - In a macro's tooltip on the action bars, what MacroSense adds (its warnings, Shift + right-click) comes after a
   blank line, apart from the game's own lines.
 
