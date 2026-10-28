@@ -4644,6 +4644,123 @@ do
     NextFrame()
 end
 
+-- Other characters' macros: kept as they were when you last played each one, shown in the Character tab under their
+-- names (your realm first), to copy into this character or General. A search finds them too; a character can be
+-- forgotten.
+do
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("character")
+    NextFrame()
+    CreateMacro("Mine Here", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    local kept = ns.Character().macros
+    check("alts: this character's own macros kept", kept["Mine Here"] and kept["Mine Here"].body == "/cast Fear"
+        and ns.Character().seen == clock)
+    check("alts: not the general ones", kept[(GetMacroInfo(1))] == nil)
+    -- The rows shown, top to bottom: "+ Name" for a character (- when open), "  name" for its macros.
+    local function shown()
+        local out = {}
+        for _, o in ipairs(created) do
+            if o.what and o.what ~= "macro" and o.shown then out[#out + 1] = o end
+        end
+        table.sort(out, function(a, b) return a.point[3] > b.point[3] end)
+        local text = {}
+        for i, r in ipairs(out) do
+            text[i] = r.what == "alt" and ((r.icon.texture or ""):find("Minus") and "- " or "+ ") .. r.alt.label
+                or "  " .. r.macro.name
+        end
+        return table.concat(text, " | "), out
+    end
+    local function find(label)
+        local _, list = shown()
+        for _, r in ipairs(list) do
+            if (r.what == "alt" and r.alt.label == label) or (r.what == "altMacro" and r.macro.name == label) then return r end
+        end
+    end
+    local hint
+    for _, o in ipairs(created) do
+        if o.kind == "FontString" and tostring(o.text):find("^Log in with your other characters") then hint = o end
+    end
+    check("alts: none known yet, a hint says how", hint and hint:IsShown() and shown() == "")
+    ns.db.characters["Mage-Realm"] = { name = "Mage", realm = "Realm", class = "MAGE", seen = clock, macros = {
+        ["Poly MO"] = { body = "/cast [@mouseover] Polymorph", icon = 6 }, ["Blink Out"] = { body = "/cast Blink", icon = 5 } } }
+    ns.db.characters["Rogue-Other"] = { name = "Rogue", realm = "Other", class = "ROGUE", seen = clock,
+        macros = { ["Kick F"] = { body = "/cast [@focus] Kick", icon = 7 } } }
+    ns.db.characters["Ann-Zed"] = { name = "Ann", realm = "Zed", seen = clock, macros = { Hide = { body = "/cast Vanish" } } }
+    ns.db.characters["Empty-Realm"] = { name = "Empty", realm = "Realm", macros = {} }
+    RAID_CLASS_COLORS = { MAGE = { r = 0.25, g = 0.78, b = 0.92 } }
+    ns.Window.RefreshList()
+    check("alts: under their names, your realm first, closed", shown() == "+ Mage | + Ann-Zed | + Rogue-Other"
+        and not hint:IsShown(), shown())
+    check("alts: in their class color", find("Mage").text.textColor == "40c7eb", find("Mage").text.textColor)
+    check("alts: how many each has", find("Mage").text.text:find("2|r", 1, true) ~= nil, find("Mage").text.text)
+    Fire(find("Mage"), "OnClick")
+    check("alts: a click shows its macros", shown() == "- Mage |   Blink Out |   Poly MO | + Ann-Zed | + Rogue-Other",
+        shown())
+    check("alts: its macros under its name, dim", find("Blink Out").icon.point[2] == 18
+        and find("Blink Out").text.textColor == ns.scheme.dim, find("Blink Out").icon.point[2])
+    check("alts: no x on another character's macro", not find("Blink Out").remove:IsShown()
+        and find("Blink Out").copy:IsShown() and find("Mage").remove:IsShown() and not find("Mage").copy:IsShown())
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    local function hover(r)
+        tip = {}
+        Fire(r, "OnEnter")
+        return table.concat(tip, " / ")
+    end
+    check("alts: its text on hover", hover(find("Poly MO")) == "Poly MO / A macro of Mage. Click to copy it. / "
+        .. "/cast [@mouseover] Polymorph", hover(find("Poly MO")))
+    check("alts: the character's", hover(find("Mage")) == "Mage / Its own macros, as they were when you last played "
+        .. "it: Today, " .. date("%H:%M", clock) .. ". Click to show or hide them.", hover(find("Mage")))
+    GameTooltip.AddLine = nil
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and ns.Highlight.Strip(r.text.text):sub(1, #label) == label then return r end
+        end
+    end
+    Fire(find("Blink Out"), "OnClick")
+    check("alts: a click offers to copy it", menuItem("Copy to Character") and menuItem("Copy to General"))
+    Fire(menuItem("Copy to General"), "OnClick")
+    NextFrame()
+    local copied = GetMacroIndexByName("Blink Out")
+    check("alts: copied into General, opened", copied > 0 and copied <= SLOTS.MAX_ACCOUNT_MACROS
+        and ns.db.scope == "general" and raw() == "/cast Blink", copied)
+    check("alts: the General tab has no other characters", shown() == "", shown())
+    ns.Window.SetScope("character")
+    NextFrame()
+    check("alts: still open in the tab again", shown():find("^%- Mage") ~= nil, shown())
+    Fire(find("Blink Out").copy, "OnClick")
+    Fire(menuItem("Copy to Character"), "OnClick")
+    NextFrame()
+    check("alts: copied into this character, under a free name", GetMacroIndexByName("Blink Out 2")
+        > SLOTS.MAX_ACCOUNT_MACROS and ns.db.scope == "character")
+    -- A search finds them too, and shows those it finds.
+    MacroSenseSearch:SetText("kick")
+    check("alts: a search finds them", shown() == "- Rogue-Other |   Kick F", shown())
+    Fire(MacroSenseSearch, "OnEnterPressed")
+    check("alts: Enter opens no character", ns.db.scope == "character" and raw() == "/cast Blink", raw())
+    MacroSenseSearch:SetText("")
+    -- Only the macros on no bar: not other characters'.
+    local filter
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Not on action bars" then filter = o end
+    end
+    Fire(filter, "OnClick")
+    check("alts: not with the filter", shown() == "", shown())
+    Fire(filter, "OnClick")
+    -- Forgotten: gone, also from the bars counted.
+    Fire(find("Rogue-Other").remove, "OnClick")
+    check("alts: a character forgotten", ns.db.characters["Rogue-Other"] == nil and not shown():find("Rogue"), shown())
+    for _, name in ipairs({ "Mine Here", "Blink Out", "Blink Out 2" }) do
+        while GetMacroIndexByName(name) > 0 do DeleteMacro(GetMacroIndexByName(name)) end
+    end
+    Send("UPDATE_MACROS")
+    for _, key in ipairs({ "Mage-Realm", "Ann-Zed", "Empty-Realm" }) do ns.db.characters[key] = nil end
+    RAID_CLASS_COLORS = nil
+    ns.Window.SetScope("general")
+    NextFrame()
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"

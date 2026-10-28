@@ -182,6 +182,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - Asks before discarding unsaved changes.
 - **Copy** or **delete** a macro with the buttons at its end in the list: a duplicate in the same tab, or a copy in
   the Character / General tab.
+- **Your alts' macros** in the Character tab, under each character's name: read them and copy one to this
+  character or General with a click. They are kept as they were when you last played each character.
 - **Move** a macro between the General and Character tabs, which the game's macro window can't do: its buttons on
   your action bars stay, and its history goes along.
 - **Not on action bars** shows only the macros on no bar, to free slots when a tab is full. Hover a macro to see

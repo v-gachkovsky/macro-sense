@@ -127,9 +127,14 @@ end
 
 -- The macros may have changed (UPDATE_MACROS, a save): a changed text is kept as a version, a macro gone
 -- under a new name takes its versions along, a deleted one goes into the trash. The first look of a session
--- only learns the macros.
+-- only learns the macros. This character's macros are also kept for your other characters to copy
+-- (ns.Character().macros: name -> { body, icon }).
 function History.Scan()
     local now = Macros()
+    local mine = {}
+    for name, m in pairs(now.character) do mine[name] = { body = m.body, icon = m.icon } end
+    local c = ns.Character()
+    c.macros, c.seen = mine, time()
     if known then
         for scope, macros in pairs(now) do
             local store, before = History.Store(scope), known[scope]

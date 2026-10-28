@@ -82,6 +82,18 @@ ns.locales.uk = {
     ["It will be gone from the bars of %s."] = "З панелей %s він зникне.",
     ["Move"] = "Перенести",
     ["could not move the macro"] = "не вдалося перенести макрос",
+    -- other characters' macros, in the Character tab
+    ["Its own macros, as they were when you last played it: %s. Click to show or hide them."] =
+        "Його власні макроси такими, якими вони були, коли ви востаннє ним грали: %s. Клацніть, щоб показати чи "
+        .. "сховати їх.",
+    ["A macro of %s. Click to copy it."] = "Макрос персонажа %s. Клацніть, щоб скопіювати його.",
+    ["Forget this character"] = "Забути цього персонажа",
+    ["Forget %s? MacroSense no longer shows its macros or counts its action bars, until you log in with it again."] =
+        "Забути %s? MacroSense більше не показуватиме його макроси й не враховуватиме його панелі дій, доки ви знову "
+        .. "не зайдете ним у гру.",
+    ["Forget"] = "Забути",
+    ["Log in with your other characters once, and their own macros show up here to copy."] =
+        "Зайдіть у гру іншими персонажами хоч раз, і їхні власні макроси з'являться тут, щоб їх можна було скопіювати.",
     -- where a macro is on the action bars
     ["Not on action bars"] = "Не на панелях дій",
     ["Only the macros you have put on no action bar: handy to free slots. MacroSense remembers the bars of each of "

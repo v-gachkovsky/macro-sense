@@ -19,8 +19,10 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
-local shortenBtn, historyBtn, search, noMatch, barsCheck
+local shortenBtn, historyBtn, search, noMatch, barsCheck, altHint
 local notOnBars = false -- the list shows only the macros on no action bar
+local expanded = {} -- the other characters whose macros the Character tab shows, by key
+local PLUS, MINUS = "Interface\\Buttons\\UI-PlusButton-Up", "Interface\\Buttons\\UI-MinusButton-Up"
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
 local function MacroRange(scope)
@@ -287,6 +289,88 @@ local function BarsNote(scope, name)
     return #out > 0 and "\n\n" .. table.concat(out, " ") or ""
 end
 
+------------------------------------------------------------------------
+-- Other characters' macros: kept as they were when you last played each one (History.Scan), shown in the
+-- Character tab under their names, to copy
+------------------------------------------------------------------------
+-- { key, c, label = name (with its realm when not yours), same = your realm, color = its class's, macros = sorted
+-- { name, icon, body } }, your realm's first.
+local function Alts()
+    local out, mine = {}, ns.Character()
+    for key, c in pairs(ns.db.characters or {}) do
+        if c ~= mine and c.macros and next(c.macros) then
+            local macros = {}
+            for name, m in pairs(c.macros) do macros[#macros + 1] = { name = name, icon = m.icon, body = m.body or "" } end
+            table.sort(macros, function(a, b) return a.name < b.name end)
+            local same = c.realm == mine.realm
+            out[#out + 1] = { key = key, c = c, macros = macros, same = same,
+                label = same and c.name or (c.name .. "-" .. c.realm),
+                color = RAID_CLASS_COLORS and c.class and RAID_CLASS_COLORS[c.class] }
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.same ~= b.same then return a.same end
+        return a.label < b.label
+    end)
+    return out
+end
+
+-- A menu item that makes a macro in tab `scope`, unless it is full.
+local function TabItem(scope, label, tip, onClick)
+    local first, last, max = MacroRange(scope)
+    local full = last - first + 1 >= max
+    return {
+        name = full and string.format("%s  |cff%s%s|r", label, ns.scheme.dim, L["(full)"]) or label,
+        disabled = full,
+        onClick = onClick,
+        onEnter = function(row)
+            GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+            GameTooltip:AddLine(label, 1, 1, 1)
+            GameTooltip:AddLine(full and string.format(L["The %s tab is full."], TabName(scope)) or tip, 0.8, 0.8, 0.8,
+                true)
+            GameTooltip:Show()
+        end,
+    }
+end
+
+-- The copy menu of another character's macro `m`: into this character's tab or General.
+local function OpenAltCopyMenu(owner, m)
+    ns.OpenMenu(owner, {
+        TabItem("character", L["Copy to Character"], L["A copy for this character only, under a free name like "
+            .. "\"Fear 2\"."], function() Window.CopyIn("character", m) end),
+        TabItem("general", L["Copy to General"], L["A copy for all your characters, under a free name like "
+            .. "\"Fear 2\"."], function() Window.CopyIn("general", m) end),
+    }, 180, false, true)
+end
+
+local function AddAltLines(alt)
+    local color = alt.color
+    GameTooltip:AddLine(alt.label, color and color.r or 1, color and color.g or 1, color and color.b or 1)
+    GameTooltip:AddLine(string.format(L["Its own macros, as they were when you last played it: %s. Click to show or "
+        .. "hide them."], When(alt.c.seen or 0)), 0.8, 0.8, 0.8, true)
+end
+
+local function AddAltMacroLines(alt, m)
+    GameTooltip:AddLine(m.name, 1, 1, 1)
+    GameTooltip:AddLine(string.format(L["A macro of %s. Click to copy it."], alt.label), 0.8, 0.8, 0.8, true)
+    for line in (m.body .. "\n"):gmatch("([^\n]*)\n") do
+        GameTooltip:AddLine(line ~= "" and line:gsub("|", "||") or " ", 0.6, 0.6, 0.6, true)
+    end
+end
+
+StaticPopupDialogs.MACROSENSE_FORGET_CHARACTER = {
+    text = "Forget %s? MacroSense no longer shows its macros or counts its action bars, until you log in with it "
+        .. "again.",
+    button1 = "Forget", button2 = "Cancel",
+    OnAccept = function(_, key)
+        ns.db.characters[key] = nil
+        Window.RefreshList()
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+-- A row of the list is one of this tab's macros ("macro"), another character ("alt", its macros under it) or one
+-- of that character's macros ("altMacro").
 local function Row(i)
     local r = CreateFrame("Button", nil, list.child)
     r:SetHeight(ROW_H)
@@ -307,14 +391,20 @@ local function Row(i)
         if on and not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end
         if not on then r.bg:SetShown(r.selected); r.bg:SetAlpha(1) end
     end
-    -- At the end: copy (a menu: this tab or the other one) and x (delete, after asking).
-    r.remove = ns.RowButton(r, "x", "invalid", lit, function() return L["Delete this macro"] end, function()
+    -- At the end: copy (a menu: this tab or the other one) and x (delete, after asking). Another character has an x
+    -- (forget it), its macros a copy button.
+    r.remove = ns.RowButton(r, "x", "invalid", lit, function()
+        return r.what == "alt" and L["Forget this character"] or L["Delete this macro"]
+    end, function()
+        if r.what == "alt" then return ns.Ask("MACROSENSE_FORGET_CHARACTER", r.alt.label, nil, r.alt.key) end
         local m = { index = r.index, name = r.name, scope = r.scope }
         ns.Ask("MACROSENSE_DELETE", r.name, BarsNote(r.scope, r.name), m)
     end)
     r.remove:SetPoint("RIGHT", -2, 0)
-    r.copy = ns.RowButton(r, COPY_ICON, "text", lit, function() return L["Copy this macro"] end,
-        function() Window.OpenCopyMenu(r.copy, r.index) end)
+    r.copy = ns.RowButton(r, COPY_ICON, "text", lit, function() return L["Copy this macro"] end, function()
+        if r.what == "altMacro" then return OpenAltCopyMenu(r.copy, r.macro) end
+        Window.OpenCopyMenu(r.copy, r.index)
+    end)
     r.copy:SetPoint("RIGHT", r.remove, "LEFT")
     -- A macro with errors gets the alert sign, as on Save.
     r.alert = r:CreateTexture(nil, "OVERLAY")
@@ -322,30 +412,45 @@ local function Row(i)
     r.alert:SetPoint("RIGHT", r.copy, "LEFT", -2, 0)
     r.alert:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
     r.alert:Hide()
-    -- Hover: the issues, line by line, and where it is on the action bars.
+    -- Hover: the issues, line by line, and where it is on the action bars; another character's macro: its text.
     r:SetScript("OnEnter", function()
         lit(true)
         GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
-        GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
-        AddIssueLines(r.issues or {})
-        AddBarsLines(r.scope, r.name)
+        if r.what == "alt" then
+            AddAltLines(r.alt)
+        elseif r.what == "altMacro" then
+            AddAltMacroLines(r.alt, r.macro)
+        else
+            GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
+            AddIssueLines(r.issues or {})
+            AddBarsLines(r.scope, r.name)
+        end
         GameTooltip:Show()
     end)
     r:SetScript("OnLeave", function()
         lit(false)
         GameTooltip:Hide()
     end)
-    r:SetScript("OnClick", function() Window.Select(r.index) end)
+    r:SetScript("OnClick", function()
+        if r.what == "alt" then
+            expanded[r.alt.key] = not expanded[r.alt.key]
+            return Window.RefreshList()
+        end
+        if r.what == "altMacro" then return OpenAltCopyMenu(r, r.macro) end
+        Window.Select(r.index)
+    end)
     -- Drag a macro onto an action bar, like in the Blizzard macro window.
     r:RegisterForDrag("LeftButton")
-    r:SetScript("OnDragStart", function() Window.Pickup(r.index) end)
-    -- The name is red with errors, yellow with warnings only.
+    r:SetScript("OnDragStart", function() if r.what == "macro" then Window.Pickup(r.index) end end)
+    -- The name is red with errors, yellow with warnings only; another character's in its class color, its macros dim.
     function r:Paint()
         local s = ns.scheme
         if not s then return end
         self.bg:SetColorTexture(ns.RGB(s.selection))
         local color = self.severity == "error" and s.invalid or self.severity == "warning" and s.warning or s.text
-        self.text:SetTextColor(ns.RGB(color))
+        self.text:SetTextColor(ns.RGB(self.what == "altMacro" and s.dim or color))
+        local class = self.what == "alt" and self.alt.color
+        if class then self.text:SetTextColor(class.r, class.g, class.b) end
     end
     ns.OnStyle(function() r:Paint() end)
     return r
@@ -377,6 +482,58 @@ local function CountMatches(scope, q)
     return n
 end
 
+-- Row `n` of the list as a row of `what` (see Row), not selected, without marks.
+local function UseRow(n, what)
+    rows[n] = rows[n] or Row(n)
+    local r = rows[n]
+    r.what, r.index, r.selected, r.severity, r.issues = what, nil, false, nil, nil
+    r.icon:SetPoint("LEFT", what == "altMacro" and 18 or 6, 0) -- a character's macros under its name
+    if what == "alt" then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
+    r.copy:SetShown(what ~= "alt")
+    r.remove:SetShown(what ~= "altMacro")
+    r.alert:Hide()
+    r.text:SetPoint("RIGHT", what == "alt" and r.remove or r.copy, "LEFT", -2, 0)
+    r.bg:Hide()
+    r.bg:SetAlpha(1)
+    r:Show()
+    return r
+end
+
+-- The Character tab also has your other characters' macros, under their names: a click shows them, a search shows
+-- those it finds. Returns the number of rows used then.
+local function AltRows(n, q)
+    local alts = Alts()
+    for _, alt in ipairs(alts) do
+        local found = {}
+        for _, m in ipairs(alt.macros) do
+            if Matches(q, m.name, m.body) then found[#found + 1] = m end
+        end
+        if q == "" or #found > 0 then
+            local open = q ~= "" or expanded[alt.key]
+            n = n + 1
+            local r = UseRow(n, "alt")
+            r.alt, r.name = alt, alt.label
+            r.icon:SetTexture(open and MINUS or PLUS)
+            r.text:SetText(string.format("%s  |cff%s%d|r", alt.label, ns.scheme.dim, #alt.macros))
+            r:Paint()
+            for _, m in ipairs(open and found or {}) do
+                n = n + 1
+                r = UseRow(n, "altMacro")
+                r.alt, r.macro, r.name = alt, m, m.name
+                r.icon:SetTexture(ns.IconTexture(m.icon))
+                r.text:SetText(m.name)
+                r:Paint()
+            end
+        end
+    end
+    -- None known yet: they show once you play them with MacroSense.
+    altHint:ClearAllPoints()
+    altHint:SetPoint("TOPLEFT", 8, -n * ROW_H - 6)
+    altHint:SetPoint("TOPRIGHT", -8, -n * ROW_H - 6)
+    altHint:SetShown(#alts == 0 and q == "")
+    return n
+end
+
 function Window.RefreshList()
     if not frame then return end
     local q = Query()
@@ -386,8 +543,7 @@ function Window.RefreshList()
         local name, icon, body = GetMacroInfo(index)
         if name and Shown(q, state.scope, name, body) then
             n = n + 1
-            rows[n] = rows[n] or Row(n)
-            local r = rows[n]
+            local r = UseRow(n, "macro")
             r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
             r.icon:SetTexture(ns.IconTexture(icon))
             r.text:SetText(name)
@@ -398,12 +554,12 @@ function Window.RefreshList()
             r.text:SetPoint("RIGHT", alert and r.alert or r.copy, "LEFT", alert and -4 or -2, 0)
             r:Paint()
             r.bg:SetShown(r.selected)
-            r.bg:SetAlpha(1)
-            r:Show()
         end
     end
+    altHint:Hide()
+    if state.scope == "character" and not notOnBars then n = AltRows(n, q) end
     for i = n + 1, #rows do rows[i]:Hide() end
-    list.child:SetHeight(math.max(n * ROW_H, 1))
+    list.child:SetHeight(math.max(n * ROW_H + (altHint:IsShown() and 40 or 0), 1))
     noMatch:SetShown(n == 0 and (q ~= "" or notOnBars))
 
     -- While searching or filtering, the tabs say how many match.
@@ -691,20 +847,9 @@ end
 local function CopyItems(index)
     local other = state.scope == "general" and "character" or "general"
     local function item(scope, label, tip, move)
-        local first, last, max = MacroRange(scope)
-        local full = last - first + 1 >= max
-        return {
-            name = full and string.format("%s  |cff%s%s|r", label, ns.scheme.dim, L["(full)"]) or label,
-            disabled = full,
-            onClick = function() if move then MoveAsked(index) else Window.Copy(scope, index) end end,
-            onEnter = function(row)
-                GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
-                GameTooltip:AddLine(label, 1, 1, 1)
-                GameTooltip:AddLine(full and string.format(L["The %s tab is full."], TabName(scope)) or tip,
-                    0.8, 0.8, 0.8, true)
-                GameTooltip:Show()
-            end,
-        }
+        return TabItem(scope, label, tip, function()
+            if move then MoveAsked(index) else Window.Copy(scope, index) end
+        end)
     end
     -- The macro being edited is copied with what the editor shows.
     local tips = index == state.index and {
@@ -730,6 +875,22 @@ local function CopyItems(index)
         item(other, other == "character" and L["Copy to Character"] or L["Copy to General"], tips[other]),
         item(other, other == "character" and L["Move to Character"] or L["Move to General"], moves[other], true),
     }
+end
+
+-- Another character's macro `m` ({ name, icon, body }) in tab `scope`, under a free name, opened. Unsaved changes are
+-- asked about first.
+function Window.CopyIn(scope, m)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local first, last, max = MacroRange(scope)
+    if last - first + 1 >= max then return NoRoom(scope) end
+    Guard(function()
+        local name = FreeName(FirstLetters(m.name, MAX_NAME))
+        local made = CreateMacro(name, m.icon or NEW_ICON, m.body, scope == "character")
+        if not made or made == 0 then return ns.Print("could not copy the macro") end
+        ns.History.Scan()
+        state.scope, ns.db.scope = scope, scope
+        Load(IndexIn(scope, name))
+    end)
 end
 
 -- The copy menu of macro `index`, under its copy button in the list.
@@ -1292,7 +1453,7 @@ local function Build()
     end)
     search:SetScript("OnEnterPressed", function(self)
         self:ClearFocus()
-        if rows[1] and rows[1]:IsShown() then Window.Select(rows[1].index) end
+        if rows[1] and rows[1]:IsShown() and rows[1].what == "macro" then Window.Select(rows[1].index) end
     end)
 
     -- Under it: only the macros on no action bar, to free slots.
@@ -1319,6 +1480,10 @@ local function Build()
     list.child:SetSize(196, 1)
     list:SetScrollChild(list.child)
     list:SetScript("OnSizeChanged", function(_, w) list.child:SetWidth(w) end)
+    altHint = ns.Text(list.child, 11, "dim")
+    altHint:SetWordWrap(true)
+    altHint:SetText(L["Log in with your other characters once, and their own macros show up here to copy."])
+    altHint:Hide()
     noMatch = ns.Text(side, 12, "dim")
     noMatch:SetPoint("TOP", list, "TOP", 0, -12)
     noMatch:SetText(L["No macros match"])
