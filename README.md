@@ -285,6 +285,13 @@ taken name gets a number (`Fear 2`), and a macro with no free slot in its tab is
 line of letters and digits, which chat apps leave as it is, ending in a dot, so words around it don't
 matter; a code cut short or changed is refused.
 
+**Share > Link this macro in chat**, or Shift-click on a macro in the list while you type in chat, puts
+`[MacroSense: Fear MO]` into your message. Players with MacroSense see it as a link: a click asks you for the
+macro (an addon whisper, no chat lines) and opens its code in the import window, where they see what it holds
+before they import it. Without MacroSense it is just the name. Only the macros you link are given, as they were
+when you linked them: the last 20. In combat in an instance the game blocks addon messages, and on Retail the
+link stays plain text there.
+
 **Trash** next to it keeps the macros you delete, here, in the game's macro window or with another addon:
 the last 30 of each tab, General ones for the account, Character ones for the character. Hover one to
 read it, click it to bring it back into its tab, under a free name if its own is taken; its **x** deletes it

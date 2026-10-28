@@ -474,6 +474,11 @@ local function Row(i)
             return Window.RefreshList()
         end
         if r.what == "altMacro" then return OpenAltCopyMenu(r, r.macro) end
+        -- Shift-click while typing in chat links the macro there, as an item is linked.
+        if IsShiftKeyDown() and ChatFrameUtil and ChatFrameUtil.GetActiveWindow and ChatFrameUtil.GetActiveWindow() then
+            local name, _, body = GetMacroInfo(r.index)
+            return ns.Links.Insert({ scope = r.scope, name = name, icon = ns.MacroIcon(r.index), body = body or "" })
+        end
         Window.Select(r.index)
     end)
     -- Drag a macro onto an action bar, like in the Blizzard macro window.
@@ -1012,6 +1017,11 @@ local function ShareItems()
         }
     end
     return {
+        item(L["Link this macro in chat"], state.index and L["Puts a link of it into the chat: players with "
+            .. "MacroSense click it to get the macro as saved now, the others read its name. Shift-click a macro in "
+            .. "the list while typing does it too."] or L["Save the macro first, then link it."], function()
+            ns.Links.Insert({ scope = state.scope, name = state.name, icon = state.savedIcon, body = state.body })
+        end, not state.index),
         item(L["Export this macro"], state.index and L["Its code, as saved, to copy and share."]
             or L["Save the macro first, then export it."], function()
             ns.ShareWindow.Export({ { scope = state.scope, name = state.name, icon = state.savedIcon,
@@ -1425,6 +1435,8 @@ local function Build()
         GameTooltip:AddLine(L["Share"], 1, 1, 1)
         GameTooltip:AddLine(L["Share your macros with other players: just pass them the code made for them. Or add "
             .. "someone else's macros to yours, if you have their code."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Or link a macro in chat: whoever has MacroSense gets it with a click."], 0.8, 0.8, 0.8,
+            true)
         GameTooltip:Show()
     end)
     shareBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)

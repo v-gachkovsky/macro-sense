@@ -138,6 +138,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.RememberBuffs()
         ns.MinimapButton.Update()
         ns.ActionBars.Setup()
+        ns.Links.Setup()
         Welcome()
     elseif event == "UNIT_AURA" then
         RememberBuffsSoon()

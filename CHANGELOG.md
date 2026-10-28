@@ -21,6 +21,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Your other characters' macros** in the Character tab, under each character's name (your realm first): their own
   macros as they were when you last played them, to read and to copy into this character or General. The search
   finds them too, and a character can be forgotten.
+- **Link a macro in chat**: Share > Link this macro in chat, or Shift-click on it in the list while typing, puts
+  `[MacroSense: Fear MO]` into the message. With MacroSense it is a link: a click asks the one who wrote it (an
+  addon whisper) and opens the macro's code in the import window, to see and import. Only the macros you link are
+  given, as they were then, the last 20.
 - **Move to Character** / **Move to General** in a macro's copy menu: into the other tab, with its buttons on your
   action bars, its history and its name (`Fear 2` when that tab has one), and not into the trash.
 - **Not on action bars** under the search: only the macros on no action bar, to free slots. MacroSense remembers

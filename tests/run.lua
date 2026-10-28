@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Shorten.lua", "History.lua", "Share.lua", "Backups.lua", "Wizard.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -801,6 +801,38 @@ do
         seen[key] = true
     end
     check("ukrainian: each text once", #twice == 0, table.concat(twice, " | "))
+end
+
+-- Links in chat: the text, clickable for MacroSense; the code in parts that fit addon messages, put back together.
+do
+    local K = ns.Links
+    check("links: the text", K.Text("Fear MO") == "[MacroSense: Fear MO]")
+    local decorated = K.Decorate("look [MacroSense: Fear MO] and [MacroSense: Kick], not [Hearthstone]", "Bob-Realm")
+    check("links: clickable", decorated == "look |cff569cd6|Haddon:MacroSense:Bob-Realm:Fear MO|h[MacroSense: Fear MO]|h|r "
+        .. "and |cff569cd6|Haddon:MacroSense:Bob-Realm:Kick|h[MacroSense: Kick]|h|r, not [Hearthstone]", decorated)
+    check("links: what a click gives", select(2, K.Parse("addon:MacroSense:Bob-Realm:Fear: MO")) == "Fear: MO"
+        and K.Parse("addon:MacroSense:Bob-Realm:Fear: MO") == "Bob-Realm")
+    check("links: not another addon's", K.Parse("addon:Other:Bob:Fear") == nil and K.Parse("item:6948") == nil)
+    local code = string.rep("x", 500)
+    local parts = K.Parts(code)
+    local fits = true
+    for _, p in ipairs(parts) do fits = fits and #p <= 255 end
+    check("links: parts that fit a message", #parts == 3 and fits and parts[1]:sub(1, 6) == "A:1/3:", #parts)
+    check("links: one part for a short code", #K.Parts("abc") == 1 and K.Parts("abc")[1] == "A:1/1:abc")
+    local got = {}
+    check("links: not done before the last part", K.Collect(got, parts[1]) == nil and K.Collect(got, parts[2]) == nil)
+    check("links: the code again", K.Collect(got, parts[3]) == code)
+    check("links: a part out of turn", K.Collect(got, parts[2]) == nil and K.Collect(got, parts[3]) == nil)
+    K.Collect(got, parts[1])
+    K.Collect(got, parts[1]) -- a first part starts over
+    K.Collect(got, parts[2])
+    check("links: starting over", K.Collect(got, parts[3]) == code)
+    local short = K.Parts(string.rep("y", 300))
+    K.Collect(got, parts[1])
+    K.Collect(got, parts[2]) -- given up: another code comes
+    K.Collect(got, short[1])
+    check("links: a new code after one given up", K.Collect(got, short[2]) == string.rep("y", 300))
+    check("links: not a part", K.Collect(got, "Q:Fear") == nil and K.Collect(got, "A:x/2:y") == nil)
 end
 
 -- Shorten: the same macro in fewer characters.

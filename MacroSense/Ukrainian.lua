@@ -154,6 +154,28 @@ ns.locales.uk = {
     ["The code of every macro of both tabs; imported, each goes into its own tab."] =
         "Код усіх макросів обох вкладок; під час імпорту кожен потрапить у свою вкладку.",
     ["Import a code..."] = "Імпортувати код...",
+    -- links in chat (Links.lua)
+    ["Link this macro in chat"] = "Посилання на макрос у чат",
+    ["Puts a link of it into the chat: players with MacroSense click it to get the macro as saved now, the others "
+        .. "read its name. Shift-click a macro in the list while typing does it too."] =
+        "Вставляє посилання на нього в чат: гравці з MacroSense клацають його й отримують макрос таким, як він "
+        .. "збережений зараз, а решта бачить його назву. Те саме робить Shift+клік по макросу в переліку, поки ви "
+        .. "пишете в чат.",
+    ["Save the macro first, then link it."] = "Спершу збережіть макрос, потім вставте посилання.",
+    ["Or link a macro in chat: whoever has MacroSense gets it with a click."] =
+        "Або вставте посилання на макрос у чат: хто має MacroSense, отримає його одним клацанням.",
+    ["asking %s for \"%s\"..."] = "питаю в %s макрос «%s»...",
+    ["%s no longer shares \"%s\""] = "%s більше не ділиться «%s»",
+    ["%s is offline"] = "%s не в мережі",
+    ["no answer from %s: they may be offline or not have MacroSense"] =
+        "%s не відповідає: можливо, не в мережі або без MacroSense",
+    ["addon messages are blocked now (in combat in an instance): try later"] =
+        "повідомлення аддонів зараз заблоковані (бій у підземеллі): спробуйте пізніше",
+    ["you no longer share \"%s\": link it again"] = "ви більше не ділитеся «%s»: вставте посилання знову",
+    ["The macro %s linked in chat: see what it holds, then import it. Nothing is replaced: a taken name gets a "
+        .. "number."] = "Макрос, яким %s поділився в чаті: подивіться, що в ньому, тоді імпортуйте. Нічого не "
+        .. "замінюється: зайнята назва отримує номер.",
+    ["could not ask %s now: try again in a moment"] = "зараз не вдалося спитати в %s: спробуйте за мить",
     ["Paste a code to make its macros. Nothing is replaced: a taken name gets a number, like \"Fear 2\"."] =
         "Вставте код, щоб створити його макроси. Нічого не замінюється: зайнята назва отримує номер, як «Fear 2».",
     ["imported %d of %d macros"] = "імпортовано макросів: %d з %d",

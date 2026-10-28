@@ -154,13 +154,14 @@ function ShareWindow.Export(macros)
     info:SetText(Names(macros))
 end
 
--- An empty box to paste a code into.
-function ShareWindow.Import()
+-- An empty box to paste a code into, or the code of a macro someone linked in chat (`from`: who).
+function ShareWindow.Import(text, from)
     Open("import")
     titleText:SetText(L["Import macros"])
-    hint:SetText(string.format(L["Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number."],
-        Keys("V")))
-    box:SetText("")
+    hint:SetText(from and string.format(L["The macro %s linked in chat: see what it holds, then import it. Nothing is "
+        .. "replaced: a taken name gets a number."], from)
+        or string.format(L["Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number."], Keys("V")))
+    box:SetText(text or "")
     Preview()
 end
 

@@ -194,6 +194,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
   your other spec uses counts as used.
 - **Share** macros: a code of one macro, a tab or all of them, to copy and send. **Import a code** shows what
   it holds and where each macro goes before making them, and never replaces one of yours.
+- **Link a macro in chat** (Share, or Shift-click it while typing): whoever has MacroSense clicks the link, sees
+  what the macro holds and imports it.
 
 ---
 

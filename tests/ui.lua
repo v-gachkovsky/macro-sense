@@ -4841,6 +4841,187 @@ do
     ns.Window.Revert()
 end
 
+-- Links in chat: a macro linked from the Share menu or with Shift-click while typing; a link in a chat line clickable;
+-- a click asks the one who wrote it (addon whispers) and opens the code in the import window; the macros linked
+-- here are given to whoever asks, at most once every 2 seconds.
+do
+    local sent, filters, callbacks, opened, result = {}, {}, {}, nil, 0
+    local prefix
+    C_ChatInfo = {
+        RegisterAddonMessagePrefix = function(p) prefix = p end,
+        SendAddonMessage = function(p, text, chatType, target)
+            sent[#sent + 1] = table.concat({ p, text, chatType, target }, " ")
+            return result
+        end,
+    }
+    local chatEdit = New("EditBox")
+    function chatEdit:Insert(t) self.inserted = (self.inserted or "") .. t end
+    local typing = false
+    ChatFrameUtil = {
+        AddMessageEventFilter = function(event, fn) filters[event] = fn end,
+        GetActiveWindow = function() return typing and chatEdit or nil end,
+        OpenChat = function(text) opened = text end,
+    }
+    local registered = 0
+    EventRegistry = { RegisterCallback = function(_, event, fn, owner)
+        registered = registered + 1
+        callbacks[event] = function(...) return fn(owner, ...) end
+    end }
+    GetNormalizedRealmName = function() return "Realm" end
+    Send("PLAYER_LOGIN")
+    local onLogin = callbacks.SetItemRef ~= nil
+    ns.Links.Setup() -- once
+    local count = 0
+    for _ in pairs(filters) do count = count + 1 end
+    check("links: set up on login, once", onLogin and prefix == "MacroSense" and count == 14 and registered == 1, count)
+
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    CreateMacro("Link Me", 1, "/cast [@mouseover,harm] Fear", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Link Me"))
+    NextFrame()
+    local share
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Share" then share = o end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and ns.Highlight.Strip(r.text.text):sub(1, #label) == label then return r end
+        end
+    end
+    ns.Window.New()
+    NextFrame()
+    Fire(share, "OnClick")
+    check("links: a new macro is saved first", menuItem("Link this macro in chat").item.disabled)
+    MacroSenseMenu:Hide()
+    ns.Window.Select(GetMacroIndexByName("Link Me"))
+    NextFrame()
+    Fire(share, "OnClick")
+    Fire(menuItem("Link this macro in chat"), "OnClick")
+    check("links: into the chat, opened", opened == "[MacroSense: Link Me]", opened)
+    local kept = ns.db.links["Link Me"]
+    local decoded = kept and ns.Share.Decode(kept.code)
+    check("links: its code kept to give", decoded and decoded[1].body == "/cast [@mouseover,harm] Fear")
+    -- Shift-click while typing: into the chat input, the editor stays.
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.what == "macro" and o.name == name and o.shown then return o end
+        end
+    end
+    CreateMacro("Also Me", 1, "/cast Fireball", false)
+    Send("UPDATE_MACROS")
+    typing = true
+    IsShiftKeyDown = function() return true end
+    Fire(row("Also Me"), "OnClick")
+    IsShiftKeyDown = function() return false end
+    check("links: Shift-click while typing", chatEdit.inserted == "[MacroSense: Also Me]" and raw() == "/cast [@mouseover,harm] "
+        .. "Fear", chatEdit.inserted)
+    typing = false
+
+    -- A chat line: the link clickable, a whisper you sent asks you; hidden lines stay as they are.
+    local frameArg = {}
+    local function filtered(event, msg, author)
+        local discard, text = filters[event](frameArg, event, msg, author, "x")
+        return discard, text
+    end
+    local discard, line = filtered("CHAT_MSG_PARTY", "look [MacroSense: Fear MO]", "Bob-Realm")
+    check("links: a line made clickable", discard == false and line:find("|Haddon:MacroSense:Bob-Realm:Fear MO|h", 1, true)
+        ~= nil, line)
+    _, line = filtered("CHAT_MSG_WHISPER_INFORM", "[MacroSense: Link Me]", "Bob-Realm")
+    check("links: one you whispered is yours", line:find("|Haddon:MacroSense:Tester:Link Me|h", 1, true) ~= nil, line)
+    check("links: other lines untouched", select(2, filtered("CHAT_MSG_SAY", "hello", "Bob")) == nil)
+    local hidden = "[MacroSense: Fear MO] (hidden)"
+    secret[hidden] = true
+    check("links: a line hidden from addons", select(2, filtered("CHAT_MSG_RAID", hidden, "Bob")) == nil)
+    secret[hidden] = nil
+
+    -- A click asks; the parts open the import window.
+    local function click(sender, name) callbacks.SetItemRef("addon:MacroSense:" .. sender .. ":" .. name, "", "LeftButton") end
+    local function addon(text, sender) Send("CHAT_MSG_ADDON", "MacroSense", text, "WHISPER", sender) end
+    click("Bob-Realm", "Fear MO")
+    check("links: a click asks", sent[#sent] == "MacroSense Q:Fear MO WHISPER Bob-Realm", sent[#sent])
+    check("links: and says so", printed[#printed]:find("asking Bob-Realm for \"Fear MO\"", 1, true) ~= nil)
+    local code = ns.Share.Encode({ { scope = "general", name = "Fear MO", icon = 1,
+        body = string.rep("/cast [@mouseover,harm,nodead] Fear\n", 6) } })
+    local parts = ns.Links.Parts(code)
+    check("links: a code in several parts", #parts > 1, #parts)
+    for i = 1, #parts - 1 do addon(parts[i], "Bob-Realm") end
+    check("links: not before the last part", not (MacroSenseShare and MacroSenseShare:IsShown()))
+    addon(parts[#parts], "Bob-Realm")
+    local box, info = ns.ShareWindow.Control("box"), ns.ShareWindow.Control("info")
+    check("links: the import window with the code", MacroSenseShare:IsShown() and box:GetText() == code
+        and info:GetText():find("Fear MO", 1, true) ~= nil, info:GetText())
+    local lines = #printed
+    Wait(6.1)
+    check("links: answered, no word of no answer", #printed == lines, printed[#printed])
+    MacroSenseShare:Hide()
+    addon(parts[1], "Bob-Realm")
+    check("links: an answer nobody asked for", not MacroSenseShare:IsShown())
+    -- Your own realm's players come with or without it.
+    click("Ann", "Kick")
+    check("links: a name without its realm", sent[#sent] == "MacroSense Q:Kick WHISPER Ann", sent[#sent])
+    addon(ns.Links.Parts(code)[1], "Ann-Realm")
+    for i = 2, #parts do addon(parts[i], "Ann-Realm") end
+    check("links: answered with the realm", MacroSenseShare:IsShown())
+    MacroSenseShare:Hide()
+    click("Bob-Realm", "Gone")
+    addon("N:Gone", "Bob-Realm")
+    check("links: no longer shared", printed[#printed]:find("Bob-Realm no longer shares \"Gone\"", 1, true) ~= nil,
+        printed[#printed])
+    click("Cat-Realm", "X")
+    Wait(6.1)
+    check("links: no answer", printed[#printed]:find("no answer from Cat-Realm", 1, true) ~= nil, printed[#printed])
+    -- What the game says when it can't send.
+    local before = #sent
+    result = 11
+    click("Bob-Realm", "Fear MO")
+    check("links: blocked in combat in an instance", printed[#printed]:find("blocked now", 1, true) ~= nil)
+    result = 12
+    click("Bob-Realm", "Fear MO")
+    check("links: offline", printed[#printed]:find("Bob-Realm is offline", 1, true) ~= nil)
+    result = 3
+    click("Bob-Realm", "Fear MO")
+    check("links: too many messages", printed[#printed]:find("could not ask Bob-Realm", 1, true) ~= nil)
+    result = 0
+    addon("A:1/1:" .. code, "Bob-Realm")
+    check("links: no answer taken after a failed question", not MacroSenseShare:IsShown() and #sent == before + 3)
+    -- Your own link: opened at once, nothing sent.
+    before = #sent
+    click("Tester", "Link Me")
+    check("links: your own", MacroSenseShare:IsShown() and box:GetText() == ns.db.links["Link Me"].code
+        and #sent == before)
+    MacroSenseShare:Hide()
+    click("Tester-Realm", "Nothing")
+    check("links: your own no longer shared", printed[#printed]:find("you no longer share \"Nothing\"", 1, true) ~= nil)
+
+    -- Asked for one of yours: the parts, at most once every 2 seconds to one player; one not linked here: no.
+    before = #sent
+    addon("Q:Link Me", "Dan-Realm")
+    check("links: given", sent[before + 1] == "MacroSense A:1/1:" .. ns.db.links["Link Me"].code .. " WHISPER Dan-Realm",
+        sent[before + 1])
+    addon("Q:Link Me", "Dan-Realm")
+    check("links: not again at once", #sent == before + 1, #sent - before)
+    Wait(2.1)
+    addon("Q:Nope", "Dan-Realm")
+    check("links: one not linked here", sent[#sent] == "MacroSense N:Nope WHISPER Dan-Realm", sent[#sent])
+    Send("CHAT_MSG_ADDON", "OtherAddon", "Q:Link Me", "WHISPER", "Eve-Realm")
+    check("links: other addons' messages", sent[#sent] == "MacroSense N:Nope WHISPER Dan-Realm")
+    -- The last 20 linked are kept.
+    for i = 1, 22 do
+        clock = clock + 1
+        ns.Links.Insert({ scope = "general", name = "M" .. i, icon = 1, body = "" })
+    end
+    local n = 0
+    for _ in pairs(ns.db.links) do n = n + 1 end
+    check("links: the last 20 kept", n == 20 and ns.db.links.M22 and ns.db.links.M3 and not ns.db.links.M2
+        and not ns.db.links["Link Me"], n)
+
+    for _, name in ipairs({ "Link Me", "Also Me" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    C_ChatInfo, ChatFrameUtil, EventRegistry, GetNormalizedRealmName = nil, nil, nil, nil
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"
