@@ -158,6 +158,12 @@ function History.Moved(from, to, old, new)
     if known and known[from][old] then known[to][new], known[from][old] = known[from][old], nil end
 end
 
+-- MacroSense wrote macro `name` again by itself (your group's new tank, Roles.lua): the text it replaced is no
+-- version to keep.
+function History.Rewritten(scope, name, body)
+    if known and known[scope][name] then known[scope][name].body = body end
+end
+
 -- This editor is about to rename a macro: its versions and its last text go with the name.
 function History.Renamed(scope, old, new)
     History.Rename(History.Store(scope), old, new)

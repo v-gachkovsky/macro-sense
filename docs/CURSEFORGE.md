@@ -57,8 +57,11 @@ Or **All options** shows the whole form, where you pick it all at once:
   `/focus` and `/assist` on units (party members by key, say; `/target` by name too), or **pet commands**
   (attack your mouseover, follow with Shift, move to the cursor with Ctrl...)
 - **what to cast**: a spell or item, found by a few letters or by the first letters of its words in capitals
-- **on whom, in order**: mouseover, focus, your target, yourself, your pet, party members 1-4, target's
-  target, arena enemies 1-3, the cursor, or as usual
+- **on whom, in order**: mouseover, focus, your target, your group's tank or healer, yourself, your pet, party
+  members 1-4, target's target, arena enemies 1-3, the cursor, or as usual
+- **your group's tank and healer**: `@tank` and `@heal` (`/cast [@tank,help,nodead] Misdirection`). The game's
+  macro gets their names, written again when your group changes (out of combat), and in MacroSense you keep
+  editing it with `@tank`
 - **friends, enemies or anyone**, alive only: set from the spell for you
 - **Shift, Ctrl, Alt** (and **Cmd** on a Mac): another spell, or the same one on someone else, with a fallback of its own
 - **and also**: stop your cast first, your trinkets, auto attack, your pet, the nearest enemy if none is targeted,

@@ -64,6 +64,8 @@ Wizard.units = {
     { key = "target", name = "Your target", filters = true },
     { key = "mouseover", name = "Mouseover", filters = true },
     { key = "focus", name = "Focus", filters = true },
+    { key = "tank", name = "Group's tank", filters = true },
+    { key = "heal", name = "Group's healer", filters = true },
     { key = "player", name = "Yourself" },
     { key = "pet", name = "Your pet", filters = true },
     { key = "party1", name = "Party member 1", filters = true },
@@ -89,6 +91,10 @@ local function ByName(spec)
 end
 -- After these nothing is asked: they always hold.
 local ALWAYS = { default = true, player = true, cursor = true }
+-- Your group's tank and healer: MacroSense's own @tank and @heal, the name of the one with the role in the macro the
+-- game keeps (Conditions.Fill, Roles.lua).
+local ROLES = { tank = true, heal = true }
+Wizard.ROLES = ROLES
 
 -- Whether a unit always holds (nothing after it is tried), and whether it is checked (friends / enemies / alive).
 function Wizard.Always(unit) return ALWAYS[unit] == true end
@@ -98,7 +104,7 @@ function Wizard.Checked(unit) return filtered[unit] == true end
 -- /target not your target (the game would target nothing) and /focus not the focus; the pet attacks neither
 -- the cursor, you nor itself.
 local function Takes(command, unit)
-    if command == "pet" then return unit ~= "cursor" and unit ~= "player" and unit ~= "pet" end
+    if command == "pet" then return unit ~= "cursor" and unit ~= "player" and unit ~= "pet" and not ROLES[unit] end
     if not Wizard.IsTarget(command) then return true end
     if unit == "default" or unit == "cursor" then return false end
     return not (command == "target" and unit == "target" or command == "focus" and unit == "focus")

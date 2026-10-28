@@ -14,9 +14,9 @@ local WIDTH, PAD, LABEL, ROW = 600, 14, 70, 32
 local X = PAD + LABEL -- where the controls of a row start
 local TOP = 84 -- the title bar and the command row
 local BOTTOM = 322 -- Also, the macro and the buttons, at the bottom whatever the command
-local STEPS_H = 510 -- the window step by step, whatever the question
+local STEPS_H = 538 -- the window step by step, whatever the question
 local STEP_TOP = 124 -- where the answers start, under a question and a hint of two lines and one
-local ANSWERS, ANSWER_W = 16, 280 -- the answers a question shows: two columns of eight at most
+local ANSWERS, ANSWER_W = 18, 280 -- the answers a question shows: two columns of nine at most
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
 local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
@@ -871,9 +871,10 @@ local function Build()
             function() return spec.on[i] end, function(key) spec.on[i] = key end)
         d:SetPoint("TOPLEFT", X + (i - 1) * 158, -1)
         if i > 1 then Text(blocks.on, L["then"], X + (i - 1) * 158 - 32, -5, "dim") end
-        Tip(d, i == 1 and L["On"] or L["Then"], i == 1 and L["Who the macro casts on. As usual: your target, or you "
-            .. "when the game casts on you by itself (Auto Self Cast)."] or L["When the one before is not there, or "
-            .. "not the one asked for: this one."])
+        Tip(d, i == 1 and L["On"] or L["Then"], i == 1 and (L["Who the macro casts on. As usual: your target, or "
+            .. "you when the game casts on you by itself (Auto Self Cast)."] .. " " .. L["Group's tank or healer: "
+            .. "@tank and @heal, the name of the one with the role in the game's macro, kept up to date."])
+            or L["When the one before is not there, or not the one asked for: this one."])
     end
     Text(blocks.on, L["Only"], PAD, -39)
     local only = Choice(blocks.on, "only", 120, { { key = "any", name = L["Anyone there"] },

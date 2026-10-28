@@ -116,7 +116,8 @@ end
 
 -- Whom a spell for enemies never goes to, and one for friends.
 local NOT_FOR = {
-    enemies = { player = true, pet = true, party1 = true, party2 = true, party3 = true, party4 = true },
+    enemies = { player = true, pet = true, party1 = true, party2 = true, party3 = true, party4 = true, tank = true,
+        heal = true },
     friends = { arena1 = true, arena2 = true, arena3 = true },
 }
 
@@ -137,17 +138,25 @@ local function Name(spec, unit, cast, only)
     if cast then
         return ({ default = L["On your target, as usual"], mouseover = L["On whoever is under the mouse"],
             cursor = L["On the ground under the cursor"], player = L["On yourself"], focus = L["On your focus"],
-            pet = L["On your pet"], targettarget = L["On your target's target"] })[unit]
+            pet = L["On your pet"], targettarget = L["On your target's target"], tank = L["On your group's tank"],
+            heal = L["On your group's healer"] })[unit]
     end
     return ({ default = L["Your target, as usual"], target = L["Your target"],
         mouseover = L["Whoever is under the mouse"], player = L["Yourself"], focus = L["Your focus"],
-        pet = L["Your pet"], targettarget = L["Your target's target"] })[unit]
+        pet = L["Your pet"], targettarget = L["Your target's target"], tank = L["Your group's tank"],
+        heal = L["Your group's healer"] })[unit]
 end
 
 -- What a unit is, for whoever doesn't know the word.
 local function UnitTip(unit)
     if unit:find("^party") then return L["Your party members, as your party frames list them from the top."] end
     if unit:find("^arena") then return L["The enemies of an arena match, in the order of their frames."] end
+    if W.ROLES[unit] then
+        return (unit == "tank" and L["The one with the tank role in your party or raid, other than you."]
+            or L["The one with the healer role in your party or raid, other than you."]) .. " "
+            .. L["MacroSense puts in the name of the one with the role now, and a new one when your group changes "
+                .. "(out of combat)."]
+    end
     return ({ default = L["The game's own choice: your target, or you when the game casts on you by itself "
             .. "(Auto Self Cast)."],
         mouseover = L["The one your mouse points at, in the world or on a frame (party, raid). Your target stays as "
@@ -189,7 +198,8 @@ local function Missing(unit)
     if arena then return string.format(L["And if arena enemy %d is not there?"], tonumber(arena)) end
     return ({ mouseover = L["And if nobody is under the mouse?"], target = L["And if you have no target?"],
         focus = L["And if you have no focus?"], pet = L["And if your pet is not out?"],
-        targettarget = L["And if your target has no target?"] })[unit]
+        targettarget = L["And if your target has no target?"], tank = L["And if your group has no tank?"],
+        heal = L["And if your group has no healer?"] })[unit]
 end
 
 -- Or the one there doesn't do: not a friend, not an enemy, dead.

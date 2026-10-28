@@ -60,9 +60,11 @@ questions; the wizard opens as you left it.
   (`@mouseover`), and its tooltip says what it is. When that one may not be there, the next question asks
   who then (**And if nobody is under the mouse?**), up to three. A spell or item that goes to nobody but you
   (Demon Armor, Bear Form: the game says it has no range) is not asked about.
+- **On your group's tank** and **On your group's healer** (Group's tank and Group's healer in the form):
+  `@tank` and `@heal` in the macro, see below.
 - **Who is it for?** Friends, enemies, anyone, or friends dead or alive (for a resurrection): asked only when
   the game doesn't say what the spell is for (an item, Holy Shock). A spell for enemies is not offered for
-  yourself, your pet or party members, one for friends not for arena enemies.
+  yourself, your pet, party members or your group's tank and healer, one for friends not for arena enemies.
 - **Shift, Ctrl, Alt** (and **Cmd** on a Mac): for each key held, what it casts instead and where.
 - **Would you like to add anything else?** The same as the form's Also.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
@@ -70,6 +72,18 @@ questions; the wizard opens as you left it.
 
 The macro shows at the bottom from the first answer. A click on an answer goes on; **< Back** goes back with
 the answers kept, and **Next >** keeps the one chosen.
+
+### Your group's tank and healer: @tank and @heal
+
+`/cast [@tank,help,nodead][@pet,help,nodead] Misdirection` goes to your group's tank: the one with the tank role,
+other than you, a raid's main tank first; `@heal` to its healer. The game doesn't know these units, so the macro
+it keeps has the name instead (`@Bob`, `@Ann-Realm` from another realm), or `@none` while nobody has the role,
+and MacroSense writes it again when your group changes, out of combat. In MacroSense the macro stays with
+`@tank`: change it and save, and it keeps working. The live preview runs it with the names, the explanations say
+"your group's tank". Small letters only: `@Tank` is a player named Tank. A macro changed outside MacroSense (the
+Blizzard window) keeps the names it has and is no longer kept up to date. The game finds the tank only when the
+role is chosen (the group finder does it; in a group made by hand someone picks it) or, in a raid, a main tank
+is set.
 
 ### The form
 
@@ -86,8 +100,8 @@ the answers kept, and **Next >** keeps the one chosen.
   (Classic) then lists them: the spell itself first (the highest rank, also after you learn a new one), then
   each rank (`Fireball(Rank 3)`).
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
-  itself), Your target, Mouseover, Focus, Yourself, Your pet, Party member 1-4, Target's target, Arena enemy
-  1-3, At the cursor. When one is not there, the next one is tried. A spell that goes to nobody but you
+  itself), Your target, Mouseover, Focus, Group's tank, Group's healer (`@tank`, `@heal`), Yourself, Your pet,
+  Party member 1-4, Target's target, Arena enemy 1-3, At the cursor. When one is not there, the next one is tried. A spell that goes to nobody but you
   (Demon Armor) sets As usual.
 - **Only**: friends, enemies or anyone there, and **Alive only**. It follows the spell you pick, when the game
   knows what it is for; a key's own spell is checked for what it is for.
@@ -369,6 +383,9 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Share.lua`: macros as a code and back. Pure Lua.
 - `MacroSense/Backups.lua`: backups of all the macros, which to keep and what a restore does. Pure Lua.
 - `MacroSense/ShareWindow.lua`: the window of a code, to export and to import.
+- `MacroSense/Links.lua`: macros linked in chat. The text of a link and the parts of a code are pure Lua.
+- `MacroSense/Roles.lua`: your group's tank and healer, and the macros with `@tank` or `@heal`, written again as
+  the group changes.
 - `MacroSense/CodeBox.lua`: the highlighted EditBox with undo, line numbers, error underlines and the
   notes column.
 - `MacroSense/Autocomplete.lua`, `MacroSense/Popup.lua`: suggestion list.

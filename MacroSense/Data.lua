@@ -151,6 +151,7 @@ ns.data = {
     units = {
         { name = "player" }, { name = "target" }, { name = "focus" }, { name = "mouseover" },
         { name = "cursor", hint = "ground at cursor" }, { name = "pet" }, { name = "none", hint = "no target" },
+        { name = "tank", hint = "group's tank" }, { name = "heal", hint = "group's healer" },
         { name = "targettarget" }, { name = "focustarget" }, { name = "pettarget" }, { name = "mouseovertarget" },
         { name = "vehicle" }, { name = "npc", hint = "NPC you talk to" },
         { name = "anyenemy", hint = "Retail" }, { name = "anyfriend", hint = "Retail" },
