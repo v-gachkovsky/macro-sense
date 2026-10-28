@@ -246,6 +246,43 @@ local function UpdatePreview()
 end
 
 ------------------------------------------------------------------------
+-- Explained: over a line's number or note, the tooltip says in plain words what the line does, every branch
+------------------------------------------------------------------------
+local explained -- what the tooltip explains now: the line's number and the text
+
+-- The names of forms and specializations and the commands of this client, for Explain.
+local explainEnv = {
+    formName = function(n)
+        for _, f in ipairs(ns.sources.forms()) do if f.name == n then return f.hint and L[f.hint] end end
+    end,
+    specName = function(n)
+        for _, spec in ipairs(ns.sources.specs()) do if spec.name == n then return spec.hint and L[spec.hint] end end
+    end,
+    commandKey = function(name) return ns.CommandKey(name) end,
+}
+
+local function UpdateExplain()
+    local n = code:HoveredLine()
+    local raw = code:GetRaw()
+    local key = n and (n .. "\1" .. raw)
+    if key == explained then return end
+    explained = key
+    local text = n and select(n, (raw .. "\n"):match(string.rep("([^\n]*)\n", n)))
+    local lines = text and ns.Explain.Line(text, explainEnv)
+    if not lines then
+        if GameTooltip:GetOwner() == code.scroll then GameTooltip:Hide() end
+        return
+    end
+    GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
+    GameTooltip:AddLine(string.format(L["Line %d"], n), 1, 1, 1)
+    for _, line in ipairs(lines) do
+        local more = line:match("^%s+(.*)$") -- a unit tried after the one before it
+        GameTooltip:AddLine(more and "     " .. more or "• " .. line, 0.85, 0.85, 0.85, true)
+    end
+    GameTooltip:Show()
+end
+
+------------------------------------------------------------------------
 -- Macro list
 ------------------------------------------------------------------------
 local rows = {}
@@ -1360,6 +1397,8 @@ local function Build()
             .. "pressed the macro now."], 0.8, 0.8, 0.8, true)
         GameTooltip:AddLine(string.format(L["Hold modifiers (%s), point the mouse at someone, change your target: use "
             .. "everything the macro checks to see which ability it uses, and when."], keys), 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(L["Point at a line's number or its note to read what the whole line does, in plain "
+            .. "words."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1704,6 +1743,7 @@ local function Build()
         sincePreview = 0
         UpdatePreview()
         ShowIcon()
+        UpdateExplain()
     end)
 
     Window.ApplyLook()

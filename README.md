@@ -219,6 +219,11 @@ mouseover unit: point at a unit in the world or at a unit frame to see the `@mou
 itself checks the conditions (`SecureCmdOptionParse`, what macros run with). Lines with syntax errors get
 no note. **Live preview** in the title bar turns it off; the text then takes the whole width.
 
+Point at a line's number, or at its note, to read what the whole line does in plain words: every branch, not only
+the one that would run now. `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` reads `with Shift held:
+Polymorph on your focus, if it is an enemy and alive`, then `otherwise: Frostbolt`; a unit tried after another
+one comes under it (`if not, on your target`). The line numbers explain with the live preview off too.
+
 ## Shorten
 
 Macros are limited to 255 characters. **Shorten** in the header writes the same macro in fewer characters
@@ -344,6 +349,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Shorten.lua`: the same macro in fewer characters. Pure Lua.
 - `MacroSense/Preview.lua`: what each line does now, for the live preview. Pure Lua; the game's condition
   check comes in from `Sources.lua` (`tests/fakeparse.lua` stands in for it in tests).
+- `MacroSense/Explain.lua`: what a line does in plain words, every branch of it, for its tooltip. Pure Lua.
 - `MacroSense/Editing.lua`: auto-closing brackets. Pure Lua.
 - `MacroSense/Data.lua`, `MacroSense/Themes.lua`: static commands, conditions, units; fonts, schemes.
 - `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.
@@ -371,7 +377,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, shorten, history, wizard, its questions, schemes, shortcuts, minimap, icon names, share codes, backups
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, explanations, shorten, history, wizard, its questions, schemes, shortcuts, minimap, icon names, share codes, backups
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 

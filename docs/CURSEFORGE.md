@@ -132,10 +132,13 @@ action bar; the button with that key turns red.
 ## Live preview
 
 Next to every line the editor shows what it would do **right now**: which spell or item it casts and on
-whom (`Fear @mouseover`), `no match` when its conditions don't hold, `stops here` for a `/stopmacro` that
-fires, and the icon `#showtooltip` shows. Hold Shift, Ctrl or Alt (Cmd on a Mac), pick another target,
+whom (`Fear @mouseover`), `conditions not met` when its conditions don't hold, `stops here` for a `/stopmacro`
+that fires, and the icon `#showtooltip` shows. Hold Shift, Ctrl or Alt (Cmd on a Mac), pick another target,
 summon another pet or point at a unit, and the notes change with it: you see every branch of a macro
 without casting anything. The game itself checks the conditions, exactly as when you press the key.
+
+Got a macro from a guide and not sure what it does? Point at a line's number and read it in plain words:
+`with Shift held: Polymorph on your focus, if it is an enemy and alive`, `otherwise: Frostbolt`.
 
 ## Shorten
 

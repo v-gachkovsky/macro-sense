@@ -61,6 +61,19 @@ local SECURE_KEYS = {
     "TEAM_DISBAND", "TEAM_INVITE", "TEAM_QUIT", "TEAM_UNINVITE", "USE", "USERANDOM", "WORLD_MARKER",
 }
 
+-- The key of a secure command (or /dismount) by any of its names in this client: "ziel" -> "TARGET", or nil.
+local commandKeys
+function ns.CommandKey(name)
+    if not commandKeys then
+        commandKeys = {}
+        for _, key in ipairs(SECURE_KEYS) do
+            for _, alias in ipairs(aliases(key)) do commandKeys[alias] = key end
+        end
+        for _, alias in ipairs(aliases("DISMOUNT")) do commandKeys[alias] = "DISMOUNT" end
+    end
+    return commandKeys[name]
+end
+
 local function isSecure(name)
     return IsSecureCmd ~= nil and IsSecureCmd("/" .. name) and true or false
 end
@@ -473,7 +486,7 @@ function ns.sources.pets()
     local out = {}
     if UnitExists and UnitExists("pet") then
         local name = UnitName("pet")
-        if name then out[#out + 1] = { name = name, hint = "your pet" } end
+        if name then out[#out + 1] = { name = name, hint = "your pet's name" } end
         local family = UnitCreatureFamily("pet")
         if family then out[#out + 1] = { name = family, hint = "pet family" } end
     end

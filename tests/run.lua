@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Shorten.lua", "History.lua", "Share.lua", "Backups.lua", "Wizard.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Shorten.lua", "History.lua", "Share.lua", "Backups.lua", "Wizard.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -673,6 +673,134 @@ do
         == "|cffccccccruns |r|cff999999/startattack|r" and P.Note(runs[2], noteColors)
         == "|cffccccccruns |r|cff999999/target|r|cffbbbbbb @focus|r", P.Note(runs[2], noteColors))
     check("a line said in chat", P.Note(runs[3], noteColors) == "|cffccccccsays it in chat|r", P.Note(runs[3], noteColors))
+end
+
+-- Explained: what a line does in plain words, every branch of it.
+do
+    local E = ns.Explain
+    local env = { formName = function(n) return ({ ["1"] = "Bear Form", ["2"] = "Cat Form" })[n] end,
+        specName = function(n) return ({ ["2"] = "Demonology" })[n] end,
+        commandKey = function(name) return name == "ziel" and "TARGET" or nil end }
+    local function says(line) return table.concat(E.Line(line, env) or { "(none)" }, " | ") end
+    local cases = {
+        { "/cast [mod:shift,@focus,harm,nodead] Polymorph; [@mouseover,help,nodead][] Flash Heal",
+            "with Shift held: Polymorph on your focus, if it is an enemy and alive | otherwise: Flash Heal on the unit "
+            .. "under the mouse, if it is a friend and alive |   if not, on your target" },
+        { "/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal", "Flash Heal on the unit under the mouse, "
+            .. "if it is a friend and alive |   if not, on your target, if it is a friend and alive |   if not, on yourself" },
+        { "/cast [combat] Shield Wall; Battle Shout", "in combat: Shield Wall | otherwise: Battle Shout" },
+        { "/cast Frostbolt", "Frostbolt" },
+        { "/cast [harm] Fireball", "Fireball on your target, if it is an enemy" },
+        { "/cast [@cursor] Blizzard", "Blizzard at the cursor" },
+        { "/cast [@player] Ice Barrier", "Ice Barrier on yourself" },
+        { "/castsequence reset=target/10 Corruption, Immolate, !Shadow Bolt", "Corruption, Immolate, Shadow Bolt in turn, "
+            .. "one each press, starting over on a new target or after 10 seconds without a press" },
+        { "/castsequence [combat] reset=combat Corruption, Immolate", "in combat: Corruption, Immolate in turn, one each "
+            .. "press, starting over when combat ends" },
+        { "/castrandom Fireball, Frostbolt", "one of Fireball, Frostbolt at random" },
+        { "/userandom [@focus] Fear, Howl of Terror", "one of Fear, Howl of Terror at random on your focus" },
+        { "/use 13", "the item in Trinket 1" },
+        { "/use [mod:alt] 0 1", "with Alt held: bag 0, slot 1" },
+        { "/equip Sword", "equips Sword" },
+        { "/equipslot 16 Sword", "equips Sword in Main Hand" },
+        { "/cancelaura Ice Block", "cancels Ice Block" },
+        { "/cast []", "does nothing" },
+        { "/stopmacro [mod:shift]", "with Shift held: the macro stops here" },
+        { "/startattack", "starts auto attack" },
+        { "/startattack [@focus]", "starts auto attack on your focus" },
+        { "/target [@mouseover,exists][@focus]", "targets the unit under the mouse, if there is one |   if not, targets "
+            .. "your focus" },
+        { "/target Rare Elite", "targets Rare Elite" },
+        { "/target", "does nothing" },
+        { "/ziel [@focus]", "targets your focus" },
+        { "/focus [@mouseover,exists][]", "sets the unit under the mouse as your focus, if there is one |   if not, sets "
+            .. "your target as your focus" },
+        { "/clearfocus [mod:shift]", "with Shift held: clears your focus" },
+        { "/assist [@party1]", "takes the target of party member 1" },
+        { "/petattack [@mouseover,harm,nodead][]", "your pet attacks the unit under the mouse, if it is an enemy and alive "
+            .. "|   if not, your pet attacks your target" },
+        { "/petmoveto [@cursor]", "your pet goes to the cursor" },
+        { "/petmoveto", "your pet goes where you click" },
+        { "/petfollow [mod:ctrl]", "with Ctrl held: your pet follows you" },
+        { "/petautocasttoggle Torment", "turns autocast of Torment on or off" },
+        { "/equipset PvP", "puts on the equipment set PvP" },
+        { "/dismount [mounted]", "mounted: gets off your mount" },
+        { "/say Hello %t", "writes in chat: Hello %t" },
+        { "/run print(1)", "runs Lua code" },
+        { "/dance", "runs /dance" },
+        { "/click ActionButton1 RightButton", "clicks ActionButton1" },
+        { "#showtooltip", "shows the icon and tooltip of the spell or item the macro uses" },
+        { "#showtooltip [mod:shift] Polymorph; Frostbolt", "with Shift held: shows the icon and tooltip of Polymorph | "
+            .. "otherwise: shows the icon and tooltip of Frostbolt" },
+        { "#show Hearthstone", "shows the icon of Hearthstone" },
+        { "Hello there", "says it in chat" },
+        { "/cast [form:1] Maul; [form:2/0] Shred; [noform] Wrath", "in Bear Form: Maul | otherwise, in Cat Form or no "
+            .. "form: Shred | otherwise, in no form: Wrath" },
+        { "/cast [stance:3] X", "in form 3: X" },
+        { "/cast [spec:2] Chaos Bolt; [talent:3/1] Shadowfury; [nospec:1] Fear", "in specialization Demonology: Chaos Bolt"
+            .. " | otherwise, with the talent of row 3, column 1: Shadowfury | otherwise, not in specialization 1: Fear" },
+        { "/cast [nomod] Fear; [mod:shift/ctrl] Howl of Terror; [nomod:alt] Death Coil", "with no key held: Fear | "
+            .. "otherwise, with Shift or Ctrl held: Howl of Terror | otherwise, without Alt held: Death Coil" },
+        { "/cast [mod] Fear; [modifier:lshift] Death Coil", "with Shift, Ctrl or Alt held: Fear | otherwise, with left "
+            .. "Shift held: Death Coil" },
+        { "/cast [@focustarget,exists] Kick", "Kick on the target of your focus, if there is one" },
+        { "/cast [@party2target] Kick; [@arena1] Kick", "Kick on the target of party member 2" },
+        { "/cast [@arena1,noexists] Kick", "Kick on arena enemy 1, if there is none" },
+        { "/cast [btn:2] Polymorph; [button:4] Fear; [known:Shadowfury] Shadowfury; [noknown:Fear] Fear",
+            "clicked with the right mouse button: Polymorph | otherwise, clicked with mouse button 4: Fear | otherwise, "
+            .. "if you know Shadowfury: Shadowfury | otherwise, if you don't know Fear: Fear" },
+        { "/cast Fear; Fireball", "Fear" },
+        { "/cast [@focus] Fear; Fireball", "Fear on your focus" },
+        { "/cast [@focus][@target] Fear", "Fear on your focus" },
+        { "/cast [group:raid] Rebirth; [group:party] Rebirth; [nogroup] Wrath", "in a raid: Rebirth | otherwise, in a "
+            .. "group: Rebirth | otherwise, not in a group: Wrath" },
+        { "/use [nocombat,nomounted] Hearthstone", "out of combat, not mounted: Hearthstone" },
+        { "/cast [@Bob] Innervate", "Innervate on Bob" },
+        { "/cast Fireball(Rank 3)", "Fireball (Rank 3)" },
+        { "/cast [channeling:Mind Flay] Mind Blast; [nochanneling] Mind Flay", "while channeling Mind Flay: Mind Blast | "
+            .. "otherwise, not channeling: Mind Flay" },
+        { "/cast [pet:Felhunter/Succubus] Command Demon; [nopet] Summon Imp", "with Felhunter or Succubus out: Command "
+            .. "Demon | otherwise, with no pet out: Summon Imp" },
+        { "/cast [equipped:Shields] Shield Block; [worn:Two-Hand] Bladestorm", "with Shields equipped: Shield Block | "
+            .. "otherwise, with Two-Hand equipped: Bladestorm" },
+        { "/cast [bar:2] X; [actionbar:1] Y", "on action bar page 2: X | otherwise, on action bar page 1: Y" },
+        { "/cast [stealth] Ambush; [flyable,nomounted] Flight Form; [swimming] Aquatic Form", "in stealth: Ambush | "
+            .. "otherwise, where you can fly, not mounted: Flight Form | otherwise, swimming: Aquatic Form" },
+        { "/cast [@target,dead] Revive; [help,party] Heal; [noharm,noraid] X", "Revive on your target, if it is dead | "
+            .. "otherwise: Heal on your target, if it is a friend and in your party | otherwise: X on your target, if it "
+            .. "is not an enemy and not in your raid" },
+        { "/cast [form:0] X; [noform:0] Y", "in no form: X | otherwise, in a form: Y" },
+        { "/cast [exists] X", "X on your target, if there is one" },
+        { "/cast [@mouseover,harm][@cursor] Blizzard", "Blizzard on the unit under the mouse, if it is an enemy |   if "
+            .. "not, at the cursor" },
+        { "/cast [mod:shift,@focus][combat,@target] X", "X on your focus, with Shift held |   if not, on your target, "
+            .. "in combat" },
+        { "/cast [foo] X", "X" },
+        { "/cast [", "(none)" },
+        { "   ", "(none)" },
+        { "#bogus", "(none)" },
+    }
+    for _, c in ipairs(cases) do check("explain: " .. c[1], says(c[1]) == c[2], says(c[1])) end
+    check("explain: units by any case", E.Unit("MouseOver") == "the unit under the mouse" and E.Unit("Party3")
+        == "party member 3" and E.Unit("partypet2") == "the pet of party member 2" and E.Unit("boss1") == "boss 1")
+    check("explain: a name ending in target is a name", E.Unit("Bobtarget") == "Bobtarget")
+    check("explain: no env needed", table.concat(E.Line("/cast [form:1] Maul") or {}) == "in form 1: Maul")
+    -- In Ukrainian: the words of its table, the unit in the case "on" takes.
+    ns.SetLanguage("uk")
+    check("explain: in Ukrainian", says("/cast [mod:shift,@focus,harm,nodead] Polymorph; [@pet] Mend Pet")
+        == "із затиснутим Shift: Polymorph на ваш фокус, якщо він ворог і живий | інакше: Mend Pet на вашого улюбленця",
+        says("/cast [mod:shift,@focus,harm,nodead] Polymorph; [@pet] Mend Pet"))
+    ns.SetLanguage("en")
+end
+
+-- Every Ukrainian text once: a second one of the same English text would quietly win over the first.
+do
+    local seen, twice = {}, {}
+    for key in io.open("MacroSense/Ukrainian.lua"):read("a"):gmatch('\n%s*%["(.-[^\\])"%]%s*=') do
+        if seen[key] then twice[#twice + 1] = key end
+        seen[key] = true
+    end
+    check("ukrainian: each text once", #twice == 0, table.concat(twice, " | "))
 end
 
 -- Shorten: the same macro in fewer characters.

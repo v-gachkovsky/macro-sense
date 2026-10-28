@@ -14,6 +14,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   and specialization as they change. Retail and WoW Forever: the talent tree; Mists of Pandaria: the talents of
   each row and the other specializations' spells; Classic Era and TBC: the talents with no points.
 - Suggestions name the specialization of a spell that is not yours now (`Chaos Bolt  Destruction`).
+- **A line in plain words**: point at a line's number, or at its note, and its tooltip says what the whole line
+  does, every branch of it: `with Shift held: Polymorph on your focus, if it is an enemy and alive`, then
+  `otherwise: Frostbolt`. Units tried one after another, the commands of the client's language, form and
+  specialization names. In English and Ukrainian.
 - **Your other characters' macros** in the Character tab, under each character's name (your realm first): their own
   macros as they were when you last played them, to read and to copy into this character or General. The search
   finds them too, and a character can be forgotten.
