@@ -14,6 +14,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
   and specialization as they change. Retail and WoW Forever: the talent tree; Mists of Pandaria: the talents of
   each row and the other specializations' spells; Classic Era and TBC: the talents with no points.
 - Suggestions name the specialization of a spell that is not yours now (`Chaos Bolt  Destruction`).
+- **Move to Character** / **Move to General** in a macro's copy menu: into the other tab, with its buttons on your
+  action bars, its history and its name (`Fear 2` when that tab has one), and not into the trash.
+- **Not on action bars** under the search: only the macros on no action bar, to free slots. MacroSense remembers
+  the bars of each of your specializations and characters as it last saw them, so a macro another specialization
+  or, for a general one, another character has counts as used. Hovering a macro in the list says where it is;
+  deleting one says it in the question, and moving one those bars have asks first.
 
 ### Fixed
 - `/castrandom` and `/userandom` lists are read name by name, as `/castsequence` ones are: a typo in one of their

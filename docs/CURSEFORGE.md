@@ -182,6 +182,11 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - Asks before discarding unsaved changes.
 - **Copy** or **delete** a macro with the buttons at its end in the list: a duplicate in the same tab, or a copy in
   the Character / General tab.
+- **Move** a macro between the General and Character tabs, which the game's macro window can't do: its buttons on
+  your action bars stay, and its history goes along.
+- **Not on action bars** shows only the macros on no bar, to free slots when a tab is full. Hover a macro to see
+  where it is: MacroSense remembers the bars of each of your specializations and characters, so a macro an alt or
+  your other spec uses counts as used.
 - **Share** macros: a code of one macro, a tab or all of them, to copy and send. **Import a code** shows what
   it holds and where each macro goes before making them, and never replaces one of yours.
 

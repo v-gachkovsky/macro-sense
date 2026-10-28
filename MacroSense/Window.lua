@@ -19,7 +19,8 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
-local shortenBtn, historyBtn, search, noMatch
+local shortenBtn, historyBtn, search, noMatch, barsCheck
+local notOnBars = false -- the list shows only the macros on no action bar
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
 local function MacroRange(scope)
@@ -260,6 +261,32 @@ local function MacroIssues(body)
     return worst, issues
 end
 
+-- Where macro `name` of tab `scope` is on the action bars, for its tooltip.
+local function AddBarsLines(scope, name)
+    local here, elsewhere = ns.ActionBars.Uses(scope, name)
+    local now = here > 0 and ns.Plural(here, "On %d button of your action bars", "On %d buttons of your action bars")
+    GameTooltip:AddLine(now or L["Not on your action bars now"], 0.6, 0.6, 0.6)
+    if #elsewhere > 0 then
+        GameTooltip:AddLine(string.format(L["On the bars of %s"], table.concat(elsewhere, ", ")), 0.6, 0.6, 0.6, true)
+    end
+end
+
+-- What deleting or moving macro `name` of tab `scope` takes from the action bars, for its question: "" or sentences.
+local function BarsNote(scope, name)
+    local here, elsewhere = ns.ActionBars.Uses(scope, name)
+    local out = {}
+    if here > 0 then
+        out[#out + 1] = ns.Plural(here, "It is on %d button of your action bars.",
+            "It is on %d buttons of your action bars.")
+    end
+    if #elsewhere > 0 then
+        local places = table.concat(elsewhere, ", ")
+        out[#out + 1] = string.format(here > 0 and L["It is on the bars of %s too."] or L["It is on the bars of %s."],
+            places)
+    end
+    return #out > 0 and "\n\n" .. table.concat(out, " ") or ""
+end
+
 local function Row(i)
     local r = CreateFrame("Button", nil, list.child)
     r:SetHeight(ROW_H)
@@ -282,7 +309,8 @@ local function Row(i)
     end
     -- At the end: copy (a menu: this tab or the other one) and x (delete, after asking).
     r.remove = ns.RowButton(r, "x", "invalid", lit, function() return L["Delete this macro"] end, function()
-        ns.Ask("MACROSENSE_DELETE", r.name, nil, { index = r.index, name = r.name, scope = state.scope })
+        local m = { index = r.index, name = r.name, scope = r.scope }
+        ns.Ask("MACROSENSE_DELETE", r.name, BarsNote(r.scope, r.name), m)
     end)
     r.remove:SetPoint("RIGHT", -2, 0)
     r.copy = ns.RowButton(r, COPY_ICON, "text", lit, function() return L["Copy this macro"] end,
@@ -294,13 +322,13 @@ local function Row(i)
     r.alert:SetPoint("RIGHT", r.copy, "LEFT", -2, 0)
     r.alert:SetTexture("Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew")
     r.alert:Hide()
-    -- Hover: the issues, line by line.
+    -- Hover: the issues, line by line, and where it is on the action bars.
     r:SetScript("OnEnter", function()
         lit(true)
-        if not r.severity then return end
         GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
         GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
-        AddIssueLines(r.issues)
+        AddIssueLines(r.issues or {})
+        AddBarsLines(r.scope, r.name)
         GameTooltip:Show()
     end)
     r:SetScript("OnLeave", function()
@@ -330,12 +358,21 @@ local function Matches(q, name, body)
     return q == "" or name:lower():find(q, 1, true) ~= nil or (body or ""):lower():find(q, 1, true) ~= nil
 end
 
+-- What the list shows: the macros the search matches, and with "Not on action bars" only those on no bar, of
+-- this character's specializations and, for a general macro, of your other characters as last seen.
+local function Shown(q, scope, name, body)
+    if not Matches(q, name, body) then return false end
+    if not notOnBars then return true end
+    local here, elsewhere = ns.ActionBars.Uses(scope, name)
+    return here == 0 and #elsewhere == 0
+end
+
 local function CountMatches(scope, q)
     local first, last = MacroRange(scope)
     local n = 0
     for index = first, last do
         local name, _, body = GetMacroInfo(index)
-        if name and Matches(q, name, body) then n = n + 1 end
+        if name and Shown(q, scope, name, body) then n = n + 1 end
     end
     return n
 end
@@ -347,11 +384,11 @@ function Window.RefreshList()
     local n = 0
     for index = first, last do
         local name, icon, body = GetMacroInfo(index)
-        if name and Matches(q, name, body) then
+        if name and Shown(q, state.scope, name, body) then
             n = n + 1
             rows[n] = rows[n] or Row(n)
             local r = rows[n]
-            r.index, r.name, r.selected = index, name, index == state.index
+            r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
             r.icon:SetTexture(ns.IconTexture(icon))
             r.text:SetText(name)
             -- Marks follow the saved text: the one being edited shows its issues in the editor.
@@ -367,10 +404,10 @@ function Window.RefreshList()
     end
     for i = n + 1, #rows do rows[i]:Hide() end
     list.child:SetHeight(math.max(n * ROW_H, 1))
-    noMatch:SetShown(n == 0 and q ~= "")
+    noMatch:SetShown(n == 0 and (q ~= "" or notOnBars))
 
-    -- While searching, the tabs say how many match.
-    if q == "" then
+    -- While searching or filtering, the tabs say how many match.
+    if q == "" and not notOnBars then
         local general, character = GetNumMacros()
         tabs.general.label:SetText(string.format(L["General  %d/%d"], general, MAX_GENERAL))
         tabs.character.label:SetText(string.format(L["Character  %d/%d"], character, MAX_CHARACTER))
@@ -416,7 +453,7 @@ StaticPopupDialogs.MACROSENSE_DISCARD = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 StaticPopupDialogs.MACROSENSE_DELETE = {
-    text = "Delete macro \"%s\"?",
+    text = "Delete macro \"%s\"?%s",
     button1 = "Delete", button2 = "Cancel",
     -- The macros may have moved since the x was clicked: then it is found by its name in its tab.
     OnAccept = function(_, m)
@@ -513,6 +550,11 @@ function Window.RefreshStatus()
     if frame and frame:IsShown() then UpdateStatus() end
 end
 
+-- What is on the action bars changed: the list follows when it shows only the macros on no bar.
+function Window.BarsChanged()
+    if frame and frame:IsShown() and notOnBars then Window.RefreshList() end
+end
+
 -- Spells, pets or talents changed: the marks in the list and the editor's warnings follow.
 function Window.SpellsChanged()
     if not frame or not frame:IsShown() then return end
@@ -593,15 +635,68 @@ function Window.Copy(scope, index)
     make(name ~= "" and name or state.name, state.icon, body)
 end
 
+-- Macro `index` into the other tab, opened there: made under its name (a free one when that tab has it) with its
+-- icon and text, put back on its buttons of the action bars now, its versions taken along, then deleted here. The
+-- bars of your other specializations and, for a general macro, of other characters lose it. Unsaved changes are
+-- asked about first.
+function Window.Move(index)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local from = index > MAX_GENERAL and "character" or "general"
+    local to = from == "general" and "character" or "general"
+    local first, last, max = MacroRange(to)
+    if last - first + 1 >= max then return NoRoom(to) end
+    Guard(function()
+        local name, _, body = GetMacroInfo(index)
+        local icon, slots = ns.MacroIcon(index), ns.ActionBars.SlotsOf(name)
+        local moved = IndexIn(to, name) and FreeName(name) or name
+        local made = CreateMacro(moved, icon or NEW_ICON, body or "", to == "character")
+        if not made or made == 0 then return ns.Print("could not move the macro") end
+        ns.History.Moved(from, to, name, moved)
+        DeleteMacro(IndexIn(from, name))
+        ns.ActionBars.Place(IndexIn(to, moved), slots)
+        ns.History.Scan()
+        state.scope, ns.db.scope = to, to
+        Load(IndexIn(to, moved))
+    end)
+end
+
+local function AskMove(_, m)
+    local index = GetMacroInfo(m.index) == m.name and m.index or IndexIn(m.scope, m.name)
+    if index then Window.Move(index) end
+end
+-- Asked when the bars of another specialization or character lose the macro.
+StaticPopupDialogs.MACROSENSE_MOVE_GENERAL = {
+    text = "Move \"%s\" to the General tab?%s",
+    button1 = "Move", button2 = "Cancel", OnAccept = AskMove,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+StaticPopupDialogs.MACROSENSE_MOVE_CHARACTER = {
+    text = "Move \"%s\" to the Character tab?%s",
+    button1 = "Move", button2 = "Cancel", OnAccept = AskMove,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+-- Moves macro `index` into the other tab; asks first when it is on the bars of your other specializations or, for a
+-- general macro, of your other characters: those lose it.
+local function MoveAsked(index)
+    local name = GetMacroInfo(index)
+    local from = index > MAX_GENERAL and "character" or "general"
+    local _, elsewhere = ns.ActionBars.Uses(from, name)
+    if #elsewhere == 0 then return Window.Move(index) end
+    local note = "\n\n" .. string.format(L["It will be gone from the bars of %s."], table.concat(elsewhere, ", "))
+    ns.Ask(from == "general" and "MACROSENSE_MOVE_CHARACTER" or "MACROSENSE_MOVE_GENERAL", name, note,
+        { index = index, name = name, scope = from })
+end
+
 local function CopyItems(index)
     local other = state.scope == "general" and "character" or "general"
-    local function item(scope, label, tip)
+    local function item(scope, label, tip, move)
         local first, last, max = MacroRange(scope)
         local full = last - first + 1 >= max
         return {
             name = full and string.format("%s  |cff%s%s|r", label, ns.scheme.dim, L["(full)"]) or label,
             disabled = full,
-            onClick = function() Window.Copy(scope, index) end,
+            onClick = function() if move then MoveAsked(index) else Window.Copy(scope, index) end end,
             onEnter = function(row)
                 GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(label, 1, 1, 1)
@@ -624,9 +719,16 @@ local function CopyItems(index)
         character = L["A copy for this character only, under a free name like \"Fear 2\"."],
         general = L["A copy for all your characters, under a free name like \"Fear 2\"."],
     }
+    local moves = {
+        character = L["Into the Character tab, for this character only. Its buttons on your action bars stay, and its "
+            .. "history goes with it."],
+        general = L["Into the General tab, for all your characters. Its buttons on your action bars stay, and its "
+            .. "history goes with it."],
+    }
     return {
         item(state.scope, L["Duplicate"], tips.same),
         item(other, other == "character" and L["Copy to Character"] or L["Copy to General"], tips[other]),
+        item(other, other == "character" and L["Move to Character"] or L["Move to General"], moves[other], true),
     }
 end
 
@@ -1193,8 +1295,24 @@ local function Build()
         if rows[1] and rows[1]:IsShown() then Window.Select(rows[1].index) end
     end)
 
+    -- Under it: only the macros on no action bar, to free slots.
+    barsCheck = ns.Check(side, L["Not on action bars"], function() return notOnBars end, function(on)
+        notOnBars = on
+        Window.RefreshList()
+    end)
+    barsCheck:SetPoint("TOPLEFT", 10, -60)
+    barsCheck:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L["Not on action bars"], 1, 1, 1)
+        GameTooltip:AddLine(L["Only the macros you have put on no action bar: handy to free slots. MacroSense "
+            .. "remembers the bars of each of your specializations and characters as it last saw them, so a general "
+            .. "macro an alt uses counts as used."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    barsCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
-    list:SetPoint("TOPLEFT", 0, -62)
+    list:SetPoint("TOPLEFT", 0, -84)
     list:SetPoint("BOTTOMRIGHT", -13, 66)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
@@ -1410,6 +1528,8 @@ local function Build()
         ns.ShareWindow.Close()
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
+        notOnBars = false
+        barsCheck:Refresh()
     end)
     -- The preview also follows the game: modifiers held, target, mouseover, pet, combat.
     local sincePreview = 0
