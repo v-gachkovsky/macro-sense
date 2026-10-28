@@ -373,6 +373,12 @@ lua tests/ui.lua    # увесь аддон на імітації WoW API
 створить GitHub Release і завантажить файл на CurseForge з нотатками з `CHANGELOG.md`. Для CurseForge
 потрібні секрет `CF_API_KEY` і змінна `CURSEFORGE_PROJECT_ID`. Опис для CurseForge — у `docs/CURSEFORGE.md`.
 
+## Підтримати
+
+MacroSense безкоштовний і таким лишиться. Якщо він заощаджує вам час і хочеться подякувати, можна
+закинути на [банку monobank](https://send.monobank.ua/jar/2GZjyGouqJ) або купити мені каву на
+[Ko-fi](https://ko-fi.com/mortivux). Звіт про помилку чи добре слово допомагають не менше.
+
 ## Ліцензія
 
 Код: MIT, див. `LICENSE`; так само іконка копіювання, намальована для MacroSense

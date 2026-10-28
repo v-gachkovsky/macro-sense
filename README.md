@@ -414,6 +414,13 @@ into the TOC, packs the zip, makes a GitHub Release and uploads it to CurseForge
 `CHANGELOG.md`. CurseForge needs the repository secret `CF_API_KEY` and the variable `CURSEFORGE_PROJECT_ID`.
 The CurseForge description is in `docs/CURSEFORGE.md`.
 
+## Support
+
+MacroSense is free and stays free. If it saves you time and you'd like to say thanks, you can buy me a coffee
+on [Ko-fi](https://ko-fi.com/mortivux) or drop something into my
+[monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ) (any card, Apple Pay or Google Pay). A bug report or a
+kind word helps just as much.
+
 ## License
 
 Code: MIT, see `LICENSE`; so is the copy icon, drawn for MacroSense (`MacroSense/Media/copy.tga`). Fonts

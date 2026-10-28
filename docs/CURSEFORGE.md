@@ -222,6 +222,12 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 Found a bug or have an idea? Open an issue on [GitHub](https://github.com/v-gachkovsky/macro-sense/issues) (or leave a comment on this page) with what
 you did, what you expected and what happened (a screenshot helps), plus the output of `/ms bug`.
 
+## Support
+
+MacroSense is free and stays free. If it saves you time and you'd like to say thanks, you can buy me a coffee
+on [Ko-fi](https://ko-fi.com/mortivux) or drop something into my
+[monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ) (any card, Apple Pay or Google Pay).
+
 ---
 
 With ❤️ from 🇺🇦
