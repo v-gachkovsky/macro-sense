@@ -513,6 +513,13 @@ function Window.RefreshStatus()
     if frame and frame:IsShown() then UpdateStatus() end
 end
 
+-- Spells, pets or talents changed: the marks in the list and the editor's warnings follow.
+function Window.SpellsChanged()
+    if not frame or not frame:IsShown() then return end
+    Window.RefreshList()
+    code:ScheduleUnderlines()
+end
+
 function Window.Revert()
     if state.index then Load(state.index) end
 end

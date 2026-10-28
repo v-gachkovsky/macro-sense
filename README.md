@@ -127,7 +127,7 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys (`lshift`, ...) |
 | `[form:` / `[stance:` | your forms with their names (`1` Bear Form, ...) |
 | `[spec:` / `[equipped:` / `[group:` / `[bar:` / `[btn:` / `[pet:` | specializations, weapon and armor types, `party` / `raid`, bar pages, buttons, your pet |
-| `/cast ` or after `]` / `;` | spells, then usable items from bags |
+| `/cast ` or after `]` / `;` | spells (another specialization's with its name), then usable items from bags |
 | a spell with several learned ranks (Classic) | its ranks, highest first: Tab inserts `Fireball(Rank 2)`, Esc keeps `Fireball` |
 | `/use ` | usable items from bags and gear, then spells |
 | `/equip ` / `/equipslot 13 ` | gear from bags |
@@ -184,6 +184,13 @@ an empty `[]` removes both.
   `did you mean "Shadow Bolt"?`; click it in the status bar to fix the name. Known names: your spells,
   your pets' spells (remembered from every pet you summon), items in your bags and seen before, Retail
   mounts. A name nothing is close to stays unmarked.
+- Spells of yours the macro can't cast now are a warning: a talent you haven't chosen (`"Shadowfury": a talent
+  you haven't chosen, the macro can't use it now`), another specialization's spell (`"Chaos Bolt" belongs to
+  Destruction`), one you learn later (`you learn it at level 40`). A branch whose conditions check that
+  themselves (`[spec:2]`, `[talent:...]`, `[known:...]`) is not marked. Such a macro turns yellow on the action
+  bars too, and its tooltip there says why. The warnings follow your talents and specialization as they change.
+  Retail and WoW Forever know your talent tree, Mists of Pandaria the talents of each row and the other
+  specializations' spells, Classic Era and TBC the talents with no points.
 - Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game, Cmd+W,
   Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns, and so does the macro's tooltip on the action bar;
   the button with that key turns red.
@@ -286,7 +293,8 @@ mark stays.
 
 Drag a macro from the list, or its icon from the header, onto an action bar. **Shift + right-click** on it
 there opens it in the editor instead of running it, and its tooltip says so: on the game's bars and those of
-Bartender, Dominos and ElvUI.
+Bartender, Dominos and ElvUI. A macro with a spell you don't have now (a talent you haven't chosen, another
+specialization's spell) turns yellow there, and its tooltip says why.
 
 ## Language
 
@@ -341,7 +349,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 - `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
-  code, and the line in its tooltip.
+  code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.
 
 ### Tests
 

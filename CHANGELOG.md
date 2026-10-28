@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Spells you don't have now** are a warning in the editor and in the macro list: a talent you haven't chosen,
+  another specialization's spell, one you learn later (with its level). A branch whose conditions check that
+  themselves (`[spec:2]`, `[talent:...]`, `[known:...]`) is not marked. On the action bars such a macro turns
+  yellow (the game's bars, Bartender, Dominos, ElvUI), and its tooltip says why. The warnings follow your talents
+  and specialization as they change. Retail and WoW Forever: the talent tree; Mists of Pandaria: the talents of
+  each row and the other specializations' spells; Classic Era and TBC: the talents with no points.
+- Suggestions name the specialization of a spell that is not yours now (`Chaos Bolt  Destruction`).
+
+### Fixed
+- `/castrandom` and `/userandom` lists are read name by name, as `/castsequence` ones are: a typo in one of their
+  spells gets its fix (the whole list was taken for one name).
+
 ## [0.7.0] - 2026-10-26
 
 ### Added

@@ -73,12 +73,31 @@ local function RememberBuffsSoon()
     end)
 end
 
+-- Spells, pets or talents changed: the warnings about spells you don't have follow, in the editor, its list and on
+-- the action bars. The game sends several such events at once: at most twice a second.
+local spellsDue
+local function SpellsChangedSoon()
+    ns.InvalidateSources("spells")
+    if spellsDue then return end
+    spellsDue = true
+    C_Timer.After(0.5, function()
+        spellsDue = false
+        ns.Window.SpellsChanged()
+        ns.ActionBars.Tint()
+    end)
+end
+
+-- The talent events differ between the clients, and the game refuses those it doesn't have.
+local TALENT_EVENTS = { PLAYER_TALENT_UPDATE = true, TRAIT_CONFIG_UPDATED = true, TRAIT_CONFIG_LIST_UPDATED = true,
+    CHARACTER_POINTS_CHANGED = true, ACTIVE_TALENT_GROUP_CHANGED = true, ACTIVE_PLAYER_SPECIALIZATION_CHANGED = true }
+
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
     "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED", "UNIT_PET",
     "PET_BAR_UPDATE", "PLAYER_REGEN_ENABLED" }) do
     f:RegisterEvent(e)
 end
+for e in pairs(TALENT_EVENTS) do pcall(f.RegisterEvent, f, e) end
 f:RegisterUnitEvent("UNIT_AURA", "player")
 f:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" then
@@ -112,8 +131,9 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "PLAYER_REGEN_ENABLED" then
         -- Action buttons can't be set up in combat: those made during it are set up now.
         ns.ActionBars.Setup()
-    elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player") then
-        ns.InvalidateSources("spells")
+    elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player")
+        or TALENT_EVENTS[event] then
+        SpellsChangedSoon()
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then

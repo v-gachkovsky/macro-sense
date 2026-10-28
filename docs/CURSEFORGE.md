@@ -112,6 +112,9 @@ the status bar names them (hover for the full list), and the Save button shows a
 - **typos in spell and item names**: `Shadwo Bolt` gets `did you mean "Shadow Bolt"?`, and a click fixes it.
   Your pets' spells are remembered from every pet you summon, so a Succubus macro stays fine while the
   Felhunter is out
+- **spells you don't have now**: a talent you haven't chosen, another specialization's spell, one you learn
+  later. The macro turns yellow on your action bars too, and its tooltip says why, so a talent swap that broke
+  a macro shows at once. A branch that checks `[spec:2]` or `[talent:...]` itself is left alone
 
 Saving is still allowed: the editor warns, it doesn't block you. In the macro list, a macro with errors
 stands out with a red name and a warning sign (only warnings: a yellow name), so a broken one is easy to

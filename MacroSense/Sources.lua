@@ -156,56 +156,162 @@ end
 ------------------------------------------------------------------------
 -- Spellbook (Retail C_SpellBook, older flavors GetSpellBookItem*)
 ------------------------------------------------------------------------
-local function retailSpells(add)
+local SpellName = C_Spell and C_Spell.GetSpellName or function(id) return GetSpellInfo and (GetSpellInfo(id)) end
+local SpellLevel = C_Spell and C_Spell.GetSpellLevelLearned or GetSpellLevelLearned
+
+-- The book also has the spells of your other specializations, each in a skill line of its own (the line's name
+-- is the specialization's), and those you learn later: `later` gets them. A spell a talent replaces (Shadow Bolt
+-- by Drain Soul) is in it by the new name; the macro may still name the old one, which casts the new one.
+local function retailSpells(add, later)
     local bank = Enum.SpellBookSpellBank.Player
+    local future = Enum.SpellBookItemType.FutureSpell
     for tab = 1, C_SpellBook.GetNumSpellBookSkillLines() do
         local line = C_SpellBook.GetSpellBookSkillLineInfo(tab)
         if line and not line.shouldHide then
+            local spec = line.offSpecID and line.name
             for slot = line.itemIndexOffset + 1, line.itemIndexOffset + line.numSpellBookItems do
                 local item = C_SpellBook.GetSpellBookItemInfo(slot, bank)
-                if item and item.itemType == Enum.SpellBookItemType.Spell and not item.isPassive then
-                    add(item.name, item.iconID, item.subName)
+                if item and not item.isPassive then
+                    local other = spec or (item.isOffSpec and line.name) or nil
+                    if item.itemType == Enum.SpellBookItemType.Spell then
+                        local base = item.actionID ~= item.spellID and item.actionID and SpellName(item.actionID)
+                        add(item.name, item.iconID, item.subName, other, base)
+                    elseif future and item.itemType == future then
+                        later(item.name, item.spellID or item.actionID, other)
+                    end
                 end
             end
         end
     end
 end
 
-local function classicSpells(add)
+-- Mists of Pandaria: the other specializations have tabs of their own (offSpecID is not 0), and the book has the
+-- spells you learn later too.
+local function classicSpells(add, later)
     local book = BOOKTYPE_SPELL or "spell"
     for tab = 1, GetNumSpellTabs() do
-        local _, _, offset, count = GetSpellTabInfo(tab)
+        local tabName, _, offset, count, _, offSpecID = GetSpellTabInfo(tab)
+        local spec = offSpecID and offSpecID ~= 0 and tabName or nil
         for slot = offset + 1, offset + count do
-            local kind = GetSpellBookItemInfo(slot, book)
-            if kind == "SPELL" and not IsPassiveSpell(slot, book) then
+            local kind, id = GetSpellBookItemInfo(slot, book)
+            if (kind == "SPELL" or kind == "FUTURESPELL") and not IsPassiveSpell(slot, book) then
                 local name, sub = GetSpellBookItemName(slot, book)
-                add(name, GetSpellBookItemTexture(slot, book), sub)
+                if kind == "SPELL" then
+                    add(name, GetSpellBookItemTexture(slot, book), sub, spec)
+                else
+                    later(name, id, spec)
+                end
             end
         end
     end
 end
 
+local laterCache -- the spells of the book you learn later, made with spellCache
+
+-- Each spell: { name, icon, ranks, offSpec = the specialization it is for when it is not yours now, and its hint,
+-- base = the name of the spell it replaces }.
 function ns.sources.spells()
     if spellCache then return spellCache end
-    local seen, out = {}, {}
+    local seen, out, later = {}, {}, {}
     -- Older flavors list every learned rank: one entry per name, its ranks ("Rank 1", ...) in spellbook order.
-    local function add(name, icon, sub)
+    local function add(name, icon, sub, spec, base)
         if not name then return end
         local spell = seen[name]
         if not spell then
-            spell = { name = name, icon = icon, ranks = {} }
+            spell = { name = name, icon = icon, ranks = {}, offSpec = spec, hint = spec }
             seen[name] = spell
             out[#out + 1] = spell
+        elseif not spec then -- your specialization has it too
+            spell.offSpec, spell.hint = nil, nil
         end
+        if base and base ~= name then spell.base = base end
         if sub and sub ~= "" then table.insert(spell.ranks, sub) end
     end
+    local function learnLater(name, id, spec)
+        if not name then return end
+        local ok, level = false, nil
+        if id and SpellLevel then ok, level = pcall(SpellLevel, id) end
+        later[#later + 1] = { name = name, offSpec = spec, level = ok and type(level) == "number" and level > 0
+            and level or nil }
+    end
     if C_SpellBook and C_SpellBook.GetNumSpellBookSkillLines then
-        retailSpells(add)
+        retailSpells(add, learnLater)
     else
-        classicSpells(add)
+        classicSpells(add, learnLater)
     end
     table.sort(out, function(a, b) return a.name < b.name end)
-    spellCache = out
+    spellCache, laterCache = out, later
+    return out
+end
+
+-- The spells of the book you learn later: { name, offSpec = another specialization's, level = when you learn it }.
+function ns.sources.laterSpells()
+    ns.sources.spells()
+    return laterCache
+end
+
+------------------------------------------------------------------------
+-- Talents you haven't chosen: Retail and WoW Forever have a tree (C_Traits), Mists of Pandaria one talent of each
+-- row, Classic Era and TBC points in talents.
+------------------------------------------------------------------------
+local TalentInfo = C_SpecializationInfo and C_SpecializationInfo.GetTalentInfo
+
+-- The tree also has the talents of your other specializations, which you can't see. The talents of a hero tree
+-- not chosen count as not chosen.
+local function treeTalents(add)
+    local configID = C_ClassTalents.GetActiveConfigID()
+    local config = configID and C_Traits.GetConfigInfo(configID)
+    if not config then return end -- not loaded yet: the game tells when it is (TRAIT_CONFIG_LIST_UPDATED)
+    for _, treeID in ipairs(config.treeIDs) do
+        for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID) or {}) do
+            local node = C_Traits.GetNodeInfo(configID, nodeID)
+            if node and node.isVisible then
+                local chosen = node.activeRank > 0 and node.activeEntry and node.activeEntry.entryID
+                if node.subTreeID and not node.subTreeActive then chosen = nil end
+                for _, entryID in ipairs(node.entryIDs) do
+                    local entry = entryID ~= chosen and C_Traits.GetEntryInfo(configID, entryID)
+                    local def = entry and entry.definitionID and C_Traits.GetDefinitionInfo(entry.definitionID)
+                    if def then
+                        add(def.spellID and SpellName(def.spellID))
+                        add(def.overrideName)
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function talentName(info) return info.spellID and info.spellID ~= 0 and SpellName(info.spellID) or info.name end
+
+local function rowTalents(add)
+    local group = C_SpecializationInfo.GetActiveSpecGroup and C_SpecializationInfo.GetActiveSpecGroup()
+    for tier = 1, MAX_NUM_TALENT_TIERS or 6 do
+        for column = 1, 3 do
+            local info = TalentInfo({ tier = tier, column = column, groupIndex = group })
+            if info and not info.selected then add(talentName(info)) end
+        end
+    end
+end
+
+local function pointTalents(add)
+    local group = C_SpecializationInfo.GetActiveSpecGroup and C_SpecializationInfo.GetActiveSpecGroup()
+    for tab = 1, GetNumTalentTabs and GetNumTalentTabs() or 0 do
+        for i = 1, GetNumTalents(tab) do
+            local info = TalentInfo({ specializationIndex = tab, talentIndex = i, groupIndex = group })
+            if info and info.rank == 0 then add(talentName(info)) end
+        end
+    end
+end
+
+-- The names of your class's talents you haven't chosen.
+function ns.sources.talents()
+    local out = {}
+    local function add(name) if name and name ~= "" then out[#out + 1] = name end end
+    if C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_Traits then
+        treeTalents(add)
+    elseif TalentInfo then
+        if ns.HasExpansion(4) then rowTalents(add) else pointTalents(add) end
+    end
     return out
 end
 
@@ -314,8 +420,6 @@ end
 ------------------------------------------------------------------------
 -- Condition values: forms, specializations, item types, pet
 ------------------------------------------------------------------------
-local SpellName = C_Spell and C_Spell.GetSpellName or function(id) return GetSpellInfo and (GetSpellInfo(id)) end
-
 -- "form:1" -> Bear Form ... (whatever the class has; Classic returns the name directly).
 function ns.sources.forms()
     local out = { { name = "0", hint = "no form" } }
@@ -498,20 +602,52 @@ end
 
 local knownCache, guesses
 local sourcesFailed -- the typo check could not read a source once: reported then, not again
--- { set = { lowercase name = true }, list = { names }, items = { item names } }
+local talentsFailed -- the same for the talents; the rest goes on without them
+-- { set = { lowercase name = true }, list = { names }, items = { item names }, missing = { lowercase name = why } }.
+-- `missing`: your spells the game can't cast now, and why: { why = "talent" (not chosen) | "spec" (another
+-- specialization's, `spec`) | "later" (learned later, at `level`) }.
 function ns.KnownActions()
     if knownCache then return knownCache end
-    local set, list, items = {}, {}, {}
-    local function add(name, isItem)
-        if not name or name == "" then return end
+    local set, list, items, missing, inList = {}, {}, {}, {}, {}
+    -- Every name goes into the list the typo check guesses from: "Shadowfurry" is close to Shadowfury too.
+    local function listed(name)
         local key = name:lower()
-        if not set[key] then
-            set[key] = true
+        if not inList[key] then
+            inList[key] = true
             list[#list + 1] = name
         end
+        return key
+    end
+    local function add(name, isItem)
+        if not name or name == "" then return end
+        set[listed(name)] = true
         if isItem then items[#items + 1] = name end
     end
-    for _, spell in ipairs(ns.sources.spells()) do add(spell.name) end
+    -- The first reason stays: a talent before a spell you learn later, before another specialization's.
+    local function miss(name, why)
+        if not name or name == "" then return end
+        local key = listed(name)
+        missing[key] = missing[key] or why
+    end
+    local ok, talents = pcall(ns.sources.talents)
+    if ok then
+        for _, name in ipairs(talents) do miss(name, { why = "talent" }) end
+    elseif not talentsFailed then
+        talentsFailed = true
+        geterrorhandler()(talents)
+    end
+    for _, spell in ipairs(ns.sources.laterSpells()) do
+        local why = spell.offSpec and { why = "spec", spec = spell.offSpec } or { why = "later", level = spell.level }
+        miss(spell.name, why)
+    end
+    for _, spell in ipairs(ns.sources.spells()) do
+        if spell.offSpec then
+            miss(spell.name, { why = "spec", spec = spell.offSpec })
+        else
+            add(spell.name)
+            add(spell.base)
+        end
+    end
     -- A pet's spells are only in its spellbook while it is out: remember those of every pet seen.
     local petSpells = ns.char and ns.char.petSpells or {}
     for _, name in ipairs(petSpellNames()) do petSpells[name] = true end
@@ -519,16 +655,38 @@ function ns.KnownActions()
     for _, item in ipairs(ns.sources.items()) do add(item.name, true) end
     for name in pairs(ns.db and ns.db.itemNames or {}) do add(name, true) end
     for _, name in ipairs(mountNames()) do add(name) end
-    for name in pairs(ns.char and ns.char.buffs or {}) do add(name) end
+    -- A buff you had (Power Infusion from a priest) is no spell of yours: a talent of that name stays missing.
+    for name in pairs(ns.char and ns.char.buffs or {}) do
+        if not missing[name:lower()] then add(name) end
+    end
     table.sort(list)
     table.sort(items)
-    knownCache, guesses = { set = set, list = list, items = items }, {}
+    knownCache, guesses = { set = set, list = list, items = items, missing = missing }, {}
     return knownCache
 end
 
+-- The commands that cast a spell by its name: a spell you don't have leaves them doing nothing.
+local CASTS = { cast = true, use = true, castsequence = true, castrandom = true, userandom = true }
+
+-- Why the game can't cast spell `name` of yours now (see KnownActions): the message, its short form.
+local function Missing(name, m)
+    if m.why == "talent" then
+        return string.format(L["\"%s\": a talent you haven't chosen, the macro can't use it now"], name),
+            L["talent not chosen"]
+    elseif m.why == "spec" then
+        return string.format(L["\"%s\" belongs to %s: you are in another specialization now"], name, m.spec),
+            string.format(L["%s only"], m.spec)
+    elseif m.level then
+        return string.format(L["\"%s\": you learn it at level %d"], name, m.level), L["not learned yet"]
+    end
+    return string.format(L["\"%s\": you haven't learned it yet"], name), L["not learned yet"]
+end
+
+-- A spell of yours the game can't cast now (a talent not chosen, another specialization's spell, one you learn
+-- later) gets a warning, unless its conditions check for it (`guarded`: [spec:2], [talent:...], [known:...]).
 -- A name that is not known but close to a known one is likely a typo. Names nothing is close to stay
--- unmarked: they may be spells of another spec or pet, items not in the bags, toys...
-function ns.Highlight.checkAction(name, command)
+-- unmarked: they may be spells of a pet, items not in the bags, toys...
+function ns.Highlight.checkAction(name, command, guarded)
     if name:find("^%d") or name:find("^item:") then return nil end -- slots, item links
     -- A source that fails (a game function this client doesn't have) costs the typo check, not the editor.
     local ok, known = pcall(ns.KnownActions)
@@ -537,10 +695,16 @@ function ns.Highlight.checkAction(name, command)
             sourcesFailed = true
             geterrorhandler()(known)
         end
-        knownCache, guesses = { set = {}, list = {}, items = {} }, {}
+        knownCache, guesses = { set = {}, list = {}, items = {}, missing = {} }, {}
         return nil
     end
     if known.set[name:lower()] then return nil end
+    local missing = known.missing[name:lower()]
+    if missing then
+        if guarded or not CASTS[command] then return nil end
+        local message, short = Missing(name, missing)
+        return { message = message, short = short, missing = true }
+    end
     local key = command .. "\1" .. name
     if guesses[key] == nil then
         local pool = (command == "equip" or command == "equipslot") and known.items or known.list

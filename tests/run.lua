@@ -507,6 +507,10 @@ do
     check("no guess for a short name", #H.Errors("/cast Fera") == 0)
     local seq = H.Errors("/castsequence reset=10 Corruption, Imolate")[1]
     check("typo in a sequence", seq and seq.fix == "Immolate", seq and seq.fix)
+    local random = H.Errors("/castrandom Corruption, Imolate")[1]
+    check("typo in a random list", random and random.fix == "Immolate", random and random.fix)
+    local reset = H.Errors("/userandom reset=10 Fear, Corruption")[1]
+    check("reset= is still for sequences only", reset and reset.message == "reset= works only in /castsequence")
     local tip = H.Errors("#showtooltip Corrupton")[1]
     check("typo in #showtooltip", tip and tip.fix == "Corruption", tip and tip.fix)
 end
@@ -515,6 +519,41 @@ local withoutSeduction = {}
 for _, n in ipairs(known) do if n ~= "Seduction" then withoutSeduction[#withoutSeduction + 1] = n end end
 useKnown(withoutSeduction)
 check("pet spell not known now: quiet", #H.Errors(fixtures.petCC) == 0)
+
+-- A spell you don't have now: the check is told whether the branch checks the specialization or a talent first.
+do
+    local calls = {}
+    H.checkAction = function(name, _, guarded)
+        calls[#calls + 1] = name .. (guarded and " guarded" or "")
+        if name == "Chaos Bolt" and not guarded then
+            return { message = "missing", short = "Destruction only", missing = true }
+        end
+    end
+    local function seen(text)
+        calls = {}
+        H.Errors(text)
+        return table.concat(calls, ", ")
+    end
+    local e = H.Errors("/cast Chaos Bolt")[1]
+    check("missing spell: a warning", e and e.severity == "warning" and e.missing == true and e.short == "Destruction only")
+    check("missing spell: guarded by spec, the next branch not", seen("/cast [spec:2] Chaos Bolt; Shadow Bolt")
+        == "Chaos Bolt guarded, Shadow Bolt", seen("/cast [spec:2] Chaos Bolt; Shadow Bolt"))
+    check("missing spell: nospec", seen("/cast [nospec:1] Chaos Bolt") == "Chaos Bolt guarded")
+    check("missing spell: talent", seen("/cast [talent:7/2] Chaos Bolt") == "Chaos Bolt guarded")
+    check("missing spell: pvptalent", seen("/cast [pvptalent:1] Chaos Bolt") == "Chaos Bolt guarded")
+    check("missing spell: known", seen("/cast [noknown:Chaos Bolt] Incinerate; Chaos Bolt")
+        == "Incinerate guarded, Chaos Bolt")
+    check("missing spell: any group of the branch", seen("/cast [@focus][spec:2] Chaos Bolt") == "Chaos Bolt guarded"
+        and seen("/cast [spec:2][@focus] Chaos Bolt") == "Chaos Bolt guarded")
+    check("missing spell: among other conditions", seen("/cast [mod:shift, spec:2] Chaos Bolt") == "Chaos Bolt guarded")
+    check("missing spell: other conditions don't guard", seen("/cast [nodead,nomod,@target] Chaos Bolt") == "Chaos Bolt")
+    check("missing spell: a sequence keeps its conditions", seen("/castsequence [spec:2] Immolate, Chaos Bolt")
+        == "Immolate guarded, Chaos Bolt guarded")
+    check("missing spell: #showtooltip", seen("#showtooltip [spec:2] Chaos Bolt") == "Chaos Bolt guarded")
+    check("missing spell: no name to check in an unclosed bracket", seen("/cast [spec:2 Chaos Bolt") == "")
+    local typo = H.Errors("/cast Chaos Bolt; Fireball")
+    check("missing spell: only that one", #typo == 1 and typo[1].missing == true)
+end
 H.checkAction = nil
 
 -- Live preview: what each line does now, for a game state (tests/fakeparse.lua stands in for the game).

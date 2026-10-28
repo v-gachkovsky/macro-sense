@@ -9,8 +9,10 @@ ns.Highlight = Highlight
 
 -- Set by Sources: function(name) -> true when "/name" is a registered command. Unknown commands are errors.
 Highlight.isCommand = nil
--- Set by Sources: function(name, command) -> nil, or { message, short, fix } when a spell / item name
--- looks like a typo of a known one ("Shadwo Bolt" -> "Shadow Bolt"). command: "cast", "use", "equip", ...
+-- Set by Sources: function(name, command, guarded) -> nil, or { message, short, fix } when a spell / item name
+-- looks like a typo of a known one ("Shadwo Bolt" -> "Shadow Bolt"), or { message, short, missing = true } for a
+-- spell of yours the game can't cast now (a talent not chosen). command: "cast", "use", "equip", ...; guarded:
+-- the conditions before the name check for that ([spec:2], [talent:...], [known:...]).
 Highlight.checkAction = nil
 -- Set by Sources: function(name) -> nil, or what is wrong with the button "/click name" would click (message,
 -- short form).
@@ -133,15 +135,28 @@ local function conditionSpans(s, base, add)
     end
 end
 
--- A spell or item name. One that looks like a typo of a known name gets a warning with the fix.
-local function actionSpan(name, from, add, command)
+-- A spell or item name. One that looks like a typo of a known name gets a warning with the fix, one the game
+-- can't cast now a warning (unless `guarded`, see checkAction).
+local function actionSpan(name, from, add, command, guarded)
     local to = from + #name - 1
-    local typo = command and Highlight.checkAction and Highlight.checkAction(name, command)
+    local typo = command and Highlight.checkAction and Highlight.checkAction(name, command, guarded)
     if typo then
         add(from, to, "action", typo.message, "warning", typo)
     else
         add(from, to, "action")
     end
+end
+
+-- Conditions that check what you can cast: a branch behind them is meant for another specialization or talent.
+local GUARDS = { spec = true, talent = true, pvptalent = true, known = true }
+
+-- Whether the conditions in brackets (without them) have one of GUARDS, also in its "no" form.
+local function guards(inner)
+    for part in (inner .. ","):gmatch("([^,]*),") do
+        local name = (part:match("^%s*(%a+)") or ""):lower()
+        if GUARDS[name] or GUARDS[name:match("^no(.+)$") or ""] then return true end
+    end
+    return false
 end
 
 -- An equipment slot number: 1 (head) to 19 (tabard). `min` 0: also the ammo slot of Classic, and "0" may still
@@ -241,8 +256,11 @@ local function resetSpans(reset, from, add, sequence)
 end
 
 -- Arguments of a secure command: "[cond] arg; [cond] arg". command: the action command ("cast", ...), if any.
+-- A sequence ("reset=" allowed) and /castrandom, /userandom have a list of names, "," between.
 local function argSpans(s, base, add, argKind, sequence, command)
     local i = 1
+    local list = sequence or command == "castrandom" or command == "userandom"
+    local guarded = false -- the conditions of this branch check for a specialization or a talent (GUARDS)
     while i <= #s do
         local c = s:sub(i, i)
         if c == "[" then
@@ -260,6 +278,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
             end
             -- Split on "," by hand: gmatch with an empty-matching pattern behaves differently in Lua 5.1.
             local inner, from = s:sub(i + 1, close - 1), 1
+            guarded = guarded or guards(inner)
             local split = inner:find(",", 1, true) ~= nil
             while true do
                 local comma = inner:find(",", from, true)
@@ -280,13 +299,14 @@ local function argSpans(s, base, add, argKind, sequence, command)
         elseif c == "]" then
             add(base + i, base + i, "error", L["] without ["])
             i = i + 1
-        elseif c == ";" or (sequence and c == ",") then
+        elseif c == ";" or (list and c == ",") then
             add(base + i, base + i, "operator")
+            if c == ";" then guarded = false end -- the next branch has conditions of its own
             i = i + 1
         elseif c:find("%s") then
             i = i + 1
         else
-            local stop = (s:find(sequence and "[;,%[%]]" or "[;%[%]]", i) or (#s + 1)) - 1
+            local stop = (s:find(list and "[;,%[%]]" or "[;%[%]]", i) or (#s + 1)) - 1
             local word = s:sub(i, stop):match("^(.-)%s*$")
             local reset = argKind == "action" and word:match("^reset=%S*")
             if reset then
@@ -308,7 +328,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
                     local nameOnly = (name and name ~= "") and name or word
                     if nameOnly ~= "" then
                         if argKind == "action" then
-                            actionSpan(nameOnly, base + i, add, command)
+                            actionSpan(nameOnly, base + i, add, command, guarded)
                         else
                             add(base + i, base + i + #nameOnly - 1, argKind)
                         end
@@ -367,8 +387,8 @@ function Highlight.Spans(raw)
     return spans
 end
 
--- Syntax problems: { from, to, message, line, severity = "error" | "warning", short?, fix? }
--- (raw positions, 1-based, inclusive; fix replaces from..to).
+-- Syntax problems: { from, to, message, line, severity = "error" | "warning", short?, fix?, missing? }
+-- (raw positions, 1-based, inclusive; fix replaces from..to; missing: a spell the game can't cast now).
 function Highlight.Errors(raw)
     local out = {}
     for _, span in ipairs(Highlight.Spans(raw)) do
@@ -377,7 +397,7 @@ function Highlight.Errors(raw)
             local extra = span[6] or {}
             out[#out + 1] = {
                 from = span[1], to = span[2], message = span[4], line = line, severity = span[5],
-                short = extra.short, fix = extra.fix,
+                short = extra.short, fix = extra.fix, missing = extra.missing,
             }
         end
     end

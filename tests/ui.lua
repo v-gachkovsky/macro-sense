@@ -45,7 +45,10 @@ function Frame:__index(k)
     if k:find("^%u") then return function() end end -- every other widget method is a no-op
 end
 function Frame:SetScript(s, fn) self.scripts[s] = fn end
+-- Like the game, an event this client doesn't have is refused: this one has no CHARACTER_POINTS_CHANGED.
+local NO_SUCH_EVENTS = { CHARACTER_POINTS_CHANGED = true }
 function Frame:RegisterEvent(e)
+    if NO_SUCH_EVENTS[e] then error("Attempt to register unknown event \"" .. e .. "\"") end
     self.events = self.events or {}
     self.events[e] = true
 end
@@ -217,7 +220,7 @@ function IsSecureCmd(command)
 end
 EMOTE1_TOKEN, EMOTE1_CMD1 = "DANCE", "/dance"
 
-Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1 } }
+Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1, FutureSpell = 2 } }
 local petBook = {} -- names of the pet's spells; empty = no pet
 local book = { -- name, rank: Classic lists every learned rank
     { "Fireball", "Rank 1" }, { "Fireball", "Rank 2" }, { "Fireball", "Rank 3" },
@@ -259,6 +262,13 @@ C_Spell = {
     SpellHasRange = function(name) return name ~= "Demon Armor" end,
     GetSpellTexture = function(id) return gameSpells[id] and gameSpells[id][1] end,
     GetSpellName = function(id) return gameSpells[id] and gameSpells[id][2] end,
+    GetSpellLevelLearned = function(id) return id == 30283 and 40 or 0 end, -- Shadowfury, learned later
+}
+-- The talents of the Classic clients, one a query: tests set talentInfo (nil: no talents).
+local talentInfo
+C_SpecializationInfo = {
+    GetTalentInfo = function(query) return talentInfo and talentInfo(query) end,
+    GetActiveSpecGroup = function() return 1 end,
 }
 function debugprofilestop() return os.clock() * 1000 end
 -- Gear: a trinket in slot 13 (no use effect, can't be equipped from the bags).
@@ -4055,6 +4065,312 @@ do
         and r.button1 == "Перезавантажити", r.text)
     choose("English")
     check("language: the one shown, no reload", ns.db.language == "en" and reloads == 1, reloads)
+end
+
+-- Spells you don't have now (Retail): a talent not chosen, another specialization's spell, one you learn later. A
+-- warning in the editor and the list, a yellow tint and a tooltip line on the action bars; none where the macro
+-- checks the specialization or the talent itself.
+do
+    local retail = C_SpellBook
+    -- Another specialization's skill line first (Fireball is yours too), then yours with Shadowfury to learn later.
+    -- Either says a spell is another specialization's: its line or the spell itself.
+    local lines = {
+        { itemIndexOffset = #book + 1, numSpellBookItems = 4, name = "Destruction", offSpecID = 267 },
+        { itemIndexOffset = 0, numSpellBookItems = #book + 1 },
+        { itemIndexOffset = #book + 5, numSpellBookItems = 1, name = "Affliction" },
+        { itemIndexOffset = #book + 6, numSpellBookItems = 1 }, -- yours: Drain Soul in place of Shadow Bolt
+        { itemIndexOffset = #book + 7, numSpellBookItems = 1, name = "Demonology", offSpecID = 266 },
+    }
+    local more = {
+        [#book + 1] = { name = "Shadowfury", subName = "", itemType = 2, isPassive = false, iconID = 1, spellID = 30283 },
+        [#book + 2] = { name = "Chaos Bolt", subName = "", itemType = 1, isPassive = false, iconID = 2, isOffSpec = true },
+        [#book + 3] = { name = "Fireball", subName = "", itemType = 1, isPassive = false, iconID = 3, isOffSpec = true },
+        [#book + 4] = { name = "Soul Fire", subName = "", itemType = 2, isPassive = false, iconID = 4, isOffSpec = true },
+        [#book + 5] = { name = "Incinerate", subName = "", itemType = 1, isPassive = false, iconID = 5 },
+        [#book + 6] = { name = "Haunt", subName = "", itemType = 1, isPassive = false, iconID = 6, isOffSpec = true },
+        [#book + 7] = { name = "Drain Soul", subName = "", itemType = 1, isPassive = false, iconID = 7, actionID = 686,
+            spellID = 198590 },
+        [#book + 8] = { name = "Shadow Bolt", subName = "", itemType = 1, isPassive = false, iconID = 8, isOffSpec = true,
+            actionID = 686, spellID = 686 },
+    }
+    gameSpells[686] = { 1, "Shadow Bolt" }
+    C_SpellBook = setmetatable({
+        GetNumSpellBookSkillLines = function() return #lines end,
+        GetSpellBookSkillLineInfo = function(i) return lines[i] end,
+        GetSpellBookItemInfo = function(slot, bank) return more[slot] or retail.GetSpellBookItemInfo(slot, bank) end,
+    }, { __index = retail })
+    -- The tree: Death Coil not chosen, Howl of Terror chosen, Fear another specialization's (not shown), Dark Pact
+    -- chosen of a choice with Mortal Coil, Soul Leech in a hero tree not chosen.
+    local nodes = {
+        { isVisible = true, activeRank = 0, activeEntry = { entryID = 11 }, entryIDs = { 11 } },
+        { isVisible = true, activeRank = 1, activeEntry = { entryID = 21 }, entryIDs = { 21 } },
+        { isVisible = false, activeRank = 0, entryIDs = { 31 } },
+        { isVisible = true, activeRank = 1, activeEntry = { entryID = 41 }, entryIDs = { 41, 42 } },
+        { isVisible = true, activeRank = 1, activeEntry = { entryID = 51 }, entryIDs = { 51 }, subTreeID = 9,
+            subTreeActive = false },
+    }
+    local spellOf = { [11] = 6789, [21] = 5484, [31] = 5782, [41] = 70001, [42] = 70002, [51] = 70003 }
+    gameSpells[70001], gameSpells[70002], gameSpells[70003] = { 1, "Dark Pact" }, { 1, "Mortal Coil" }, { 1, "Soul Leech" }
+    local configID = 7
+    C_ClassTalents = { GetActiveConfigID = function() return configID end }
+    C_Traits = {
+        GetConfigInfo = function(id) return id == 7 and { treeIDs = { 1 } } or nil end,
+        GetTreeNodes = function() return { 1, 2, 3, 4, 5 } end,
+        GetNodeInfo = function(_, id) return nodes[id] end,
+        GetEntryInfo = function(_, id) return { definitionID = id } end,
+        GetDefinitionInfo = function(id) return { spellID = spellOf[id], overrideName = id == 11 and "Coil" or nil } end,
+    }
+    ns.InvalidateSources("spells")
+    -- The first issue's short form, "(missing)" when it is a spell you don't have.
+    local function issue(text)
+        local e = ns.Highlight.Errors(text)[1]
+        return e and (e.short .. (e.missing and " (missing)" or "")) or ""
+    end
+    check("missing: a talent not chosen", issue("/cast Death Coil") == "talent not chosen (missing)",
+        issue("/cast Death Coil"))
+    check("missing: in full", ns.Highlight.Errors("/cast Death Coil")[1].message
+        == "\"Death Coil\": a talent you haven't chosen, the macro can't use it now")
+    check("missing: by the talent's own name too", issue("/cast Coil") == "talent not chosen (missing)", issue("/cast Coil"))
+    check("missing: not a chosen one", issue("/cast Dark Pact") == "", issue("/cast Dark Pact"))
+    check("missing: the other one of a choice", issue("/cast Mortal Coil") == "talent not chosen (missing)",
+        issue("/cast Mortal Coil"))
+    check("missing: a hero tree not chosen", issue("/cast Soul Leech") == "talent not chosen (missing)",
+        issue("/cast Soul Leech"))
+    check("missing: not another specialization's talents", issue("/cast Fear") == "", issue("/cast Fear"))
+    check("missing: another specialization's spell", issue("/cast Chaos Bolt") == "Destruction only (missing)",
+        issue("/cast Chaos Bolt"))
+    check("missing: by its skill line", issue("/cast Incinerate") == "Destruction only (missing)", issue("/cast Incinerate"))
+    check("missing: by the spell", issue("/cast Haunt") == "Affliction only (missing)", issue("/cast Haunt"))
+    check("missing: in full, with the specialization", ns.Highlight.Errors("/cast Chaos Bolt")[1].message
+        == "\"Chaos Bolt\" belongs to Destruction: you are in another specialization now")
+    check("missing: not a spell of yours too", issue("/cast Fireball") == "", issue("/cast Fireball"))
+    check("missing: not the spell a talent replaces", issue("/cast Shadow Bolt") == "" and issue("/cast Drain Soul") == "",
+        issue("/cast Shadow Bolt"))
+    check("missing: a spell learned later", issue("/cast Shadowfury") == "not learned yet (missing)",
+        issue("/cast Shadowfury"))
+    check("missing: another specialization's, learned later", issue("/cast Soul Fire") == "Destruction only (missing)",
+        issue("/cast Soul Fire"))
+    check("missing: with its level", ns.Highlight.Errors("/cast Shadowfury")[1].message
+        == "\"Shadowfury\": you learn it at level 40", ns.Highlight.Errors("/cast Shadowfury")[1].message)
+    check("missing: /use casts it too", issue("/use Death Coil") == "talent not chosen (missing)")
+    check("missing: in a sequence", issue("/castsequence Fireball, Death Coil") == "talent not chosen (missing)")
+    check("missing: in #showtooltip", issue("#showtooltip Death Coil") == "talent not chosen (missing)")
+    check("missing: at random", issue("/castrandom Fireball, Death Coil") == "talent not chosen (missing)"
+        and issue("/userandom Fireball, Death Coil") == "talent not chosen (missing)")
+    check("missing: not for /cancelaura", issue("/cancelaura Death Coil") == "", issue("/cancelaura Death Coil"))
+    check("missing: the specialization checked first", issue("/cast [spec:2] Chaos Bolt; Fireball") == "")
+    check("missing: also as nospec", issue("/cast [nospec:1] Chaos Bolt") == "")
+    check("missing: the talent checked first", issue("/cast [talent:4/2] Death Coil") == "")
+    check("missing: known checked first", issue("/cast [known:Death Coil] Death Coil; Fireball") == "")
+    check("missing: in a group of its own", issue("/cast [@focus][spec:2] Chaos Bolt") == ""
+        and issue("/cast [spec:2][@focus] Chaos Bolt") == "")
+    check("missing: the next branch has its own", issue("/cast [spec:2] Fireball; Chaos Bolt")
+        == "Destruction only (missing)", issue("/cast [spec:2] Fireball; Chaos Bolt"))
+    check("missing: other conditions don't count", issue("/cast [mod:shift,nodead] Chaos Bolt")
+        == "Destruction only (missing)")
+    local typo = ns.Highlight.Errors("/cast Death Coyl")[1]
+    check("missing: a typo of one gets its fix", typo and typo.fix == "Death Coil" and not typo.missing,
+        typo and typo.fix)
+    local hint
+    for _, item in ipairs(ns.Completion.Get(ns.Parser.GetContext("/cast Chaos", 11))) do
+        if item.name == "Chaos Bolt" then hint = item.hint end
+    end
+    check("missing: suggested with its specialization", hint == "Destruction", hint)
+    -- Talents not loaded yet (just logged in): none, and no talents of the Classic kind either.
+    configID = nil
+    talentInfo = function() return { name = "Blazing Speed", selected = false, rank = 0, spellID = 0 } end
+    ns.InvalidateSources("spells")
+    check("missing: talents not loaded yet", issue("/cast Death Coil") == "" and issue("/cast Blazing Speed") == "",
+        issue("/cast Blazing Speed"))
+    configID, talentInfo = 7, nil
+    ns.InvalidateSources("spells")
+    -- A buff of that name (Power Infusion from a priest) is no spell of yours.
+    ns.char.buffs["Mortal Coil"] = { icon = 1, seen = 1 }
+    ns.InvalidateSources("buffs")
+    check("missing: not hidden by a buff of its name", issue("/cast Mortal Coil") == "talent not chosen (missing)")
+    ns.char.buffs["Mortal Coil"] = nil
+    ns.InvalidateSources("buffs")
+
+    -- The editor and its list.
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    CreateMacro("Coil", 1, "/cast Death Coil", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Coil"))
+    NextFrame()
+    NextFrame()
+    local function statusText()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and tostring(o.text):find("Line %d+:") then return o.text end
+        end
+        return ""
+    end
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.shown and o.name == name and o.index then return o end
+        end
+    end
+    check("missing: in the status bar", statusText():find("Line 1: talent not chosen", 1, true) ~= nil, statusText())
+    check("missing: a yellow name in the list", row("Coil") and row("Coil").severity == "warning")
+
+    -- The action bars: the buttons turn yellow, the tooltip says why.
+    local saved2, saved100 = actions[2], actions[100]
+    actions[2] = { "macro", 6789, "spell", text = "Coil" }
+    actions[100] = { "macro", 6789, "spell", text = "Coil" }
+    startButton.action, labButton.action = 2, 100
+    Send("UPDATE_MACROS")
+    local function Tinted(b, color)
+        for _, o in ipairs(created) do
+            if o.kind == "Texture" and o.parentFrame == b and o.color == color then return o:IsShown() end
+        end
+        return false
+    end
+    check("missing: the button turns yellow", Tinted(startButton, "ffd100"))
+    check("missing: on LibActionButton's too", Tinted(labButton, "ffd100"))
+    local tip, colors = {}, {}
+    GameTooltip.AddLine = function(_, text, r, g, b)
+        tip[#tip + 1] = text
+        colors[text] = string.format("%.2f %.2f %.2f", r or 1, g or 1, b or 1)
+    end
+    local function Tip(owner, slot)
+        tip = {}
+        GameTooltip:SetOwner(owner)
+        GameTooltip:SetAction(slot)
+        return table.concat(tip, " / ")
+    end
+    local line = "\"Death Coil\": a talent you haven't chosen, the macro can't use it now"
+    check("missing: the tooltip says why", Tip(startButton, 2) == line .. " / " .. ns.ActionBars.TIP, Tip(startButton, 2))
+    check("missing: in yellow", colors[line] == "1.00 0.82 0.00", colors[line])
+    check("missing: on LibActionButton's tooltip too", Tip(labButton, 100) == line .. " / " .. ns.ActionBars.TIP,
+        Tip(labButton, 100))
+    local laidOut
+    GameTooltip.Show = function() laidOut = true end
+    check("missing: the tooltip line alone, laid out", Tip(New("Frame"), 2) == line and laidOut)
+    GameTooltip.Show = nil
+    -- Other issues don't tint: a typo shows in the editor.
+    CreateMacro("Typo", 1, "/cast Fierball", false)
+    actions[8] = { "macro", 133, "spell", text = "Typo" }
+    startButton.action = 8
+    Send("UPDATE_MACROS")
+    check("missing: not for a typo", not Tinted(startButton, "ffd100") and Tip(startButton, 8) == ns.ActionBars.TIP,
+        Tip(startButton, 8))
+    startButton.action, actions[8] = 2, nil
+    DeleteMacro(GetMacroIndexByName("Typo"))
+    Send("UPDATE_MACROS")
+    -- LibActionButton's buttons made later, and each change of their action.
+    local made = ActionButton(0, { type = "action", action = 7 })
+    made.action = 7
+    actions[7] = { "macro", 6789, "spell", text = "Coil" }
+    lab.OnButtonCreated("OnButtonCreated", made)
+    NextFrame()
+    check("missing: LibActionButton's buttons made later", Tinted(made, "ffd100"))
+    actions[7] = { "spell", 6789 }
+    lab.OnButtonUpdate("OnButtonUpdate", made)
+    check("missing: they follow their action", not Tinted(made, "ffd100"))
+    actions[7] = nil
+    -- On a Mac, a macOS shortcut on the button's key is worse: red.
+    local coil = GetMacroIndexByName("Coil")
+    EditMacro(coil, "Coil", 1, "/cast [mod:cmd] Death Coil")
+    bindings.ACTIONBUTTON2 = "Q"
+    Send("UPDATE_BINDINGS")
+    labButton.action = 2 -- its key is not that of the game's bar
+    Send("UPDATE_BINDINGS")
+    check("missing: red wins", Tinted(startButton, "ff0000") and not Tinted(startButton, "ffd100"))
+    check("missing: LibActionButton's stays yellow", Tinted(labButton, "ffd100") and not Tinted(labButton, "ff0000"))
+    labButton.action = 100
+    bindings.ACTIONBUTTON2 = nil
+    EditMacro(coil, "Coil", 1, "/cast Death Coil")
+    Send("UPDATE_MACROS")
+    check("missing: yellow again", Tinted(startButton, "ffd100") and not Tinted(startButton, "ff0000"))
+
+    -- The talent chosen: the warnings go, a moment after the game says.
+    nodes[1].activeRank, nodes[1].activeEntry = 1, { entryID = 11 }
+    Send("TRAIT_CONFIG_UPDATED")
+    check("missing: not before the game is done", Tinted(startButton, "ffd100"))
+    Wait(0.6)
+    check("missing: chosen, the tint goes", not Tinted(startButton, "ffd100") and not Tinted(labButton, "ffd100"))
+    check("missing: and the tooltip line", Tip(startButton, 2) == ns.ActionBars.TIP, Tip(startButton, 2))
+    check("missing: and the status bar", statusText() == "", statusText())
+    check("missing: and the list", row("Coil") and row("Coil").severity == nil)
+    local talentEvents, refused = false, false
+    for _, o in ipairs(created) do
+        talentEvents = talentEvents or (o.events and o.events.TRAIT_CONFIG_UPDATED and o.events.PLAYER_TALENT_UPDATE)
+        refused = refused or (o.events and o.events.CHARACTER_POINTS_CHANGED)
+    end
+    check("missing: the talent events this client has", talentEvents and not refused)
+
+    GameTooltip.AddLine = nil
+    actions[2], actions[100] = saved2, saved100
+    startButton.action, labButton.action = nil, nil
+    DeleteMacro(coil)
+    Send("UPDATE_MACROS")
+    C_SpellBook, C_ClassTalents, C_Traits = retail, nil, nil
+    gameSpells[70001], gameSpells[70002], gameSpells[70003], gameSpells[686] = nil, nil, nil, nil
+    ns.InvalidateSources("spells")
+end
+
+-- Spells you don't have now (Classic): Mists of Pandaria has a tab for each other specialization and the spells
+-- learned later in the book; talents are points (Classic Era, TBC) or one talent of each row (Mists of Pandaria).
+do
+    local retail = C_SpellBook
+    C_SpellBook = { HasPetSpells = function() return nil end }
+    local tabs = { { "General", 0, 0, 1, false, 0 }, { "Frost", 0, 1, 2, false, 0 }, { "Fire", 0, 3, 1, false, 63 } }
+    local slots = { { "SPELL", 1, "Frostbolt", "" }, { "SPELL", 2, "Frost Nova", "" }, { "FUTURESPELL", 30451, "Ice Lance" },
+        { "SPELL", 3, "Pyroblast", "" } }
+    GetNumSpellTabs = function() return #tabs end
+    GetSpellTabInfo = function(i) return table.unpack(tabs[i]) end
+    GetSpellBookItemInfo = function(slot) return slots[slot][1], slots[slot][2] end
+    GetSpellBookItemName = function(slot) return slots[slot][3], slots[slot][4] end
+    GetSpellBookItemTexture = function() return 1 end
+    IsPassiveSpell = function() return false end
+    local function issue(text)
+        ns.InvalidateSources("spells")
+        local e = ns.Highlight.Errors(text)[1]
+        return e and (e.short .. (e.missing and " (missing)" or "")) or ""
+    end
+    check("classic missing: another specialization's tab", issue("/cast Pyroblast") == "Fire only (missing)",
+        issue("/cast Pyroblast"))
+    check("classic missing: learned later", issue("/cast Ice Lance") == "not learned yet (missing)",
+        issue("/cast Ice Lance"))
+    check("classic missing: with no level", ns.Highlight.Errors("/cast Ice Lance")[1].message
+        == "\"Ice Lance\": you haven't learned it yet")
+    check("classic missing: yours", issue("/cast Frost Nova") == "", issue("/cast Frost Nova"))
+    -- Classic Era and TBC: a talent with no points is not chosen.
+    LE_EXPANSION_LEVEL_CURRENT = 0
+    GetNumTalentTabs, GetNumTalents = function() return 1 end, function() return 3 end
+    local queries = {}
+    talentInfo = function(q)
+        queries[#queries + 1] = q
+        if q.specializationIndex == 1 and q.talentIndex == 1 then return { name = "Ice Barrier", rank = 0, spellID = 0 } end
+        if q.specializationIndex == 1 and q.talentIndex == 2 then return { name = "Cold Snap", rank = 1, spellID = 0 } end
+        if q.specializationIndex == 1 and q.talentIndex == 3 then return { name = "Frost Coil", rank = 0, spellID = 6789 } end
+    end
+    check("classic missing: a talent with no points", issue("/cast Ice Barrier") == "talent not chosen (missing)",
+        issue("/cast Ice Barrier"))
+    check("classic missing: one with points", issue("/cast Cold Snap") == "", issue("/cast Cold Snap"))
+    check("classic missing: by its spell's name", issue("/cast Death Coil") == "talent not chosen (missing)",
+        issue("/cast Death Coil"))
+    check("classic missing: the active talents", queries[1] and queries[1].groupIndex == 1)
+    -- Mists of Pandaria: one talent of each row.
+    LE_EXPANSION_LEVEL_CURRENT = 4
+    talentInfo = function(q)
+        if q.tier ~= 1 then return nil end
+        return ({ { name = "Presence of Mind", selected = true, spellID = 0 },
+            { name = "Blazing Speed", selected = false, spellID = 0 },
+            { name = "Ice Floes", selected = false, spellID = 0 } })[q.column]
+    end
+    check("classic missing: a talent of a row not chosen", issue("/cast Blazing Speed") == "talent not chosen (missing)",
+        issue("/cast Blazing Speed"))
+    check("classic missing: the one chosen", issue("/cast Presence of Mind") == "", issue("/cast Presence of Mind"))
+    -- Talents the client can't give cost only the talents, once reported.
+    local errors = #reported
+    talentInfo = function() error("no talents here") end
+    check("classic missing: the rest without talents", issue("/cast Pyroblast") == "Fire only (missing)")
+    issue("/cast Pyroblast")
+    check("classic missing: reported once", #reported == errors + 1, #reported - errors)
+    talentInfo, LE_EXPANSION_LEVEL_CURRENT, GetNumTalentTabs, GetNumTalents = nil, nil, nil, nil
+    C_SpellBook, GetNumSpellTabs, GetSpellTabInfo, GetSpellBookItemInfo = retail, nil, nil, nil
+    GetSpellBookItemName, GetSpellBookItemTexture, IsPassiveSpell = nil, nil, nil
+    ns.InvalidateSources("spells")
 end
 
 -- Theme switch recolors without touching the text.
