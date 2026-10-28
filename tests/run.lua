@@ -1196,6 +1196,8 @@ do
     check("roles fill: the names", C.Fill("/cast [@tank,help][target=heal][@heal] X", { tank = "Bob", heal = "Ann-R" })
         == "/cast [@Bob,help][target=Ann-R][@Ann-R] X", C.Fill("/cast [@tank,help][target=heal][@heal] X",
         { tank = "Bob", heal = "Ann-R" }))
+    local tags = C.Tags("/cast [@heal][target=heal][@Tank][@tanker] X")
+    check("roles tags: the ones in the text", tags.heal and not tags.tank and next(tags, next(tags)) == nil)
     check("roles fill: nobody, and not other words", C.Fill("/cast [@tank][@Tank][@tanker][@heal] X", {})
         == "/cast [@none][@Tank][@tanker][@none] X", C.Fill("/cast [@tank][@Tank][@tanker][@heal] X", {}))
     -- Ranks: the one picked in brackets, as the game names it; the spell alone is the highest learned.

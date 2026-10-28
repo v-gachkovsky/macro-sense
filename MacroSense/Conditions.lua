@@ -79,6 +79,15 @@ function Conditions.Fill(text, names)
     end))
 end
 
+-- The tags `text` has: { tank = true }.
+function Conditions.Tags(text)
+    local out = {}
+    for tag in text:gmatch("[@=](%l+)") do
+        if Conditions.TAGS[tag] then out[tag] = true end
+    end
+    return out
+end
+
 ------------------------------------------------------------------------
 -- Values
 ------------------------------------------------------------------------

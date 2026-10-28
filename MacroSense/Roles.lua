@@ -1,8 +1,10 @@
 -- Your group's tank and healer: @tank and @heal in a macro. The game doesn't know them, so the macro it keeps has the
 -- name of the one with the role ("/cast [@Bob,help,nodead] Misdirection"), and MacroSense keeps the text with the
 -- tags: the editor shows and saves that, and when your group changes MacroSense writes the game's macro again for
--- the names then, out of combat. A macro changed outside MacroSense since is let go. Needs the game.
+-- the names then, out of combat, and says a new name on the screen. A macro changed outside MacroSense since is let
+-- go. Needs the game.
 local _, ns = ...
+local L = ns.L
 
 local Roles = {}
 ns.Roles = Roles
@@ -115,13 +117,40 @@ local function Find(scope, name, written, store)
 end
 
 local told = {} -- the texts too long to write, said once
+local shown -- the names last told on the screen: { tank = "Bob" }; nil before the first look of a session
+
+-- The texts told, in the language MacroSense is in now.
+local function Put(tag)
+    if tag == "tank" then return L["MacroSense: your group's new tank is %s"] end
+    return L["MacroSense: your group's new healer is %s"]
+end
+local function Failed(tag)
+    if tag == "tank" then
+        return L["MacroSense: could not set your group's new tank, %s: the macro would be too long"]
+    end
+    return L["MacroSense: could not set your group's new healer, %s: the macro would be too long"]
+end
+
+-- A tank or healer new since the last look is told in red mid-screen, as the game's errors are: put into the
+-- macros with its tag, or not, one of them too long then. The first look of a session only learns them.
+local function Notice(names, put, failed)
+    if shown then
+        for _, tag in ipairs({ "tank", "heal" }) do
+            if names[tag] and names[tag] ~= shown[tag] then
+                if put[tag] then UIErrorsFrame:AddMessage(Put(tag):format(names[tag]), 1, 0.1, 0.1, 1) end
+                if failed[tag] then UIErrorsFrame:AddMessage(Failed(tag):format(names[tag]), 1, 0.1, 0.1, 1) end
+            end
+        end
+    end
+    shown = names
+end
 
 -- Each macro still as MacroSense wrote it gets the names of your group now; one changed or deleted since is let go,
 -- one renamed is followed. A text the new names make too long stays as it was. Not in combat, when macros can't be
 -- changed: after it.
 function Roles.Update()
     if InCombatLockdown() then return end
-    local names = Roles.Names()
+    local names, put, failed = Roles.Names(), {}, {}
     for _, scope in ipairs({ "general", "character" }) do
         local store = Store(scope)
         local list = {}
@@ -135,6 +164,7 @@ function Roles.Update()
                 store[now] = entry
                 local text = ns.Conditions.Fill(entry.text, names)
                 if Letters(text) > MAX_BODY then
+                    for tag in pairs(ns.Conditions.Tags(entry.text)) do failed[tag] = true end
                     if not told[text] then
                         told[text] = true
                         ns.Print("could not put your group's new names into \"%s\": it would be longer than %d "
@@ -145,9 +175,13 @@ function Roles.Update()
                     entry.written = select(3, GetMacroInfo(index))
                     ns.History.Rewritten(scope, now, entry.written)
                 end
+                if entry.written == text then
+                    for tag in pairs(ns.Conditions.Tags(entry.text)) do put[tag] = true end
+                end
             end
         end
     end
+    Notice(names, put, failed)
 end
 
 -- The group or its roles changed, or combat ended: a second later (the game tells it several times at once), the

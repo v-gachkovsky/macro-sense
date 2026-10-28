@@ -78,7 +78,9 @@ the answers kept, and **Next >** keeps the one chosen.
 `/cast [@tank,help,nodead][@pet,help,nodead] Misdirection` goes to your group's tank: the one with the tank role,
 other than you, a raid's main tank first; `@heal` to its healer. The game doesn't know these units, so the macro
 it keeps has the name instead (`@Bob`, `@Ann-Realm` from another realm), or `@none` while nobody has the role,
-and MacroSense writes it again when your group changes, out of combat. In MacroSense the macro stays with
+and MacroSense writes it again when your group changes, out of combat. A new tank or healer in your macros is
+said in red mid-screen: `MacroSense: your group's new tank is Bob`, and so is one a macro has no room for (a
+macro takes 255 characters). In MacroSense the macro stays with
 `@tank`: change it and save, and it keeps working. The live preview runs it with the names, the explanations say
 "your group's tank". Small letters only: `@Tank` is a player named Tank. A macro changed outside MacroSense (the
 Blizzard window) keeps the names it has and is no longer kept up to date. The game finds the tank only when the
