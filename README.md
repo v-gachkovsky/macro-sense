@@ -475,7 +475,8 @@ MacroSense is free. If it helps you, you can support its development:
 - [Ko-fi](https://ko-fi.com/mortivux)
 - [monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ)
 
-Found a bug or have an idea? Write in the comments on
+Found a bug or have an idea? Open an issue on
+[GitHub Issues](https://github.com/v-gachkovsky/macro-sense/issues), write in the comments on
 [CurseForge](https://www.curseforge.com/wow/addons/macro-sense) or email me at
 [volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com).
 
