@@ -15,6 +15,7 @@ ns.locales.uk = {
     ["  and try to fix things as fast as I can. Type /ms bug for the details to include."] =
         "  і намагаюся все виправляти якнайшвидше. Наберіть /ms bug, щоб отримати подробиці для звіту.",
     ["  Report here: %s"] = "  Пишіть сюди: %s",
+    ["  Or in the comments on CurseForge, or by email: %s"] = "  Або в коментарях на CurseForge, або на пошту: %s",
     ["|cff00ff00on|r"] = "|cff00ff00увімк.|r",
     ["|cffff0000off|r"] = "|cffff0000вимк.|r",
     ["autocomplete %s"] = "автодоповнення: %s",

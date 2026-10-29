@@ -8,6 +8,7 @@ function ns.Print(text, ...) print(PREFIX .. string.format(L[text], ...)) end
 
 -- Where players report bugs.
 ns.ISSUES_URL = "https://github.com/v-gachkovsky/macro-sense/issues"
+ns.EMAIL = "volodymyr.hachkovsky@icloud.com"
 
 -- This character among the account's characters (ns.db.characters, by "Name-Realm"): its name, realm and class,
 -- and what is kept for it there (the action bars of each specialization, see ActionBars.lua).
@@ -52,6 +53,7 @@ local function Welcome()
     print(L["  Found a bug or have an idea? Please don't hesitate to tell me: I read every report"])
     print(L["  and try to fix things as fast as I can. Type /ms bug for the details to include."])
     if ns.ISSUES_URL then print(string.format(L["  Report here: %s"], ns.ISSUES_URL)) end
+    print(string.format(L["  Or in the comments on CurseForge, or by email: %s"], ns.EMAIL))
 end
 
 local IsLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
@@ -189,6 +191,7 @@ SlashCmdList.MACROSENSE = function(msg)
             IsMacClient and IsMacClient() and "Mac" or "Windows"))
         print(L["  Please describe what you did, what you expected and what happened; a screenshot helps."])
         if ns.ISSUES_URL then print(string.format(L["  Report here: %s"], ns.ISSUES_URL)) end
+        print(string.format(L["  Or in the comments on CurseForge, or by email: %s"], ns.EMAIL))
     elseif msg == "debug" then
         ns.db.debug = not ns.db.debug
         ns.Print("debug %s", OnOff(ns.db.debug))
