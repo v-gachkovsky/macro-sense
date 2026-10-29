@@ -1125,8 +1125,6 @@ end
 ------------------------------------------------------------------------
 -- Trash: macros deleted anywhere, to bring back (History.lua keeps them)
 ------------------------------------------------------------------------
-local TRASH_SHOWN = 12 -- deleted macros in the menu: the newest
-
 StaticPopupDialogs.MACROSENSE_EMPTY_TRASH = {
     text = "Empty the trash? Its %s deleted macros will be gone for good.",
     button1 = "Yes", button2 = "No",
@@ -1174,7 +1172,7 @@ end
 
 local function TrashItems()
     local items, dim, deleted = {}, ns.scheme.dim, Deleted()
-    for n = 1, math.min(#deleted, TRASH_SHOWN) do
+    for n = 1, #deleted do
         local d = deleted[n]
         local first, last, max = MacroRange(d.scope)
         local full = last - first + 1 >= max
@@ -1199,10 +1197,6 @@ local function TrashItems()
     end
     local noop = function() end
     if #deleted == 0 then items[1] = { name = L["No deleted macros"], disabled = true, onClick = noop } end
-    if #deleted > TRASH_SHOWN then
-        items[#items + 1] = { name = ns.Plural(#deleted - TRASH_SHOWN, "%d older", "%d older"), disabled = true,
-            onClick = noop }
-    end
     items[#items + 1] = { name = L["Empty the trash"], disabled = #deleted == 0,
         onClick = function() ns.Ask("MACROSENSE_EMPTY_TRASH", #deleted) end }
     return items
@@ -1553,9 +1547,8 @@ local function Build()
         GameTooltip:AddLine(L["Trash"], 1, 1, 1)
         GameTooltip:AddLine(string.format(L["Deleted macros land here, and you can bring them back. It doesn't "
             .. "matter where you deleted them: here, in another addon or in the game's macro window. The trash keeps "
-            .. "the last %d deleted macros of each tab and deletes older ones by itself. The menu shows the %d "
-            .. "newest."], ns.History.TRASH,
-            TRASH_SHOWN), 0.8, 0.8, 0.8, true)
+            .. "the last %d deleted macros of each tab and deletes older ones by itself."], ns.History.TRASH), 0.8,
+            0.8, 0.8, true)
         GameTooltip:Show()
     end)
     trashBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)

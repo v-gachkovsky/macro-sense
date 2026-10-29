@@ -47,9 +47,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
   thumb jumps to where you click, in the macro list, the editor, the icons and the suggestions.
 - A macro with `@tank` or `@heal` open in the editor could turn into the names written into the game's macro
   (`@none` with no tank) when your group changed, and saving it then lost the tags.
+- In Ukrainian, "Вставити в редактор" didn't fit its button in the wizard.
 - The editor's tooltips (a line's explanation, a word's meaning) no longer show through the wizard or the questions window above it.
 
 ### Changed
+- **The trash menu lists every deleted macro** (up to 30 per tab), not only the 12 newest. A long menu shows 20
+  rows at a time; the mouse wheel or its scroll bar goes through the rest.
 - Plainer words in tooltips and hints, in English and Ukrainian: whole short sentences instead of chains of
   colons. The Ukrainian says the same thing the same way everywhere (трінкет, стелс, вдягає), and `channeling` is
   a channeled spell, not any cast.

@@ -1190,6 +1190,7 @@ end
 local function ShowPurpose(lost)
     controls.title:SetText(editing and L["Change macro (Wizard)"] or L["New macro (Wizard)"])
     createBtn.label:SetText(editing and L["Put in editor"] or L["Create macro"])
+    createBtn:SetWidth(editing and 170 or 110) -- "Вставити в редактор" is long
     controls.tab:SetShown(not editing)
     controls.tabLabel:SetShown(not editing)
     controls.stepGeneral:SetShown(not editing)

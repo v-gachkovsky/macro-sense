@@ -221,18 +221,19 @@ end
 ------------------------------------------------------------------------
 -- Menus: one shared list frame for dropdowns and menu buttons
 ------------------------------------------------------------------------
+local MENU_ROWS = 20 -- rows a menu shows at a time; the wheel and its scroll bar go through the rest
 local menu = CreateFrame("Frame", "MacroSenseMenu", UIParent, "BackdropTemplate")
 menu:SetFrameStrata("FULLSCREEN_DIALOG")
 menu:SetClampedToScreen(true)
 menu:Hide()
-menu.rows = {}
+menu.rows, menu.items, menu.offset = {}, {}, 0
 ns.Backdrop(menu, "panel", "border")
 
 local function MenuRow(i)
     local r = CreateFrame("Button", nil, menu)
     r:SetHeight(20)
     r:SetPoint("TOPLEFT", 2, -2 - (i - 1) * 20)
-    r:SetPoint("TOPRIGHT", -2, -2 - (i - 1) * 20)
+    r:SetPoint("RIGHT", menu, "RIGHT", -2, 0)
     r.bg = r:CreateTexture(nil, "BACKGROUND")
     r.bg:SetAllPoints()
     r.text = ns.Text(r, 12)
@@ -272,16 +273,11 @@ menu:SetScript("OnUpdate", function(self)
     end
 end)
 
--- items: { { name, onClick = fn, current = the chosen one, disabled, onEnter = fn(row) for a tooltip,
--- onRemove = fn for an x at the row's end, removeTip = its tooltip } }.
--- Opens below `owner`, or above it with `up`; `right` lines it up with the owner's right edge.
-local function OpenMenu(owner, items, width, up, right)
-    if menu:IsShown() and menu.owner == owner then return menu:Hide() end
-    GameTooltip:Hide() -- the owner's tooltip would cover the list
-    for i = #menu.rows + 1, #items do menu.rows[i] = MenuRow(i) end
+-- The rows show the items from `menu.offset` on.
+local function FillMenu()
     for i, r in ipairs(menu.rows) do
-        local item = items[i]
-        r:SetShown(item ~= nil)
+        local item = menu.items[menu.offset + i]
+        r:SetShown(i <= MENU_ROWS and item ~= nil)
         if item then
             r.item, r.current = item, item.current
             r.bg:SetShown(r.current)
@@ -291,14 +287,44 @@ local function OpenMenu(owner, items, width, up, right)
             r.text:SetPoint("RIGHT", item.onRemove and -24 or -8, 0)
         end
     end
-    menu.owner = owner
+    if menu.bar then menu.bar:SetPosition(menu.offset) end
+end
+
+local function ScrollMenu(offset)
+    menu.offset = math.max(0, math.min(#menu.items - MENU_ROWS, math.floor(offset + 0.5)))
+    GameTooltip:Hide()
+    FillMenu()
+end
+menu:EnableMouseWheel(true)
+menu:SetScript("OnMouseWheel", function(_, delta) ScrollMenu(menu.offset - delta * 3) end)
+
+-- items: { { name, onClick = fn, current = the chosen one, disabled, onEnter = fn(row) for a tooltip,
+-- onRemove = fn for an x at the row's end, removeTip = its tooltip } }.
+-- Opens below `owner`, or above it with `up`; `right` lines it up with the owner's right edge. A long one shows
+-- MENU_ROWS at a time, with a scroll bar.
+local function OpenMenu(owner, items, width, up, right)
+    if menu:IsShown() and menu.owner == owner then return menu:Hide() end
+    GameTooltip:Hide() -- the owner's tooltip would cover the list
+    local shown = math.min(#items, MENU_ROWS)
+    for i = #menu.rows + 1, shown do menu.rows[i] = MenuRow(i) end
+    menu.items, menu.offset, menu.owner = items, 0, owner
+    if not menu.bar then
+        menu.bar = ns.ScrollBar(menu, ScrollMenu, 1)
+        menu.bar:SetPoint("TOPRIGHT", -2, -2)
+        menu.bar:SetPoint("BOTTOMRIGHT", -2, 2)
+    end
+    local scrolls = #items > MENU_ROWS
+    menu.bar:SetRange(#items - shown, shown)
     -- As wide as the longest row, in any language.
     local w = math.max(width, 180)
     for i, item in ipairs(items) do
-        w = math.max(w, menu.rows[i].text:GetStringWidth() + (item.onRemove and 32 or 16))
+        menu.rows[1].text:SetText(item.name)
+        w = math.max(w, menu.rows[1].text:GetStringWidth() + (item.onRemove and 32 or 16))
     end
-    menu:SetWidth(w)
-    menu:SetHeight(#items * 20 + 4)
+    FillMenu()
+    for _, r in ipairs(menu.rows) do r:SetPoint("RIGHT", menu, "RIGHT", scrolls and -12 or -2, 0) end
+    menu:SetWidth(w + (scrolls and 10 or 0))
+    menu:SetHeight(shown * 20 + 4)
     menu:ClearAllPoints()
     local side = right and "RIGHT" or "LEFT"
     if up then
