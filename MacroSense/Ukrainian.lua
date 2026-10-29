@@ -312,6 +312,12 @@ ns.locales.uk = {
     ["Import macros"] = "Імпортувати макроси",
     ["Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number."] =
         "Вставте код MacroSense (%s). Нічого не замінюється: зайнята назва отримує номер.",
+    ["MacroSense: %d macros on your bars use spells you don't have now"] = {
+        "MacroSense: %d макрос на ваших панелях має заклинання, якого у вас зараз немає",
+        "MacroSense: %d макроси на ваших панелях мають заклинання, яких у вас зараз немає",
+        "MacroSense: %d макросів на ваших панелях мають заклинання, яких у вас зараз немає",
+    },
+    ["on your bars, with spells you don't have now: %s"] = "на ваших панелях, із заклинаннями, яких зараз немає: %s",
     ["%d macros in the code:"] = { "У коді %d макрос:", "У коді %d макроси:", "У коді %d макросів:" },
     ["%s: into %s"] = "%s: у «%s»",
     ["%s: into %s as \"%s\" (the name is taken)"] = "%s: у «%s» як «%s» (назву вже зайнято)",

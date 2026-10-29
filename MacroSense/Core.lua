@@ -88,15 +88,19 @@ end
 
 -- Spells, pets or talents changed: the warnings about spells you don't have follow, in the editor, its list and on
 -- the action bars. The game sends several such events at once: at most twice a second.
-local spellsDue
-local function SpellsChangedSoon()
+-- A talent or specialization change also tells of the macros on the bars it broke.
+local spellsDue, talentsChanged
+local function SpellsChangedSoon(talents)
     ns.InvalidateSources("spells")
+    talentsChanged = talentsChanged or talents
     if spellsDue then return end
     spellsDue = true
     C_Timer.After(0.5, function()
         spellsDue = false
         ns.Window.SpellsChanged()
         ns.ActionBars.Tint()
+        ns.ActionBars.TellBroken(talentsChanged)
+        talentsChanged = false
     end)
 end
 
@@ -147,7 +151,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.ActionBars.Setup()
     elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player")
         or TALENT_EVENTS[event] then
-        SpellsChangedSoon()
+        SpellsChangedSoon(TALENT_EVENTS[event])
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then

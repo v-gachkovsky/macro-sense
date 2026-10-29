@@ -171,10 +171,7 @@ end
 -- What the macro on action slot `slot` says, as saved, about spells the game can't cast now (the editor's
 -- warnings), or nil. Kept by text until the next ActionBars.Tint.
 local missingCache = {}
-local function Missing(slot)
-    local index = type(slot) == "number" and ActionBars.MacroAt(slot)
-    if not index then return nil end
-    local _, _, body = GetMacroInfo(index)
+local function MissingIn(body)
     body = body or ""
     local found = missingCache[body]
     if not found then
@@ -185,6 +182,10 @@ local function Missing(slot)
         missingCache[body] = found
     end
     return #found > 0 and found or nil
+end
+local function Missing(slot)
+    local index = type(slot) == "number" and ActionBars.MacroAt(slot)
+    return index and MissingIn(select(3, GetMacroInfo(index))) or nil
 end
 
 local function Tint(button)
@@ -229,6 +230,30 @@ function ActionBars.Tint()
         ActionBars.Remember()
         ns.Window.BarsChanged()
     end)
+end
+
+local broken -- the macros on the bars that use spells you don't have now: name -> true; nil before the first look
+local loadedAt = GetTime() -- the session's start
+
+-- Your talents or specialization changed: the macros on the bars now that use spells you don't have, and didn't
+-- before, are told on the screen and in chat. Before, and in the first seconds of a session (the game tells of
+-- talents then too, before it knows them all), they are only learned.
+function ActionBars.TellBroken(talents)
+    local now, new = {}, {}
+    for name in pairs((OnBarsNow())) do
+        local index = GetMacroIndexByName(name)
+        if index and index > 0 and MissingIn(select(3, GetMacroInfo(index))) then
+            now[name] = true
+            if broken and not broken[name] then new[#new + 1] = name end
+        end
+    end
+    local tell = talents and GetTime() - loadedAt > 10
+    broken = now
+    if not tell or #new == 0 then return end
+    table.sort(new)
+    UIErrorsFrame:AddMessage(ns.Plural(#new, "MacroSense: %d macro on your bars uses a spell you don't have now",
+        "MacroSense: %d macros on your bars use spells you don't have now"), 1, 0.82, 0, 1)
+    ns.Print("on your bars, with spells you don't have now: %s", table.concat(new, ", "))
 end
 
 -- A button just made may still be setting itself up: it is taken a frame later.
