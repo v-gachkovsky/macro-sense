@@ -50,8 +50,10 @@ questions; the wizard opens as you left it.
 
 ### Step by step
 
+<p align="center"><img src="docs/wizard-steps.gif" width="720" alt="The wizard, step by step"></p>
+
 - **What should the macro do?** Cast a spell, use an item, several spells in turn, one of several at random,
-  target someone, set your focus, take someone's target, command your pet.
+  target someone, set your focus, take someone's target, command your pet, ride a mount.
 - Then what that needs: the spell or item (type a few letters, or pick it from the list: picked, it goes on) and
   its rank when it has several (Classic),
   the spells of a list in their order and what starts a sequence over, what the pet does.
@@ -66,6 +68,9 @@ questions; the wizard opens as you left it.
   the game doesn't say what the spell is for (an item, Holy Shock). A spell for enemies is not offered for
   yourself, your pet, party members or your group's tank and healer, one for friends not for arena enemies.
 - **Shift, Ctrl, Alt** (and **Cmd** on a Mac): for each key held, what it casts instead and where.
+- **Ride a mount**: which mount, then one where you can fly and one for water (each may stay empty), what a press
+  does on a mount (get off, but not in the air; get off anywhere; nothing), and a mount of their own for the keys
+  held.
 - **Would you like to add anything else?** The same as the form's Also.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
   the name, saves it and opens it in the editor.
@@ -96,7 +101,10 @@ is set.
   (`13`, `14`). `/target`, `/focus` and `/assist` take only units, party members among them: a key can take
   other units or clear the target / focus, and `/target` can also go by name (a rare, say). **Pet commands**:
   what the pet does without a key (attack, on units in order, follow, stay, move to the cursor, passive,
-  defensive, aggressive, dismiss), and with each key held.
+  defensive, aggressive, dismiss), and with each key held. **Mount**: a mount for anywhere, one where you can fly
+  (from TBC on) and one for water, your mounts offered first, and **On a mount**: what a press does there
+  (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`,
+  `/dismount [mounted,noflying]`). A key held calls another mount (a ground one where you could fly).
 - **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words in capitals (`FB`),
   and your spells and usable items come up; any other name works too. A spell with several learned ranks
   (Classic) then lists them: the spell itself first (the highest rank, also after you learn a new one), then
@@ -171,6 +179,8 @@ an empty `[]` removes both.
 
 ## Highlighting and error checks
 
+<p align="center"><img src="docs/fix-one-click.gif" width="720" alt="Mistakes underlined, fixed with a click on the status bar"></p>
+
 - Line numbers in a gutter on the left, as in a code editor: a long line that wraps keeps one number, the
   cursor's line is bright, and the gutter follows the font and its size. Error messages refer to them.
 
@@ -217,6 +227,9 @@ an empty `[]` removes both.
   Keys are found from a direct `MACRO name` binding and the standard action bars; bars of addons (Bartender,
   ElvUI) are not checked.
 
+<p align="center"><img src="docs/talent-editor.png" width="720" alt="A talent you haven't chosen: the status bar warns"></p>
+<p align="center"><img src="docs/talent-tooltip.png" width="373" alt="The macro's tooltip on the action bar says why"></p>
+
 <p align="center"><img src="docs/mac-shortcut-editor.png" width="720" alt="The status bar warns: Cmd+Q is a macOS shortcut"></p>
 <p align="center"><img src="docs/mac-shortcut-tooltip.png" width="340" alt="The macro's tooltip on the action bar warns too">
 <img src="docs/mac-shortcut-bar.png" width="177" alt="Its button on Q turns red"></p>
@@ -250,7 +263,11 @@ typing: its name goes in at the cursor, after `/cast` or `/use` on an empty line
 Point at a word for what it means: a command (`/stopmacro`), a condition (`nodead`, `mod:shift`), a unit
 (`@focus`, `@party2target`), `#showtooltip`, `reset=`. A spell or item shows the game's own tooltip.
 
+<p align="center"><img src="docs/word-tips.gif" width="720" alt="What a word means, under the mouse"></p>
+
 ## Shorten
+
+<p align="center"><img src="docs/shorten.gif" width="720" alt="Shorten"></p>
 
 Macros are limited to 255 characters. **Shorten** in the header writes the same macro in fewer characters
 and says how many it saves (`Shorten -41`):
@@ -321,6 +338,8 @@ macro (an addon whisper, no chat lines) and opens its code in the import window,
 before they import it. Without MacroSense it is just the name. Only the macros you link are given, as they were
 when you linked them: the last 20. In combat in an instance the game blocks addon messages, and on Retail the
 link stays plain text there.
+
+<p align="center"><img src="docs/share-chat.gif" width="720" alt="A macro linked in chat, and imported from the link"></p>
 
 **Trash** next to it keeps the macros you delete, here, in the game's macro window or with another addon:
 the last 30 of each tab, General ones for the account, Character ones for the character. Hover one to
