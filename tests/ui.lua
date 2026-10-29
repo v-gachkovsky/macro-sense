@@ -2632,7 +2632,7 @@ do
     gameSpells[5784], book[#book], bag[#bag] = nil, nil, nil
     ns.InvalidateSources()
     TypeIn(C("mountFly"), "fire")
-    check("wizard: no mounts at all: all of it", offered(C("mountFly")) == "Fire Blast, Fireball", offered(C("mountFly")))
+    check("wizard: no mounts at all: no spells either", not C("mountFly").list:IsShown(), offered(C("mountFly")))
     TypeIn(C("mountFly"), "Swift Red Gryphon")
     Fire(C("mountFly"), "OnEnterPressed")
     pick(C("offMount"), "Nothing")
