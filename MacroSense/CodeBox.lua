@@ -364,6 +364,61 @@ function CodeBox:HoveredLine()
     return nil
 end
 
+-- The raw position (1-based) of the letter under the mouse in the text, or nil off the text. A wrapped line is
+-- split into its rows as the measurer wraps it.
+function CodeBox:HoveredPos()
+    local tops = self.lineTops
+    if not self.scroll:IsMouseOver() or #tops == 0 then return nil end
+    local left, right, top = self.scroll:GetLeft(), self.scroll:GetRight(), self.edit:GetTop()
+    if not (left and right and top) then return nil end
+    local scale = self.edit:GetEffectiveScale() or 1
+    local x, y = GetCursorPosition()
+    x, y = x / scale, y / scale
+    x = x - left - (self.insetL or 0) -- from the text's left edge
+    if x < 0 then return nil end
+    local down, h = y - top, self.rowHeight or 14
+    local lines, starts, at = {}, {}, 1
+    for l in (self:GetRaw() .. "\n"):gmatch("([^\n]*)\n") do
+        lines[#lines + 1], starts[#starts + 1] = l, at
+        at = at + #l + 1
+    end
+    for i = 1, #tops do
+        local line = lines[i] or ""
+        local rows = self:Rows(line)
+        local bottom = tops[i + 1] or (tops[i] - rows * h)
+        if down <= tops[i] and down > bottom then
+            -- The row of the line under the mouse, and the letters on it.
+            local row = math.min(rows - 1, math.floor((tops[i] - down) / h))
+            local from, to = 1, #line
+            for r = 1, row do
+                local lo, hi = from, #line
+                while lo < hi do -- the first letter on row r: the shortest start that takes r + 1 rows
+                    local mid = math.floor((lo + hi) / 2)
+                    if self:Rows(line:sub(1, mid)) > r then hi = mid else lo = mid + 1 end
+                end
+                from = lo
+            end
+            if row < rows - 1 then
+                local lo, hi = from, #line
+                while lo < hi do
+                    local mid = math.floor((lo + hi) / 2)
+                    if self:Rows(line:sub(1, mid)) > row + 1 then hi = mid else lo = mid + 1 end
+                end
+                to = lo - 1
+            end
+            local text = line:sub(from, to)
+            if text == "" or self:TextWidth(text) < x then return nil end
+            local lo, hi = 1, #text -- the letter whose right edge is past the mouse
+            while lo < hi do
+                local mid = math.floor((lo + hi) / 2)
+                if self:TextWidth(text:sub(1, mid)) > x then hi = mid else lo = mid + 1 end
+            end
+            return starts[i] + from - 2 + lo
+        end
+    end
+    return nil
+end
+
 -- Where the cursor would be at raw position `pos`, asking the game: { x, y, h } or nil when the game
 -- does not report it right away.
 function CodeBox:MeasureByCursor(pos)

@@ -243,6 +243,9 @@ the one that would run now. `/cast [mod:shift,@focus,harm,nodead] Polymorph; Fro
 Polymorph on your focus, if it is an enemy and alive`, then `otherwise: Frostbolt`; a unit tried after another
 one comes under it (`if not, on your target`). The line numbers explain with the live preview off too.
 
+Point at a word for what it means: a command (`/stopmacro`), a condition (`nodead`, `mod:shift`), a unit
+(`@focus`, `@party2target`), `#showtooltip`, `reset=`. A spell or item shows the game's own tooltip.
+
 ## Shorten
 
 Macros are limited to 255 characters. **Shorten** in the header writes the same macro in fewer characters
@@ -376,6 +379,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Preview.lua`: what each line does now, for the live preview. Pure Lua; the game's condition
   check comes in from `Sources.lua` (`tests/fakeparse.lua` stands in for it in tests).
 - `MacroSense/Explain.lua`: what a line does in plain words, every branch of it, for its tooltip. Pure Lua.
+- `MacroSense/Docs.lua`: what a word of a macro means, for the tooltip of the word under the mouse. Pure Lua.
 - `MacroSense/Editing.lua`: auto-closing brackets. Pure Lua.
 - `MacroSense/Data.lua`, `MacroSense/Themes.lua`: static commands, conditions, units; fonts, schemes.
 - `MacroSense/Conditions.lua`: condition values and unit ids, their checks and suggestions. Pure Lua.

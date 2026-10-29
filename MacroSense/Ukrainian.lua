@@ -987,4 +987,149 @@ ns.locales.uk = {
     ["popup: second button"] = "вікно: друга кнопка",
     ["on you now"] = "зараз на вас",
     ["buff"] = "бафф",
+    -- Docs.lua: what a word of a macro means
+    ["Casts a spell or uses an item by its name. Branches split by \";\" are tried in order: the first whose "
+        .. "conditions hold runs."] =
+        "Застосовує заклинання або предмет за назвою. Гілки, розділені «;», перевіряються по черзі: спрацьовує "
+        .. "перша, умови якої виконано.",
+    ["Uses an item: by name, item:ID, an equipment slot (13, 14 for trinkets) or a bag and slot (0 1). Spells "
+        .. "work too, as with /cast."] =
+        "Використовує предмет: за назвою, item:ID, слотом спорядження (13, 14 — аксесуари) або сумкою й слотом "
+        .. "(0 1). Заклинання теж працюють, як із /cast.",
+    ["Casts the next spell of the list on each press. reset= says when it starts over: after seconds "
+        .. "without a press, a new target, the end of combat, or Shift, Ctrl, Alt held."] =
+        "Щоразу застосовує наступне заклинання зі списку. reset= каже, коли почати спочатку: через стільки-то "
+        .. "секунд без натискань, на нову ціль, після бою або з затиснутим Shift, Ctrl, Alt.",
+    ["Casts one spell of the list, picked at random."] = "Застосовує одне заклинання зі списку навмання.",
+    ["Uses one item of the list, picked at random (mounts, toys)."] =
+        "Використовує один предмет зі списку навмання (маунти, іграшки).",
+    ["Stops the spell you are casting, so the line after it can cast at once."] =
+        "Перериває заклинання, яке ви зараз кастуєте, щоб наступний рядок спрацював одразу.",
+    ["Stops the macro here when its conditions hold: the lines below it don't run."] =
+        "Зупиняє макрос тут, якщо умови виконано: рядки нижче не виконуються.",
+    ["Starts auto attack on your target, or on the unit given. It never turns auto attack off."] =
+        "Вмикає автоатаку по вашій цілі або по вказаному юніту. Вимкнути автоатаку вона не може.",
+    ["Stops auto attack."] = "Вимикає автоатаку.",
+    ["Removes a buff from you, by its name."] = "Знімає з вас бафф за його назвою.",
+    ["Leaves your form or stance (Bear Form, Shadowform...)."] =
+        "Виходить із форми чи стійки (Bear Form, Shadowform...).",
+    ["Targets a unit, or the nearest player or creature with that name."] =
+        "Бере в ціль юніта або найближчого гравця чи істоту з таким ім'ям.",
+    ["Targets the next enemy in front of you, as Tab does."] = "Бере в ціль наступного ворога перед вами, як Tab.",
+    ["Targets the next friendly player."] = "Бере в ціль наступного дружнього гравця.",
+    ["Targets your previous target again."] = "Знову бере в ціль попередню ціль.",
+    ["Clears your target."] = "Скидає вашу ціль.",
+    ["Targets the target of a unit: /assist [@focus] takes your focus's target."] =
+        "Бере в ціль ціль юніта: /assist [@focus] бере ціль вашого фокуса.",
+    ["Sets your focus: the unit given, or your target. A focus stays while you target others."] =
+        "Ставить фокус: на вказаного юніта або на вашу ціль. Фокус лишається, поки ви берете в ціль інших.",
+    ["Clears your focus."] = "Скидає фокус.",
+    ["Your pet attacks your target, or the unit given."] = "Ваш улюбленець атакує вашу ціль або вказаного юніта.",
+    ["Your pet comes back and follows you."] = "Ваш улюбленець повертається й іде за вами.",
+    ["Your pet stays where it is."] = "Ваш улюбленець лишається на місці.",
+    ["Your pet doesn't attack by itself."] = "Ваш улюбленець сам не атакує.",
+    ["Your pet attacks what attacks you or it."] = "Ваш улюбленець атакує тих, хто атакує вас або його.",
+    ["Your pet attacks what you attack."] = "Ваш улюбленець атакує те, що атакуєте ви.",
+    ["Puts on an item from your bags, in the slot it goes to."] = "Одягає предмет із сумок у його слот.",
+    ["Puts on an item in the slot given: /equipslot 14 Name for the second trinket."] =
+        "Одягає предмет у вказаний слот: /equipslot 14 Назва — другий аксесуар.",
+    ["Clicks a button by its frame name, as if you pressed it: /click ActionButton1."] =
+        "Натискає кнопку за назвою її фрейму, ніби ви натиснули її самі: /click ActionButton1.",
+    ["Gets you off your mount."] = "Злазить із маунта.",
+    ["Leaves the vehicle you are in."] = "Виходить із транспорту.",
+    ["Runs a line of Lua code. Addons' code can't cast spells, so this can't either."] =
+        "Виконує рядок коду Lua. Код аддонів не може застосовувати заклинання, тож і він не може.",
+    ["Says the text in chat, to players near you. %t is your target's name."] =
+        "Каже текст у чат гравцям поруч. %t — ім'я вашої цілі.",
+    ["Yells the text in chat, to players in a wide area. %t is your target's name."] =
+        "Кричить текст у чат гравцям на великій відстані. %t — ім'я вашої цілі.",
+    ["Says the text in your party's chat. %t is your target's name."] = "Пише текст у чат групи. %t — ім'я вашої цілі.",
+    ["Says the text in your raid's chat. %t is your target's name."] = "Пише текст у чат рейду. %t — ім'я вашої цілі.",
+    ["Shows the text as your emote: \"Bob waves.\" %t is your target's name."] =
+        "Показує текст як вашу емоцію: «Bob махає рукою.» %t — ім'я вашої цілі.",
+    ["Whispers the text to one player: /whisper Name text."] = "Шепоче текст одному гравцю: /whisper Ім'я текст.",
+    ["You are in combat."] = "Ви в бою.",
+    ["A modifier key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Without a value, any of them."] =
+        "Затиснуто клавішу-модифікатор: mod:shift, mod:ctrl, mod:alt, кілька через «/». Без значення — будь-яку.",
+    ["The unit is an enemy you can attack."] = "Юніт — ворог, якого можна атакувати.",
+    ["The unit is friendly: you can heal or buff it."] = "Юніт дружній: його можна лікувати чи баффати.",
+    ["The unit is there: with nobody under the mouse, @mouseover doesn't exist."] =
+        "Юніт є: коли під мишею нікого, @mouseover не існує.",
+    ["The unit is dead."] = "Юніт мертвий.",
+    ["Your form or stance, by its number: form:1, form:2/3. form:0 or noform: no form."] =
+        "Ваша форма чи стійка за номером: form:1, form:2/3. form:0 або noform — без форми.",
+    ["You are in stealth."] = "Ви в стелсі.",
+    ["You are on a mount."] = "Ви на маунті.",
+    ["You are flying."] = "Ви летите.",
+    ["You can fly here: the zone allows it."] = "Тут можна літати: зона це дозволяє.",
+    ["Skyriding is allowed here."] = "Тут дозволено skyriding.",
+    ["You are swimming."] = "Ви пливете.",
+    ["You are indoors: no mounts here."] = "Ви в приміщенні: маунтів тут не викликати.",
+    ["You are outdoors."] = "Ви просто неба.",
+    ["You are in a rested area: an inn or a city."] = "Ви в зоні відпочинку: у таверні чи місті.",
+    ["You are channeling a spell, or that one: channeling:Drain Life."] =
+        "Ви кастуєте поточне заклинання або саме це: channeling:Drain Life.",
+    ["You are in a group: group:party or group:raid."] = "Ви в групі: group:party або group:raid.",
+    ["The unit is in your party."] = "Юніт у вашій групі.",
+    ["The unit is in your raid."] = "Юніт у вашому рейді.",
+    ["Your pet is out, or that one: pet:Felhunter, pet:Imp/Voidwalker."] =
+        "Ваш улюбленець викликаний, або саме цей: pet:Felhunter, pet:Imp/Voidwalker.",
+    ["Your active specialization: spec:1, spec:2..."] = "Ваша активна спеціалізація: spec:1, spec:2...",
+    ["You know that spell: known:Name or its number."] = "Ви знаєте це заклинання: known:Назва або його номер.",
+    ["That talent is chosen: talent:row/column."] = "Цей талант обрано: talent:ряд/стовпець.",
+    ["That PvP talent is chosen."] = "Цей PvP-талант обрано.",
+    ["You wear that kind of item: equipped:Shields, equipped:Two-Handed Axes."] =
+        "На вас такий тип предмета: equipped:Shields, equipped:Two-Handed Axes.",
+    ["The mouse button that clicked the action button: btn:1 left, btn:2 right."] =
+        "Кнопка миші, якою клацнули по кнопці дії: btn:1 — ліва, btn:2 — права.",
+    ["The page of your action bar now: bar:2."] = "Поточна сторінка панелі дій: bar:2.",
+    ["A bonus bar is up (forms and stances change it): bonusbar:1."] =
+        "Увімкнено бонусну панель (її міняють форми й стійки): bonusbar:1.",
+    ["The extra action button is shown."] = "Показано додаткову кнопку дії.",
+    ["An override bar replaces your action bar."] = "Вашу панель дій замінює інша панель.",
+    ["You control another creature's actions."] = "Ви керуєте діями іншої істоти.",
+    ["You are in a vehicle with its own action bar."] = "Ви в транспорті з власною панеллю дій.",
+    ["The unit is in a vehicle."] = "Юніт у транспорті.",
+    ["You can leave the vehicle you are in."] = "Ви можете вийти з транспорту.",
+    ["You are in a pet battle."] = "Ви в бою улюбленців.",
+    ["You hold something on the mouse cursor: a spell, an item, a macro."] =
+        "Ви тримаєте щось на курсорі миші: заклинання, предмет, макрос.",
+    ["The one you have targeted."] = "Той, кого ви взяли в ціль.",
+    ["A unit you set with /focus: you act on it without targeting it."] =
+        "Юніт, якого ви поставили в /focus: на нього можна діяти, не беручи в ціль.",
+    ["The unit under the mouse: in the world, on its nameplate or on a unit frame."] =
+        "Юніт під мишею: у світі, на його неймплейті або на рамці юніта.",
+    ["You."] = "Ви.",
+    ["The ground under the mouse: a spell you aim lands there at once, without a click."] =
+        "Земля під мишею: заклинання, яке треба націлювати, падає туди одразу, без кліку.",
+    ["Nobody: a spell that needs a target asks you to click one."] =
+        "Ніхто: заклинання, якому потрібна ціль, попросить клацнути по ній.",
+    ["Your group's tank, other than you. MacroSense puts in the name of the one with the role, and a new one "
+        .. "when your group changes."] =
+        "Танк вашої групи, окрім вас. MacroSense вписує ім'я того, хто має цю роль, і нове, коли група змінюється.",
+    ["Your group's healer, other than you. MacroSense puts in the name of the one with the role, and a new "
+        .. "one when your group changes."] =
+        "Хілер вашої групи, окрім вас. MacroSense вписує ім'я того, хто має цю роль, і нове, коли група змінюється.",
+    ["Your target if it is an enemy, else the enemy your soft targeting picks."] =
+        "Ваша ціль, якщо це ворог, інакше ворог, якого обирає м'яке націлювання.",
+    ["Your target if it is friendly, else the friend your soft targeting picks."] =
+        "Ваша ціль, якщо вона дружня, інакше друг, якого обирає м'яке націлювання.",
+    ["The enemy your soft targeting picks: the one in front of you."] =
+        "Ворог, якого обирає м'яке націлювання: той, що перед вами.",
+    ["The friend your soft targeting picks."] = "Друг, якого обирає м'яке націлювання.",
+    ["What your soft targeting picks to interact with."] = "Те, з чим м'яке націлювання пропонує взаємодіяти.",
+    ["Your target if you can interact with it, else what soft targeting picks."] =
+        "Ваша ціль, якщо з нею можна взаємодіяти, інакше те, що обирає м'яке націлювання.",
+    ["The unit of a nameplate shown, by its number."] = "Юніт показаного неймплейта, за номером.",
+    ["The macro's icon and tooltip are of the spell or item it would use now: of the first line that "
+        .. "casts, or of the one named after it."] =
+        "Іконка й підказка макроса — від заклинання чи предмета, які він застосував би зараз: першого рядка, що "
+        .. "кастує, або названого після нього.",
+    ["The macro's icon is of the spell or item it would use now, with no tooltip."] =
+        "Іконка макроса — від заклинання чи предмета, які він застосував би зараз, без підказки.",
+    ["On whom the branch acts: @mouseover, @focus, @player... target= is the same."] =
+        "На кого діє гілка: @mouseover, @focus, @player... target= — те саме.",
+    ["Holds when this does not:"] = "Виконується, коли це не так:",
+    ["When the sequence starts over: seconds without a press, target, combat, shift, ctrl or alt."] =
+        "Коли послідовність починається спочатку: секунди без натискань, target, combat, shift, ctrl або alt.",
 }

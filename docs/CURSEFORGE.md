@@ -142,7 +142,8 @@ summon another pet or point at a unit, and the notes change with it: you see eve
 without casting anything. The game itself checks the conditions, exactly as when you press the key.
 
 Got a macro from a guide and not sure what it does? Point at a line's number and read it in plain words:
-`with Shift held: Polymorph on your focus, if it is an enemy and alive`, `otherwise: Frostbolt`.
+`with Shift held: Polymorph on your focus, if it is an enemy and alive`, `otherwise: Frostbolt`. Point at a
+word for what it means: `nodead`, `@focus`, `/stopmacro`; a spell or item shows the game's own tooltip.
 
 ## Shorten
 

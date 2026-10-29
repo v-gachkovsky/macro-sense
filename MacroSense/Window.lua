@@ -262,16 +262,49 @@ local explainEnv = {
     commandKey = function(name) return ns.CommandKey(name) end,
 }
 
+-- The game's tooltip of a spell or item named in a macro; false when the game knows no such name.
+local function ActionTip(name)
+    name = name:gsub("%(.-%)$", "") -- "Fireball(Rank 4)"
+    local spell = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(name)
+    local id = spell and spell.spellID or (GetSpellInfo and select(7, GetSpellInfo(name)))
+    if id and GameTooltip.SetSpellByID then
+        GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
+        GameTooltip:SetSpellByID(id)
+        return true
+    end
+    local itemInfo = C_Item and C_Item.GetItemInfo or GetItemInfo
+    local link = itemInfo and select(2, itemInfo(name))
+    if link then
+        GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
+        GameTooltip:SetHyperlink(link)
+        return true
+    end
+    return false
+end
+
+-- The word under the mouse: what it means, or the game's tooltip of the spell or item.
+local function WordTip(raw, pos)
+    local doc = pos and ns.Docs.At(raw, pos, explainEnv)
+    if not doc then return false end
+    if doc.action then return ActionTip(doc.action) end
+    GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
+    GameTooltip:AddLine(doc.title, 1, 1, 1)
+    for _, line in ipairs(doc.lines) do GameTooltip:AddLine(line, 0.85, 0.85, 0.85, true) end
+    GameTooltip:Show()
+    return true
+end
+
 local function UpdateExplain()
     local n = code:HoveredLine()
     local raw = code:GetRaw()
-    local key = n and (n .. "\1" .. raw)
+    local pos = not n and code:HoveredPos()
+    local key = (n and n .. "\1" .. raw) or (pos and "@" .. pos .. "\1" .. raw)
     if key == explained then return end
     explained = key
     local text = n and select(n, (raw .. "\n"):match(string.rep("([^\n]*)\n", n)))
     local lines = text and ns.Explain.Line(text, explainEnv)
     if not lines then
-        if GameTooltip:GetOwner() == code.scroll then GameTooltip:Hide() end
+        if not WordTip(raw, pos) and GameTooltip:GetOwner() == code.scroll then GameTooltip:Hide() end
         return
     end
     GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
