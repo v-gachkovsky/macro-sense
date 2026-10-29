@@ -434,9 +434,11 @@ MacroSense безкоштовний. Якщо він вам допомагає, 
 - [Ko-fi](https://ko-fi.com/mortivux)
 - [Банка monobank](https://send.monobank.ua/jar/2GZjyGouqJ)
 
-Знайшли помилку чи маєте ідею? Створіть issue на
-[GitHub Issues](https://github.com/v-gachkovsky/macro-sense/issues), пишіть у коментарях на [CurseForge](https://www.curseforge.com/wow/addons/macro-sense) або мені на пошту
-[volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com).
+Знайшли помилку чи маєте ідею? Напишіть мені, як вам зручно:
+
+- коментарі на [CurseForge](https://www.curseforge.com/wow/addons/macro-sense)
+- [GitHub Issues](https://github.com/v-gachkovsky/macro-sense/issues)
+- пошта: [volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com)
 
 ## Ліцензія
 

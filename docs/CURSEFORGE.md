@@ -255,10 +255,13 @@ MacroSense is free. If it helps you, you can support its development:
 - [Ko-fi](https://ko-fi.com/mortivux)
 - [monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ)
 
-Found a bug or have an idea? Write in the comments here, open an issue on
-[GitHub Issues](https://github.com/v-gachkovsky/macro-sense/issues) or email me at
-[volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com). Say what you did, what you expected and
-what happened (a screenshot helps), and add what `/ms bug` prints.
+Found a bug or have an idea? Tell me any way you like:
+
+- comments on this page
+- [GitHub Issues](https://github.com/v-gachkovsky/macro-sense/issues)
+- email: [volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com)
+
+Say what you did, what you expected and what happened (a screenshot helps), and add what `/ms bug` prints.
 
 ---
 
