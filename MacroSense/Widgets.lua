@@ -376,23 +376,21 @@ end
 ------------------------------------------------------------------------
 local BAR_W, MIN_THUMB = 8, 24
 
--- onChange(value) runs when the player drags the thumb. `step` = snap to whole steps (rows).
+-- onChange(value) runs when the player moves the thumb: drags it, or clicks the track (the thumb jumps there, its
+-- middle under the mouse). `step` = snap to whole steps (rows). Our own, not the game's Slider: its clicks on the
+-- track went the other way.
 function ns.ScrollBar(parent, onChange, step)
-    local bar = CreateFrame("Slider", nil, parent)
-    bar:SetOrientation("VERTICAL")
+    local bar = CreateFrame("Frame", nil, parent)
     bar:SetWidth(BAR_W)
-    bar:SetMinMaxValues(0, 0)
-    bar:SetValueStep(step or 1)
-    if bar.SetObeyStepOnDrag then bar:SetObeyStepOnDrag(step ~= nil) end
     bar:EnableMouse(true)
-    bar.max, bar.visible = 0, 1
+    bar.max, bar.visible, bar.value = 0, 1, 0
     bar:Hide() -- until there is something to scroll
 
     local track = bar:CreateTexture(nil, "BACKGROUND")
     track:SetAllPoints()
     local thumb = bar:CreateTexture(nil, "OVERLAY")
     thumb:SetSize(BAR_W, MIN_THUMB)
-    bar:SetThumbTexture(thumb)
+    bar.thumb = thumb
 
     local function paint()
         local s = ns.scheme
@@ -401,34 +399,74 @@ function ns.ScrollBar(parent, onChange, step)
         track:SetAlpha(0.35)
         thumb:SetColorTexture(ns.RGB((bar.hover or bar.dragging) and s.dim or s.border))
     end
-    bar:SetScript("OnEnter", function() bar.hover = true; paint() end)
-    bar:SetScript("OnLeave", function() bar.hover = false; paint() end)
-    bar:SetScript("OnMouseDown", function() bar.dragging = true; paint() end)
-    bar:SetScript("OnMouseUp", function() bar.dragging = false; paint() end)
     ns.OnStyle(paint)
 
+    -- How far the thumb can travel, and where it is for the value: from the top.
+    local thumbH = MIN_THUMB
+    local function travel() return math.max(0, (bar:GetHeight() or 0) - thumbH) end
+    local function place()
+        local y = bar.max > 0 and travel() * bar.value / bar.max or 0
+        thumb:ClearAllPoints()
+        thumb:SetPoint("TOP", bar, "TOP", 0, -y)
+    end
     -- The thumb shows how much of the content is visible.
     local function sizeThumb()
         local h = bar:GetHeight() or 0
-        thumb:SetHeight(math.max(MIN_THUMB, h * bar.visible / (bar.visible + bar.max)))
+        thumbH = math.max(MIN_THUMB, h * bar.visible / (bar.visible + bar.max))
+        thumb:SetHeight(thumbH)
+        place()
     end
     bar:SetScript("OnSizeChanged", sizeThumb)
-    bar:SetScript("OnValueChanged", function(_, v)
-        if not bar.setting then onChange(v) end
+
+    local function set(v)
+        v = math.max(0, math.min(bar.max, v))
+        if step then v = math.floor(v / step + 0.5) * step end
+        if v == bar.value then return end
+        bar.value = v
+        place()
+        onChange(v)
+    end
+    -- The mouse, from the bar's top.
+    local function down()
+        local _, y = GetCursorPosition()
+        return (bar:GetTop() or 0) - y / (bar:GetEffectiveScale() or 1)
+    end
+    local grab -- where on the thumb it is held, from the thumb's top
+    local function follow()
+        local t = travel()
+        if t > 0 then set((down() - grab) / t * bar.max) end
+    end
+    bar:SetScript("OnMouseDown", function()
+        local top = bar.max > 0 and travel() * bar.value / bar.max or 0
+        local y = down()
+        local onThumb = y >= top and y <= top + thumbH
+        grab = onThumb and (y - top) or thumbH / 2
+        bar.dragging = true
+        paint()
+        follow()
+        bar:SetScript("OnUpdate", follow)
     end)
+    bar:SetScript("OnMouseUp", function()
+        bar.dragging = false
+        bar:SetScript("OnUpdate", nil)
+        paint()
+    end)
+    bar:SetScript("OnEnter", function() bar.hover = true; paint() end)
+    bar:SetScript("OnLeave", function() bar.hover = false; paint() end)
 
     -- max = how far it scrolls, visible = how much fits (same units).
     function bar:SetRange(max, visible)
         self.max, self.visible = math.max(0, max or 0), math.max(1, visible or 1)
-        self:SetMinMaxValues(0, self.max)
+        self.value = math.min(self.value, self.max)
         self:SetShown(self.max >= 1) -- text insets can leave a sub-pixel range: nothing to scroll
         sizeThumb()
     end
+    -- Where the content is now, scrolled some other way (the wheel, the keys): the thumb follows, nothing is told.
     function bar:SetPosition(v)
-        self.setting = true
-        self:SetValue(v)
-        self.setting = false
+        self.value = math.max(0, math.min(self.max, v or 0))
+        place()
     end
+    function bar:GetValue() return self.value end
     return bar
 end
 

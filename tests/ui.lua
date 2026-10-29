@@ -539,7 +539,7 @@ do
 end
 do
     local visible = 0
-    for _, o in ipairs(created) do if o.kind == "Slider" and o.SetRange and o:IsShown() then visible = visible + 1 end end
+    for _, o in ipairs(created) do if o.thumb and o.SetRange and o:IsShown() then visible = visible + 1 end end
     check("no scroll bars without overflow", visible == 0, visible)
 end
 
@@ -1176,7 +1176,7 @@ end
 do
     local scroll = MacroSenseListScroll
     local function bar()
-        for _, o in ipairs(created) do if o.kind == "Slider" and o.SetRange and o.max == 100 then return o end end
+        for _, o in ipairs(created) do if o.thumb and o.SetRange and o.max == 100 then return o end end
     end
     scroll.range = 100
     Fire(scroll, "OnScrollRangeChanged")
@@ -1189,8 +1189,29 @@ do
     check("wheel clamps at end", scroll.vscroll == 100, scroll.vscroll)
     Fire(scroll, "OnMouseWheel", 5)
     check("wheel clamps at top", scroll.vscroll == 0, scroll.vscroll)
-    Fire(b, "OnValueChanged", 30)
-    check("dragging thumb scrolls", scroll.vscroll == 30, scroll.vscroll)
+    -- The bar is 200 high with its top at 500, 200 of 300 shown: the thumb is 133.3 high and travels 66.7 for 100.
+    local function near(v) return math.abs(scroll.vscroll - v) < 0.01 end
+    b.top = 500
+    cursorY = 500 - 190
+    Fire(b, "OnMouseDown")
+    check("a click low on the track scrolls down", scroll.vscroll == 100 and b.dragging, scroll.vscroll)
+    Fire(b, "OnMouseUp")
+    cursorY = 500 - 5
+    Fire(b, "OnMouseDown")
+    Fire(b, "OnMouseUp")
+    check("a click high on the track scrolls up", scroll.vscroll == 0, scroll.vscroll)
+    -- At the top the thumb covers 0 to 133.3: held 50 below its top and moved down 33.3, it scrolls half way.
+    cursorY = 500 - 50
+    Fire(b, "OnMouseDown")
+    check("a click on the thumb doesn't move it", near(0), scroll.vscroll)
+    cursorY = 500 - 50 - 100 / 3
+    Fire(b, "OnUpdate")
+    check("dragging the thumb scrolls", near(50), scroll.vscroll)
+    Fire(b, "OnMouseUp")
+    cursorY = 500 - 150
+    Fire(b, "OnUpdate")
+    check("let go: no more scrolling", near(50) and not b.dragging, scroll.vscroll)
+    cursorY = 0
     scroll.range = 0.4
     Fire(scroll, "OnScrollRangeChanged")
     check("sub-pixel range hides the bar", not b:IsShown())
@@ -1373,7 +1394,7 @@ end
 do
     local function hover()
         for _, o in ipairs(created) do
-            if o.kind == "Frame" and o.scripts.OnMouseUp and o.scripts.OnEnter and o.scripts.OnLeave then return o end
+            if o.kind == "Frame" and not o.thumb and o.scripts.OnMouseUp and o.scripts.OnEnter and o.scripts.OnLeave then return o end
         end
     end
     local function statusText()
