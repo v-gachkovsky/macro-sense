@@ -474,12 +474,17 @@ local function Row(i)
             expanded[r.alt.key] = not expanded[r.alt.key]
             return Window.RefreshList()
         end
-        if r.what == "altMacro" then return OpenAltCopyMenu(r, r.macro) end
-        -- Shift-click while typing in chat links the macro there, as an item is linked.
-        if IsShiftKeyDown() and ChatFrameUtil and ChatFrameUtil.GetActiveWindow and ChatFrameUtil.GetActiveWindow() then
+        -- Shift-click links the macro in chat, as an item is linked: into the message being typed, or a new one,
+        -- wherever the cursor is.
+        if IsShiftKeyDown() and ChatFrameUtil then
+            if r.what == "altMacro" then
+                return ns.Links.Insert({ scope = "character", name = r.macro.name, icon = r.macro.icon,
+                    body = r.macro.body or "" })
+            end
             local name, _, body = GetMacroInfo(r.index)
             return ns.Links.Insert({ scope = r.scope, name = name, icon = ns.MacroIcon(r.index), body = body or "" })
         end
+        if r.what == "altMacro" then return OpenAltCopyMenu(r, r.macro) end
         Window.Select(r.index)
     end)
     -- Drag a macro onto an action bar, like in the Blizzard macro window.
@@ -1029,7 +1034,7 @@ local function ShareItems()
     return {
         item(L["Link this macro in chat"], state.index and L["Puts a link of it into the chat: players with "
             .. "MacroSense click it to get the macro as saved now, the others read its name. Shift-click a macro in "
-            .. "the list while typing does it too."] or L["Save the macro first, then link it."], function()
+            .. "the list does it too."] or L["Save the macro first, then link it."], function()
             ns.Links.Insert({ scope = state.scope, name = state.name, icon = state.savedIcon, body = state.body })
         end, not state.index),
         item(L["Export this macro"], state.index and L["Its code, as saved, to copy and share."]

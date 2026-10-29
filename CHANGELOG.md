@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **Shift-click a macro in the list** links it in chat wherever the cursor is: into the message you are typing,
+  or the chat opens with the link. An alt's macro can be linked the same way.
+
 ## [0.8.0] - 2026-10-28
 
 ### Added

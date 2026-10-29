@@ -4949,6 +4949,32 @@ do
     check("links: Shift-click while typing", chatEdit.inserted == "[MacroSense: Also Me]" and raw() == "/cast [@mouseover,harm] "
         .. "Fear", chatEdit.inserted)
     typing = false
+    opened = nil
+    IsShiftKeyDown = function() return true end
+    Fire(row("Also Me"), "OnClick")
+    check("links: Shift-click with the chat closed opens it with the link, the editor stays",
+        opened == "[MacroSense: Also Me]" and raw() == "/cast [@mouseover,harm] Fear", opened)
+    ns.db.characters["Pal-Realm"] = { name = "Pal", realm = "Realm", seen = time(),
+        macros = { Bubble = { body = "/cast Divine Shield", icon = 9 } } }
+    ns.Window.SetScope("character")
+    local function altRow(what, label)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.what == what and o.shown
+                and (what == "alt" and o.alt.label == label or what == "altMacro" and o.macro.name == label) then
+                return o
+            end
+        end
+    end
+    IsShiftKeyDown = function() return false end
+    Fire(altRow("alt", "Pal"), "OnClick")
+    IsShiftKeyDown = function() return true end
+    Fire(altRow("altMacro", "Bubble"), "OnClick")
+    IsShiftKeyDown = function() return false end
+    local alt = ns.db.links.Bubble and ns.Share.Decode(ns.db.links.Bubble.code)
+    check("links: an alt's macro too", opened == "[MacroSense: Bubble]" and alt and alt[1].body == "/cast Divine Shield"
+        and not (MacroSenseMenu and MacroSenseMenu:IsShown()), opened)
+    ns.db.characters["Pal-Realm"] = nil
+    ns.Window.SetScope("general")
 
     -- A chat line: the link clickable, a whisper you sent asks you; hidden lines stay as they are.
     local frameArg = {}
