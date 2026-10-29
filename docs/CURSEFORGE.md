@@ -184,6 +184,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 
 ## Editing comforts
 
+- **Drag a spell, mount or item** onto the text, or Shift-click it while typing: its name goes in, after `/cast`
+  or `/use` on an empty line.
 - Undo / redo: **Ctrl+Z**, **Ctrl+Y** (or Ctrl+Shift+Z). Save: **Ctrl+S**.
 - **Search** your macros by name or text (**Ctrl+F**): the tabs show how many match in each.
 - Line, column and a length counter (macros are limited to 255 characters).

@@ -244,6 +244,9 @@ the one that would run now. `/cast [mod:shift,@focus,harm,nodead] Polymorph; Fro
 Polymorph on your focus, if it is an enemy and alive`, then `otherwise: Frostbolt`; a unit tried after another
 one comes under it (`if not, on your target`). The line numbers explain with the live preview off too.
 
+Drag a spell, mount or item from your spellbook, bags or action bars onto the text, or Shift-click it while
+typing: its name goes in at the cursor, after `/cast` or `/use` on an empty line.
+
 Point at a word for what it means: a command (`/stopmacro`), a condition (`nodead`, `mod:shift`), a unit
 (`@focus`, `@party2target`), `#showtooltip`, `reset=`. A spell or item shows the game's own tooltip.
 
