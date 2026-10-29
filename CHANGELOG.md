@@ -14,6 +14,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **What a word means**: point at a word in the editor. A command, a condition (`nodead` reads "Holds when this
   does not: The unit is dead."), a unit, `#showtooltip`, `reset=` get a few plain words; a spell or item shows the
   game's own tooltip. In English and Ukrainian.
+- A talent or specialization change that breaks macros on your bars says so on the screen (`MacroSense: 2 macros
+  on your bars use spells you don't have now`), their names in chat.
 
 ## [0.8.1] - 2026-10-29
 

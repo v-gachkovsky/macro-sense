@@ -207,7 +207,8 @@ an empty `[]` removes both.
   you haven't chosen, the macro can't use it now`), another specialization's spell (`"Chaos Bolt" belongs to
   Destruction`), one you learn later (`you learn it at level 40`). A branch whose conditions check that
   themselves (`[spec:2]`, `[talent:...]`, `[known:...]`) is not marked. Such a macro turns yellow on the action
-  bars too, and its tooltip there says why. The warnings follow your talents and specialization as they change.
+  bars too, and its tooltip there says why. The warnings follow your talents and specialization as they change,
+  and a change that breaks macros on your bars says so on the screen, their names in chat.
   Retail and WoW Forever know your talent tree, Mists of Pandaria the talents of each row and the other
   specializations' spells, Classic Era and TBC the talents with no points.
 - Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game, Cmd+W,

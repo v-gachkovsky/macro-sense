@@ -4370,6 +4370,59 @@ do
         refused = refused or (o.events and o.events.CHARACTER_POINTS_CHANGED)
     end
     check("missing: the talent events this client has", talentEvents and not refused)
+    -- The talent dropped again: the macro on the bars it broke is told, once.
+    local seen, said = #onScreen, #printed
+    nodes[1].activeRank, nodes[1].activeEntry = 0, nil
+    Send("TRAIT_CONFIG_UPDATED")
+    Wait(0.6)
+    check("broken: told on the screen, in yellow", #onScreen == seen + 1 and onScreen[#onScreen].text
+        == "MacroSense: 1 macro on your bars uses a spell you don't have now" and onScreen[#onScreen].g == 0.82,
+        onScreen[#onScreen] and onScreen[#onScreen].text)
+    check("broken: and which, in chat", #printed == said + 1
+        and printed[#printed]:find("on your bars, with spells you don't have now: Coil", 1, true) ~= nil,
+        printed[#printed])
+    Send("TRAIT_CONFIG_UPDATED")
+    Wait(0.6)
+    check("broken: once", #onScreen == seen + 1, #onScreen - seen)
+    -- Chosen and dropped with no talent event (a spell learned, say): nothing told.
+    nodes[1].activeRank, nodes[1].activeEntry = 1, { entryID = 11 }
+    Send("TRAIT_CONFIG_UPDATED")
+    Wait(0.6)
+    nodes[1].activeRank, nodes[1].activeEntry = 0, nil
+    Send("SPELLS_CHANGED")
+    Wait(0.6)
+    check("broken: not without a talent change", #onScreen == seen + 1, #onScreen - seen)
+    -- A new session: its first look only learns, and so do its first seconds.
+    local function fresh()
+        local copy = setmetatable({}, { __index = ns })
+        assert(loadfile("MacroSense/ActionBars.lua"))("MacroSense", copy)
+        return copy.ActionBars
+    end
+    local session = fresh()
+    Wait(11)
+    session.TellBroken(true)
+    check("broken: a session's first look tells nothing", #onScreen == seen + 1, #onScreen - seen)
+    session = fresh()
+    session.TellBroken(true)
+    nodes[1].activeRank, nodes[1].activeEntry = 1, { entryID = 11 }
+    ns.InvalidateSources("spells")
+    session.Tint()
+    session.TellBroken(true)
+    nodes[1].activeRank, nodes[1].activeEntry = 0, nil
+    ns.InvalidateSources("spells")
+    session.Tint()
+    session.TellBroken(true)
+    check("broken: nor its first seconds", #onScreen == seen + 1, #onScreen - seen)
+    Wait(11)
+    nodes[1].activeRank, nodes[1].activeEntry = 1, { entryID = 11 }
+    ns.InvalidateSources("spells")
+    session.Tint()
+    session.TellBroken(true)
+    nodes[1].activeRank, nodes[1].activeEntry = 0, nil
+    ns.InvalidateSources("spells")
+    session.Tint()
+    session.TellBroken(true)
+    check("broken: then told", #onScreen == seen + 2, #onScreen - seen)
 
     GameTooltip.AddLine = nil
     actions[2], actions[100] = saved2, saved100
