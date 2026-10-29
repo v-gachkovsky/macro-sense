@@ -434,6 +434,10 @@ MacroSense безкоштовний. Якщо він вам допомагає, 
 - [Ko-fi](https://ko-fi.com/mortivux)
 - [Банка monobank](https://send.monobank.ua/jar/2GZjyGouqJ)
 
+Знайшли помилку чи маєте ідею? Пишіть у коментарях на
+[CurseForge](https://www.curseforge.com/wow/addons/macro-sense) або мені на пошту
+[volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com).
+
 ## Ліцензія
 
 Код: MIT, див. `LICENSE`; так само іконка копіювання, намальована для MacroSense
