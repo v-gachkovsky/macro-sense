@@ -142,7 +142,8 @@ function Conditions.Values(name)
     if base == "spec" then return source("specs") end
     if base == "equipped" then return source("itemTypes") end
     if base == "pet" then return source("pets") end
-    if base == "known" or base == "channeling" then return source("spells") end
+    if base == "known" then return source("spells") end
+    if base == "channeling" then return source("channeled") end
     return {}
 end
 
