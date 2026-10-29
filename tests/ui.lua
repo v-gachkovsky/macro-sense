@@ -3607,18 +3607,23 @@ do
     StaticPopup_Show = show
     check("trash: emptied, after asking", asked == 2 and Labels() == "No deleted macros / Empty the trash", Labels())
 
-    -- A long trash: the newest in the menu, the rest counted.
-    for i = 1, 14 do ns.History.Discard(ns.History.Trash("general"), "Old " .. i, { body = "/sit", icon = 1 }, i) end
+    -- A long trash: all of it in the menu, twenty rows at a time; the wheel and the scroll bar go through the rest.
+    for i = 1, 24 do ns.History.Discard(ns.History.Trash("general"), "Old " .. i, { body = "/sit", icon = 1 }, i) end
     local rows = Rows()
-    MacroSenseMenu:Hide()
-    check("trash: the newest twelve, the rest counted", #rows == 14 and rows[1].text.text:find("^Old 14")
-        and ns.Highlight.Strip(rows[13].text.text) == "2 older" and rows[13].item.disabled, #rows)
+    check("trash: twenty rows at a time, a scroll bar for the rest", #rows == 20 and rows[1].text.text:find("^Old 24")
+        and MacroSenseMenu.bar:IsShown() and rows[1].remove:IsShown(), #rows)
+    for _ = 1, 3 do Fire(MacroSenseMenu, "OnMouseWheel", -1) end
+    rows = {}
+    for _, r in ipairs(MacroSenseMenu.rows) do
+        if r:IsShown() then rows[#rows + 1] = r end
+    end
+    check("trash: the wheel goes down to the oldest and Empty the trash", rows[1].text.text:find("^Old 19")
+        and rows[19].text.text:find("^Old 1") and rows[20].text.text == "Empty the trash"
+        and not rows[20].remove:IsShown(), rows[1].text.text)
 
     -- The x of a deleted macro deletes it for good, after asking; the rest stay.
     rows = Rows()
-    check("trash: an x on each deleted macro", rows[1].remove:IsShown() and rows[12].remove:IsShown()
-        and not rows[13].remove:IsShown() and not rows[14].remove:IsShown())
-    tip = {}
+    local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(rows[1].remove, "OnEnter")
     GameTooltip.AddLine = nil
@@ -3632,9 +3637,18 @@ do
     StaticPopup_Show = show
     local trash = ns.History.Trash("general")
     check("trash: the x deletes it for good, after asking", tip[1] == "Delete for good"
-        and which == "MACROSENSE_FORGET_DELETED" and said == "Old 14" and #trash == 13
-        and trash[#trash].name == "Old 13", said)
-    check("trash: one older less", Labels():find("1 older", 1, true) ~= nil, Labels())
+        and which == "MACROSENSE_FORGET_DELETED" and said == "Old 24" and #trash == 23
+        and trash[#trash].name == "Old 23", said)
+    MacroSenseMenu:Hide()
+    local short = Rows()
+    check("trash: a short menu has no scroll bar", (function()
+        MacroSenseMenu:Hide()
+        wipe(ns.History.Trash("general"))
+        local r = Rows()
+        local bar = MacroSenseMenu.bar:IsShown()
+        MacroSenseMenu:Hide()
+        return #short == 20 and #r == 2 and not bar
+    end)())
     for _, name in ipairs({ "Trash B", "Trash B 2", "Trash D" }) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
     wipe(ns.History.Trash("general"))
@@ -4121,6 +4135,11 @@ do
         and C("name").text == "Wiz Edit" and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball",
         shown())
     check("open in wizard: it stays in its tab", not C("tab").shown and not C("tabLabel").shown)
+    ns.db.wizardForm = nil
+    Fire(C("mode"), "OnClick")
+    local function backBy() return C("back").point[2] end
+    check("open in wizard: Back next to Next, not the wider button hidden", C("next").shown and backBy() == C("next"))
+    Fire(C("mode"), "OnClick")
     check("open in wizard: the line it leaves out", C("changed").shown and C("changed").text.text == "1 line will change"
         and tooltip(C("changed")):find("/run print(1)", 1, true) ~= nil, tooltip(C("changed")))
     Fire(C("on1"), "OnClick")
@@ -4416,8 +4435,8 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(trash, "OnEnter")
     GameTooltip.AddLine = nil
-    check("ukrainian: the trash's tooltip, with its limits", tip[2]:find("останні 30 видалених макросів", 1, true)
-        and tip[2]:find("У меню видно 12 найновіших.", 1, true), tip[2])
+    check("ukrainian: the trash's tooltip, with its limit", tip[2]:find("останні 30 видалених макросів", 1, true)
+        and not tip[2]:find("У меню", 1, true), tip[2])
     local preview
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and o.label.text == "Live preview" then preview = o end

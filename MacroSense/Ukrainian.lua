@@ -183,14 +183,13 @@ ns.locales.uk = {
     ["Trash"] = "Кошик",
     ["Deleted macros land here, and you can bring them back. It doesn't matter where you deleted them: here, in "
         .. "another addon or in the game's macro window. The trash keeps the last %d deleted macros of each tab and "
-        .. "deletes older ones by itself. The menu shows the %d newest."] =
+        .. "deletes older ones by itself."] =
         "Сюди потрапляють видалені макроси, і їх можна повернути. Неважливо, де ви їх видалили: тут, в іншому аддоні "
         .. "чи в стандартному вікні макросів. Кошик тримає останні %d видалених макросів кожної вкладки, а старіші "
-        .. "видаляє сам. У меню видно %d найновіших.",
+        .. "видаляє сам.",
     ["Deleted from %s: %s. Click to bring it back."] = "Видалено з вкладки «%s»: %s. Клацніть, щоб повернути.",
     ["Delete for good"] = "Видалити назавжди",
     ["No deleted macros"] = "Видалених макросів немає",
-    ["%d older"] = { "ще %d старіший", "ще %d старіші", "ще %d старіших" },
     ["Empty the trash"] = "Очистити кошик",
     ["Empty the trash? Its %s deleted macros will be gone for good."] =
         "Очистити кошик? Видалені макроси (%s) зникнуть назавжди.",
