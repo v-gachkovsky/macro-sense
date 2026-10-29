@@ -429,9 +429,16 @@ lua tests/ui.lua    # увесь аддон на імітації WoW API
 
 ## Підтримати
 
-MacroSense безкоштовний і таким лишиться. Якщо він заощаджує вам час і хочеться подякувати, можна
-закинути на [банку monobank](https://send.monobank.ua/jar/2GZjyGouqJ) або купити мені каву на
-[Ko-fi](https://ko-fi.com/mortivux). Звіт про помилку чи добре слово допомагають не менше.
+MacroSense безкоштовний. Якщо він вам допомагає, можете підтримати його розробку:
+
+- [Ko-fi](https://ko-fi.com/mortivux)
+- [Банка monobank](https://send.monobank.ua/jar/2GZjyGouqJ)
+
+Знайшли помилку чи маєте ідею? Напишіть мені, як вам зручно:
+
+- коментарі на [CurseForge](https://www.curseforge.com/wow/addons/macro-sense)
+- [GitHub Issues](https://github.com/v-gachkovsky/macro-sense/issues)
+- пошта: [volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com)
 
 ## Ліцензія
 

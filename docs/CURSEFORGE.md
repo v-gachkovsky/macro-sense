@@ -248,16 +248,20 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - Macros can't be created, changed or put on action bars in combat; the game doesn't allow it.
 - Action bars of other addons (Bartender, ElvUI, ...) are not checked for the Mac Cmd warning.
 
-## Feedback
-
-Found a bug or have an idea? Open an issue on [GitHub](https://github.com/v-gachkovsky/macro-sense/issues) (or leave a comment on this page) with what
-you did, what you expected and what happened (a screenshot helps), plus the output of `/ms bug`.
-
 ## Support
 
-MacroSense is free and stays free. If it saves you time and you'd like to say thanks, you can buy me a coffee
-on [Ko-fi](https://ko-fi.com/mortivux) or drop something into my
-[monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ) (any card, Apple Pay or Google Pay).
+MacroSense is free. If it helps you, you can support its development:
+
+- [Ko-fi](https://ko-fi.com/mortivux)
+- [monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ)
+
+Found a bug or have an idea? Tell me any way you like:
+
+- comments on this page
+- [GitHub Issues](https://github.com/v-gachkovsky/macro-sense/issues)
+- email: [volodymyr.hachkovsky@icloud.com](mailto:volodymyr.hachkovsky@icloud.com)
+
+Say what you did, what you expected and what happened (a screenshot helps), and add what `/ms bug` prints.
 
 ---
 
