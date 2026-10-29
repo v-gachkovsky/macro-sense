@@ -1423,7 +1423,8 @@ end
 local function Build()
     frame = CreateFrame("Frame", "MacroSenseFrame", UIParent, "BackdropTemplate")
     table.insert(UISpecialFrames, "MacroSenseFrame") -- Esc closes it
-    frame:SetFrameStrata("HIGH") -- below StaticPopup dialogs
+    -- With the game's own windows (bags, the spellbook...): the one clicked last is on top. Below StaticPopup dialogs.
+    frame:SetFrameStrata("MEDIUM")
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)

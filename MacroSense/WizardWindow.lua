@@ -819,7 +819,7 @@ local function Build()
 
     frame = CreateFrame("Frame", "MacroSenseWizard", UIParent, "BackdropTemplate")
     table.insert(UISpecialFrames, "MacroSenseWizard") -- Esc closes it
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("MEDIUM") -- with the game's windows, as the editor
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)

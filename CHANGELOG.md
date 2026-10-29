@@ -37,6 +37,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- MacroSense's windows stayed over the game's own (bags, the spellbook, the character window) even when you clicked
+  those. Now they share one layer: the window you clicked last is on top.
 - A click on a scroll bar's track scrolled the wrong way (to scroll down you had to click near the top). Now the
   thumb jumps to where you click, in the macro list, the editor, the icons and the suggestions.
 - A macro with `@tank` or `@heal` open in the editor could turn into the names written into the game's macro

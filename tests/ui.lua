@@ -83,6 +83,9 @@ function Frame:GetWidth() return 300 end
 function Frame:GetHeight() return 200 end
 function Frame:GetFrameLevel() return 1 end
 function Frame:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
+function Frame:SetFrameStrata(strata) self.strata = strata end
+function Frame:SetToplevel(on) self.toplevel = on end
+function Frame:Raise() self.raised = (self.raised or 0) + 1 end
 function Frame:IsMouseOver() return false end
 function Frame:GetParent() return self.parentFrame end
 -- Fonts: a character is 0.6 of the size wide, a row is size + 1 high (size 13: 8 x 14 px).
@@ -5776,6 +5779,17 @@ ns.db.scheme = "darcula"
 ns.Window.ApplyLook()
 check("scheme keeps text", raw() == body)
 check("darcula colors used", edit:GetText():find("|cffcc7832") ~= nil) -- Darcula keyword
+
+-- The windows share the layer of the game's own (bags, the spellbook...): the one clicked last is on top.
+do
+    local raised = MacroSenseIconPicker and MacroSenseIconPicker.raised
+    local ok = true
+    for _, f in ipairs({ MacroSenseFrame, MacroSenseWizard, MacroSenseIconPicker, MacroSenseShare }) do
+        ok = ok and f.strata == "MEDIUM" and f.toplevel == true
+    end
+    check("windows in the layer of the game's windows", ok)
+    check("the icons come over the editor when opened", raised and raised > 0, raised)
+end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
