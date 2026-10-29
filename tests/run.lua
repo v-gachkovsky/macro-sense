@@ -260,6 +260,40 @@ expectErrs("/cast [@mouseover,harm,nodead][] Spell", "")
 expectErrs("/cast [harmm] Spell", 'harmm=unknown condition "harmm"@1')
 expectErrs("/cast [harm Spell", "[=[ is not closed with ]@1")
 expectErrs("/cast harm] Spell", "]=] without [@1")
+-- One click fixes these: the text after the first issue's fix, and what its tooltip says.
+local function fixed(raw)
+    local e = H.Errors(raw)[1]
+    if not (e and e.fix) then return nil end
+    local from, to = e.fixFrom or e.from, e.fixTo or e.to
+    return raw:sub(1, from - 1) .. e.fix .. raw:sub(to + 1), e.fixTip or e.short
+end
+H.isCommand = function(name) return name == "cast" or name == "castsequence" end
+for _, case in ipairs({
+    { "/cast [harmm] Spell", "/cast [harm] Spell", 'did you mean "harm"?' },
+    { "/cast [nodaed] Spell", "/cast [nodead] Spell" },
+    { "/cats Spell", "/cast Spell", 'did you mean "/cast"?' },
+    { "/cast [@mousover] Spell", "/cast [@mouseover] Spell" },
+    { "/cast [@fcustargte] Spell", "/cast [@focustarget] Spell" }, -- a long word: two typos
+    { "/cast [target=focsu] Spell", "/cast [target=focus] Spell" },
+    { "/cast [mod:shfit] Spell", "/cast [mod:shift] Spell" },
+    { "/castsequence reset=tagret A, B", "/castsequence reset=target A, B" },
+    { "/cast [harm Spell", "/cast [harm] Spell", 'Click to add "]"' },
+    { "/cast [@focus,harm, nodead Spell", "/cast [@focus,harm, nodead] Spell" },
+    { "/cast [harm", "/cast [harm]" },
+    { "/cast harm] Spell", "/cast [harm] Spell", 'Click to add "["' },
+    { "/cast [harm][@focus,help] A; nodead] B", "/cast [harm][@focus,help] A; [nodead] B" },
+    { "/cast ] Spell", "/cast  Spell", 'Click to remove "]"' },
+    { "/cast [harm,,dead] Spell", "/cast [harm,dead] Spell", 'Click to remove ","' },
+    { "/cast [harm,] Spell", "/cast [harm] Spell" },
+    { "/cast [combat:1] Spell", "/cast [combat] Spell", 'Click to remove ":1"' },
+}) do
+    local text, tip = fixed(case[1])
+    check("one-click fix: " .. case[1], text == case[2] and (not case[3] or tip == case[3]),
+        tostring(text) .. " / " .. tostring(tip))
+end
+check("no fix far from any word", fixed("/cast [qqqqqq] Spell") == nil and fixed("/cast [@] Spell") == nil
+    and fixed("/zz Spell") == nil)
+H.isCommand = nil
 expectErrs("/cast [harm,,dead] X", ",=empty condition@1")
 expectErrs("/cast [,harm] X", ",=empty condition@1")
 expectErrs("/cast [harm,] X", ",=empty condition@1")

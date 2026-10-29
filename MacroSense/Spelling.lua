@@ -41,9 +41,9 @@ function Spelling.Allowed(len)
     return 3
 end
 
--- The candidate closest to `name` within its allowance, or nil. Ties go to the first candidate.
-function Spelling.Suggest(name, candidates)
-    local max = Spelling.Allowed(#name)
+-- The candidate closest to `name` within its allowance (or `max` typos), or nil. Ties go to the first candidate.
+function Spelling.Suggest(name, candidates, max)
+    max = max or Spelling.Allowed(#name)
     if max == 0 then return nil end
     local best, bestDistance = nil, max + 1
     for _, candidate in ipairs(candidates) do
@@ -54,6 +54,12 @@ function Spelling.Suggest(name, candidates)
         end
     end
     return best
+end
+
+-- The closest of a few known words (commands, conditions, units): those are no names of their own, so a short one
+-- may have a typo too ("cats" -> "cast").
+function Spelling.SuggestWord(word, candidates)
+    return Spelling.Suggest(word, candidates, #word <= 2 and 0 or #word <= 8 and 1 or 2)
 end
 
 return Spelling

@@ -1708,7 +1708,8 @@ local function Build()
         AddIssueLines(errors)
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
         if warning.shown and warning.shown.fix then
-            GameTooltip:AddLine(string.format(L["Click to use \"%s\""], warning.shown.fix), 0.4, 1, 0.4)
+            GameTooltip:AddLine(warning.shown.fixTip or string.format(L["Click to use \"%s\""], warning.shown.fix),
+                0.4, 1, 0.4)
         elseif warning.shown then
             GameTooltip:AddLine(string.format(L["Click to go to line %d"], warning.shown.line), 0.4, 1, 0.4)
         end
@@ -1721,8 +1722,8 @@ local function Build()
         if not e then return end
         GameTooltip:Hide()
         if not e.fix then return code:SetRawCursor(e.from - 1) end
-        local raw = code:GetRaw()
-        code:SetRaw(raw:sub(1, e.from - 1) .. e.fix .. raw:sub(e.to + 1), e.from - 1 + #e.fix, true)
+        local raw, from, to = code:GetRaw(), e.fixFrom or e.from, e.fixTo or e.to
+        code:SetRaw(raw:sub(1, from - 1) .. e.fix .. raw:sub(to + 1), from - 1 + #e.fix, true)
         code:CheckNow()
     end)
 

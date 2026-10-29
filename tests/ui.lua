@@ -706,7 +706,7 @@ do
     NextFrame()
     local n = underlines()
     check("error underlined", n == 1, n)
-    check("short error in status", statusError():find("Line %d+: unknown condition|r") ~= nil, statusError())
+    check("short error in status", statusError():find('Line %d+: did you mean "harm"%?|r') ~= nil, statusError())
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     for _, o in ipairs(created) do
@@ -810,7 +810,8 @@ do
     Type("\n/cast [@mousover] X")
     NextFrame()
     local warn = ns.scheme.warning
-    check("warning in status, short", statusText():find("|cff" .. warn .. "Line %d+: unknown unit|r") ~= nil, statusText())
+    check("warning in status, short", statusText():find("|cff" .. warn .. 'Line %d+: did you mean "mouseover"%?|r') ~= nil,
+        statusText())
     check("no Save alert for a warning", saveAlert() == false)
     local yellow = false
     for _, o in ipairs(created) do
@@ -825,7 +826,10 @@ end
 do
     local function warned()
         for _, o in ipairs(created) do
-            if o.kind == "FontString" and tostring(o.text):find("unknown unit") then return true end
+            local text = tostring(o.text)
+            if o.kind == "FontString" and (text:find("unknown unit") or text:find('did you mean "mouseover"')) then
+                return true
+            end
         end
         return false
     end
@@ -1377,13 +1381,29 @@ do
     NextFrame()
     check("click fixes the name", raw() == "/cast Fireball", raw())
     check("no issue after the fix", statusText() == "", statusText())
-    Type("\n/cats x")
+    Type("\n/cast [@] x")
     Wait(1)
     edit:ClearFocus()
     edit:SetCursorPosition(0)
     Fire(hover(), "OnMouseUp")
     local at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
-    check("click on an issue with no fix goes to it", edit:HasFocus() and at == #"/cast Fireball\n", at)
+    check("click on an issue with no fix goes to it", edit:HasFocus() and at == #"/cast Fireball\n/cast [", at)
+    ns.Window.Revert()
+    CreateMacro("Fix Me", 1, "/cast [harm Fireball", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Fix Me"))
+    Wait(1)
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(hover(), "OnEnter")
+    GameTooltip.AddLine = function() end
+    check("the fix in the tooltip", table.concat(tip, "|"):find('Click to add "]"', 1, true) ~= nil, table.concat(tip, "|"))
+    Fire(hover(), "OnMouseUp")
+    NextFrame()
+    check("a click puts it in", raw() == "/cast [harm] Fireball", raw())
+    ns.Window.Revert()
+    DeleteMacro(GetMacroIndexByName("Fix Me"))
+    Send("UPDATE_MACROS")
     -- Items: names seen in the bags are remembered for later.
     check("seen items remembered", ns.db.itemNames and ns.db.itemNames["Healthstone"] == true)
     -- Pet spells: remembered from every pet seen, so the other pet's spells stay known.

@@ -179,14 +179,17 @@ an empty `[]` removes both.
 - Schemes: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the built-in
   themes of VS Code and JetBrains IDEs). Each macro token has a semantic role (keyword, property, string,
   ...), and a scheme colors roles, so new schemes are easy to add in `Themes.lua`.
-- Syntax errors are underlined, the status bar names the first one with its line (all of them on hover, a click goes there) and
-  Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty
+- Syntax errors are underlined, the status bar names the first one with its line (all of them on hover, a
+  click goes there) and Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty
   condition (`[harm,,dead]`), `@` or `target=` without a unit, `mod:` without a value, a wrong value
   (`btn:7`, `group:arena`, `mod:shfit`), a value for a condition that takes none (`combat:1`), a wrong
   `reset=` value (`reset=tagret`, `reset=1.5`), `reset=` outside `/castsequence`, a slot that doesn't exist
   (`/use 23`), `/equipslot` without the slot or the item, `item:` without a number. Spaces after
   commas are fine. A word you are typing that may still become valid (`comb` on its way to `combat`) is
   marked only after a short pause or on Save; a typo that can't (`mousovr`, `btn:7`) is marked at once.
+- One click on the status bar fixes what is clear: a typo in a command, condition, unit or value (`/cats` →
+  `/cast`, `harmm` → `harm`, `@mousover` → `@mouseover`), a missing `]` or `[`, a stray `]`, an empty condition's
+  comma, a value where none belongs (`combat:1`). Its tooltip says what the click does; Ctrl+Z takes it back.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
   name, which macros allow.
 - `/click`: a name no button has now is a warning (an addon may make it later), and so is a frame that is
