@@ -69,6 +69,8 @@ Or **All options** shows the whole form, where you pick it all at once:
   and in MacroSense you keep editing it with `@tank`
 - **friends, enemies or anyone**, alive only: set from the spell for you
 - **Shift, Ctrl, Alt** (and **Cmd** on a Mac): another spell, or the same one on someone else, with a fallback of its own
+- **gear**: swap weapons, trinkets or rings, always or with a key held, or put on an equipment set
+  (`/equipslot [mod:shift] 14 Lucky Charm`, `/equipset PvP`)
 - **when**: only in or out of combat, in stealth, in a group or alone, with your pet out, in a form, and what it
   casts otherwise (`/cast [stealth] Ambush; Sinister Strike`)
 - **and also**: stop your cast first, your trinkets, auto attack, your pet, the nearest enemy if none is targeted,

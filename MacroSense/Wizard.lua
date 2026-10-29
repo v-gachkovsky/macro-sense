@@ -19,7 +19,37 @@ Wizard.commands = {
     { key = "assist", name = "/assist" },
     { key = "pet", name = "Pet commands" },
     { key = "mount", name = "Mount" },
+    { key = "equip", name = "Put on gear" },
 }
+
+-- Gear to put on (/equip, /equipslot): up to EQUIP pieces, each in its own slot or one chosen (a trinket, a ring,
+-- a hand), always or with a key; and an equipment set (/equipset), where the game has them.
+Wizard.EQUIP = 4
+Wizard.equipSlots = {
+    { key = "", name = "Default slot" },
+    { key = "16", name = "Main hand" }, { key = "17", name = "Off hand" },
+    { key = "13", name = "Trinket 1" }, { key = "14", name = "Trinket 2" },
+    { key = "11", name = "Ring 1" }, { key = "12", name = "Ring 2" },
+}
+Wizard.equipKeys = {
+    { key = "always", name = "Always" },
+    { key = "shift", name = "With Shift held", cond = "mod:shift" },
+    { key = "ctrl", name = "With Ctrl held", cond = "mod:ctrl" },
+    { key = "alt", name = "With Alt held", cond = "mod:alt" },
+    { key = "cmd", name = "With Cmd held", cond = "mod:cmd" },
+    { key = "none", name = "Without a key", cond = "nomod" },
+}
+
+-- The choices of when to put a piece on, for the keys of this client (`keys`: Cmd on a Mac).
+function Wizard.EquipKeys(keys)
+    local mac = false
+    for _, k in ipairs(keys or {}) do mac = mac or k == "cmd" end
+    local out = {}
+    for _, k in ipairs(Wizard.equipKeys) do
+        if k.key ~= "cmd" or mac then out[#out + 1] = k end
+    end
+    return out
+end
 
 -- Where a mount macro calls which mount, as the form lists them; the macro tries water first, then flying, then the
 -- one for anywhere (`cond`: the macro's condition for the place). `since`: the expansion with flying (TBC).
@@ -30,9 +60,9 @@ Wizard.mountPlaces = {
 }
 -- What a press on a mount does: off it, but not in the air (a fall); off it anywhere; nothing.
 Wizard.offMount = {
-    { key = "safe", name = "Get off, not in the air" },
-    { key = "always", name = "Get off, even in the air" },
-    { key = "no", name = "Nothing" },
+    { key = "safe", name = "Dismount, but not while flying" },
+    { key = "always", name = "Dismount, even while flying" },
+    { key = "no", name = "Do nothing" },
 }
 
 -- The places of this game: `expansion` is the client's (nil: all of them).
@@ -220,7 +250,8 @@ end
 function Wizard.Fresh()
     local spec = { command = "cast", on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {},
         list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party", mounts = {}, offMount = "safe",
-        when = {} }
+        when = {}, equip = {} }
+    for i = 1, Wizard.EQUIP do spec.equip[i] = { slot = "", key = "always" } end
     for _, key in ipairs(Wizard.KEYS) do
         spec.keys[key] = { active = false, on = { "default", "none" }, pet = PET_KEYS[key] }
     end
@@ -483,11 +514,38 @@ local function MountLines(spec)
     return lines, MountBranches(spec, false)
 end
 
+-- "/equipset PvP", then a line per piece: "/equip [mod:shift,nocombat] Shield", "/equipslot [nocombat] 14 Charm".
+local function EquipLines(spec)
+    local out = {}
+    local when = When(spec)
+    if spec.equipSet then
+        out[#out + 1] = "/equipset " .. (when ~= "" and "[" .. when .. "] " or "") .. spec.equipSet
+    end
+    for _, piece in ipairs(spec.equip) do
+        if piece.item then
+            local conds = {}
+            for _, k in ipairs(Wizard.equipKeys) do
+                if k.key == piece.key and k.cond then conds[#conds + 1] = k.cond end
+            end
+            if when ~= "" then conds[#conds + 1] = when end
+            local groups = #conds > 0 and "[" .. table.concat(conds, ",") .. "] " or ""
+            local slot = piece.slot ~= "" and piece.slot .. " " or ""
+            out[#out + 1] = (slot ~= "" and "/equipslot " or "/equip ") .. groups .. slot .. piece.item.name
+        end
+    end
+    return out
+end
+
 -- What the macro is named after and shows with trinkets first: the spell or item, a key's, the list's first.
 local function First(spec)
     if Wizard.IsTarget(spec.command) or spec.command == "pet" then return nil end
     if Wizard.IsList(spec.command) then return Names(spec)[1] end
-    if spec.command == "mount" then
+    if spec.command == "equip" then
+        for _, piece in ipairs(spec.equip) do
+            if piece.item then return piece.item end
+        end
+        return nil
+    elseif spec.command == "mount" then
         for _, p in ipairs(Wizard.mountPlaces) do
             if spec.mounts[p.key] then return spec.mounts[p.key] end
         end
@@ -504,7 +562,12 @@ end
 function Wizard.Text(spec)
     local target = Wizard.IsTarget(spec.command) or spec.command == "pet" -- no spell, no icon of its own
     local before, line, after, icon = {}, nil, nil, nil
-    if spec.command == "mount" then
+    if spec.command == "equip" then
+        -- The icon of the first piece; an equipment set alone has none to show.
+        before = EquipLines(spec)
+        local first = First(spec)
+        icon, target = first and first.name, first == nil
+    elseif spec.command == "mount" then
         local lines
         lines, icon = MountLines(spec)
         line, after = lines and lines[1], lines and lines[2]
@@ -563,6 +626,7 @@ function Wizard.Name(spec)
     if first then return first.label or first.name end
     if spec.trinket1 or spec.trinket2 then return ns.L["Trinkets"] end
     if spec.command == "mount" then return ns.L["Mount"] end
+    if spec.command == "equip" then return spec.equipSet or ns.L["Gear"] end
 end
 
 return Wizard

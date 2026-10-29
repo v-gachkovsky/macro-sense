@@ -83,7 +83,7 @@ end
 ------------------------------------------------------------------------
 -- What a box offers: your spells and the items you can use. /use offers the items first, with the equipment
 -- slots whose item has a use effect ("13", Trinket 1); a mount macro only your mounts (none: you type the
--- name).
+-- name), a gear macro only gear, worn or in the bags.
 local function Candidates()
     local spells, items = {}, {}
     for _, spell in ipairs(ns.sources.spells()) do
@@ -95,6 +95,12 @@ local function Candidates()
     local out = {}
     local function add(list)
         for _, c in ipairs(list) do out[#out + 1] = c end
+    end
+    if spec.command == "equip" then
+        for _, item in ipairs(ns.sources.items()) do
+            if item.equippable or item.hint == "equipped" then out[#out + 1] = { name = item.name, icon = item.icon, hint = item.hint, item = true } end
+        end
+        return out
     end
     for _, mount in ipairs(spec.command == "mount" and ns.sources.mounts() or {}) do
         out[#out + 1] = { name = mount.name, icon = mount.icon, hint = L["mount"] }
@@ -409,7 +415,10 @@ function Arrange()
     local list, target, pet = W.IsList(spec.command), W.IsTarget(spec.command), spec.command == "pet"
     local mount = spec.command == "mount"
     local parts = {}
-    if mount then
+    local equip = spec.command == "equip"
+    if equip then
+        parts[1] = blocks.equip
+    elseif mount then
         parts[1] = blocks.mount
     elseif list then
         parts[1] = blocks.list
@@ -421,11 +430,16 @@ function Arrange()
         parts[1] = blocks.name
     end
     -- Units for a cast or a target; for the pet only when it attacks.
-    if not mount and (not pet or spec.pet == "attack") then parts[#parts + 1] = blocks.on end
+    if not mount and not equip and (not pet or spec.pet == "attack") then parts[#parts + 1] = blocks.on end
     if spec.command == "castsequence" then parts[#parts + 1] = blocks.reset end
-    if not list then parts[#parts + 1] = blocks.keys end
+    if not list and not equip then parts[#parts + 1] = blocks.keys end
     -- A mount macro has places of its own instead.
     controls.otherwise:SetShown(spec.command == "cast" or spec.command == "use")
+    -- Gear: the row of the equipment sets only when you have some.
+    local sets = #ns.sources.equipSets() > 0
+    blocks.equip.setRow:SetShown(sets)
+    blocks.equip.rows:SetPoint("TOPLEFT", 0, sets and -ROW or 0)
+    blocks.equip.height = (W.EQUIP + (sets and 1 or 0)) * ROW + 2
     if not mount then parts[#parts + 1] = blocks.when end
     -- A key casts something (or tells the pet something) in the first column and has its units in the On row's
     -- last ones; for /target, /focus and /assist it only has units, in the first ones.
@@ -548,7 +562,8 @@ function Answered()
     local kind = asked and asked.kind
     local function typed(box) return strtrim(box:GetText() or "") ~= "" end
     if kind == "spell" then
-        return asked.optional or (asked.mount and spec.mounts[asked.mount] or spec.action) ~= nil
+        return asked.optional or (asked.mount and spec.mounts[asked.mount]
+            or asked.slot == "equip" and spec.equip[asked.index].item or spec.action) ~= nil
             or typed(controls.stepSpell)
     end
     if kind == "list" then
@@ -585,6 +600,7 @@ local function ShowStep()
     local box = controls.stepSpell
     local mount = spec.command == "mount"
     box.placeholder:SetText(mount and (asked.optional and L["none"] or L["type a mount"])
+        or asked.slot == "equip" and (asked.optional and L["none"] or L["type an item"])
         or asked.slot and L["nothing"] or asked.key and L["same spell"] or L["type a spell or item"])
     if asked.kind == "spell" and not asked.optional and not asked.key and not spec.action then box:SetFocus() end
     controls.stepDismount:SetShown(not mount)
@@ -659,11 +675,14 @@ local function BuildSteps()
         if key then return spec.keys[key].action end
         if place then return spec.mounts[place] end
         if otherwise() then return spec.otherwise end
+        if asked and asked.slot == "equip" then return spec.equip[asked.index].item end
         return spec.action
     end, function(action)
         local key, place = keyOf(), placeOf()
         if otherwise() then
             spec.otherwise = action
+        elseif asked and asked.slot == "equip" then
+            spec.equip[asked.index].item = action
         elseif place then
             spec.mounts[place] = action
         elseif key then
@@ -888,6 +907,39 @@ local function Build()
         controls["list" .. i] = box
     end
 
+    -- Gear: an equipment set, then the pieces, each with its slot and when it is put on.
+    blocks.equip = Block((W.EQUIP + 1) * ROW + 2)
+    local setRow = CreateFrame("Frame", nil, blocks.equip)
+    setRow:SetSize(WIDTH, ROW)
+    setRow:SetPoint("TOPLEFT")
+    blocks.equip.setRow = setRow
+    Text(setRow, L["Set"], PAD, -5)
+    Choice(setRow, "equipSet", 236, function()
+        local out = { { key = "", name = "No set" } }
+        for _, name in ipairs(ns.sources.equipSets()) do out[#out + 1] = { key = name, name = name } end
+        return out
+    end, function() return spec.equipSet or "" end, function(key) spec.equipSet = key ~= "" and key or nil end)
+        :SetPoint("TOPLEFT", X, -1)
+    local rows = CreateFrame("Frame", nil, blocks.equip)
+    rows:SetSize(WIDTH, W.EQUIP * ROW)
+    blocks.equip.rows = rows
+    Text(rows, L["Put on"], PAD, -5)
+    for i = 1, W.EQUIP do
+        local y = -(i - 1) * ROW
+        local piece = function() return spec.equip[i] end
+        local item = SpellBox(rows, 230, i == 1 and L["type an item"] or L["none"], function() return piece().item end,
+            function(action) piece().item = action end)
+        item:SetPoint("TOPLEFT", X, y)
+        controls["equip" .. i] = item
+        Choice(rows, "equipSlot" .. i, 128, W.equipSlots, function() return piece().slot end,
+            function(key) piece().slot = key end):SetPoint("TOPLEFT", X + 238, y - 1)
+        Choice(rows, "equipKey" .. i, 130, function() return W.EquipKeys(keys) end, function() return piece().key end,
+            function(key) piece().key = key end):SetPoint("TOPLEFT", X + 374, y - 1)
+    end
+    Tip(controls.equip1, L["Put on"], L["Gear from your bags or what you're wearing. \"Default slot\" lets the game "
+        .. "choose; for trinkets, rings and weapons you can pick the slot yourself (/equipslot 14). Each item can go on "
+        .. "always or only with a key held."])
+
     -- A mount: one for anywhere, others where you can fly and in water (the places this game has), and what a press
     -- on a mount does.
     local places = W.MountPlaces(LE_EXPANSION_LEVEL_CURRENT)
@@ -900,11 +952,11 @@ local function Build()
         box:SetPoint("TOPLEFT", X + 70, y)
         controls["mount" .. p.key:gsub("^%l", string.upper)] = box
     end
-    Text(blocks.mount, L["On a mount"], PAD, -#places * ROW - 5)
+    Text(blocks.mount, L["When mounted"], PAD, -#places * ROW - 5)
     local offMount = Choice(blocks.mount, "offMount", 236, W.offMount, function() return spec.offMount end,
         function(key) spec.offMount = key end)
     offMount:SetPoint("TOPLEFT", X + 70, -#places * ROW - 1)
-    Tip(offMount, L["On a mount"], L["What a press does while you are on a mount. In the air, getting off is a fall."])
+    Tip(offMount, L["When mounted"], L["What pressing the macro does while you're mounted. Dismounting in the air means falling."])
 
     -- /target by name: a rare, say.
     blocks.name = Block(34)
@@ -1013,11 +1065,11 @@ local function Build()
     blocks.when = Block(2 * ROW + 2)
     Text(blocks.when, L["When"], PAD, -5)
     BuildWhen(blocks.when, "", X)
-    controls.otherwise = SpellBox(blocks.when, 160, L["otherwise: nothing"], function() return spec.otherwise end,
+    controls.otherwise = SpellBox(blocks.when, 160, L["otherwise: do nothing"], function() return spec.otherwise end,
         function(action) spec.otherwise = action end)
     controls.otherwise:SetPoint("TOPLEFT", X + 2 * 168, -ROW)
-    Tip(controls.otherwise, L["Otherwise"], L["What the macro casts when the When row above doesn't hold. Leave it "
-        .. "empty to do nothing then."])
+    Tip(controls.otherwise, L["Otherwise"], L["What the macro casts when the conditions on the left aren't met. Leave "
+        .. "it empty to do nothing then."])
 
     -- Also, the macro, the buttons: at the bottom, from the bottom up.
     local function Low(region, x, y) region:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", x, y) end
