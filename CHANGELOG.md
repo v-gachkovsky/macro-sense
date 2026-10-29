@@ -18,6 +18,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   on your bars use spells you don't have now`), their names in chat.
 - **Drag a spell, mount or item onto the text** (or pick it up and click), or Shift-click it while typing: its name
   goes in at the cursor, after `/cast` or `/use` on an empty line.
+- **Import a macro's text from a guide** (Wowhead, Icy Veins, a forum): Share > Import a code or text takes plain
+  text too, one macro or several split by an empty line, each named after its first spell, with its icon. **Share >
+  Copy this macro's text** gives the text to post.
 
 ## [0.8.1] - 2026-10-29
 

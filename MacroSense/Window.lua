@@ -1061,7 +1061,10 @@ function Window.Import(macros, done)
         for _, p in ipairs(Window.ImportPlan(macros)) do
             if p.name then
                 local m = p.macro
-                CreateMacro(p.name, m.icon ~= "" and m.icon or NEW_ICON, m.body, m.scope == "character")
+                -- A text from a guide has no icon: that of the spell it is named after, unless #showtooltip picks.
+                local icon = m.icon ~= "" and m.icon
+                    or not m.body:find("^#show") and ns.Completion.IconFor(p.name) or NEW_ICON
+                CreateMacro(p.name, icon, m.body, m.scope == "character")
                 made, first = made + 1, first or p
             end
         end
@@ -1102,13 +1105,17 @@ local function ShareItems()
             ns.ShareWindow.Export({ { scope = state.scope, name = state.name, icon = state.savedIcon,
                 body = state.body } })
         end, not state.index),
+        item(L["Copy this macro's text"], state.index and L["Its text as saved, to paste into a guide, a forum or "
+            .. "Discord. MacroSense imports such a text too."] or L["Save the macro first, then copy its text."],
+            function() ns.ShareWindow.ExportText({ name = state.name, body = state.body }) end, not state.index),
         item(string.format(L["Export the %s tab (%d)"], tab, here), L["The code of every macro in this tab."],
             function() ns.ShareWindow.Export(Macros(state.scope)) end, here == 0),
         item(string.format(L["Export all macros (%d)"], general + character),
             L["The code of every macro of both tabs; imported, each goes into its own tab."],
             function() ns.ShareWindow.Export(Macros()) end, general + character == 0),
-        item(L["Import a code..."], L["Paste a code to make its macros. Nothing is replaced: a taken name gets a "
-            .. "number, like \"Fear 2\"."], function() ns.ShareWindow.Import() end),
+        item(L["Import a code or text..."], L["Paste a code, or a macro's text from a guide, to make its macros. "
+            .. "Nothing is replaced: a taken name gets a number, like \"Fear 2\"."],
+            function() ns.ShareWindow.Import() end),
     }
 end
 

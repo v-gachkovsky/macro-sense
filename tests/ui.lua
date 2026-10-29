@@ -3208,7 +3208,8 @@ do
     check("share: an empty box to paste into", MacroSenseShare:IsShown() and C("title").text == "Import macros"
         and C("box").text == "" and C("info").text == "" and not C("import"):IsEnabled())
     C("box"):SetText("hello")
-    check("share: not a code", C("info").text:find("not a MacroSense code") ~= nil and not C("import"):IsEnabled(),
+    check("share: not a code", C("info").text:find("neither a MacroSense code nor a macro") ~= nil
+        and not C("import"):IsEnabled(),
         C("info").text)
     local two = ns.Share.Encode({
         { scope = "general", icon = 134400, name = "Share A", body = "/cast Fear\n/say boo" },
@@ -3226,6 +3227,29 @@ do
         and GetNumMacros() + select(2, GetNumMacros()) == before + 2, GetMacroIndexByName("Share A 2"))
     check("share: the first one opens, the window closes", raw() == "/cast Fear\n/say boo"
         and not MacroSenseShare:IsShown(), raw())
+    -- The text of a macro, to copy for a guide; and a guide's text, imported.
+    Pick("Copy this macro's text")
+    check("share: a macro's text to copy", MacroSenseShare:IsShown() and C("title").text == "The macro's text"
+        and C("box").text == "/cast Fear\n/say boo" and C("box").highlighted ~= false, C("box").text)
+    Pick("Import a code")
+    C("box"):SetText("  #showtooltip\n  /cast [@mouseover,harm][] Fear\n\n/castsequence reset=10 Fire Blast(Rank 2), X\n")
+    info = C("info").text
+    check("share: a guide's text, two macros", info:find("2 macros in the text", 1, true)
+        and info:find("Fear: into General", 1, true) and info:find("Fire Blast: into General", 1, true), info)
+    Fire(C("import"), "OnClick")
+    check("share: imported as written, lines trimmed", select(3, GetMacroInfo(GetMacroIndexByName("Fear")))
+        == "#showtooltip\n/cast [@mouseover,harm][] Fear" and select(3, GetMacroInfo(GetMacroIndexByName("Fire Blast")))
+        == "/castsequence reset=10 Fire Blast(Rank 2), X", raw())
+    DeleteMacro(GetMacroIndexByName("Fear"))
+    DeleteMacro(GetMacroIndexByName("Fire Blast"))
+    Pick("Import a code")
+    C("box"):SetText("/cast [@focus] Polymorph")
+    Fire(C("import"), "OnClick")
+    local icon = select(2, GetMacroInfo(GetMacroIndexByName("Polymorph")))
+    check("share: no #showtooltip, the icon of its spell", icon ~= nil and icon == ns.Completion.IconFor("Polymorph")
+        and icon ~= 134400, icon)
+    DeleteMacro(GetMacroIndexByName("Polymorph"))
+    Send("UPDATE_MACROS")
 
     -- One name twice in a code: each gets its own.
     Pick("Import a code")

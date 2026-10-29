@@ -199,8 +199,9 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - **Not on action bars** shows only the macros on no bar, to free slots when a tab is full. Hover a macro to see
   where it is: MacroSense remembers the bars of each of your specializations and characters, so a macro an alt or
   your other spec uses counts as used.
-- **Share** macros: a code of one macro, a tab or all of them, to copy and send. **Import a code** shows what
-  it holds and where each macro goes before making them, and never replaces one of yours.
+- **Share** macros: a code of one macro, a tab or all of them, to copy and send. **Import a code or text** shows
+  what it holds and where each macro goes before making them, and never replaces one of yours. It takes a
+  macro's plain text from a guide too, and **Copy this macro's text** gives yours as text.
 - **Link a macro in chat** (Share, or Shift-click it in the list): whoever has MacroSense clicks the link, sees
   what the macro holds and imports it.
 

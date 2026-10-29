@@ -9,6 +9,7 @@ local Share = {}
 ns.Share = Share
 
 local PREFIX = "MacroSense1:"
+Share.PREFIX = PREFIX
 local FIELD, MACRO, SUM = "\31", "\30", "\29" -- between a macro's parts, between macros, before the sum
 local DIGITS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 local VALUE = {}
@@ -79,6 +80,38 @@ function Share.Decode(text)
         local scope, icon, name, macroText = part:match("^(%a)" .. FIELD .. "(.-)" .. FIELD .. "(.-)" .. FIELD .. "(.*)$")
         if not SCOPES[scope or ""] or name == "" then return nil, L["The code is damaged."] end
         macros[#macros + 1] = { scope = SCOPES[scope], icon = tonumber(icon) or icon, name = name, body = macroText }
+    end
+    return macros
+end
+
+-- The macros in a macro's text, as guides and forums write it (Wowhead, Icy Veins: plain text): every line
+-- starts with "/" or "#", several macros are split by an empty line. Each goes into tab `scope`, named after its
+-- first spell or item (else its first command), with no icon of its own. Nil when the text is no macro.
+function Share.FromText(text, scope)
+    local chunks, chunk = {}, nil
+    for raw in (text:gsub("\r", ""):gsub("```%a*", "") .. "\n"):gmatch("([^\n]*)\n") do
+        local line = raw:match("^%s*(.-)%s*$")
+        if line == "" then
+            chunk = nil
+        elseif not line:find("^[/#]") then
+            return nil
+        else
+            if not chunk then
+                chunk = {}
+                chunks[#chunks + 1] = chunk
+            end
+            chunk[#chunk + 1] = line
+        end
+    end
+    if #chunks == 0 then return nil end
+    local macros = {}
+    for i, lines in ipairs(chunks) do
+        local body, name = table.concat(lines, "\n"), nil
+        for _, span in ipairs(ns.Highlight.Spans(body)) do
+            if span[3] == "action" and not name then name = body:sub(span[1], span[2]):gsub("%(.-%)$", "") end
+        end
+        name = name or body:match("/(%S+)") or body:match("#(%a+)")
+        macros[i] = { scope = scope, icon = "", name = name, body = body }
     end
     return macros
 end
