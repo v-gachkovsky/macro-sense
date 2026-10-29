@@ -11,7 +11,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
   `nostealth`, `noharm`, `nogroup`, `noknown:`...), and `party`, `raid`, `shapeshift`, `modifier`. Conditions a
   client's game doesn't have yet (`advflyable`, `petbattle`, `pvptalent`, `extrabar`) are not offered there.
 - After `channeling:` and `nochanneling:` the list offers only your channeled spells (Drain Life, Mind Flay...),
-  not every spell.
+  not every spell. Each spell's tooltip is read once and kept until the next patch of the game.
 
 ## [0.9.0] - 2026-10-30
 

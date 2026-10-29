@@ -1526,7 +1526,19 @@ do
     end
     check("channeling: only the channeled spells", names("channeling") == "Frostbolt"
         and names("nochanneling") == "Frostbolt" and names("known"):find("Fireball") ~= nil, names("nochanneling"))
+    -- Read once, kept on disk: the tooltips are not read again, not even after the spells change.
+    local reads = 0
+    local get = C_TooltipInfo.GetSpellByID
+    C_TooltipInfo.GetSpellByID = function(id) reads = reads + 1; return get(id) end
+    ns.InvalidateSources("spells")
+    check("channeling: kept on disk, not read again", names("channeling") == "Frostbolt" and reads == 0
+        and ns.db.channeled[105] == true and ns.db.channeled[104] == false, reads)
+    -- A new patch: read again.
+    ns.db.channeledBuild = "old"
+    ns.InvalidateSources("spells")
+    check("channeling: read again after a patch", names("channeling") == "Frostbolt" and reads > 0, reads)
     C_TooltipInfo = nil
+    ns.db.channeled = {}
     ns.InvalidateSources("spells")
     check("channeling: all spells when no tooltip can be read", names("channeling"):find("Fireball") ~= nil,
         names("channeling"))

@@ -286,27 +286,35 @@ local function TooltipLines(id)
     return out
 end
 
+-- Whether a spell is channeled, by its ID: read once from its tooltip, then kept in MacroSenseDB (a spell stays
+-- channeled or not for every character), until the game's next patch. Nil while the tooltip can't be read.
+local channeledMemo = {}
+local function Channeled(id)
+    local build = GetBuildInfo and select(2, GetBuildInfo()) or ""
+    local db = ns.db
+    if db and db.channeledBuild ~= build then db.channeled, db.channeledBuild = {}, build end
+    local known = db and db.channeled or channeledMemo
+    if known[id] ~= nil then return known[id] end
+    local ok, lines = pcall(TooltipLines, id)
+    if not ok or #lines == 0 then return nil end
+    local channeled = false
+    for _, text in ipairs(lines) do channeled = channeled or text == SPELL_CAST_CHANNELED end
+    known[id] = channeled
+    return channeled
+end
+
 -- Your channeled spells (Drain Life, Mind Flay...), for [channeling:] and [nochanneling:]: their tooltip says
 -- "Channeled" (SPELL_CAST_CHANNELED, in the client's language). All your spells when no tooltip can be read.
 local channeledCache, channeledFor
 function ns.sources.channeled()
     local spells = ns.sources.spells()
     if channeledFor == spells then return channeledCache end
-    local word = SPELL_CAST_CHANNELED
-    if not word then return spells end
+    if not SPELL_CAST_CHANNELED then return spells end
     local out, read = {}, false
     for _, spell in ipairs(spells) do
-        local ok, lines = false, nil
-        if spell.id then ok, lines = pcall(TooltipLines, spell.id) end
-        if ok and #lines > 0 then
-            read = true
-            for _, text in ipairs(lines) do
-                if text == word then
-                    out[#out + 1] = spell
-                    break
-                end
-            end
-        end
+        local channeled = spell.id and Channeled(spell.id)
+        read = read or channeled ~= nil
+        if channeled then out[#out + 1] = spell end
     end
     if not read then out = spells end
     channeledCache, channeledFor = out, spells
