@@ -136,7 +136,7 @@ end
 local function Create()
     frame = CreateFrame("Frame", "MacroSenseIconPicker", UIParent, "BackdropTemplate")
     table.insert(UISpecialFrames, "MacroSenseIconPicker")
-    frame:SetFrameStrata("HIGH")
+    frame:SetFrameStrata("MEDIUM") -- with the game's windows, as the editor
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
     frame:EnableMouse(true)
@@ -279,6 +279,7 @@ function Picker.Open(editor, icon, pick)
         frame:SetPoint(saved.point, UIParent, saved.relPoint, saved.x, saved.y)
     end
     frame:Show()
+    frame:Raise() -- over the editor and the game's windows
 end
 
 function Picker.Close()

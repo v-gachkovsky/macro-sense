@@ -66,7 +66,7 @@ end
 local function Build()
     frame = CreateFrame("Frame", "MacroSenseShare", UIParent, "BackdropTemplate")
     table.insert(UISpecialFrames, "MacroSenseShare") -- Esc closes it
-    frame:SetFrameStrata("HIGH") -- below StaticPopup dialogs (unsaved changes are asked about)
+    frame:SetFrameStrata("MEDIUM") -- with the game's windows; below StaticPopup dialogs (unsaved changes are asked)
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
