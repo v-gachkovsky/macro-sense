@@ -4,6 +4,11 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- A click on the issue in the status bar puts the cursor on it (a misspelled name is still fixed by the click).
+
 ## [0.8.1] - 2026-10-29
 
 ### Changed

@@ -1709,18 +1709,21 @@ local function Build()
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
         if warning.shown and warning.shown.fix then
             GameTooltip:AddLine(string.format(L["Click to use \"%s\""], warning.shown.fix), 0.4, 1, 0.4)
+        elseif warning.shown then
+            GameTooltip:AddLine(string.format(L["Click to go to line %d"], warning.shown.line), 0.4, 1, 0.4)
         end
         GameTooltip:Show()
     end)
     warningHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Click: replace the misspelled name with the suggestion.
+    -- Click: replace the misspelled name with the suggestion, or go to the issue.
     warningHover:SetScript("OnMouseUp", function()
         local e = warning.shown
-        if not (e and e.fix) then return end
+        if not e then return end
+        GameTooltip:Hide()
+        if not e.fix then return code:SetRawCursor(e.from - 1) end
         local raw = code:GetRaw()
         code:SetRaw(raw:sub(1, e.from - 1) .. e.fix .. raw:sub(e.to + 1), e.from - 1 + #e.fix, true)
         code:CheckNow()
-        GameTooltip:Hide()
     end)
 
     -- Editor.

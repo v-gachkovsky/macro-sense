@@ -491,6 +491,12 @@ function CodeBox:GetRawCursor()
     return H.ToRaw(self.edit:GetText(), self.edit:GetCursorPosition())
 end
 
+-- Puts the cursor at raw position `rawCursor`, in the text box.
+function CodeBox:SetRawCursor(rawCursor)
+    self.edit:SetFocus()
+    self.edit:SetCursorPosition(H.ToColored(self.edit:GetText(), rawCursor))
+end
+
 -- Programmatic change (load a macro, accept a suggestion). `keepHistory` = record it for undo.
 function CodeBox:SetRaw(raw, cursor, keepHistory)
     if keepHistory then self:PushUndo(true) else self.undo, self.redo = {}, {} end

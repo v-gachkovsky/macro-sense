@@ -179,7 +179,7 @@ an empty `[]` removes both.
 - Schemes: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the built-in
   themes of VS Code and JetBrains IDEs). Each macro token has a semantic role (keyword, property, string,
   ...), and a scheme colors roles, so new schemes are easy to add in `Themes.lua`.
-- Syntax errors are underlined, the status bar names the first one with its line (all of them on hover) and
+- Syntax errors are underlined, the status bar names the first one with its line (all of them on hover, a click goes there) and
   Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty
   condition (`[harm,,dead]`), `@` or `target=` without a unit, `mod:` without a value, a wrong value
   (`btn:7`, `group:arena`, `mod:shfit`), a value for a condition that takes none (`combat:1`), a wrong
