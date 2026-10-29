@@ -1314,6 +1314,28 @@ do
         { name = "1", hint = "Bear Form" } })[3].name == "Bear Form" and W.WhenForms({ { name = "2" } })[3].name
         == "form 2")
 
+    -- Gear: a line per piece, in its own slot or one chosen, always or with a key; a set first; When on each.
+    local function gear(set)
+        local spec = form({ command = "equip", equipSet = set.equipSet, when = set.when or {} })
+        for i, piece in ipairs(set.pieces or {}) do
+            spec.equip[i] = { item = { name = piece[1], item = true }, slot = piece[2] or "", key = piece[3] or "always" }
+        end
+        return spec
+    end
+    expectText("equip: a weapon swap", W.Text(gear({ pieces = { { "Arcanite Reaper", "", "shift" },
+        { "Sword", "16", "none" }, { "Shield", "17", "none" } } })), "#showtooltip Arcanite Reaper\n"
+        .. "/equip [mod:shift] Arcanite Reaper\n/equipslot [nomod] 16 Sword\n/equipslot [nomod] 17 Shield")
+    expectText("equip: a trinket, out of combat", W.Text(gear({ pieces = { { "Lucky Charm", "14" } },
+        when = { combat = "no" } })), "#showtooltip Lucky Charm\n/equipslot [nocombat] 14 Lucky Charm")
+    expectText("equip: a set, then a piece", W.Text(gear({ equipSet = "PvP", pieces = { { "Fishing Pole" } } })),
+        "#showtooltip Fishing Pole\n/equipset PvP\n/equip Fishing Pole")
+    check("equip: a set alone, no icon", W.Text(gear({ equipSet = "PvP", when = { combat = "no" } }))
+        == "/equipset [nocombat] PvP" and W.Name(gear({ equipSet = "PvP" })) == "PvP")
+    check("equip: nothing yet", W.Text(gear({})) == nil and W.Name(gear({})) == "Gear"
+        and W.Name(gear({ pieces = { { "Shield" } } })) == "Shield")
+    check("equip: Cmd only on a Mac", #W.EquipKeys({ "shift", "ctrl", "alt" }) == 5
+        and #W.EquipKeys({ "shift", "ctrl", "alt", "cmd" }) == 6)
+
     -- A mount: water first, then flying, then the one for anywhere; a key's own before them; off it on a press.
     local ground, flyer, turtle = { name = "Swift Brown Steed" }, { name = "Swift Red Gryphon" }, { name = "Sea Turtle" }
     expectText("mount: one for anywhere", text({ command = "mount", mounts = { ground = ground } }),
@@ -1383,6 +1405,34 @@ do
         check("questions: " .. label, got == want, "\n  got  " .. tostring(got) .. "\n  want " .. want)
     end
 
+    -- Gear: an equipment set when there are some, then a piece at a time until one is left empty; When.
+    local equip = W.Fresh()
+    Q.Choose(equip, "what", "equip")
+    check("questions: gear", steps(equip) == "what,equipItem1,when,finish", steps(equip))
+    equip.equip[1].item = { name = "Shield", item = true }
+    check("questions: gear, a piece picked", steps(equip) == "what,equipItem1,equipSlot1,equipKey1,equipItem2,when,"
+        .. "finish", steps(equip))
+    local first, second = ask(equip, "equipItem1"), ask(equip, "equipItem2")
+    check("questions: the first piece, the next ones may stay empty", first.kind == "spell" and first.slot == "equip"
+        and first.index == 1 and not first.optional and second.optional and second.text == "And another one?")
+    check("questions: its slot", keys(equip, "equipSlot1") == ",16,17,13,14,11,12"
+        and ask(equip, "equipSlot1").text == "Where should Shield go?" and find(equip, "equipSlot1", "17").hint
+        == "/equipslot 17")
+    check("questions: when it goes on", keys(equip, "equipKey1") == "always,shift,ctrl,alt,none"
+        and find(equip, "equipKey1", "none").hint == "[nomod]" and ask(equip, "equipKey1").chosen == "always")
+    Q.Choose(equip, "equipSlot1", "17")
+    Q.Choose(equip, "equipKey1", "shift")
+    check("questions: gear chosen", equip.equip[1].slot == "17" and equip.equip[1].key == "shift")
+    ns.sources.equipSets = function() return { "PvP" } end
+    check("questions: a set first", steps(equip):find("^what,equipSet,equipItem1") ~= nil
+        and keys(equip, "equipSet") == "PvP," and ask(equip, "equipSet").chosen == "", steps(equip))
+    Q.Choose(equip, "equipSet", "PvP")
+    equip.equip[1].item = nil
+    check("questions: with a set, no piece is a must", equip.equipSet == "PvP" and ask(equip, "equipItem1").optional)
+    Q.Choose(equip, "equipSet", "")
+    check("questions: no set", equip.equipSet == nil)
+    ns.sources.equipSets = nil
+
     -- When, then for /cast and /use what it casts otherwise.
     local timed = W.Fresh()
     check("questions: when, before anything else", steps(timed) == "what,spell,on1,only,on2,keys,when,also,finish",
@@ -1407,7 +1457,7 @@ do
     LE_EXPANSION_LEVEL_CURRENT = nil
     local first, fly = ask(mount, "mountGround"), ask(mount, "mountFly")
     check("questions: the mount for anywhere", first.kind == "spell" and first.mount == "ground" and not first.optional
-        and first.text == "Which mount should the macro call?")
+        and first.text == "Which mount should the macro summon?")
     check("questions: flying may stay empty", fly.mount == "fly" and fly.optional and ask(mount, "mountSwim").mount
         == "swim")
     local alt = ask(mount, "altCast")
@@ -1423,7 +1473,7 @@ do
     check("questions: a fresh form", steps(spec) == "what,spell,on1,only,on2,keys,when,also,finish", steps(spec))
     local what = ask(spec, "what")
     check("questions: what the macro does", what.kind == "choice" and what.text == "What should the macro do?"
-        and keys(spec, "what") == "cast,use,castsequence,castrandom,target,focus,assist,pet,mount" and what.chosen == "cast"
+        and keys(spec, "what") == "cast,use,castsequence,castrandom,target,focus,assist,pet,mount,equip" and what.chosen == "cast"
         and what.answers[1].name == "Cast a spell" and what.answers[1].hint == "/cast"
         and what.answers[3].tip ~= nil, keys(spec, "what"))
     check("questions: the spell", ask(spec, "spell").kind == "spell"

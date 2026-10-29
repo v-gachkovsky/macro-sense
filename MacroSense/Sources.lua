@@ -613,6 +613,21 @@ local function mountNames()
     return out
 end
 
+-- Your equipment sets by name, for /equipset: Retail and the classic clients with the equipment manager.
+function ns.sources.equipSets()
+    local out = {}
+    pcall(function()
+        if C_EquipmentSet and C_EquipmentSet.GetEquipmentSetIDs then
+            for _, id in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
+                local name = C_EquipmentSet.GetEquipmentSetInfo(id)
+                if name then out[#out + 1] = name end
+            end
+        end
+    end)
+    table.sort(out)
+    return out
+end
+
 -- Spells that are mounts: the warlock's and the paladin's steeds, the druid's travel forms, Ghost Wolf.
 local MOUNT_SPELLS = { 5784, 23161, 13819, 23214, 34769, 34767, 783, 33943, 40120, 1066, 2645 }
 local ItemInfoInstant = C_Item and C_Item.GetItemInfoInstant or GetItemInfoInstant

@@ -13,6 +13,11 @@ local W = ns.Wizard
 -- Whether nothing is asked after a unit: it always holds, or it is nobody, or clears the target.
 local function Last(unit) return unit == "none" or unit == "clear" or W.Always(unit) end
 
+-- Your equipment sets by name (none in Classic Era, or without the game).
+local function EquipSets()
+    return ns.sources and ns.sources.equipSets and ns.sources.equipSets() or {}
+end
+
 -- Whether a spell has ranks to pick from: two learned at least (Classic; Retail has none).
 local function Ranked(action) return action ~= nil and action.ranks ~= nil and #action.ranks > 1 end
 
@@ -35,6 +40,21 @@ end
 -- no units. `keys`: the keys of this client (Cmd on a Mac).
 function Questions.Steps(spec, keys)
     local command = spec.command
+    -- Gear: an equipment set when you have them, then a piece at a time (its slot and key once it is picked), up to
+    -- one left empty.
+    if command == "equip" then
+        local out = { "what" }
+        if #EquipSets() > 0 then out[#out + 1] = "equipSet" end
+        for i = 1, W.EQUIP do
+            out[#out + 1] = "equipItem" .. i
+            if not spec.equip[i].item then break end
+            out[#out + 1] = "equipSlot" .. i
+            out[#out + 1] = "equipKey" .. i
+        end
+        out[#out + 1] = "when"
+        out[#out + 1] = "finish"
+        return out
+    end
     if command == "mount" then
         local out = { "what" }
         for _, p in ipairs(W.MountPlaces(LE_EXPANSION_LEVEL_CURRENT)) do
@@ -264,8 +284,10 @@ local function What()
         { key = "pet", name = L["Command your pet"], hint = "/petattack",
             tip = L["Tell your pet to attack, follow you, stay..."] },
         { key = "mount", name = L["Ride a mount"], hint = "/cast",
-            tip = L["One button for your mounts: a flying one where you can fly, another elsewhere, one for water. "
-                .. "On a mount, it gets you off."] },
+            tip = L["One button for all your mounts: a flying one where you can fly, a ground one elsewhere, a "
+                .. "swimming one in water. Press it again to get off."] },
+        { key = "equip", name = L["Put on gear"], hint = "/equip",
+            tip = L["Swap weapons, trinkets or rings, or put on an equipment set: always, or with a key held."] },
     }
 end
 
@@ -296,12 +318,12 @@ end
 -- The questions of a mount macro: which mount for each place.
 local function MountAsk(step)
     if step == "mountFly" then
-        return L["And where you can fly?"], L["Pick a flying mount, or leave it empty for the same one."]
+        return L["Which mount where you can fly?"], L["Pick a flying mount, or leave it empty to use the same one."]
     elseif step == "mountSwim" then
-        return L["And in water?"], L["Pick one that is fast in water, or leave it empty for the others."]
+        return L["Which mount in water?"], L["Pick one that's fast in water, or leave it empty to use the others."]
     end
-    return L["Which mount should the macro call?"],
-        L["The one for anywhere. The next questions ask about places to fly, and water."]
+    return L["Which mount should the macro summon?"],
+        L["This one works anywhere. Next you can pick others for flying and for water."]
 end
 
 -- What `step` asks, in the chosen language: { kind = "choice", "spell", "list", "reset", "byName", "keys", "also"
@@ -320,18 +342,48 @@ function Questions.Ask(spec, step, keys)
         local answers = {}
         for _, a in ipairs(W.offMount) do answers[#answers + 1] = { key = a.key, name = L[a.name] } end
         answers[1].hint, answers[2].hint = "/dismount [mounted,noflying]", "/dismount [mounted]"
-        return { kind = "choice", text = L["And when you press it on a mount?"], answers = answers,
+        return { kind = "choice", text = L["What should a press do while you're mounted?"], answers = answers,
             chosen = spec.offMount }
+    elseif step == "equipSet" then
+        local answers = {}
+        for _, name in ipairs(EquipSets()) do answers[#answers + 1] = { key = name, name = name, hint = "/equipset" } end
+        answers[#answers + 1] = { key = "", name = L["No set"] }
+        return { kind = "choice", text = L["Put on one of your equipment sets?"],
+            hint = L["These are your sets from the game's equipment manager. You can add single items after this."],
+            answers = answers, chosen = spec.equipSet or "" }
+    elseif step:match("^equipItem%d$") then
+        local n = tonumber(step:sub(-1))
+        return { kind = "spell", slot = "equip", index = n, optional = n > 1 or spec.equipSet ~= nil,
+            text = n == 1 and L["Which item should the macro put on?"] or L["And another one?"],
+            hint = n == 1 and L["Start typing its name, or pick it from the list."] or L["Leave it empty if that's all."] }
+    elseif step:match("^equipSlot%d$") then
+        local piece = spec.equip[tonumber(step:sub(-1))]
+        local answers = {}
+        for _, slot in ipairs(W.equipSlots) do
+            answers[#answers + 1] = { key = slot.key, name = L[slot.name],
+                hint = slot.key ~= "" and "/equipslot " .. slot.key or "/equip" }
+        end
+        return { kind = "choice", text = string.format(L["Where should %s go?"], piece.item.name),
+            hint = L["\"Default slot\" lets the game choose. For trinkets, rings and weapons you can pick the slot yourself."],
+            answers = answers, chosen = piece.slot }
+    elseif step:match("^equipKey%d$") then
+        local piece = spec.equip[tonumber(step:sub(-1))]
+        local answers = {}
+        for _, k in ipairs(W.EquipKeys(keys)) do
+            answers[#answers + 1] = { key = k.key, name = L[k.name], hint = k.cond and "[" .. k.cond .. "]" or nil }
+        end
+        return { kind = "choice", text = string.format(L["When should the macro put on %s?"], piece.item.name),
+            answers = answers, chosen = piece.key }
     elseif step == "when" then
         return { kind = "when", text = L["Should the macro work only at certain times?"],
-            hint = L["Leave these as they are for always. At other times the macro does nothing, unless the next "
-                .. "question gives it something."] }
+            hint = L["Leave everything as is to make it always work. The rest of the time the macro does nothing, "
+                .. "unless you choose something for it next."] }
     elseif step == "otherwise" then
         return { kind = "spell", slot = "otherwise", optional = true,
             text = L["And what should it cast the rest of the time?"], hint = L["Leave it empty to do nothing then."] }
     elseif rest == "Cast" and spec.command == "mount" then
         return { kind = "spell", key = key, context = context, optional = true, text = L["Which mount instead?"],
-            hint = L["A ground mount where you could fly, say. Leave it empty for none."] }
+            hint = L["For example, a ground mount in a flying zone. Leave it empty to skip this key."] }
     elseif step == "what" then
         return { kind = "choice", text = L["What should the macro do?"], answers = What(), chosen = spec.command }
     elseif step == "spell" then
@@ -398,6 +450,12 @@ function Questions.Choose(spec, step, answer)
     local i = tonumber(step:match("^on(%d)$") or rest and rest:match("^On(%d)$"))
     if step == "offMount" then
         spec.offMount = answer
+    elseif step == "equipSet" then
+        spec.equipSet = answer ~= "" and answer or nil
+    elseif step:match("^equipSlot%d$") then
+        spec.equip[tonumber(step:sub(-1))].slot = answer
+    elseif step:match("^equipKey%d$") then
+        spec.equip[tonumber(step:sub(-1))].key = answer
     elseif step == "what" then
         W.Switch(spec, answer)
         if answer == "pet" and spec.pet == "attack" then spec.only = "enemies" end

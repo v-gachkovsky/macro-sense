@@ -71,6 +71,8 @@ questions; the wizard opens as you left it.
 - **Ride a mount**: which mount, then one where you can fly and one for water (each may stay empty), what a press
   does on a mount (get off, but not in the air; get off anywhere; nothing), and a mount of their own for the keys
   held.
+- **Put on gear**: which item, the slot it goes to (the default one, or a trinket, ring or hand slot) and when (always,
+  or only with a key held), then another one, up to four; first an equipment set, when you have some.
 - **Should the macro work only at certain times?** In or out of combat, in stealth, in a group, with your pet out,
   in a form; then, for a spell or item, what it casts the rest of the time.
 - **Would you like to add anything else?** The same as the form's Also.
@@ -106,7 +108,10 @@ is set.
   defensive, aggressive, dismiss), and with each key held. **Mount**: a mount for anywhere, one where you can fly
   (from TBC on) and one for water, picked from your mounts only, and **On a mount**: what a press does there
   (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`,
-  `/dismount [mounted,noflying]`). A key held calls another mount (a ground one where you could fly).
+  `/dismount [mounted,noflying]`). A key held calls another mount (a ground one where you could fly). **Put on
+  gear**: up to four items from your bags or what you wear, each with its slot (`/equipslot 14` for the second
+  trinket) and when it goes on (always, or with Shift, Ctrl or Alt held, or with no key), and an equipment set
+  (`/equipset PvP`) where the game has them.
 - **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words in capitals (`FB`),
   and your spells and usable items come up; any other name works too. A spell with several learned ranks
   (Classic) then lists them: the spell itself first (the highest rank, also after you learn a new one), then

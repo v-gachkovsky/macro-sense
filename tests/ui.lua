@@ -2658,12 +2658,36 @@ do
     check("wizard: no mounts at all: no spells either", not C("mountFly").list:IsShown(), offered(C("mountFly")))
     TypeIn(C("mountFly"), "Swift Red Gryphon")
     Fire(C("mountFly"), "OnEnterPressed")
-    pick(C("offMount"), "Nothing")
+    pick(C("offMount"), "Do nothing")
     check("wizard: nothing on a mount", shown() == "#showtooltip\n/cast [mod:shift] Swift Brown Steed; [flyable] "
         .. "Swift Red Gryphon; Swift Brown Steed", shown())
     Fire(C("shift"), "OnClick")
     C_MountJournal = journal
     pick(C("command"), "/cast")
+    -- Gear: only gear in the list; a slot and a key per piece; a set when there are some.
+    pick(C("command"), "Put on gear")
+    check("wizard: gear, no units or keys", not C("on1").parentFrame:IsShown() and not C("shift").parentFrame:IsShown()
+        and C("equip1"):IsShown() and not C("equipSet").parentFrame:IsShown() and not C("otherwise"):IsShown(), shown())
+    TypeIn(C("equip1"), "")
+    Fire(C("equip1"), "OnEditFocusGained")
+    check("wizard: only gear offered", offered(C("equip1")) == "Fire Ring, Lucky Charm", offered(C("equip1")))
+    TypeIn(C("equip1"), "Fire Ring")
+    Fire(C("equip1"), "OnEnterPressed")
+    pick(C("equipSlot1"), "Ring 2")
+    pick(C("equipKey1"), "With Shift held")
+    check("wizard: a ring in its slot with Shift", shown() == "#showtooltip Fire Ring\n/equipslot [mod:shift] 12 Fire Ring",
+        shown())
+    C_EquipmentSet = { GetEquipmentSetIDs = function() return { 1 } end, GetEquipmentSetInfo = function() return "PvP" end }
+    pick(C("command"), "Put on gear")
+    pick(C("equipSet"), "PvP")
+    check("wizard: an equipment set", C("equipSet").parentFrame:IsShown() and shown() == "#showtooltip Fire Ring\n"
+        .. "/equipset PvP\n/equipslot [mod:shift] 12 Fire Ring", shown())
+    pick(C("equipSet"), "No set")
+    C_EquipmentSet = nil
+    TypeIn(C("equip1"), "")
+    Fire(C("equip1"), "OnEnterPressed")
+    pick(C("command"), "/cast")
+    pick(C("on2"), "As usual")
     check("wizard: and back to /cast", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
         and C("on1").parentFrame:IsShown() and C("dismount"):IsShown() and C("shiftCast").placeholder.text == "same spell", shown())
 
@@ -2772,7 +2796,7 @@ do
         and question() == "What should the macro do?" and not C("back"):IsEnabled() and C("back").shown
         and C("next").shown and not C("create").shown and not C("cancel").shown, question())
     check("steps: what the macro does", answers() == "Cast a spell, Use an item, Several spells in turn, One of "
-        .. "several at random, Target someone, Set your focus, Take someone's target, Command your pet, Ride a mount"
+        .. "several at random, Target someone, Set your focus, Take someone's target, Command your pet, Ride a mount, Put on gear"
         and chosen() == "Cast a spell" and C("answer1").hint.text == "/cast", answers())
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
@@ -2781,18 +2805,35 @@ do
     check("steps: an answer's tooltip says what it is", tip[1] == "Several spells in turn"
         and tip[2]:find("^Each press casts the next spell") ~= nil, tip[2])
 
+    -- Gear: the first piece is a must, then where it goes and when; another one may stay empty.
+    Fire(answer("Put on gear"), "OnClick")
+    check("steps: gear first", question() == "Which item should the macro put on?" and not C("next"):IsEnabled()
+        and C("stepSpell").placeholder.text == "type an item", question())
+    TypeIn(C("stepSpell"), "Lucky Charm")
+    Fire(C("next"), "OnClick")
+    check("steps: where it goes", question() == "Where should Lucky Charm go?" and chosen() == "Default slot", question())
+    Fire(answer("Trinket 2"), "OnClick")
+    Fire(answer("Without a key"), "OnClick")
+    check("steps: another piece may stay empty", question() == "And another one?" and C("next"):IsEnabled()
+        and C("stepSpell").placeholder.text == "none" and shown() == "#showtooltip Lucky Charm\n"
+        .. "/equipslot [nomod] 14 Lucky Charm", shown())
+    Fire(C("next"), "OnClick")
+    check("steps: then When", question() == "Should the macro work only at certain times?", question())
+    for _ = 1, 5 do Fire(C("back"), "OnClick") end
+    check("steps: back to the first again", question() == "What should the macro do?", question())
+
     -- A mount: the one for anywhere is a must, the others may stay empty; then what a press on a mount does.
     Fire(answer("Ride a mount"), "OnClick")
-    check("steps: a mount first", question() == "Which mount should the macro call?" and not C("next"):IsEnabled()
+    check("steps: a mount first", question() == "Which mount should the macro summon?" and not C("next"):IsEnabled()
         and C("stepSpell").placeholder.text == "type a mount", question())
     TypeIn(C("stepSpell"), "Swift Brown Steed")
     Fire(C("next"), "OnClick")
-    check("steps: a mount typed goes on", question() == "And where you can fly?" and C("next"):IsEnabled()
+    check("steps: a mount typed goes on", question() == "Which mount where you can fly?" and C("next"):IsEnabled()
         and C("stepSpell").text == "" and C("stepSpell").placeholder.text == "none", question())
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
-    check("steps: on a mount", question() == "And when you press it on a mount?" and chosen()
-        == "Get off, not in the air" and shown() == "#showtooltip Swift Brown Steed\n/cast [nomounted] Swift Brown Steed\n"
+    check("steps: on a mount", question() == "What should a press do while you're mounted?" and chosen()
+        == "Dismount, but not while flying" and shown() == "#showtooltip Swift Brown Steed\n/cast [nomounted] Swift Brown Steed\n"
         .. "/dismount [mounted,noflying]", shown())
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
@@ -4196,7 +4237,8 @@ do
     for _, w in ipairs(W.whens) do
         for _, item in ipairs(w.items or {}) do whenItems[#whenItems + 1] = item end
     end
-    for _, list in ipairs({ W.commands, W.PetActions(99), W.channels, W.units, W.mountPlaces, W.offMount, whenItems }) do
+    for _, list in ipairs({ W.commands, W.PetActions(99), W.channels, W.units, W.mountPlaces, W.offMount, whenItems,
+        W.equipSlots, W.equipKeys }) do
         for _, item in ipairs(list) do add(item.name) end
     end
     for _, command in ipairs(W.commands) do
