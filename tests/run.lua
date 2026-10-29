@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -1238,6 +1238,11 @@ do
         list = { corruption } })) == "#showtooltip\n/castrandom [@mouseover,exists,nodead][] Corruption")
     for label, body in pairs(made) do
         check("wizard " .. label .. ": no issues", body and issues(body) == "", body and issues(body))
+        -- Back in the form, the same macro: nothing written otherwise.
+        local spec, lost = W.Read(body)
+        local again = spec and W.Text(spec)
+        check("wizard " .. label .. ": read back", again == body and #lost == 0,
+            "\n  got  " .. tostring(again) .. "\n  want " .. body .. "\n  lost " .. table.concat(lost or {}, " | "))
     end
     -- Your group's tank and healer: MacroSense's own @tank and @heal, checked like any unit; the pet attacks neither.
     local md = { name = "Misdirection" }
@@ -1817,7 +1822,57 @@ do
     ns.SetLanguage("en")
     for _, body in ipairs(made) do
         check("questions: " .. body:gsub("\n", " | ") .. ": no issues", issues(body) == "", issues(body))
+        local read, lost = W.Read(body)
+        local again = read and W.Text(read)
+        check("questions: " .. body:gsub("\n", " | ") .. ": read back", again == body and #lost == 0,
+            "\n  got  " .. tostring(again) .. "\n  lost " .. table.concat(lost or {}, " | "))
     end
+end
+
+-- The wizard reads a macro back: the form's answers, and the lines it would write otherwise or leave out.
+do
+    local W = ns.Wizard
+    local function read(label, body, want, lost)
+        local spec, gone = W.Read(body)
+        local got = spec and W.Text(spec)
+        check("wizard read: " .. label, got == want and table.concat(gone or {}, " | ") == (lost or ""),
+            "\n  got  " .. tostring(got) .. "\n  want " .. tostring(want) .. "\n  lost " .. table.concat(gone or {}, " | "))
+        return spec
+    end
+    local spec = read("as typed, spaces and target= too",
+        "/cast [target=mouseover, help, nodead] [] Flash Heal",
+        "#showtooltip\n/cast [@mouseover,help,nodead][] Flash Heal")
+    check("wizard read: the form's answers", spec.command == "cast" and spec.action.name == "Flash Heal"
+        and spec.only == "friends" and spec.alive and table.concat(spec.on, ",") == "mouseover,default,none")
+    read("a line the wizard has no place for", "#showtooltip\n/run print(1)\n/cast Fireball",
+        "#showtooltip\n/cast Fireball", "/run print(1)")
+    read("a unit without a check: the wizard checks it", "/cast [@focus] Polymorph",
+        "#showtooltip\n/cast [@focus,exists] Polymorph", "/cast [@focus] Polymorph")
+    read("a second cast line", "/cast Fireball\n/cast Frostbolt", "#showtooltip\n/cast Fireball", "/cast Frostbolt")
+    check("wizard read: nothing it makes", W.Read("/say hi") == nil and W.Read("") == nil
+        and W.Read("/run print(1)") == nil)
+    spec = read("a sequence", "/castsequence [@focus,harm,nodead][] reset=12/target Corruption, Immolate(Rank 2)",
+        "#showtooltip\n/castsequence [@focus,harm,nodead][] reset=12/target Corruption, Immolate(Rank 2)")
+    check("wizard read: the sequence's answers", spec.reset.timed and spec.reset.seconds == 12 and spec.reset.target
+        and spec.list[2].name == "Immolate" and spec.list[2].rank == "Rank 2")
+    read("random, by its other name", "/userandom Toy A, Toy B", "#showtooltip\n/castrandom Toy A, Toy B")
+    spec = read("the focus, with a key that clears it",
+        "/clearfocus [mod:alt]\n/stopmacro [mod:alt]\n/focus [@mouseover,exists]",
+        "/clearfocus [mod:alt]\n/stopmacro [mod:alt]\n/focus [@mouseover,exists]")
+    check("wizard read: the key clears", spec.command == "focus" and spec.keys.alt.on[1] == "clear")
+    read("a name to target", "/target [combat] Hogger", "/target [combat] Hogger")
+    read("gear", "/equipset PvP\n/equipslot [mod:shift] 14 Charm\n/equip Shield",
+        "#showtooltip Charm\n/equipset PvP\n/equipslot [mod:shift] 14 Charm\n/equip Shield")
+    spec = read("a mount", "/cast [nomounted,swimming] Turtle; [nomounted,flyable] Drake; [nomounted] Horse\n"
+        .. "/dismount [mounted,noflying]",
+        "#showtooltip [swimming] Turtle; [flyable] Drake; Horse\n/cast [nomounted,swimming] Turtle; "
+        .. "[nomounted,flyable] Drake; [nomounted] Horse\n/dismount [mounted,noflying]")
+    check("wizard read: the mounts", spec.command == "mount" and spec.mounts.fly.name == "Drake"
+        and spec.offMount == "safe")
+    read("the pet", "/petattack", "/petattack")
+    read("trinkets and the rest", "#showtooltip\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n"
+        .. "/s Go!", "#showtooltip Mortal Strike\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n/say Go!")
+    read("trinkets alone", "/use 13\n/use 14", "#showtooltip\n/use 13\n/use 14")
 end
 
 -- Every scheme colors every role and UI part.

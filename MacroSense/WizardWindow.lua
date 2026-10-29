@@ -34,6 +34,7 @@ local suggested -- the name the form put in the name box, until someone types an
 local keys -- the keys a macro checks here: Cmd only on a Mac
 local stepsShown -- the questions are shown, not the form
 local step, asked -- the question shown (Questions.Steps) and what it asks (Questions.Ask)
+local editing -- a macro of the editor in the form (WizardWindow.Edit): what takes the new text, else nil
 local Arrange, Answered, Go
 
 local function Letters(s)
@@ -848,7 +849,7 @@ local function Build()
     end)
     local titleText = ns.Text(title, 14)
     titleText:SetPoint("LEFT", 12, 0)
-    titleText:SetText(L["New macro (Wizard)"])
+    controls.title = titleText
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
     -- The form or its questions: the answers and the name typed stay.
@@ -880,7 +881,7 @@ local function Build()
     Text(form, L["Name"], X + 144, -55)
     controls.name = ns.Input(form, 140, 16)
     controls.name:SetPoint("TOPLEFT", X + 186, -50)
-    Text(form, L["Tab"], X + 338, -55)
+    controls.tabLabel = Text(form, L["Tab"], X + 338, -55)
     Choice(form, "tab", 110, { { key = "general", name = "General" }, { key = "character", name = "Character" } },
         function() return scope end, function(key) scope = key end):SetPoint("TOPLEFT", X + 392, -51)
 
@@ -1111,6 +1112,28 @@ local function Build()
     counter = ns.Text(frame, 11, "dim")
     counter:SetPoint("BOTTOMLEFT", PAD, PAD + 5)
     controls.counter = counter
+    -- A macro opened from the editor: its lines the wizard writes otherwise or leaves out, in the tooltip.
+    local changed = CreateFrame("Frame", nil, frame)
+    changed:SetPoint("BOTTOMLEFT", PAD + 80, PAD + 1)
+    changed:SetSize(260, 20)
+    changed:EnableMouse(true)
+    changed.text = ns.Text(changed, 11, "warning")
+    changed.text:SetPoint("LEFT")
+    changed:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Lines that will change"], 1, 1, 1)
+        local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
+        GameTooltip:AddLine(string.format(L["The wizard writes these lines of your macro its own way, or can't keep "
+            .. "them. You get the text shown above. Your macro doesn't change until you put that text in the editor. "
+            .. "Even then, %s undoes it."], undo), 0.8, 0.8, 0.8, true)
+        for _, line in ipairs(self.lines or {}) do
+            GameTooltip:AddLine((line:gsub("|", "||")), 1, 0.82, 0, true)
+        end
+        GameTooltip:Show()
+    end)
+    changed:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    changed:Hide()
+    controls.changed = changed
     createBtn = ns.Button(frame, L["Create macro"], 110, function() WizardWindow.Create() end, true)
     createBtn:SetPoint("BOTTOMRIGHT", -PAD, PAD)
     controls.create = createBtn
@@ -1124,21 +1147,82 @@ local function Build()
     controls.back:SetPoint("RIGHT", createBtn, "LEFT", -6, 0)
 end
 
--- The macro goes into the tab chosen, under the name in the box (a free one: "Fear 2" when "Fear" is taken).
+-- The macro goes into the tab chosen, under the name in the box (a free one: "Fear 2" when "Fear" is taken). A
+-- macro opened from the editor goes back into it, under the name in the box.
 function WizardWindow.Create()
     local text = W.Text(spec)
     if not text then return end
     local name = strtrim(NameBox():GetText())
+    if editing then
+        local put = editing
+        frame:Hide()
+        return put(text, name)
+    end
     if name == "" then name = W.Name(spec) or L["Macro"] end
     ns.Window.CreateFromWizard(name, text, scope)
 end
 
+-- The spells and items read from a macro's text, as the form's lists have them: the icon, the ranks learned,
+-- what is in a slot, whether it goes to you only.
+local function Known(action)
+    if not action then return end
+    for _, c in ipairs(Candidates()) do
+        if c.name:lower() == action.name:lower() and (c.item or false) == (action.item or false) then
+            action.ranks, action.label, action.equipLoc = c.ranks, c.label, c.equipLoc
+            action.selfOnly = ns.sources.selfOnly(c.label or c.name, c.item) or nil
+            return
+        end
+    end
+end
+
+local function KnowAll()
+    for _, action in ipairs({ spec.action, spec.otherwise, spec.mounts.ground, spec.mounts.fly, spec.mounts.swim }) do
+        Known(action)
+    end
+    for i = 1, W.LIST do Known(spec.list[i]) end
+    for _, k in pairs(spec.keys) do Known(k.action) end
+    for _, piece in ipairs(spec.equip) do Known(piece.item) end
+end
+
+-- What a new macro or one from the editor shows: the title, the button at the end, the tab (an edited macro stays
+-- where it is), the lines that will change.
+local function ShowPurpose(lost)
+    controls.title:SetText(editing and L["Change macro (Wizard)"] or L["New macro (Wizard)"])
+    createBtn.label:SetText(editing and L["Put in editor"] or L["Create macro"])
+    controls.tab:SetShown(not editing)
+    controls.tabLabel:SetShown(not editing)
+    controls.stepGeneral:SetShown(not editing)
+    controls.stepCharacter:SetShown(not editing)
+    controls.changed.lines = lost
+    controls.changed.text:SetText(lost and #lost > 0 and ns.Plural(#lost, "%d line will change", "%d lines will change")
+        or "")
+    controls.changed:SetShown(lost ~= nil and #lost > 0)
+end
+
 -- A fresh form, for a macro in `tab`: the questions from the first, or the form.
 function WizardWindow.Open(tab)
-    spec, scope, suggested = W.Fresh(), tab or "general", nil -- before the form: its controls read them
+    spec, scope, suggested, editing = W.Fresh(), tab or "general", nil, nil -- before the form: its controls read them
     if not frame then Build() end
     controls.name:SetText("")
     controls.stepName:SetText("")
+    WizardWindow.Show()
+end
+
+-- The macro of the editor in the form, read from its `text` (WizardRead.lua); `put(text, name)` takes what the
+-- form makes of it. false when the wizard can't make that macro.
+function WizardWindow.Edit(text, name, put)
+    local read, lost = W.Read(text)
+    if not read then return false end
+    spec, suggested, editing = read, nil, put
+    if not frame then Build() end
+    KnowAll()
+    controls.name:SetText(name or "")
+    controls.stepName:SetText(name or "")
+    WizardWindow.Show(lost)
+    return true
+end
+
+function WizardWindow.Show(lost)
     -- The editor's font, when it is one of ours (not one from another addon).
     local font = ns.FindByKey(ns.fonts, ns.db.font)
     preview:SetFont(font and font.path or ns.UIFont(), 12, "")
@@ -1149,6 +1233,7 @@ function WizardWindow.Open(tab)
         controls["stepTrinket" .. (slot - 12)]:SetLabel(label)
     end
     ShowMode()
+    ShowPurpose(lost)
     Update()
     frame:Show()
     frame:Raise()
@@ -1159,6 +1244,9 @@ function WizardWindow.Close()
 end
 
 function WizardWindow.IsShown() return frame ~= nil and frame:IsShown() end
+
+-- Whether the form has a macro of the editor (WizardWindow.Edit), not a new one.
+function WizardWindow.IsEditing() return WizardWindow.IsShown() and editing ~= nil end
 
 function WizardWindow.Toggle(tab)
     if WizardWindow.IsShown() then return WizardWindow.Close() end

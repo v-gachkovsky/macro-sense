@@ -4078,6 +4078,71 @@ do
     NextFrame()
 end
 
+-- Open in Wizard: the macro shown, in the wizard's form; what the form makes comes back into the editor as a change.
+do
+    local function button(label)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == label then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    local C = ns.WizardWindow.Control
+    local function shown() return ns.Highlight.Strip(C("preview").text) end
+    local function tooltip(owner)
+        local tip = {}
+        GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+        Fire(owner, "OnEnter")
+        GameTooltip.AddLine = nil
+        return table.concat(tip, " | ")
+    end
+    local body = "/cast [@mouseover,harm,nodead][] Fireball\n/run print(1)"
+    CreateMacro("Wiz Edit", 1, body, false)
+    CreateMacro("Wiz Chat", 1, "/say hi", false)
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.Open(GetMacroIndexByName("Wiz Chat"))
+    NextFrame()
+    local open = button("Wizard")
+    check("open in wizard: not for a macro the wizard can't make", open and not open:IsEnabled()
+        and tooltip(open):find("can't read this macro", 1, true) ~= nil)
+    ns.Window.Open(GetMacroIndexByName("Wiz Edit"))
+    NextFrame()
+    check("open in wizard: a macro it can make", open:IsEnabled()
+        and tooltip(open):find("1 line will come out different or be left out.", 1, true) ~= nil, tooltip(open))
+    ns.db.wizardForm = true
+    Fire(open, "OnClick")
+    check("open in wizard: the form, with the macro's answers", MacroSenseWizard:IsShown()
+        and C("title").text == "Change macro (Wizard)" and C("create").label.text == "Put in editor"
+        and C("cast").text == "Fireball" and C("on1").label.text == "Mouseover" and C("only").label.text == "Enemies"
+        and C("name").text == "Wiz Edit" and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball",
+        shown())
+    check("open in wizard: it stays in its tab", not C("tab").shown and not C("tabLabel").shown)
+    check("open in wizard: the line it leaves out", C("changed").shown and C("changed").text.text == "1 line will change"
+        and tooltip(C("changed")):find("/run print(1)", 1, true) ~= nil, tooltip(C("changed")))
+    Fire(C("on1"), "OnClick")
+    Fire(menuItem("Focus"), "OnClick")
+    Fire(C("create"), "OnClick")
+    check("open in wizard: the new text in the editor, not saved yet", not MacroSenseWizard:IsShown()
+        and raw() == "#showtooltip\n/cast [@focus,harm,nodead][] Fireball"
+        and select(3, GetMacroInfo(GetMacroIndexByName("Wiz Edit"))) == body, raw())
+    ns.Window.Revert()
+    Fire(open, "OnClick")
+    ns.Window.Open(GetMacroIndexByName("Wiz Chat"))
+    check("open in wizard: another macro shown closes it", not MacroSenseWizard:IsShown())
+    ns.WizardWindow.Open("general")
+    check("open in wizard: a new macro is a new one again", C("title").text == "New macro (Wizard)"
+        and C("create").label.text == "Create macro" and C("tab").shown and not C("changed").shown
+        and C("name").text == "")
+    ns.WizardWindow.Close()
+    DeleteMacro(GetMacroIndexByName("Wiz Edit"))
+    DeleteMacro(GetMacroIndexByName("Wiz Chat"))
+    Send("UPDATE_MACROS")
+end
+
 -- In combat the game doesn't let macros change: Save and Delete say so and leave the macro as it is.
 do
     CreateMacro("Fight", 1, "/cast Fear", false)

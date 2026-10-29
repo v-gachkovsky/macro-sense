@@ -82,6 +82,15 @@ questions; the wizard opens as you left it.
 The macro shows at the bottom from the first answer. A click on an answer goes on; **< Back** goes back with
 the answers kept, and **Next >** keeps the one chosen.
 
+### A macro you already have
+
+**Wizard**, next to History above the text, opens the macro shown in the wizard, with its answers filled in: the
+spell, the units in order, the keys, the When row, the mounts, the gear. Change what you like with a few clicks,
+then **Put in editor**. The new text goes into the editor, and Save keeps it (Ctrl+Z, Cmd+Z on a Mac, takes it
+back). It works for macros the wizard could have made, also typed by hand or taken from a guide. When the wizard
+writes some lines its own way or has no place for them (`/run`, a second `/cast`), it says so before you open it,
+and the window shows those lines under **lines will change**.
+
 ### Your group's tank and healer: @tank and @heal
 
 `/cast [@tank,help,nodead][@pet,help,nodead] Misdirection` goes to your group's tank: the one with the tank role,
@@ -423,6 +432,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Sources.lua`: live slash commands, spellbook and items (Retail and Classic APIs).
 - `MacroSense/Shortcuts.lua`: macOS shortcut check for `[mod:cmd]`.
 - `MacroSense/Wizard.lua`: the wizard's form as macro text. Pure Lua.
+- `MacroSense/WizardRead.lua`: a macro back in the wizard's form, and the lines it would write otherwise. Pure Lua.
 - `MacroSense/Questions.lua`: the wizard's form as questions, one at a time. Pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.

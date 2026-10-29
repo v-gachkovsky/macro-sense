@@ -19,7 +19,7 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
-local shortenBtn, historyBtn, search, noMatch, barsCheck, altHint
+local shortenBtn, historyBtn, wizardEditBtn, search, noMatch, barsCheck, altHint
 local notOnBars = false -- the list shows only the macros on no action bar
 local expanded = {} -- the other characters whose macros the Character tab shows, by key
 local PLUS, MINUS = "Interface\\Buttons\\UI-PlusButton-Up", "Interface\\Buttons\\UI-MinusButton-Up"
@@ -169,6 +169,7 @@ local function UpdateStatus()
     local dirty = IsDirty()
     UpdateShorten(raw)
     historyBtn:SetEnabled(#Versions() > 0)
+    wizardEditBtn:SetEnabled(ns.Wizard.Read(raw) ~= nil)
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
     revertBtn:SetEnabled(dirty and state.index ~= nil)
     -- Mac: [mod:cmd] on a key macOS uses with Cmd (the macro's keys are the saved macro's).
@@ -686,6 +687,8 @@ end
 -- Editing
 ------------------------------------------------------------------------
 local function Load(index)
+    -- The wizard had the macro shown before: what it makes is not for this one.
+    if ns.WizardWindow.IsEditing() then ns.WizardWindow.Close() end
     if index then
         local name, _, body = GetMacroInfo(index)
         local text = ns.Roles.Text(index > MAX_GENERAL and "character" or "general", name, body or "")
@@ -1315,6 +1318,15 @@ end
 ------------------------------------------------------------------------
 -- Wizard: a new macro from a form, in a window of its own
 ------------------------------------------------------------------------
+-- The macro shown, in the wizard's form: what the form makes of it comes back into the editor as a change, under
+-- the name chosen there (Save keeps it, undo takes it back, as with History).
+function Window.OpenInWizard()
+    ns.WizardWindow.Edit(code:GetRaw(), nameBox:GetText(), function(text, name)
+        if name ~= "" then nameBox:SetText(name) end
+        Window.Restore(text)
+    end)
+end
+
 -- A name no macro has, cut to fit (see FreeName).
 function Window.FreeName(name) return FreeName(FirstLetters(name, MAX_NAME)) end
 
@@ -1722,11 +1734,35 @@ local function Build()
     end)
     historyBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Open in Wizard, left of History: one word, as its neighbours, so the row fits the narrowest window.
+    wizardEditBtn = ns.Button(main, L["Wizard"], 80, function() Window.OpenInWizard() end)
+    wizardEditBtn:SetPoint("RIGHT", historyBtn, "LEFT", -8, 0)
+    wizardEditBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:AddLine(L["Open in Wizard"], 1, 1, 1)
+        local read, lost = ns.Wizard.Read(code:GetRaw())
+        if not read then
+            GameTooltip:AddLine(L["The wizard can't read this macro. It makes macros that cast a spell, use an item, "
+                .. "target someone, command your pet, summon a mount or put on gear."], 0.8, 0.8, 0.8, true)
+        else
+            GameTooltip:AddLine(L["Opens this macro in the wizard, so you can change it with a few clicks. The new "
+                .. "text comes back here, and Save keeps it."], 0.8, 0.8, 0.8, true)
+            if #lost > 0 then
+                GameTooltip:AddLine(ns.Plural(#lost, "%d line will come out different or be left out.",
+                    "%d lines will come out different or be left out."), 1, 0.82, 0, true)
+            end
+        end
+        GameTooltip:Show()
+    end)
+    wizardEditBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     local nameHint = ns.Text(main, 11, "dim")
     nameHint:SetPoint("LEFT", nameBox, "RIGHT", 10, 0)
     nameHint:SetText(L["click or drag the icon"])
-    nameHint:SetPoint("RIGHT", historyBtn, "LEFT", -12, 0)
+    nameHint:SetPoint("RIGHT", wizardEditBtn, "LEFT", -12, 0)
     nameHint:SetWordWrap(false)
+    -- No room for it in a narrow window.
+    main:HookScript("OnSizeChanged", function(_, w) nameHint:SetShown(w >= 680) end)
 
     -- Status bar: position, length, Save / Revert.
     local bar = CreateFrame("Frame", nil, main, "BackdropTemplate")
