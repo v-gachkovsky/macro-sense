@@ -33,6 +33,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A macro with `@tank` or `@heal` open in the editor could turn into the names written into the game's macro
+  (`@none` with no tank) when your group changed, and saving it then lost the tags.
 - The editor's tooltips (a line's explanation, a word's meaning) no longer show through the wizard or the questions window above it.
 
 ## [0.8.1] - 2026-10-29

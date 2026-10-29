@@ -5472,6 +5472,20 @@ do
     check("roles: the game's macro has the name, the editor @tank", body("Tank Heal") == named("Bob") and kept
         and kept.text == tagged and kept.written == named("Bob") and raw() == tagged, body("Tank Heal"))
 
+    -- The game tells UPDATE_MACROS while EditMacro runs: the editor still shows @tank, and no version is kept.
+    local editMacro = EditMacro
+    EditMacro = function(...)
+        local index = editMacro(...)
+        Send("UPDATE_MACROS")
+        return index
+    end
+    regroup({ ANN, DEE })
+    check("roles: told at once that the macro changed, the editor keeps @tank", body("Tank Heal") == named("none")
+        and raw() == tagged and not saveBtn:IsEnabled()
+        and #ns.History.Versions(ns.History.Store("general"), "Tank Heal", named("Bob")) == 0, raw())
+    regroup({ BOB, ANN, DEE })
+    EditMacro = editMacro
+
     local seen = #onScreen
     regroup({ CARL, ANN, DEE })
     local said = onScreen[seen + 1]
