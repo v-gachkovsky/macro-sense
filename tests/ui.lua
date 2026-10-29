@@ -285,7 +285,14 @@ function PickupMacro(index) picked = index end
 function PlaceAction(slot)
     if picked then actions[slot] = { "macro", 0, nil, text = (GetMacroInfo(picked)) } end
 end
-function ClearCursor() picked = nil end
+-- What the mouse holds besides a macro: { "spell", index, book, id } or { "item", id }, set by a test.
+local onCursor
+function GetCursorInfo()
+    if onCursor then return table.unpack(onCursor) end
+end
+function ClearCursor() picked, onCursor = nil, nil end
+-- Shift-click on a link: the game passes it here (into the chat being typed).
+function ChatEdit_InsertLink() return false end
 -- This character, and the group it is in: none, unless a test fills `group` ({ raid = true in a raid, members =
 -- { { name, realm, role = "TANK", mainTank = true } }, me = your role }). In a raid you are raid1, the members after
 -- you.
@@ -328,6 +335,7 @@ function GameTooltip:SetOwner(owner) self.owner = owner end
 function GameTooltip:GetOwner() return self.owner end
 function GameTooltip:SetAction(slot) return actions[slot] ~= nil end
 function hooksecurefunc(t, name, hook)
+    if type(t) == "string" then t, name, hook = _G, t, name end
     local original = t[name]
     t[name] = function(...)
         local r = table.pack(original(...))
@@ -1404,6 +1412,57 @@ do
     ns.Window.Revert()
     DeleteMacro(GetMacroIndexByName("Fix Me"))
     Send("UPDATE_MACROS")
+
+    -- A spell dropped on the text: on an empty line with /cast, else its name at the cursor.
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    onCursor = { "spell", 12, "spell", 5782 } -- Fear
+    Fire(edit, "OnReceiveDrag")
+    check("dropped: a spell on an empty line", raw() == "/cast Fear" and onCursor == nil, raw())
+    Type("\n/cast [@focus] ")
+    onCursor = { "item", 5512 }
+    GetItemInfo = function(id) return id == 5512 and "Healthstone" or nil end
+    Fire(edit, "OnMouseDown")
+    check("dropped by a click: an item's name at the cursor", raw() == "/cast Fear\n/cast [@focus] Healthstone", raw())
+    Type("\n")
+    onCursor = { "item", 5512 }
+    Fire(edit, "OnReceiveDrag")
+    check("dropped: an item on an empty line with /use", raw():find("\n/use Healthstone$") ~= nil, raw())
+    GetItemInfo = nil
+    onCursor = { "macro", 3 }
+    Fire(edit, "OnReceiveDrag")
+    check("dropped: a macro is not text", raw():find("\n/use Healthstone$") ~= nil and onCursor ~= nil, raw())
+    onCursor = nil
+    -- Shift-click on a spell's link while the text has the focus.
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    ChatEdit_InsertLink("|cff71d5ff|Hspell:133:0|h[Fireball]|h|r")
+    check("shift-click: a spell's name with /cast", raw() == "/cast Fireball", raw())
+    edit:ClearFocus()
+    ChatEdit_InsertLink("|cff71d5ff|Hspell:116:0|h[Frostbolt]|h|r")
+    check("shift-click: not without the focus", raw() == "/cast Fireball", raw())
+    edit:SetFocus()
+    ChatEdit_InsertLink("|cffffff00|Hachievement:6:0|h[Level 10]|h|r")
+    check("shift-click: not an achievement", raw() == "/cast Fireball", raw())
+    Type("\n")
+    ChatEdit_InsertLink("|cff71d5ff|Hspell:116:0|h[Frostbolt]|h|r")
+    ChatEdit_InsertLink("|cff71d5ff|Hspell:116:0|h[Frostbolt]|h|r") -- the same link again at once: passed on
+    check("shift-click: one link once", raw() == "/cast Fireball\n/cast Frostbolt", raw())
+    -- Dropped below the last line, with no focus: at the end, wherever the cursor was.
+    edit:SetCursorPosition(0)
+    edit:ClearFocus()
+    local catcher
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.parentFrame == MacroSenseCodeScroll and o.scripts.OnReceiveDrag then catcher = o end
+    end
+    onCursor = { "spell", 1, "spell", 5782 }
+    Fire(catcher, "OnClick")
+    check("dropped below the text: at its end", raw() == "/cast Fireball\n/cast FrostboltFear" and onCursor == nil,
+        raw())
+    ns.Window.Revert()
+    NextFrame()
     -- Items: names seen in the bags are remembered for later.
     check("seen items remembered", ns.db.itemNames and ns.db.itemNames["Healthstone"] == true)
     -- Pet spells: remembered from every pet seen, so the other pet's spells stay known.

@@ -61,10 +61,19 @@ function ns.CreateCodeBox(parent, name)
     local catcher = CreateFrame("Button", nil, scroll)
     catcher:SetAllPoints()
     catcher:SetFrameLevel(scroll:GetFrameLevel())
+    -- A spell or item dropped on the text, dragged or picked up and clicked: onDrop puts it in.
+    local function drop()
+        if not (self.onDrop and GetCursorInfo and GetCursorInfo()) then return false end
+        self.onDrop()
+        return true
+    end
     catcher:SetScript("OnClick", function()
+        if drop() then return end
         edit:SetFocus()
         edit:SetCursorPosition(#edit:GetText())
     end)
+    catcher:SetScript("OnReceiveDrag", drop)
+    edit:SetScript("OnReceiveDrag", drop)
 
     edit:SetScript("OnTextChanged", function(e, userInput)
         if self.updating then return end
@@ -129,7 +138,10 @@ function ns.CreateCodeBox(parent, name)
             self:Key(key, "keydown")
         end
     end)
-    edit:SetScript("OnMouseDown", function() self.lockCursor = nil end)
+    edit:SetScript("OnMouseDown", function()
+        self.lockCursor = nil
+        drop()
+    end)
     return self
 end
 
@@ -550,6 +562,14 @@ end
 function CodeBox:SetRawCursor(rawCursor)
     self.edit:SetFocus()
     self.edit:SetCursorPosition(H.ToColored(self.edit:GetText(), rawCursor))
+end
+
+-- Puts `text` in at the cursor (at the end when the text has no focus); undo takes it out.
+function CodeBox:InsertText(text)
+    local raw = self:GetRaw()
+    local at = self.edit:HasFocus() and self:GetRawCursor() or #raw
+    self:SetRaw(raw:sub(1, at) .. text .. raw:sub(at + 1), at + #text, true)
+    self.edit:SetFocus()
 end
 
 -- Programmatic change (load a macro, accept a suggestion). `keepHistory` = record it for undo.

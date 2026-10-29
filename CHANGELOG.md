@@ -16,6 +16,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   game's own tooltip. In English and Ukrainian.
 - A talent or specialization change that breaks macros on your bars says so on the screen (`MacroSense: 2 macros
   on your bars use spells you don't have now`), their names in chat.
+- **Drag a spell, mount or item onto the text** (or pick it up and click), or Shift-click it while typing: its name
+  goes in at the cursor, after `/cast` or `/use` on an empty line.
 
 ## [0.8.1] - 2026-10-29
 

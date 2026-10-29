@@ -282,6 +282,33 @@ local function ActionTip(name)
     return false
 end
 
+-- The name of what is on the cursor (a spell, mount or item) and the command that takes it; nil for anything else.
+local function OnCursor()
+    local kind, a, b, c = GetCursorInfo()
+    if kind == "spell" then
+        local id = c or a
+        local name = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(id)
+            or (GetSpellInfo and GetSpellInfo(id))
+        return name, "/cast"
+    elseif kind == "mount" then
+        return C_MountJournal and C_MountJournal.GetMountInfoByID and C_MountJournal.GetMountInfoByID(a), "/cast"
+    elseif kind == "companion" then -- the Classic clients' mounts and pets
+        local spell = GetCompanionInfo and select(3, GetCompanionInfo(b, a))
+        return spell and (GetSpellInfo and GetSpellInfo(spell)), "/cast"
+    elseif kind == "item" then
+        local name = C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(a) or (GetItemInfo and GetItemInfo(a))
+        return name, "/use"
+    end
+end
+
+-- `name` goes in at the cursor; on an empty line after the command that takes it ("/cast Fireball").
+local function PutName(name, command)
+    local raw = code:GetRaw()
+    local at = code.edit:HasFocus() and code:GetRawCursor() or #raw
+    local line = raw:sub(1, at):match("[^\n]*$") .. raw:sub(at + 1):match("^[^\n]*")
+    code:InsertText(line:find("%S") and name or (command .. " " .. name))
+end
+
 -- The word under the mouse: what it means, or the game's tooltip of the spell or item.
 local function WordTip(raw, pos)
     local doc = pos and ns.Docs.At(raw, pos, explainEnv)
@@ -1770,6 +1797,26 @@ local function Build()
     code.scroll:SetPoint("BOTTOMRIGHT", -15, 4)
     ns.AttachAutocomplete(code)
     code:ShowNotes(ns.db.preview)
+    -- A spell, mount or item dropped on the text: its name, as the game's macro window takes it.
+    code.onDrop = function()
+        local name, command = OnCursor()
+        if not name then return end
+        ClearCursor()
+        PutName(name, command)
+    end
+    -- Shift-click on a spell or item while the text has the focus: its name, as the game's macro window does.
+    local lastLink
+    local function linked(link)
+        if not (code.edit:HasFocus() and type(link) == "string") or lastLink == link .. GetTime() then return end
+        lastLink = link .. GetTime() -- the game may pass one link through both functions
+        local name = link:match("|h%[(.-)%]|h")
+        local kind = link:match("|H(%a+):")
+        if name and (kind == "spell" or kind == "item" or kind == "mount") then
+            PutName(name, kind == "item" and "/use" or "/cast")
+        end
+    end
+    if ChatEdit_InsertLink then hooksecurefunc("ChatEdit_InsertLink", linked) end
+    if ChatFrameUtil and ChatFrameUtil.InsertLink then hooksecurefunc(ChatFrameUtil, "InsertLink", linked) end
     -- Issues are found a frame after each change: the status bar and the preview follow them.
     code.onErrors = function()
         UpdateStatus()
