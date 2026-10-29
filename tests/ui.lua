@@ -238,7 +238,8 @@ C_SpellBook = {
     HasPetSpells = function() return #petBook > 0 and #petBook or nil end,
     GetSpellBookItemName = function(i, bank) if bank == 1 then return petBook[i] end end,
     GetSpellBookItemInfo = function(slot)
-        return { name = book[slot][1], subName = book[slot][2], itemType = 1, isPassive = false, iconID = slot }
+        return { name = book[slot][1], subName = book[slot][2], itemType = 1, isPassive = false, iconID = slot,
+            spellID = 100 + slot }
     end,
 }
 local bag = { "|cffffffff|Hitem:5512::|h[Healthstone]|h|r", "|cff0070dd|Hitem:1234::|h[Fire Ring]|h|r" }
@@ -1146,7 +1147,8 @@ do
     MacroSenseIconPicker:Hide()
 
     -- What the names match shows up while they are looked up, and more coming in don't move the view. A new
-    -- session's lookup, a part of the spells a frame: 100 names early, 30 late.
+    -- patch's lookup (nothing kept from before), a part of the spells a frame: 100 names early, 30 late.
+    ns.db.iconNames = nil
     assert(loadfile("MacroSense/IconNames.lua"))("MacroSense", ns)
     ns.IconNames.SPELLS, ns.IconNames.EMPTY = 30000, 1000
     local late = { first = 20101, last = 20130 }
@@ -1508,6 +1510,40 @@ do
     petBook = {}
     ns.Window.Select(1)
     NextFrame()
+end
+
+-- [channeling:] and [nochanneling:] offer your channeled spells only: the tooltip says "Channeled".
+do
+    SPELL_CAST_CHANNELED = "Channeled"
+    C_TooltipInfo = { GetSpellByID = function(id)
+        -- Frostbolt (slot 5) is channeled here, for the test.
+        return { lines = { { leftText = "x" }, { leftText = id == 105 and "Channeled" or "1.5 sec cast" } } }
+    end }
+    ns.InvalidateSources("spells")
+    local function names(cond)
+        local out = {}
+        for _, v in ipairs(ns.Conditions.Values(cond)) do out[#out + 1] = v.name end
+        return table.concat(out, ",")
+    end
+    check("channeling: only the channeled spells", names("channeling") == "Frostbolt"
+        and names("nochanneling") == "Frostbolt" and names("known"):find("Fireball") ~= nil, names("nochanneling"))
+    -- Read once, kept on disk: the tooltips are not read again, not even after the spells change.
+    local reads = 0
+    local get = C_TooltipInfo.GetSpellByID
+    C_TooltipInfo.GetSpellByID = function(id) reads = reads + 1; return get(id) end
+    ns.InvalidateSources("spells")
+    check("channeling: kept on disk, not read again", names("channeling") == "Frostbolt" and reads == 0
+        and ns.db.channeled[105] == true and ns.db.channeled[104] == false, reads)
+    -- A new patch: read again.
+    ns.db.channeledBuild = "old"
+    ns.InvalidateSources("spells")
+    check("channeling: read again after a patch", names("channeling") == "Frostbolt" and reads > 0, reads)
+    C_TooltipInfo = nil
+    ns.db.channeled = {}
+    ns.InvalidateSources("spells")
+    check("channeling: all spells when no tooltip can be read", names("channeling"):find("Fireball") ~= nil,
+        names("channeling"))
+    SPELL_CAST_CHANNELED = nil
 end
 
 -- The Classic clients have C_SpellBook with HasPetSpells but not the rest: the pet's spells come from the old

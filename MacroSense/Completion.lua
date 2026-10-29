@@ -45,7 +45,14 @@ local function list(kind, ctx)
     local d = ns.data
     if kind == "command" then return ns.sources.commands and ns.sources.commands() or d.commands end
     if kind == "meta" then return d.meta end
-    if kind == "condition" then return d.conditions end
+    if kind == "condition" then
+        -- Not those that came with a later expansion than this client's.
+        local out = {}
+        for _, c in ipairs(d.conditions) do
+            if not ns.HasExpansion or ns.HasExpansion(c.since) then out[#out + 1] = c end
+        end
+        return out
+    end
     if kind == "unit" then return ns.Conditions.UnitItems(ctx.prefix) end
     if kind == "modifier" then return d.modifiers end
     if kind == "action" then return actions(ctx.base) end

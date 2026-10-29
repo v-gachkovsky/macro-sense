@@ -123,6 +123,20 @@ check("condition with value inserts ':'", modItem and modItem.insert == "mod:", 
 local nomodItem = ns.Completion.Get(ctx("/cast [nom|"))[1]
 check("nomod inserts no ':'", nomodItem and nomodItem.insert == "nomod", nomodItem and nomodItem.insert)
 check("nomod: with a value, still the modifiers", names("/cast [nomod:|"):find("^shift,ctrl,alt") ~= nil)
+local nochanItem = ns.Completion.Get(ctx("/cast [nocha|"))[1]
+check("nochanneling offered, with no ':'", nochanItem and nochanItem.insert == "nochanneling",
+    nochanItem and nochanItem.insert)
+check("every condition the other way round too", names("/cast [nomou|") == "nomounted"
+    and names("/cast [nostea|") == "nostealth" and names("/cast [nopar|"):find("^noparty") ~= nil,
+    names("/cast [nomou|") .. " | " .. names("/cast [nostea|") .. " | " .. names("/cast [nopar|"))
+local noknown = ns.Completion.Get(ctx("/cast [noknow|"))[1]
+check("a \"no\" form that needs a value gets ':'", noknown and noknown.insert == "noknown:", noknown and noknown.insert)
+-- A client of an older expansion (Classic Era: 0) is not offered what came later.
+ns.HasExpansion = function(since) return not since or since <= 0 end
+check("skyriding, pet battles, PvP talents not in Classic Era", names("/cast [advfl|") == ""
+    and names("/cast [petba|") == "" and names("/cast [pvpta|") == "" and names("/cast [flyab|") == "flyable,noflyable",
+    names("/cast [advfl|") .. " | " .. names("/cast [flyab|"))
+ns.HasExpansion = nil
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
 
@@ -182,8 +196,9 @@ do
     check("small: names that start with it before a later word", #out == 2 and out[1].name == "Fireball",
         out[1] and out[1].name)
 end
-check("conditions by the letters of a word", names("/cast [nmd|") == "nomod", names("/cast [nmd|"))
-check("letters inside before letters apart", names("/cast [nd|") == "indoors,nomod,nodead", names("/cast [nd|"))
+check("conditions by the letters of a word", names("/cast [nmd|") == "nomod,nomounted", names("/cast [nmd|"))
+check("letters inside before letters apart", names("/cast [nd|"):find("^indoors,noindoors,nomod,nodead") ~= nil,
+    names("/cast [nd|"))
 
 -- Items: /equip wants gear, /use puts items first, /cast puts spells first.
 check("equip items", names("/equip F|") == "Fire Ring", names("/equip F|"))
@@ -451,6 +466,7 @@ local function issues(raw)
     for _, e in ipairs(H.Errors(raw)) do out[#out + 1] = e.severity .. ":" .. raw:sub(e.from, e.to) end
     return table.concat(out, " ")
 end
+check("nochanneling is no mistake", issues("/cast [nochanneling] X; [nochanneling:Drain Life] Y") == "")
 check("unknown unit is a warning", issues("/cast [@mousover] X") == "warning:mousover", issues("/cast [@mousover] X"))
 check("player name is only a warning", issues("/cast [target=Thrall] X") == "warning:Thrall")
 check("bad value is an error", issues("/cast [btn:7] X") == "error:7", issues("/cast [btn:7] X"))
@@ -2137,6 +2153,33 @@ do
     check("icon names: each spell found starts the count over", Names(names, 12) == "Страх,Жах,Late",
         Names(names, 12))
     spells[1600] = nil
+    -- Kept on disk (MacroSenseDB): the next session goes on where the lookup stopped, and once done the names
+    -- are there at once. Another patch or language looks again.
+    GetBuildInfo = function() return "1.0", "100" end
+    GetLocale = function() return "enUS" end
+    local db = {}
+    local function Session(last, empty)
+        local t = { Completion = ns.Completion, db = db }
+        assert(loadfile("MacroSense/IconNames.lua"))("MacroSense", t)
+        t.IconNames.SPELLS, t.IconNames.EMPTY = last, empty
+        t.IconNames.Want({ 10, 11, 12, 13 })
+        return t.IconNames
+    end
+    names = Session(3000, 100)
+    names.Step(1)
+    local stopped = db.iconNames.nextID
+    names = Session(3000, 100)
+    check("icon names: a new session goes on where it stopped", stopped > 1 and names.Progress() > 0
+        and db.iconNames.nextID == stopped, stopped)
+    while not names.Step(1000) do end
+    names = Session(3000, 100)
+    check("icon names: once done, there at once", names.Progress() == 1 and Names(names, 12) == "Страх,Жах,Late"
+        and names.For(12).text == "страх\nжах\nlate" and db.iconNames.found[12].text == nil, Names(names, 12))
+    GetBuildInfo = function() return "1.1", "101" end
+    names = Session(3000, 100)
+    check("icon names: a new patch looks again", names.Progress() < 1 and Names(names, 12) == "")
+    GetBuildInfo, GetLocale = nil, nil
+
     -- Achievements, where the game has them: after the spells.
     GetCategoryList = function() return { 92, 95 } end
     GetCategoryNumAchievements = function(category) return category == 92 and 2 or 1 end

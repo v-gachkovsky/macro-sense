@@ -188,7 +188,7 @@ local function retailSpells(add, later)
                     local other = spec or (item.isOffSpec and line.name) or nil
                     if item.itemType == Enum.SpellBookItemType.Spell then
                         local base = item.actionID ~= item.spellID and item.actionID and SpellName(item.actionID)
-                        add(item.name, item.iconID, item.subName, other, base)
+                        add(item.name, item.iconID, item.subName, other, base, item.spellID or item.actionID)
                     elseif future and item.itemType == future then
                         later(item.name, item.spellID or item.actionID, other)
                     end
@@ -210,7 +210,7 @@ local function classicSpells(add, later)
             if (kind == "SPELL" or kind == "FUTURESPELL") and not IsPassiveSpell(slot, book) then
                 local name, sub = GetSpellBookItemName(slot, book)
                 if kind == "SPELL" then
-                    add(name, GetSpellBookItemTexture(slot, book), sub, spec)
+                    add(name, GetSpellBookItemTexture(slot, book), sub, spec, nil, id)
                 else
                     later(name, id, spec)
                 end
@@ -222,12 +222,12 @@ end
 local laterCache -- the spells of the book you learn later, made with spellCache
 
 -- Each spell: { name, icon, ranks, offSpec = the specialization it is for when it is not yours now, and its hint,
--- base = the name of the spell it replaces }.
+-- base = the name of the spell it replaces, id = its spell ID (the highest rank's) }.
 function ns.sources.spells()
     if spellCache then return spellCache end
     local seen, out, later = {}, {}, {}
     -- Older flavors list every learned rank: one entry per name, its ranks ("Rank 1", ...) in spellbook order.
-    local function add(name, icon, sub, spec, base)
+    local function add(name, icon, sub, spec, base, id)
         if not name then return end
         local spell = seen[name]
         if not spell then
@@ -238,6 +238,7 @@ function ns.sources.spells()
             spell.offSpec, spell.hint = nil, nil
         end
         if base and base ~= name then spell.base = base end
+        spell.id = id or spell.id
         if sub and sub ~= "" then table.insert(spell.ranks, sub) end
     end
     local function learnLater(name, id, spec)
@@ -254,6 +255,69 @@ function ns.sources.spells()
     end
     table.sort(out, function(a, b) return a.name < b.name end)
     spellCache, laterCache = out, later
+    return out
+end
+
+-- The lines of a spell's tooltip (left and right), as the game shows them: Retail reads them from C_TooltipInfo,
+-- older clients from a hidden tooltip of our own.
+local scanTip
+local function TooltipLines(id)
+    local out = {}
+    if C_TooltipInfo and C_TooltipInfo.GetSpellByID then
+        local data = C_TooltipInfo.GetSpellByID(id)
+        for _, line in ipairs(data and data.lines or {}) do
+            out[#out + 1] = line.leftText
+            out[#out + 1] = line.rightText
+        end
+        return out
+    end
+    if not scanTip then
+        scanTip = CreateFrame("GameTooltip", "MacroSenseScanTip", nil, "GameTooltipTemplate")
+    end
+    scanTip:SetOwner(UIParent, "ANCHOR_NONE")
+    scanTip:SetSpellByID(id)
+    for i = 1, scanTip:NumLines() do
+        for _, side in ipairs({ "Left", "Right" }) do
+            local fs = _G["MacroSenseScanTip" .. "Text" .. side .. i]
+            out[#out + 1] = fs and fs:GetText()
+        end
+    end
+    scanTip:Hide()
+    return out
+end
+
+-- Whether a spell is channeled, by its ID: read once from its tooltip, then kept in MacroSenseDB (a spell stays
+-- channeled or not for every character), until the game's next patch. Nil while the tooltip can't be read.
+local channeledMemo = {}
+local function Channeled(id)
+    local build = GetBuildInfo and select(2, GetBuildInfo()) or ""
+    local db = ns.db
+    if db and db.channeledBuild ~= build then db.channeled, db.channeledBuild = {}, build end
+    local known = db and db.channeled or channeledMemo
+    if known[id] ~= nil then return known[id] end
+    local ok, lines = pcall(TooltipLines, id)
+    if not ok or #lines == 0 then return nil end
+    local channeled = false
+    for _, text in ipairs(lines) do channeled = channeled or text == SPELL_CAST_CHANNELED end
+    known[id] = channeled
+    return channeled
+end
+
+-- Your channeled spells (Drain Life, Mind Flay...), for [channeling:] and [nochanneling:]: their tooltip says
+-- "Channeled" (SPELL_CAST_CHANNELED, in the client's language). All your spells when no tooltip can be read.
+local channeledCache, channeledFor
+function ns.sources.channeled()
+    local spells = ns.sources.spells()
+    if channeledFor == spells then return channeledCache end
+    if not SPELL_CAST_CHANNELED then return spells end
+    local out, read = {}, false
+    for _, spell in ipairs(spells) do
+        local channeled = spell.id and Channeled(spell.id)
+        read = read or channeled ~= nil
+        if channeled then out[#out + 1] = spell end
+    end
+    if not read then out = spells end
+    channeledCache, channeledFor = out, spells
     return out
 end
 
