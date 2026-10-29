@@ -8,7 +8,7 @@ ns.Wizard = Wizard
 
 -- The commands the form makes. /cast and /use take one spell or item, with keys; /castsequence and /castrandom
 -- a list of them (/userandom is the same command as /castrandom in the game); /target, /focus and /assist only
--- units, with keys too; the pet's commands one per key held.
+-- units, with keys too; the pet's commands one per key held; a mount, one for each place, and one per key held.
 Wizard.commands = {
     { key = "cast", name = "/cast" },
     { key = "use", name = "/use" },
@@ -18,7 +18,31 @@ Wizard.commands = {
     { key = "focus", name = "/focus" },
     { key = "assist", name = "/assist" },
     { key = "pet", name = "Pet commands" },
+    { key = "mount", name = "Mount" },
 }
+
+-- Where a mount macro calls which mount, as the form lists them; the macro tries water first, then flying, then the
+-- one for anywhere (`cond`: the macro's condition for the place). `since`: the expansion with flying (TBC).
+Wizard.mountPlaces = {
+    { key = "ground", name = "Mount" },
+    { key = "fly", name = "Where you can fly", cond = "flyable", since = 1 },
+    { key = "swim", name = "In water", cond = "swimming" },
+}
+-- What a press on a mount does: off it, but not in the air (a fall); off it anywhere; nothing.
+Wizard.offMount = {
+    { key = "safe", name = "Get off, not in the air" },
+    { key = "always", name = "Get off, even in the air" },
+    { key = "no", name = "Nothing" },
+}
+
+-- The places of this game: `expansion` is the client's (nil: all of them).
+function Wizard.MountPlaces(expansion)
+    local out = {}
+    for _, p in ipairs(Wizard.mountPlaces) do
+        if not (expansion and p.since and expansion < p.since) then out[#out + 1] = p end
+    end
+    return out
+end
 
 -- What the pet can be told. Attack takes units, Move to goes to the cursor; `since`: the expansion it came with
 -- (Move To with Cataclysm: Classic Era and TBC have the command, but their game does nothing with it).
@@ -150,7 +174,7 @@ end
 -- `reaction` for the macro's, a key's own for its spell ("friends", "enemies" or nil).
 function Wizard.Fresh()
     local spec = { command = "cast", on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {},
-        list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party" }
+        list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party", mounts = {}, offMount = "safe" }
     for _, key in ipairs(Wizard.KEYS) do
         spec.keys[key] = { active = false, on = { "default", "none" }, pet = PET_KEYS[key] }
     end
@@ -356,11 +380,54 @@ local function PetLines(spec)
     return lines
 end
 
+-- "/cast [nomounted,mod:shift] Ground; [nomounted,swimming] Water; [nomounted,flyable] Flying; [nomounted] Ground":
+-- the keys' mounts, then water, flying and the one for anywhere, side by side as one when the same. On a mount the
+-- macro gets you off it ("/dismount [mounted,noflying]"), so it calls none then.
+local function MountLines(spec)
+    local off = spec.offMount ~= "no"
+    local out = {}
+    local function add(cond, action)
+        local conds = {}
+        if off then conds[#conds + 1] = "nomounted" end
+        if cond then conds[#conds + 1] = cond end
+        local group = "[" .. table.concat(conds, ",") .. "]"
+        local last = out[#out]
+        if last and Wizard.Spelled(last.action) == Wizard.Spelled(action) and last.action.item == action.item then
+            last.groups = last.groups .. group
+        else
+            out[#out + 1] = { groups = group, action = action }
+        end
+    end
+    for _, key in ipairs(Wizard.KEYS) do
+        local k = spec.keys[key]
+        if k.active and k.action then add("mod:" .. key, k.action) end
+    end
+    for i = #Wizard.mountPlaces, 1, -1 do
+        local p = Wizard.mountPlaces[i]
+        if spec.mounts[p.key] then add(p.cond, spec.mounts[p.key]) end
+    end
+    if #out == 0 then return nil end
+    local parts = {}
+    for i, c in ipairs(out) do
+        local groups = (i == #out and c.groups == "[]") and "" or (c.groups .. " ")
+        parts[i] = groups .. Wizard.Spelled(c.action)
+    end
+    local lines = { "/cast " .. table.concat(parts, "; ") }
+    if off then lines[2] = spec.offMount == "always" and "/dismount [mounted]" or "/dismount [mounted,noflying]" end
+    return lines
+end
+
 -- What the macro is named after and shows with trinkets first: the spell or item, a key's, the list's first.
 local function First(spec)
     if Wizard.IsTarget(spec.command) or spec.command == "pet" then return nil end
     if Wizard.IsList(spec.command) then return Names(spec)[1] end
-    if spec.action then return spec.action end
+    if spec.command == "mount" then
+        for _, p in ipairs(Wizard.mountPlaces) do
+            if spec.mounts[p.key] then return spec.mounts[p.key] end
+        end
+    elseif spec.action then
+        return spec.action
+    end
     for _, key in ipairs(Wizard.KEYS) do
         local k = spec.keys[key]
         if k.active and k.action then return k.action end
@@ -370,8 +437,11 @@ end
 -- The macro, or nil while there is nothing to cast, use or target.
 function Wizard.Text(spec)
     local target = Wizard.IsTarget(spec.command) or spec.command == "pet" -- no spell, no icon of its own
-    local before, line = {}, nil
-    if spec.command == "pet" then
+    local before, line, after = {}, nil, nil
+    if spec.command == "mount" then
+        local lines = MountLines(spec)
+        line, after = lines and lines[1], lines and lines[2]
+    elseif spec.command == "pet" then
         before = PetLines(spec)
     elseif target then
         before, line = TargetLines(spec)
@@ -397,7 +467,7 @@ function Wizard.Text(spec)
     end
     if spec.stopcasting then lines[#lines + 1] = "/stopcasting" end
     if spec.cancelform then lines[#lines + 1] = "/cancelform" end
-    if spec.dismount then lines[#lines + 1] = "/dismount [mounted]" end
+    if spec.dismount and spec.command ~= "mount" then lines[#lines + 1] = "/dismount [mounted]" end
     if spec.cancelaura then lines[#lines + 1] = "/cancelaura " .. spec.cancelaura.name end
     if spec.nearest then lines[#lines + 1] = "/targetenemy [noharm][dead]" end
     for _, use in ipairs(uses) do lines[#lines + 1] = use end
@@ -407,6 +477,7 @@ function Wizard.Text(spec)
         for _, l in ipairs(before) do lines[#lines + 1] = l end
     end
     if line then lines[#lines + 1] = line end
+    if after then lines[#lines + 1] = after end
     if spec.petattack then lines[#lines + 1] = "/petattack" end
     local say = spec.say and Trim(spec.say) or ""
     if say ~= "" then lines[#lines + 1] = "/" .. spec.channel .. " " .. say end
@@ -423,6 +494,7 @@ function Wizard.Name(spec)
     local first = First(spec)
     if first then return first.label or first.name end
     if spec.trinket1 or spec.trinket2 then return ns.L["Trinkets"] end
+    if spec.command == "mount" then return ns.L["Mount"] end
 end
 
 return Wizard

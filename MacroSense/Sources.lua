@@ -613,6 +613,28 @@ local function mountNames()
     return out
 end
 
+-- Your mounts for the wizard, by name: { name, icon }. Retail has them in its collection, Wrath to Mists in the
+-- companions' Mounts tab; Classic Era as items and spells (the wizard offers those anyway).
+function ns.sources.mounts()
+    local out = {}
+    local ok = pcall(function()
+        if C_MountJournal and C_MountJournal.GetMountIDs then
+            for _, id in ipairs(C_MountJournal.GetMountIDs()) do
+                local name, _, icon, _, _, _, _, _, _, hidden, collected = C_MountJournal.GetMountInfoByID(id)
+                if name and collected and not hidden then out[#out + 1] = { name = name, icon = icon } end
+            end
+        elseif GetNumCompanions then
+            for i = 1, GetNumCompanions("MOUNT") do
+                local _, name, _, icon = GetCompanionInfo("MOUNT", i)
+                if name then out[#out + 1] = { name = name, icon = icon } end
+            end
+        end
+    end)
+    if not ok then return {} end
+    table.sort(out, function(a, b) return a.name < b.name end)
+    return out
+end
+
 local knownCache, guesses
 local sourcesFailed -- the typo check could not read a source once: reported then, not again
 local talentsFailed -- the same for the talents; the rest goes on without them

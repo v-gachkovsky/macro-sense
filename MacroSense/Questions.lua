@@ -29,10 +29,25 @@ end
 -- before may not be there, then "byName" when /target goes by name; "keys", and for each key held "shiftCast" (and
 -- "shiftRank") or "shiftPet", "shiftOn1", "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the
 -- first unit checked for it, unless the game says what the spell is for (a key's own spell too); the pet attacks
--- enemies. A spell that goes to nobody but you (Demon Armor) asks for no units. `keys`: the keys of this client (Cmd
--- on a Mac).
+-- enemies. A spell that goes to nobody but you (Demon Armor) asks for no units. A mount macro asks "mountGround",
+-- "mountFly" (where there is flying), "mountSwim", "offMount", then "keys" and for each key held "shiftCast", with
+-- no units. `keys`: the keys of this client (Cmd on a Mac).
 function Questions.Steps(spec, keys)
     local command = spec.command
+    if command == "mount" then
+        local out = { "what" }
+        for _, p in ipairs(W.MountPlaces(LE_EXPANSION_LEVEL_CURRENT)) do
+            out[#out + 1] = "mount" .. p.key:gsub("^%l", string.upper)
+        end
+        out[#out + 1] = "offMount"
+        out[#out + 1] = "keys"
+        for _, key in ipairs(keys) do
+            if spec.keys[key].active then out[#out + 1] = key .. "Cast" end
+        end
+        out[#out + 1] = "also"
+        out[#out + 1] = "finish"
+        return out
+    end
     local list, target, pet = W.IsList(command), W.IsTarget(command), command == "pet"
     local out, only = { "what" }, nil
     local ask = not pet and (target or not spec.reaction)
@@ -245,6 +260,9 @@ local function What()
             tip = L["Your target becomes the target of someone else: the tank's, say."] },
         { key = "pet", name = L["Command your pet"], hint = "/petattack",
             tip = L["Tell your pet to attack, follow you, stay..."] },
+        { key = "mount", name = L["Ride a mount"], hint = "/cast",
+            tip = L["One button for your mounts: a flying one where you can fly, another elsewhere, one for water. "
+                .. "On a mount, it gets you off."] },
     }
 end
 
@@ -272,14 +290,39 @@ local function OnlyAnswers()
         { key = "dead", name = L["Friends, dead or alive"], tip = L["For a resurrection."] } }
 end
 
+-- The questions of a mount macro: which mount for each place.
+local function MountAsk(step)
+    if step == "mountFly" then
+        return L["And where you can fly?"], L["Pick a flying mount, or leave it empty for the same one."]
+    elseif step == "mountSwim" then
+        return L["And in water?"], L["Pick one that is fast in water, or leave it empty for the others."]
+    end
+    return L["Which mount should the macro call?"],
+        L["The one for anywhere. The next questions ask about places to fly, and water."]
+end
+
 -- What `step` asks, in the chosen language: { kind = "choice", "spell", "list", "reset", "byName", "keys", "also"
 -- or "finish", text = the question, hint, context = the key held it is about, key = that key; a choice has
--- answers = { { key, name, hint = the macro's words for it, tip } } and chosen = the key of the one chosen }.
+-- answers = { { key, name, hint = the macro's words for it, tip } } and chosen = the key of the one chosen; a mount
+-- has mount = its place ("ground"), and `optional` when it may stay empty }.
 function Questions.Ask(spec, step, keys)
     local key, rest = KeyStep(step)
     local context = key and string.format(L["With %s held"], (key:gsub("^%l", string.upper))) or nil
     local i = tonumber(step:match("^on(%d)$") or rest and rest:match("^On(%d)$"))
-    if step == "what" then
+    local place = step:match("^mount(%u%l+)$")
+    if place then
+        local text, hint = MountAsk(step)
+        return { kind = "spell", mount = place:lower(), optional = place ~= "Ground", text = text, hint = hint }
+    elseif step == "offMount" then
+        local answers = {}
+        for _, a in ipairs(W.offMount) do answers[#answers + 1] = { key = a.key, name = L[a.name] } end
+        answers[1].hint, answers[2].hint = "/dismount [mounted,noflying]", "/dismount [mounted]"
+        return { kind = "choice", text = L["And when you press it on a mount?"], answers = answers,
+            chosen = spec.offMount }
+    elseif rest == "Cast" and spec.command == "mount" then
+        return { kind = "spell", key = key, context = context, optional = true, text = L["Which mount instead?"],
+            hint = L["A ground mount where you could fly, say. Leave it empty for none."] }
+    elseif step == "what" then
         return { kind = "choice", text = L["What should the macro do?"], answers = What(), chosen = spec.command }
     elseif step == "spell" then
         return { kind = "spell", text = spec.command == "use" and L["Which item should the macro use?"]
@@ -343,7 +386,9 @@ end
 function Questions.Choose(spec, step, answer)
     local key, rest = KeyStep(step)
     local i = tonumber(step:match("^on(%d)$") or rest and rest:match("^On(%d)$"))
-    if step == "what" then
+    if step == "offMount" then
+        spec.offMount = answer
+    elseif step == "what" then
         W.Switch(spec, answer)
         if answer == "pet" and spec.pet == "attack" then spec.only = "enemies" end
     elseif step == "rank" or rest == "Rank" then

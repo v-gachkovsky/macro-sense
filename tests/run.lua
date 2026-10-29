@@ -1286,6 +1286,26 @@ do
     check("wizard name: trinkets alone", W.Name(form({ trinket1 = true })) == "Trinkets")
     check("wizard name: nothing yet", W.Name(W.Fresh()) == nil)
 
+    -- A mount: water first, then flying, then the one for anywhere; a key's own before them; off it on a press.
+    local ground, flyer, turtle = { name = "Swift Brown Steed" }, { name = "Swift Red Gryphon" }, { name = "Sea Turtle" }
+    expectText("mount: one for anywhere", text({ command = "mount", mounts = { ground = ground } }),
+        "#showtooltip\n/cast [nomounted] Swift Brown Steed\n/dismount [mounted,noflying]")
+    expectText("mount: by place", text({ command = "mount", mounts = { ground = ground, fly = flyer, swim = turtle } }),
+        "#showtooltip\n/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Swift Red Gryphon; [nomounted] "
+        .. "Swift Brown Steed\n/dismount [mounted,noflying]")
+    expectText("mount: a key's own, the same side by side", text({ command = "mount", offMount = "always",
+        mounts = { ground = ground, fly = flyer }, keys = { shift = { action = ground }, alt = {} } }),
+        "#showtooltip\n/cast [nomounted,mod:shift] Swift Brown Steed; [nomounted,flyable] Swift Red Gryphon; "
+        .. "[nomounted] Swift Brown Steed\n/dismount [mounted]")
+    expectText("mount: nothing on a mount", text({ command = "mount", offMount = "no", dismount = true,
+        mounts = { fly = flyer, ground = ground } }), "#showtooltip\n/cast [flyable] Swift Red Gryphon; Swift Brown Steed")
+    check("mount: none picked, no macro", text({ command = "mount" }) == nil)
+    check("wizard name: a mount", W.Name(form({ command = "mount", mounts = { fly = flyer } })) == "Swift Red Gryphon"
+        and W.Name(form({ command = "mount", trinket1 = true })) == "Trinkets"
+        and W.Name(form({ command = "mount", keys = { ctrl = { action = turtle } } })) == "Sea Turtle")
+    check("mount: places of a game without flying", #W.MountPlaces(0) == 2 and #W.MountPlaces(1) == 3
+        and #W.MountPlaces() == 3)
+
     -- The game reads them as meant (the stand-in for its check decides).
     local chain = text({ action = heal, only = "friends", on = { "mouseover", "target", "player" } })
     expectPreview("wizard: a friend under the mouse", chain, { units = { mouseover = {} } },
@@ -1333,12 +1353,36 @@ do
         check("questions: " .. label, got == want, "\n  got  " .. tostring(got) .. "\n  want " .. want)
     end
 
+    -- A mount: one per place, what a press on a mount does, then the keys' own mounts; no units.
+    local mount = W.Fresh()
+    Q.Choose(mount, "what", "mount")
+    check("questions: a mount", steps(mount) == "what,mountGround,mountFly,mountSwim,offMount,keys,also,finish",
+        steps(mount))
+    mount.keys.alt.active = true
+    check("questions: a mount with a key held", steps(mount) == "what,mountGround,mountFly,mountSwim,offMount,keys,"
+        .. "altCast,also,finish", steps(mount))
+    LE_EXPANSION_LEVEL_CURRENT = 0
+    check("questions: no flying in Classic Era", steps(mount):find("mountFly") == nil, steps(mount))
+    LE_EXPANSION_LEVEL_CURRENT = nil
+    local first, fly = ask(mount, "mountGround"), ask(mount, "mountFly")
+    check("questions: the mount for anywhere", first.kind == "spell" and first.mount == "ground" and not first.optional
+        and first.text == "Which mount should the macro call?")
+    check("questions: flying may stay empty", fly.mount == "fly" and fly.optional and ask(mount, "mountSwim").mount
+        == "swim")
+    local alt = ask(mount, "altCast")
+    check("questions: a key's mount", alt.kind == "spell" and alt.key == "alt" and alt.optional
+        and alt.text == "Which mount instead?" and alt.context == "With Alt held")
+    check("questions: on a mount", keys(mount, "offMount") == "safe,always,no" and ask(mount, "offMount").chosen
+        == "safe" and find(mount, "offMount", "safe").hint == "/dismount [mounted,noflying]")
+    Q.Choose(mount, "offMount", "always")
+    check("questions: on a mount, chosen", mount.offMount == "always")
+
     -- A heal on whoever is under the mouse, then on your target if a friend, then on you.
     local spec = W.Fresh()
     check("questions: a fresh form", steps(spec) == "what,spell,on1,only,on2,keys,also,finish", steps(spec))
     local what = ask(spec, "what")
     check("questions: what the macro does", what.kind == "choice" and what.text == "What should the macro do?"
-        and keys(spec, "what") == "cast,use,castsequence,castrandom,target,focus,assist,pet" and what.chosen == "cast"
+        and keys(spec, "what") == "cast,use,castsequence,castrandom,target,focus,assist,pet,mount" and what.chosen == "cast"
         and what.answers[1].name == "Cast a spell" and what.answers[1].hint == "/cast"
         and what.answers[3].tip ~= nil, keys(spec, "what"))
     check("questions: the spell", ask(spec, "spell").kind == "spell"
