@@ -78,6 +78,10 @@ Or **All options** shows the whole form, where you pick it all at once:
 
 The macro shows as you choose; **Create macro** saves it and opens it in the editor.
 
+**Already have a macro?** **Wizard** above the text opens it in the wizard with its answers filled in, also one
+typed by hand or taken from a guide. Change it with a few clicks, and **Put in editor**: Save keeps the new text,
+Ctrl+Z takes it back. Lines the wizard writes its own way, or has no place for, are listed before anything changes.
+
 ## Autocomplete
 
 | You type | You get |

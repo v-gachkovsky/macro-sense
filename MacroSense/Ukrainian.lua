@@ -1260,4 +1260,24 @@ ns.locales.uk = {
     ["With Alt held"] = "З затиснутим Alt",
     ["With Cmd held"] = "З затиснутим Cmd",
     ["Without a key"] = "Без клавіші",
+    -- Open in Wizard
+    ["Open in Wizard"] = "Відкрити в майстрі",
+    ["Wizard"] = "Майстер",
+    ["Change macro (Wizard)"] = "Зміна макроса (майстер)",
+    ["Put in editor"] = "Вставити в редактор",
+    ["Lines that will change"] = "Рядки, які зміняться",
+    ["%d lines will change"] = { "%d рядок зміниться", "%d рядки зміняться", "%d рядків зміниться" },
+    ["The wizard writes these lines of your macro its own way, or can't keep them. You get the text shown above. "
+        .. "Your macro doesn't change until you put that text in the editor. Even then, %s undoes it."] =
+        "Ці рядки вашого макроса майстер пише по-своєму або не може зберегти. Ви отримаєте текст, показаний вище. "
+        .. "Ваш макрос не зміниться, доки ви не вставите цей текст у редактор. Але навіть тоді %s усе поверне.",
+    ["Opens this macro in the wizard, so you can change it with a few clicks. The new text comes back here, and "
+        .. "Save keeps it."] = "Відкриває цей макрос у майстрі, щоб змінити його кількома кліками. Новий текст "
+        .. "повернеться сюди, а «Зберегти» його збереже.",
+    ["The wizard can't read this macro. It makes macros that cast a spell, use an item, target someone, command "
+        .. "your pet, summon a mount or put on gear."] = "Майстер не може прочитати цей макрос. Він уміє робити "
+        .. "макроси, які застосовують заклинання чи предмет, беруть когось у ціль, керують улюбленцем, викликають "
+        .. "маунта або вдягають спорядження.",
+    ["%d lines will come out different or be left out."] = { "%d рядок вийде інакшим або зникне.",
+        "%d рядки вийдуть інакшими або зникнуть.", "%d рядків вийдуть інакшими або зникнуть." },
 }

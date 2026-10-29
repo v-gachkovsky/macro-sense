@@ -7,6 +7,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Open a macro you have in the wizard**: **Wizard** next to History opens the macro shown with its answers filled
+  in (the spell, the units in order, the keys, the When row, mounts, gear, the rest), typed by hand or not. **Put in
+  editor** puts the new text in the editor: Save keeps it, undo takes it back. Lines the wizard would write its own
+  way or leave out (`/run`, a second `/cast`) are named before anything changes.
 - A click on the issue in the status bar puts the cursor on it (a misspelled name is still fixed by the click).
 - **More one-click fixes** in the status bar: a typo in a command, condition, unit or value (`/cats` → `/cast`,
   `harmm` → `harm`, `@mousover` → `@mouseover`, `mod:shfit`, `reset=tagret`), a missing `]` or `[`, a stray `]`, the
