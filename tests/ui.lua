@@ -3996,6 +3996,7 @@ do
     end
     for _, what in pairs(ns.Shortcuts.MAC) do add(what) end
     for _, text in ipairs(ns.Explain.Texts()) do add(text) end
+    for _, text in ipairs(ns.Docs.Texts()) do add(text) end
     add(ns.ActionBars.TIP)
     -- Kept in their files' locals: month names, tab names, the preview's quiet notes and verbs, hints made in
     -- Sources and Completion, what a condition's value should be, and the wizard's names for a macro.
@@ -4865,8 +4866,41 @@ do
     check("explained: a command of the client's language", at(102, 5) == "Line 5 / • targets your focus"
         and at(102, 6) == "Line 6 / • gets off your mount", at(102, 6))
     GetNumShapeshiftForms, GetShapeshiftFormInfo, GetNumSpecializations, GetSpecializationInfo = nil, nil, nil, nil
-    at(400, 1)
-    check("explained: not over the text", not GameTooltip:IsShown())
+    -- Over the text: the word under the mouse. Letter k of a line is at x = text start + 8 (k - 1).
+    local w = math.floor((edit.fontSize or 13) * 0.6 + 0.5)
+    local function letter(k) return 100 + 2 * w + 12 + 6 + (k - 1) * w + 2 end
+    check("word: a command", at(letter(3), 1) == "/cast / Casts a spell or uses an item by its name. Branches split "
+        .. "by \";\" are tried in order: the first whose conditions hold runs.", at(letter(3), 1))
+    check("word: a condition", at(letter(9), 1):find("^mod / A modifier key is held") ~= nil, at(letter(9), 1))
+    check("word: a value tells of its condition", at(letter(13), 1):find("^mod / ") ~= nil, at(letter(13), 1))
+    check("word: @", at(letter(18), 1):find("^@ / On whom the branch acts") ~= nil, at(letter(18), 1))
+    check("word: a unit", at(letter(21), 1) == "@focus / A unit you set with /focus: you act on it without "
+        .. "targeting it.", at(letter(21), 1))
+    check("word: a condition the other way round", at(letter(31), 1) == "nodead / Holds when this does not: / "
+        .. "The unit is dead.", at(letter(31), 1))
+    check("word: a command of the client's language", at(letter(2), 5):find("^/ziel / Targets a unit") ~= nil,
+        at(letter(2), 5))
+    local shownSpell
+    C_Spell.GetSpellInfo = function(name) return name == "Polymorph" and { spellID = 118 } or nil end
+    GameTooltip.SetSpellByID = function(_, id) shownSpell = id end
+    at(letter(40), 1)
+    check("word: a spell is the game's tooltip of it", shownSpell == 118 and GameTooltip:GetOwner() == scroll,
+        shownSpell)
+    C_Spell.GetSpellInfo, GameTooltip.SetSpellByID = nil, nil
+    at(letter(20), 2)
+    check("explained: not past a line's end", not GameTooltip:IsShown())
+    -- A wrapped line: the letters of its second row.
+    wrapLines = true
+    ns.Window.Restore("/cast [@focus" .. string.rep("target", 15) .. "] X")
+    NextFrame()
+    NextFrame()
+    check("word: on a wrapped line's second row", at(letter(3), 1):find("^/cast") ~= nil
+        and at(letter(3), 2):find("^@focustarget") ~= nil, at(letter(3), 2))
+    wrapLines = false
+    ns.Window.Restore("/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt\n/startattack\n"
+        .. "/cast [@mouseover,help][] Heal\n/cast [form:1] Maul; [spec:2] Wrath\n/ziel [@focus]\n/absitzen")
+    NextFrame()
+    NextFrame()
     at(102, 2)
     over = false
     at(102, 2)

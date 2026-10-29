@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -707,6 +707,33 @@ do
         == "|cffccccccruns |r|cff999999/startattack|r" and P.Note(runs[2], noteColors)
         == "|cffccccccruns |r|cff999999/target|r|cffbbbbbb @focus|r", P.Note(runs[2], noteColors))
     check("a line said in chat", P.Note(runs[3], noteColors) == "|cffccccccsays it in chat|r", P.Note(runs[3], noteColors))
+end
+
+-- Words: what the word under the mouse means.
+do
+    local D = ns.Docs
+    local function doc(raw, word, nth)
+        local at = 0
+        for _ = 1, nth or 1 do at = raw:find(word, at + 1, true) end
+        local d = D.At(raw, at)
+        if not d then return "nil" end
+        if d.action then return "action " .. d.action end
+        return d.title .. " / " .. table.concat(d.lines, " / ")
+    end
+    local raw = "#showtooltip\n/castsequence reset=10/target A, B\n/cast [nomod,@party2target,group:raid] C\n"
+        .. "/cast [noform] [@heal] D\n/cast [harmm] E"
+    check("words: #showtooltip", doc(raw, "#show"):find("^#showtooltip / The macro's icon and tooltip") ~= nil)
+    check("words: reset=", doc(raw, "reset"):find("^reset= / When the sequence starts over") ~= nil)
+    check("words: nomod the other way round", doc(raw, "nomod") == "nomod / Holds when this does not: / A modifier "
+        .. "key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Without a value, any of them.")
+    check("words: a chain of units in words", doc(raw, "party2target") == "@party2target / The target of party "
+        .. "member 2", doc(raw, "party2target"))
+    check("words: a value", doc(raw, "raid", 1):find("^group / You are in a group") ~= nil, doc(raw, "raid", 1))
+    check("words: noform", doc(raw, "noform"):find("^noform / Holds when this does not: / Your form") ~= nil)
+    check("words: @heal", doc(raw, "heal"):find("^@heal / Your group's healer") ~= nil)
+    check("words: a spell is the game's", doc(raw, "C") == "action C" and doc(raw, "A, B") == "action A")
+    check("words: nothing for an error, a bracket or a space", doc(raw, "harmm") == "nil" and doc(raw, "[noform]")
+        == "nil" and doc(raw, " B") == "nil")
 end
 
 -- Explained: what a line does in plain words, every branch of it.

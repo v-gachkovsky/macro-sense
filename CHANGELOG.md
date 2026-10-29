@@ -11,6 +11,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **More one-click fixes** in the status bar: a typo in a command, condition, unit or value (`/cats` → `/cast`,
   `harmm` → `harm`, `@mousover` → `@mouseover`, `mod:shfit`, `reset=tagret`), a missing `]` or `[`, a stray `]`, the
   comma of an empty condition, a value where none belongs (`combat:1`). The tooltip says what the click does.
+- **What a word means**: point at a word in the editor. A command, a condition (`nodead` reads "Holds when this
+  does not: The unit is dead."), a unit, `#showtooltip`, `reset=` get a few plain words; a spell or item shows the
+  game's own tooltip. In English and Ukrainian.
 
 ## [0.8.1] - 2026-10-29
 

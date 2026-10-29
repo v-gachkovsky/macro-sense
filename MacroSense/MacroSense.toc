@@ -18,6 +18,7 @@ Highlight.lua
 Spelling.lua
 Preview.lua
 Explain.lua
+Docs.lua
 Shorten.lua
 Editing.lua
 Completion.lua
