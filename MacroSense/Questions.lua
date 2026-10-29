@@ -29,7 +29,8 @@ end
 -- before may not be there, then "byName" when /target goes by name; "keys", and for each key held "shiftCast" (and
 -- "shiftRank") or "shiftPet", "shiftOn1", "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the
 -- first unit checked for it, unless the game says what the spell is for (a key's own spell too); the pet attacks
--- enemies. A spell that goes to nobody but you (Demon Armor) asks for no units. A mount macro asks "mountGround",
+-- enemies. "when" asks when the macro works at all, and for /cast and /use "otherwise" what it casts the rest of the
+-- time. A spell that goes to nobody but you (Demon Armor) asks for no units. A mount macro asks "mountGround",
 -- "mountFly" (where there is flying), "mountSwim", "offMount", then "keys" and for each key held "shiftCast", with
 -- no units. `keys`: the keys of this client (Cmd on a Mac).
 function Questions.Steps(spec, keys)
@@ -90,6 +91,8 @@ function Questions.Steps(spec, keys)
         end
     end
     if only then table.insert(out, only + 1, "only") end
+    add("when")
+    if (command == "cast" or command == "use") and W.When(spec) ~= "" then add("otherwise") end
     add("also")
     add("finish")
     return out
@@ -319,6 +322,13 @@ function Questions.Ask(spec, step, keys)
         answers[1].hint, answers[2].hint = "/dismount [mounted,noflying]", "/dismount [mounted]"
         return { kind = "choice", text = L["And when you press it on a mount?"], answers = answers,
             chosen = spec.offMount }
+    elseif step == "when" then
+        return { kind = "when", text = L["Should the macro work only at certain times?"],
+            hint = L["Leave these as they are for always. At other times the macro does nothing, unless the next "
+                .. "question gives it something."] }
+    elseif step == "otherwise" then
+        return { kind = "spell", slot = "otherwise", optional = true,
+            text = L["And what should it cast the rest of the time?"], hint = L["Leave it empty to do nothing then."] }
     elseif rest == "Cast" and spec.command == "mount" then
         return { kind = "spell", key = key, context = context, optional = true, text = L["Which mount instead?"],
             hint = L["A ground mount where you could fly, say. Leave it empty for none."] }

@@ -424,6 +424,9 @@ function Arrange()
     if not mount and (not pet or spec.pet == "attack") then parts[#parts + 1] = blocks.on end
     if spec.command == "castsequence" then parts[#parts + 1] = blocks.reset end
     if not list then parts[#parts + 1] = blocks.keys end
+    -- A mount macro has places of its own instead.
+    controls.otherwise:SetShown(spec.command == "cast" or spec.command == "use")
+    if not mount then parts[#parts + 1] = blocks.when end
     -- A key casts something (or tells the pet something) in the first column and has its units in the On row's
     -- last ones; for /target, /focus and /assist it only has units, in the first ones.
     for key, row in pairs(keyRows) do
@@ -459,6 +462,25 @@ function Arrange()
     controls.castLabel:SetText(spec.command == "use" and L["Use"] or L["Cast"])
     controls.listTitle:SetText(spec.command == "castsequence" and L["In turn, one per press"]
         or spec.command == "castrandom" and L["One of these at random"] or "")
+end
+
+-- When the macro works at all (Wizard.whens), two rows of three from `x`: in the form, and as a question. `prefix`
+-- names the controls as for BuildAlso: "whenCombat", "stepWhenCombat". The forms are this character's: none, no list.
+local function BuildWhen(parent, prefix, x)
+    for i, w in ipairs(W.whens) do
+        local name = "when" .. w.key:gsub("^%l", string.upper)
+        local items = w.items or function() return W.WhenForms(ns.sources.forms()) end
+        local d = Choice(parent, prefix == "" and name or prefix .. name:gsub("^%l", string.upper), 160, items,
+            function() return spec.when[w.key] or "any" end, function(key) spec.when[w.key] = key end)
+        d:SetPoint("TOPLEFT", x + (i - 1) % 3 * 168, -math.floor((i - 1) / 3) * ROW)
+        if w.key == "form" then
+            local refresh = d.Refresh
+            function d:Refresh()
+                refresh(self)
+                self:SetShown(#ns.sources.forms() > 1)
+            end
+        end
+    end
 end
 
 -- What else the macro does, in three columns of yes / no, then a buff to cancel first and what to say in chat last:
@@ -563,7 +585,7 @@ local function ShowStep()
     local box = controls.stepSpell
     local mount = spec.command == "mount"
     box.placeholder:SetText(mount and (asked.optional and L["none"] or L["type a mount"])
-        or asked.key and L["same spell"] or L["type a spell or item"])
+        or asked.slot and L["nothing"] or asked.key and L["same spell"] or L["type a spell or item"])
     if asked.kind == "spell" and not asked.optional and not asked.key and not spec.action then box:SetFocus() end
     controls.stepDismount:SetShown(not mount)
     controls.stepGeneral:SetChosen(scope == "general")
@@ -601,7 +623,7 @@ local function BuildSteps()
     controls.hint = ns.Text(steps, 12, "dim")
     controls.hint:SetPoint("TOPLEFT", controls.question, "BOTTOMLEFT", 0, -6)
     controls.hint:SetWidth(WIDTH - 2 * PAD)
-    for _, kind in ipairs({ "choice", "spell", "list", "reset", "byName", "keys", "also", "finish" }) do
+    for _, kind in ipairs({ "choice", "spell", "list", "reset", "byName", "keys", "when", "also", "finish" }) do
         local panel = CreateFrame("Frame", nil, steps)
         panel:SetPoint("TOPLEFT", 0, -STEP_TOP)
         panel:SetSize(WIDTH, STEPS_H - STEP_TOP - 150)
@@ -631,14 +653,18 @@ local function BuildSteps()
     -- A spell or item: the macro's, or a key's. Picked from the list, it goes on.
     local function keyOf() return asked and asked.key end
     local function placeOf() return asked and asked.mount end
+    local function otherwise() return asked and asked.slot == "otherwise" end
     local box = SpellBox(panels.spell, 400, L["type a spell or item"], function()
         local key, place = keyOf(), placeOf()
         if key then return spec.keys[key].action end
         if place then return spec.mounts[place] end
+        if otherwise() then return spec.otherwise end
         return spec.action
     end, function(action)
         local key, place = keyOf(), placeOf()
-        if place then
+        if otherwise() then
+            spec.otherwise = action
+        elseif place then
             spec.mounts[place] = action
         elseif key then
             SetKeyAction(key, action)
@@ -714,6 +740,7 @@ local function BuildSteps()
     end
     if controls.stepCmd then CmdTip(controls.stepCmd) end
 
+    BuildWhen(panels.when, "step", PAD)
     BuildAlso(panels.also, "step")
 
     -- The name and the tab. Enter in the name creates the macro.
@@ -981,6 +1008,16 @@ local function Build()
     local secondsText = ns.Text(blocks.reset, 12, "dim")
     secondsText:SetPoint("LEFT", seconds, "RIGHT", 8, 0)
     secondsText:SetText(L["seconds without a press"])
+
+    -- When it works at all, and for /cast and /use what it casts otherwise (last, after the form).
+    blocks.when = Block(2 * ROW + 2)
+    Text(blocks.when, L["When"], PAD, -5)
+    BuildWhen(blocks.when, "", X)
+    controls.otherwise = SpellBox(blocks.when, 160, L["otherwise: nothing"], function() return spec.otherwise end,
+        function(action) spec.otherwise = action end)
+    controls.otherwise:SetPoint("TOPLEFT", X + 2 * 168, -ROW)
+    Tip(controls.otherwise, L["Otherwise"], L["What the macro casts when the When row above doesn't hold. Leave it "
+        .. "empty to do nothing then."])
 
     -- Also, the macro, the buttons: at the bottom, from the bottom up.
     local function Low(region, x, y) region:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", x, y) end

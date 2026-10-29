@@ -2594,6 +2594,28 @@ do
     check("wizard: back to /cast", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
         and not C("shiftPet"):IsShown(), shown())
 
+    -- When: in combat only, otherwise Fire Blast; /target has no otherwise; the forms of this character.
+    pick(C("whenCombat"), "In combat")
+    TypeIn(C("otherwise"), "Fire Blast")
+    Fire(C("otherwise"), "OnEnterPressed")
+    check("wizard: when, otherwise", shown() == "#showtooltip\n/cast [combat,@mouseover,harm,nodead][combat] Frostbolt; "
+        .. "Fire Blast" and C("otherwise"):IsShown() and not C("whenForm"):IsShown(), shown())
+    pick(C("command"), "/target")
+    check("wizard: no otherwise for /target", not C("otherwise"):IsShown() and C("whenCombat"):IsShown(), shown())
+    pick(C("command"), "/cast")
+    pick(C("on2"), "As usual") -- /target has no As usual
+    GetNumShapeshiftForms, GetShapeshiftFormInfo = function() return 1 end, function() return 1, "Bear Form" end
+    C("whenForm"):Refresh()
+    pick(C("whenForm"), "Bear Form")
+    check("wizard: in a form of yours", C("whenForm"):IsShown() and shown():find("[combat,form:1,@mouseover", 1, true)
+        ~= nil, shown())
+    pick(C("whenForm"), "In any form or none")
+    pick(C("whenCombat"), "In or out of combat")
+    TypeIn(C("otherwise"), "")
+    Fire(C("otherwise"), "OnEnterPressed")
+    GetNumShapeshiftForms, GetShapeshiftFormInfo = nil, nil
+    check("wizard: when taken back", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+
     -- A mount: your mounts offered first, one for each place; a key's own; no units; off it on a press.
     local journal = C_MountJournal
     C_MountJournal = { GetMountIDs = function() return { 1, 2, 3 } end, GetMountInfoByID = function(id)
@@ -2698,6 +2720,12 @@ end
 do
     local C = ns.WizardWindow.Control
     local wizardBtn
+    local function pick(dropdown, label)
+        Fire(dropdown, "OnClick")
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return Fire(r, "OnClick") end
+        end
+    end
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizardBtn = o end
     end
@@ -2821,6 +2849,22 @@ do
     Fire(answer("On your focus"), "OnClick")
     check("steps: and if there is no focus", question() == "And if you have no focus?", question())
     Fire(answer("Do nothing"), "OnClick")
+    -- When it works: in combat only, and what it casts the rest of the time.
+    check("steps: when", question() == "Should the macro work only at certain times?" and C("next"):IsEnabled()
+        and C("stepWhenCombat").label.text == "In or out of combat" and not C("stepWhenForm"):IsShown(), question())
+    pick(C("stepWhenCombat"), "In combat")
+    Fire(C("next"), "OnClick")
+    check("steps: otherwise", question() == "And what should it cast the rest of the time?" and C("next"):IsEnabled()
+        and C("stepSpell").placeholder.text == "nothing", question())
+    TypeIn(C("stepSpell"), "Frostbolt")
+    Fire(C("next"), "OnClick")
+    check("steps: in combat, otherwise Frostbolt", shown() == "#showtooltip\n/cast [mod:shift,combat,@focus,harm,"
+        .. "nodead] Polymorph; [combat,@mouseover,harm,nodead][combat] Fireball; Frostbolt", shown())
+    Fire(C("back"), "OnClick")
+    TypeIn(C("stepSpell"), "")
+    Fire(C("back"), "OnClick")
+    pick(C("stepWhenCombat"), "In or out of combat")
+    Fire(C("next"), "OnClick")
     check("steps: anything else", question() == "Would you like to add anything else?" and C("context").text == ""
         and C("stepTrinket1").label.text == "Trinket 1: Lucky Charm", question())
     Fire(C("stepStopcasting"), "OnClick")
@@ -2835,6 +2879,7 @@ do
     -- Back, with the answers kept; the form with them, and the questions again from the first.
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
     check("steps: Back keeps the answers", question() == "And if you have no focus?" and chosen() == "Do nothing"
         and C("context").text == "With Shift held", question())
     C("stepName"):SetText("Burst")
@@ -2847,7 +2892,7 @@ do
     Fire(C("mode"), "OnClick")
     check("steps: the questions from the first again", question() == "What should the macro do?"
         and chosen() == "Cast a spell" and shown() == burst, question())
-    for _ = 1, 10 do Fire(C("next"), "OnClick") end
+    for _ = 1, 11 do Fire(C("next"), "OnClick") end
     check("steps: Next through the answers given", question() == "Almost done: name your macro"
         and C("stepName").text == "Burst", question())
     Fire(C("stepCharacter"), "OnClick")
@@ -2970,7 +3015,8 @@ do
     Fire(C("stepShift"), "OnClick")
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
-    check("steps: a key casting it: no units either", question() == "Would you like to add anything else?", question())
+    check("steps: a key casting it: no units either", question() == "Should the macro work only at certain times?",
+        question())
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
@@ -2982,7 +3028,7 @@ do
     Fire(C("next"), "OnClick")
     TypeIn(C("stepSpell"), "Demon Armor")
     Fire(C("next"), "OnClick")
-    check("steps: a key's own spell for yourself only", question() == "Would you like to add anything else?"
+    check("steps: a key's own spell for yourself only", question() == "Should the macro work only at certain times?"
         and shown() == "#showtooltip\n/cast [mod:shift] Demon Armor; [@mouseover,harm,nodead][] Fireball", shown())
     Fire(C("mode"), "OnClick")
     TypeIn(C("cast"), "Demon Armor")
@@ -4145,7 +4191,11 @@ do
     end
     for _, s in ipairs(ns.schemes) do add(s.name) end
     local W = ns.Wizard
-    for _, list in ipairs({ W.commands, W.PetActions(99), W.channels, W.units, W.mountPlaces, W.offMount }) do
+    local whenItems = W.WhenForms({})
+    for _, w in ipairs(W.whens) do
+        for _, item in ipairs(w.items or {}) do whenItems[#whenItems + 1] = item end
+    end
+    for _, list in ipairs({ W.commands, W.PetActions(99), W.channels, W.units, W.mountPlaces, W.offMount, whenItems }) do
         for _, item in ipairs(list) do add(item.name) end
     end
     for _, command in ipairs(W.commands) do

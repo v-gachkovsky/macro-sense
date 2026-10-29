@@ -75,6 +75,51 @@ Wizard.channels = {
     { key = "say", name = "Say" }, { key = "yell", name = "Yell" }, { key = "party", name = "Party" },
     { key = "raid", name = "Raid" }, { key = "emote", name = "Emote" },
 }
+-- When the macro does anything at all: each a choice, "any" for always; `cond` is what the macro checks. The forms
+-- are this character's (Wizard.WhenForms). Otherwise (`spec.otherwise`): what /cast or /use does when not.
+Wizard.whens = {
+    { key = "combat", items = { { key = "any", name = "In or out of combat" },
+        { key = "yes", name = "In combat", cond = "combat" }, { key = "no", name = "Out of combat", cond = "nocombat" } } },
+    { key = "stealth", items = { { key = "any", name = "In stealth or not" },
+        { key = "yes", name = "In stealth", cond = "stealth" }, { key = "no", name = "Not in stealth", cond = "nostealth" } } },
+    { key = "group", items = { { key = "any", name = "In a group or alone" },
+        { key = "party", name = "In a group", cond = "group" }, { key = "raid", name = "In a raid", cond = "group:raid" },
+        { key = "no", name = "Alone", cond = "nogroup" } } },
+    { key = "pet", items = { { key = "any", name = "With a pet or not" },
+        { key = "yes", name = "Your pet is out", cond = "pet" }, { key = "no", name = "No pet out", cond = "nopet" } } },
+    { key = "form" },
+}
+
+-- The choices of a form: any, none, then each of `forms` ({ name = "1", hint = "Bear Form" }, Sources.forms).
+function Wizard.WhenForms(forms)
+    local out = { { key = "any", name = "In any form or none" }, { key = "0", name = "In no form", cond = "noform" } }
+    for _, f in ipairs(forms or {}) do
+        if f.name ~= "0" then
+            out[#out + 1] = { key = f.name, name = f.hint or ("form " .. f.name), cond = "form:" .. f.name }
+        end
+    end
+    return out
+end
+
+-- "combat,nostealth": what the macro checks before anything, in the order of Wizard.whens.
+local function When(spec)
+    local out = {}
+    for _, w in ipairs(Wizard.whens) do
+        local chosen = spec.when[w.key]
+        if chosen and chosen ~= "any" then
+            if w.key == "form" then
+                out[#out + 1] = chosen == "0" and "noform" or "form:" .. chosen
+            else
+                for _, item in ipairs(w.items) do
+                    if item.key == chosen then out[#out + 1] = item.cond end
+                end
+            end
+        end
+    end
+    return table.concat(out, ",")
+end
+Wizard.When = When
+
 Wizard.LIST = 6 -- names a list takes in the form
 Wizard.RESETS = { "target", "combat", "shift", "ctrl", "alt" } -- what starts a sequence over, besides seconds
 
@@ -174,7 +219,8 @@ end
 -- `reaction` for the macro's, a key's own for its spell ("friends", "enemies" or nil).
 function Wizard.Fresh()
     local spec = { command = "cast", on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {},
-        list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party", mounts = {}, offMount = "safe" }
+        list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party", mounts = {}, offMount = "safe",
+        when = {} }
     for _, key in ipairs(Wizard.KEYS) do
         spec.keys[key] = { active = false, on = { "default", "none" }, pet = PET_KEYS[key] }
     end
@@ -191,7 +237,7 @@ function Wizard.Only(spec, key)
     return spec.only
 end
 
--- "[mod:shift,@mouseover,help,nodead]": the key (`mod`, "mod:shift" or "nomod:shift/ctrl"), the unit, then
+-- "[mod:shift,combat,@mouseover,help,nodead]": the key (`mod`, "mod:shift" or "nomod:shift/ctrl"), the unit, then
 -- what it must be (`only`: friends or enemies, the form's choice if nil). A unit that may not be there without a
 -- check is asked for ([@focus,exists]), so the cast goes on to the next one. A cast needs no "@target" (it goes to
 -- the target anyway); /focus and /assist do (`named`).
@@ -199,6 +245,8 @@ local function Group(spec, unit, mod, named, only)
     local conds = {}
     only = only or spec.only
     if mod then conds[#conds + 1] = mod end
+    local when = When(spec)
+    if when ~= "" then conds[#conds + 1] = when end
     if unit ~= "default" and (named or unit ~= "target") then conds[#conds + 1] = "@" .. unit end
     if filtered[unit] then
         conds[#conds + 1] = only == "friends" and "help" or only == "enemies" and "harm" or "exists"
@@ -259,6 +307,8 @@ end
 local function CastLine(spec)
     local clauses = Clauses(spec)
     if #clauses == 0 then return nil end
+    -- What it casts when the When row doesn't hold: the last clause, which always does.
+    if spec.otherwise and When(spec) ~= "" then clauses[#clauses + 1] = { groups = "[]", action = spec.otherwise } end
     local parts = {}
     for i, c in ipairs(clauses) do
         -- A last clause that always holds needs no brackets: "; Frostbolt".
@@ -330,7 +380,8 @@ local function ListLine(spec)
 end
 
 -- /target, /focus or /assist on the units in order, keys first; a key that clears goes before it all, with a
--- /stopmacro so the rest doesn't take a unit again. /target may end with a name: "[] Hogger" when nobody else is.
+-- /stopmacro so the rest doesn't take a unit again. /target may end with a name: "[] Hogger" when nobody else is
+-- ("[combat] Hogger" with the When row).
 local CLEAR = { target = "/cleartarget", focus = "/clearfocus", assist = "/cleartarget" }
 local function TargetLines(spec)
     local clears, groups = {}, ""
@@ -348,8 +399,11 @@ local function TargetLines(spec)
         local mods = "[mod:" .. table.concat(clears, "/") .. "]"
         before = { CLEAR[spec.command] .. " " .. mods, "/stopmacro " .. mods }
     end
-    local name = ByName(spec)
-    if name ~= "" then return before, "/target " .. (groups ~= "" and groups .. "[] " or "") .. name end
+    local name, when = ByName(spec), When(spec)
+    if name ~= "" then
+        local last = when ~= "" and "[" .. when .. "] " or groups ~= "" and "[] " or ""
+        return before, "/target " .. groups .. last .. name
+    end
     return before, groups ~= "" and ("/" .. spec.command .. " " .. groups) or nil
 end
 
@@ -359,10 +413,12 @@ local function PetLine(spec, action, units, mod)
     local groups = ""
     if action == "attack" then
         for _, unit in ipairs(Chain(units)) do groups = groups .. Group(spec, unit, mod) end
-    elseif action == "moveto" then
-        groups = "[" .. (mod and mod .. "," or "") .. "@cursor]"
-    elseif mod then
-        groups = "[" .. mod .. "]"
+    else
+        local conds = {}
+        if mod then conds[#conds + 1] = mod end
+        if When(spec) ~= "" then conds[#conds + 1] = When(spec) end
+        if action == "moveto" then conds[#conds + 1] = "@cursor" end
+        if #conds > 0 then groups = "[" .. table.concat(conds, ",") .. "]" end
     end
     return PET_COMMANDS[action] .. (groups ~= "" and groups ~= "[]" and " " .. groups or "")
 end
