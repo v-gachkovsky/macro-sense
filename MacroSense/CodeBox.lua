@@ -353,11 +353,23 @@ function CodeBox:HighlightLineNumber()
     end
 end
 
+-- Whether the mouse is on the box itself: over it, and no window (the wizard, the questions) is above it there.
+function CodeBox:MouseOn()
+    if not self.scroll:IsMouseOver() then return false end
+    local focus = GetMouseFoci and GetMouseFoci()[1] or GetMouseFocus and GetMouseFocus()
+    if not focus then return true end
+    repeat
+        if focus == self.scroll then return true end
+        focus = focus:GetParent()
+    until not focus
+    return false
+end
+
 -- The number of the line the mouse is on, when it is over the line numbers or the notes column (not the text):
 -- nil elsewhere.
 function CodeBox:HoveredLine()
     local tops = self.lineTops
-    if not self.scroll:IsMouseOver() or #tops == 0 then return nil end
+    if #tops == 0 or not self:MouseOn() then return nil end
     local left, right, top = self.scroll:GetLeft(), self.scroll:GetRight(), self.edit:GetTop()
     if not (left and right and top) then return nil end
     local scale = self.edit:GetEffectiveScale() or 1
@@ -380,7 +392,7 @@ end
 -- split into its rows as the measurer wraps it.
 function CodeBox:HoveredPos()
     local tops = self.lineTops
-    if not self.scroll:IsMouseOver() or #tops == 0 then return nil end
+    if #tops == 0 or not self:MouseOn() then return nil end
     local left, right, top = self.scroll:GetLeft(), self.scroll:GetRight(), self.edit:GetTop()
     if not (left and right and top) then return nil end
     local scale = self.edit:GetEffectiveScale() or 1

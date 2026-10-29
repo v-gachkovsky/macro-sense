@@ -22,6 +22,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   text too, one macro or several split by an empty line, each named after its first spell, with its icon. **Share >
   Copy this macro's text** gives the text to post.
 
+### Fixed
+
+- The editor's tooltips (a line's explanation, a word's meaning) no longer show through the wizard or the questions window above it.
+
 ## [0.8.1] - 2026-10-29
 
 ### Changed
