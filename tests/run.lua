@@ -2153,6 +2153,33 @@ do
     check("icon names: each spell found starts the count over", Names(names, 12) == "Страх,Жах,Late",
         Names(names, 12))
     spells[1600] = nil
+    -- Kept on disk (MacroSenseDB): the next session goes on where the lookup stopped, and once done the names
+    -- are there at once. Another patch or language looks again.
+    GetBuildInfo = function() return "1.0", "100" end
+    GetLocale = function() return "enUS" end
+    local db = {}
+    local function Session(last, empty)
+        local t = { Completion = ns.Completion, db = db }
+        assert(loadfile("MacroSense/IconNames.lua"))("MacroSense", t)
+        t.IconNames.SPELLS, t.IconNames.EMPTY = last, empty
+        t.IconNames.Want({ 10, 11, 12, 13 })
+        return t.IconNames
+    end
+    names = Session(3000, 100)
+    names.Step(1)
+    local stopped = db.iconNames.nextID
+    names = Session(3000, 100)
+    check("icon names: a new session goes on where it stopped", stopped > 1 and names.Progress() > 0
+        and db.iconNames.nextID == stopped, stopped)
+    while not names.Step(1000) do end
+    names = Session(3000, 100)
+    check("icon names: once done, there at once", names.Progress() == 1 and Names(names, 12) == "Страх,Жах,Late"
+        and names.For(12).text == "страх\nжах\nlate" and db.iconNames.found[12].text == nil, Names(names, 12))
+    GetBuildInfo = function() return "1.1", "101" end
+    names = Session(3000, 100)
+    check("icon names: a new patch looks again", names.Progress() < 1 and Names(names, 12) == "")
+    GetBuildInfo, GetLocale = nil, nil
+
     -- Achievements, where the game has them: after the spells.
     GetCategoryList = function() return { 92, 95 } end
     GetCategoryNumAchievements = function(category) return category == 92 and 2 or 1 end

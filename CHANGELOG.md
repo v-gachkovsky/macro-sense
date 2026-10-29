@@ -13,6 +13,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - After `channeling:` and `nochanneling:` the list offers only your channeled spells (Drain Life, Mind Flay...),
   not every spell. Each spell's tooltip is read once and kept until the next patch of the game.
 
+### Changed
+- The names of the game's icons (for the icon search) are looked up once and kept, not in each session: after
+  the first time they are there at once, until the next patch or another language. A lookup cut short goes on
+  where it stopped.
+
 ## [0.9.0] - 2026-10-30
 
 ### Added

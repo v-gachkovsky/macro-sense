@@ -1147,7 +1147,8 @@ do
     MacroSenseIconPicker:Hide()
 
     -- What the names match shows up while they are looked up, and more coming in don't move the view. A new
-    -- session's lookup, a part of the spells a frame: 100 names early, 30 late.
+    -- patch's lookup (nothing kept from before), a part of the spells a frame: 100 names early, 30 late.
+    ns.db.iconNames = nil
     assert(loadfile("MacroSense/IconNames.lua"))("MacroSense", ns)
     ns.IconNames.SPELLS, ns.IconNames.EMPTY = 30000, 1000
     local late = { first = 20101, last = 20130 }
