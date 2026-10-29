@@ -24,7 +24,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **The wizard makes mount macros** ("Ride a mount"): a mount for anywhere, one where you can fly, one for water,
   another with Shift, Ctrl or Alt held. The list offers only your mounts (the collection, mount items, Summon
   Felsteed, Travel Form...). A press on a mount gets you off it, not in the air unless you choose so: `/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`,
-  `/dismount [mounted,noflying]`.
+  `/dismount [mounted,noflying]`. Its `#showtooltip` names the same mounts, so on a mount the icon stays the
+  mount's, not a question mark.
 - **The wizard's When row**: the macro works only in or out of combat, in stealth or not, in a group, a raid or
   alone, with your pet out or not, in one of your forms or none (`[combat,nostealth,form:1]` on every branch). For
   /cast and /use, **otherwise** names what it casts the rest of the time (`/cast [stealth] Ambush; Sinister
