@@ -84,6 +84,7 @@ function Frame:GetHeight() return 200 end
 function Frame:GetFrameLevel() return 1 end
 function Frame:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
 function Frame:IsMouseOver() return false end
+function Frame:GetParent() return self.parentFrame end
 -- Fonts: a character is 0.6 of the size wide, a row is size + 1 high (size 13: 8 x 14 px).
 function Frame:SetFont(path, size) self.fontPath, self.fontSize = path, size; return true end
 function Frame:GetFont() return "font", self.fontSize or 13, "" end
@@ -5037,6 +5038,14 @@ do
         .. "/cast [@mouseover,help][] Heal\n/cast [form:1] Maul; [spec:2] Wrath\n/ziel [@focus]\n/absitzen")
     NextFrame()
     NextFrame()
+    -- A window above the editor (the wizard, the questions): its own frame is under the mouse, not the text.
+    local above = CreateFrame("Frame", nil, UIParent)
+    GetMouseFoci = function() return { above } end
+    check("word: not through a window above", at(letter(3), 1) == "" and not GameTooltip:IsShown(), at(letter(3), 1))
+    check("explained: not through a window above", at(102, 2) == "" and not GameTooltip:IsShown(), at(102, 2))
+    GetMouseFoci = function() return { edit } end
+    check("word: the text under the mouse", at(letter(3), 1):find("^/cast") ~= nil, at(letter(3), 1))
+    GetMouseFoci = nil
     at(102, 2)
     over = false
     at(102, 2)
