@@ -171,6 +171,11 @@ function Roles.Update()
                             .. "characters", now, MAX_BODY)
                     end
                 elseif text ~= entry.written then
+                    -- The game tells the macro changed while EditMacro runs: by then it must be known as written
+                    -- here, or the editor would show the names (@none) as a change of its own, and the history keep
+                    -- a version.
+                    entry.written = text
+                    ns.History.Rewritten(scope, now, text)
                     EditMacro(index, nil, nil, text) -- as the game's macro window does: the name and icon stay
                     entry.written = select(3, GetMacroInfo(index))
                     ns.History.Rewritten(scope, now, entry.written)
