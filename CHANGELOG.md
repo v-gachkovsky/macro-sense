@@ -22,8 +22,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   text too, one macro or several split by an empty line, each named after its first spell, with its icon. **Share >
   Copy this macro's text** gives the text to post.
 - **The wizard makes mount macros** ("Ride a mount"): a mount for anywhere, one where you can fly, one for water,
-  another with Shift, Ctrl or Alt held. Your mounts are offered first. A press on a mount gets you off it, not in the
-  air unless you choose so: `/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`,
+  another with Shift, Ctrl or Alt held. The list offers only your mounts (the collection, mount items, Summon
+  Felsteed, Travel Form...). A press on a mount gets you off it, not in the air unless you choose so: `/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`,
   `/dismount [mounted,noflying]`.
 
 ### Fixed

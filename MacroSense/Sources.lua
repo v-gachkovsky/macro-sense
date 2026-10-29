@@ -613,24 +613,56 @@ local function mountNames()
     return out
 end
 
+-- Spells that are mounts: the warlock's and the paladin's steeds, the druid's travel forms, Ghost Wolf.
+local MOUNT_SPELLS = { 5784, 23161, 13819, 23214, 34769, 34767, 783, 33943, 40120, 1066, 2645 }
+local ItemInfoInstant = C_Item and C_Item.GetItemInfoInstant or GetItemInfoInstant
+local MISC, MOUNT = 15, 5 -- the item class Miscellaneous, its subclass Mount
+
 -- Your mounts for the wizard, by name: { name, icon }. Retail has them in its collection, Wrath to Mists in the
--- companions' Mounts tab; Classic Era as items and spells (the wizard offers those anyway).
+-- companions' Mounts tab; older games have mount items in the bags and class spells (Summon Felsteed).
 function ns.sources.mounts()
-    local out = {}
-    local ok = pcall(function()
+    local out, seen = {}, {}
+    local function add(name, icon)
+        if name and not seen[name] then
+            seen[name] = true
+            out[#out + 1] = { name = name, icon = icon }
+        end
+    end
+    pcall(function()
         if C_MountJournal and C_MountJournal.GetMountIDs then
             for _, id in ipairs(C_MountJournal.GetMountIDs()) do
                 local name, _, icon, _, _, _, _, _, _, hidden, collected = C_MountJournal.GetMountInfoByID(id)
-                if name and collected and not hidden then out[#out + 1] = { name = name, icon = icon } end
-            end
-        elseif GetNumCompanions then
-            for i = 1, GetNumCompanions("MOUNT") do
-                local _, name, _, icon = GetCompanionInfo("MOUNT", i)
-                if name then out[#out + 1] = { name = name, icon = icon } end
+                if collected and not hidden then add(name, icon) end
             end
         end
     end)
-    if not ok then return {} end
+    pcall(function()
+        if GetNumCompanions then
+            for i = 1, GetNumCompanions("MOUNT") do
+                local _, name, _, icon = GetCompanionInfo("MOUNT", i)
+                add(name, icon)
+            end
+        end
+    end)
+    local mountSpells = {}
+    for _, id in ipairs(MOUNT_SPELLS) do
+        local name = SpellName(id)
+        if name then mountSpells[name] = true end
+    end
+    for _, spell in ipairs(ns.sources.spells()) do
+        if mountSpells[spell.name] and not spell.offSpec then add(spell.name, spell.icon) end
+    end
+    pcall(function()
+        for bag = 0, LAST_BAG do
+            for slot = 1, NumSlots(bag) or 0 do
+                local link = ItemLink(bag, slot)
+                if link then
+                    local _, _, _, _, icon, class, subclass = ItemInfoInstant(link)
+                    if class == MISC and subclass == MOUNT then add(linkName(link), icon) end
+                end
+            end
+        end
+    end)
     table.sort(out, function(a, b) return a.name < b.name end)
     return out
 end

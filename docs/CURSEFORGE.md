@@ -59,7 +59,7 @@ Or **All options** shows the whole form, where you pick it all at once:
   `/focus` and `/assist` on units (party members by key, say; `/target` by name too), or **pet commands**
   (attack your mouseover, follow with Shift, move to the cursor with Ctrl...)
 - **a mount macro**: one button for a flying mount where you can fly, another elsewhere, one for water, another
-  with a key held, your mounts offered first; on a mount it gets you off, but not in the air
+  with a key held, picked from your mounts; on a mount it gets you off, but not in the air
   (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`)
 - **what to cast**: a spell or item, found by a few letters or by the first letters of its words in capitals
 - **on whom, in order**: mouseover, focus, your target, your group's tank or healer, yourself, your pet, party

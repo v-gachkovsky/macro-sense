@@ -82,8 +82,8 @@ end
 -- A spell or item box: type a name, or pick one of yours from the list under it
 ------------------------------------------------------------------------
 -- What a box offers: your spells and the items you can use. /use offers the items first, with the equipment
--- slots whose item has a use effect ("13", Trinket 1); a mount macro your mounts first (older games have them as
--- spells or items, after).
+-- slots whose item has a use effect ("13", Trinket 1); a mount macro only your mounts (all of it when none are
+-- found).
 local function Candidates()
     local spells, items = {}, {}
     for _, spell in ipairs(ns.sources.spells()) do
@@ -96,13 +96,11 @@ local function Candidates()
     local function add(list)
         for _, c in ipairs(list) do out[#out + 1] = c end
     end
-    if spec.command == "mount" then
-        for _, mount in ipairs(ns.sources.mounts()) do
-            out[#out + 1] = { name = mount.name, icon = mount.icon, hint = L["mount"] }
-        end
-        add(spells)
-        add(items)
-    elseif spec.command == "use" then
+    for _, mount in ipairs(spec.command == "mount" and ns.sources.mounts() or {}) do
+        out[#out + 1] = { name = mount.name, icon = mount.icon, hint = L["mount"] }
+    end
+    if #out > 0 then return out end
+    if spec.command == "use" then
         add(items)
         for _, slot in ipairs(ns.data.slots) do
             local name, usable = ns.sources.equipped(tonumber(slot.name))
