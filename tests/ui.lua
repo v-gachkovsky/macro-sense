@@ -2589,6 +2589,38 @@ do
     check("wizard: back to /cast", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
         and not C("shiftPet"):IsShown(), shown())
 
+    -- A mount: your mounts offered first, one for each place; a key's own; no units; off it on a press.
+    local journal = C_MountJournal
+    C_MountJournal = { GetMountIDs = function() return { 1, 2, 3 } end, GetMountInfoByID = function(id)
+        return ({ "Swift Red Gryphon", "Swift Brown Steed", "Hidden One" })[id], nil, nil, nil, nil, nil, nil, nil, nil,
+            id == 3, true
+    end }
+    pick(C("command"), "Mount")
+    check("wizard: a mount, no units", not C("on1").parentFrame:IsShown() and C("mountGround"):IsShown() and C("mountFly"):IsShown()
+        and C("offMount"):IsShown() and not C("dismount"):IsShown() and C("shiftCast").placeholder.text == "a mount"
+        and shown():find("Pick a spell", 1, true) ~= nil, shown())
+    TypeIn(C("mountGround"), "swift")
+    check("wizard: your mounts first", offered(C("mountGround")) == "Swift Brown Steed, Swift Red Gryphon",
+        offered(C("mountGround")))
+    Fire(C("mountGround"), "OnEnterPressed")
+    TypeIn(C("mountFly"), "Swift Red Gryphon")
+    Fire(C("mountFly"), "OnEnterPressed")
+    Fire(C("shift"), "OnClick")
+    TypeIn(C("shiftCast"), "Swift Brown Steed")
+    Fire(C("shiftCast"), "OnEnterPressed")
+    check("wizard: a mount for each place, Shift for the ground one", shown() == "#showtooltip\n/cast [nomounted,"
+        .. "mod:shift] Swift Brown Steed; [nomounted,flyable] Swift Red Gryphon; [nomounted] Swift Brown Steed\n"
+        .. "/dismount [mounted,noflying]" and not C("shiftOn"):IsShown(), C("name").text,
+        shown())
+    pick(C("offMount"), "Nothing")
+    check("wizard: nothing on a mount", shown() == "#showtooltip\n/cast [mod:shift] Swift Brown Steed; [flyable] "
+        .. "Swift Red Gryphon; Swift Brown Steed", shown())
+    Fire(C("shift"), "OnClick")
+    C_MountJournal = journal
+    pick(C("command"), "/cast")
+    check("wizard: and back to /cast", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
+        and C("on1").parentFrame:IsShown() and C("dismount"):IsShown() and C("shiftCast").placeholder.text == "same spell", shown())
+
     -- Also: out of a form, off the mount, a buff cancelled first; something said in chat last.
     Fire(C("cancelform"), "OnClick")
     Fire(C("dismount"), "OnClick")
@@ -2688,7 +2720,7 @@ do
         and question() == "What should the macro do?" and not C("back"):IsEnabled() and C("back").shown
         and C("next").shown and not C("create").shown and not C("cancel").shown, question())
     check("steps: what the macro does", answers() == "Cast a spell, Use an item, Several spells in turn, One of "
-        .. "several at random, Target someone, Set your focus, Take someone's target, Command your pet"
+        .. "several at random, Target someone, Set your focus, Take someone's target, Command your pet, Ride a mount"
         and chosen() == "Cast a spell" and C("answer1").hint.text == "/cast", answers())
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
@@ -2696,6 +2728,26 @@ do
     GameTooltip.AddLine = nil
     check("steps: an answer's tooltip says what it is", tip[1] == "Several spells in turn"
         and tip[2]:find("^Each press casts the next spell") ~= nil, tip[2])
+
+    -- A mount: the one for anywhere is a must, the others may stay empty; then what a press on a mount does.
+    Fire(answer("Ride a mount"), "OnClick")
+    check("steps: a mount first", question() == "Which mount should the macro call?" and not C("next"):IsEnabled()
+        and C("stepSpell").placeholder.text == "type a mount", question())
+    TypeIn(C("stepSpell"), "Swift Brown Steed")
+    Fire(C("next"), "OnClick")
+    check("steps: a mount typed goes on", question() == "And where you can fly?" and C("next"):IsEnabled()
+        and C("stepSpell").text == "" and C("stepSpell").placeholder.text == "none", question())
+    Fire(C("next"), "OnClick")
+    Fire(C("next"), "OnClick")
+    check("steps: on a mount", question() == "And when you press it on a mount?" and chosen()
+        == "Get off, not in the air" and shown() == "#showtooltip\n/cast [nomounted] Swift Brown Steed\n"
+        .. "/dismount [mounted,noflying]", shown())
+    Fire(C("next"), "OnClick")
+    Fire(C("next"), "OnClick")
+    check("steps: no dismount check for a mount", question() == "Would you like to add anything else?"
+        and not C("stepDismount"):IsShown(), question())
+    for _ = 1, 6 do Fire(C("back"), "OnClick") end
+    check("steps: back to the first", question() == "What should the macro do?", question())
 
     Fire(answer("Cast a spell"), "OnClick")
     check("steps: a click answers and goes on", question() == "Which spell should the macro cast?"
@@ -4070,7 +4122,7 @@ do
     end
     for _, s in ipairs(ns.schemes) do add(s.name) end
     local W = ns.Wizard
-    for _, list in ipairs({ W.commands, W.PetActions(99), W.channels, W.units }) do
+    for _, list in ipairs({ W.commands, W.PetActions(99), W.channels, W.units, W.mountPlaces, W.offMount }) do
         for _, item in ipairs(list) do add(item.name) end
     end
     for _, command in ipairs(W.commands) do

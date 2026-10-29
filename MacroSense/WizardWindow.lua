@@ -82,7 +82,8 @@ end
 -- A spell or item box: type a name, or pick one of yours from the list under it
 ------------------------------------------------------------------------
 -- What a box offers: your spells and the items you can use. /use offers the items first, with the equipment
--- slots whose item has a use effect ("13", Trinket 1).
+-- slots whose item has a use effect ("13", Trinket 1); a mount macro your mounts first (older games have them as
+-- spells or items, after).
 local function Candidates()
     local spells, items = {}, {}
     for _, spell in ipairs(ns.sources.spells()) do
@@ -95,7 +96,13 @@ local function Candidates()
     local function add(list)
         for _, c in ipairs(list) do out[#out + 1] = c end
     end
-    if spec.command == "use" then
+    if spec.command == "mount" then
+        for _, mount in ipairs(ns.sources.mounts()) do
+            out[#out + 1] = { name = mount.name, icon = mount.icon, hint = L["mount"] }
+        end
+        add(spells)
+        add(items)
+    elseif spec.command == "use" then
         add(items)
         for _, slot in ipairs(ns.data.slots) do
             local name, usable = ns.sources.equipped(tonumber(slot.name))
@@ -402,8 +409,11 @@ end
 -- The parts the command asks for, one under another, and the window as tall as they are.
 function Arrange()
     local list, target, pet = W.IsList(spec.command), W.IsTarget(spec.command), spec.command == "pet"
+    local mount = spec.command == "mount"
     local parts = {}
-    if list then
+    if mount then
+        parts[1] = blocks.mount
+    elseif list then
         parts[1] = blocks.list
     elseif pet then
         parts[1] = blocks.pet
@@ -413,15 +423,16 @@ function Arrange()
         parts[1] = blocks.name
     end
     -- Units for a cast or a target; for the pet only when it attacks.
-    if not pet or spec.pet == "attack" then parts[#parts + 1] = blocks.on end
+    if not mount and (not pet or spec.pet == "attack") then parts[#parts + 1] = blocks.on end
     if spec.command == "castsequence" then parts[#parts + 1] = blocks.reset end
     if not list then parts[#parts + 1] = blocks.keys end
     -- A key casts something (or tells the pet something) in the first column and has its units in the On row's
     -- last ones; for /target, /focus and /assist it only has units, in the first ones.
     for key, row in pairs(keyRows) do
         local x = target and X or X + 158
-        local units = not pet or spec.keys[key].pet == "attack"
+        local units = not mount and (not pet or spec.keys[key].pet == "attack")
         row.box:SetShown(not target and not pet)
+        row.box.placeholder:SetText(mount and L["a mount"] or L["same spell"])
         row.pet:SetShown(pet)
         row.on:SetPoint("TOPLEFT", x, row.y - 1)
         row["then"]:SetPoint("TOPLEFT", x + 158, row.y - 1)
@@ -431,6 +442,9 @@ function Arrange()
         row.word:SetShown(units)
     end
     blocks.keys.on:SetPoint("TOPLEFT", target and X or X + 158, -8)
+    blocks.keys.on:SetShown(not mount)
+    -- A mount macro gets you off a mount its own way.
+    controls.dismount:SetShown(not mount)
     local shown = {}
     for _, b in ipairs(parts) do shown[b] = true end
     for _, b in pairs(blocks) do
@@ -513,7 +527,10 @@ end
 function Answered()
     local kind = asked and asked.kind
     local function typed(box) return strtrim(box:GetText() or "") ~= "" end
-    if kind == "spell" then return spec.action ~= nil or typed(controls.stepSpell) end
+    if kind == "spell" then
+        return asked.optional or (asked.mount and spec.mounts[asked.mount] or spec.action) ~= nil
+            or typed(controls.stepSpell)
+    end
     if kind == "list" then
         for i = 1, W.LIST do
             if spec.list[i] or typed(controls["stepList" .. i]) then return true end
@@ -546,8 +563,11 @@ local function ShowStep()
     end
     -- A key casts the macro's spell unless it has one of its own.
     local box = controls.stepSpell
-    box.placeholder:SetText(asked.key and L["same spell"] or L["type a spell or item"])
-    if asked.kind == "spell" and not asked.key and not spec.action then box:SetFocus() end
+    local mount = spec.command == "mount"
+    box.placeholder:SetText(mount and (asked.optional and L["none"] or L["type a mount"])
+        or asked.key and L["same spell"] or L["type a spell or item"])
+    if asked.kind == "spell" and not asked.optional and not asked.key and not spec.action then box:SetFocus() end
+    controls.stepDismount:SetShown(not mount)
     controls.stepGeneral:SetChosen(scope == "general")
     controls.stepCharacter:SetChosen(scope == "character")
     controls.back:SetEnabled(Q.Next(spec, keys, step, true) ~= nil)
@@ -612,13 +632,17 @@ local function BuildSteps()
 
     -- A spell or item: the macro's, or a key's. Picked from the list, it goes on.
     local function keyOf() return asked and asked.key end
+    local function placeOf() return asked and asked.mount end
     local box = SpellBox(panels.spell, 400, L["type a spell or item"], function()
-        local key = keyOf()
+        local key, place = keyOf(), placeOf()
         if key then return spec.keys[key].action end
+        if place then return spec.mounts[place] end
         return spec.action
     end, function(action)
-        local key = keyOf()
-        if key then
+        local key, place = keyOf(), placeOf()
+        if place then
+            spec.mounts[place] = action
+        elseif key then
             SetKeyAction(key, action)
         else
             spec.action = action
@@ -838,6 +862,24 @@ local function Build()
         box:SetPoint("TOPLEFT", x, y)
         controls["list" .. i] = box
     end
+
+    -- A mount: one for anywhere, others where you can fly and in water (the places this game has), and what a press
+    -- on a mount does.
+    local places = W.MountPlaces(LE_EXPANSION_LEVEL_CURRENT)
+    blocks.mount = Block((#places + 1) * ROW + 2)
+    for i, p in ipairs(places) do
+        local y = -(i - 1) * ROW
+        Text(blocks.mount, L[p.name], PAD, y - 5)
+        local box = SpellBox(blocks.mount, 236, p.key == "ground" and L["type a mount"] or L["the same one"],
+            function() return spec.mounts[p.key] end, function(action) spec.mounts[p.key] = action end)
+        box:SetPoint("TOPLEFT", X + 70, y)
+        controls["mount" .. p.key:gsub("^%l", string.upper)] = box
+    end
+    Text(blocks.mount, L["On a mount"], PAD, -#places * ROW - 5)
+    local offMount = Choice(blocks.mount, "offMount", 236, W.offMount, function() return spec.offMount end,
+        function(key) spec.offMount = key end)
+    offMount:SetPoint("TOPLEFT", X + 70, -#places * ROW - 1)
+    Tip(offMount, L["On a mount"], L["What a press does while you are on a mount. In the air, getting off is a fall."])
 
     -- /target by name: a rare, say.
     blocks.name = Block(34)
