@@ -1286,6 +1286,34 @@ do
     check("wizard name: trinkets alone", W.Name(form({ trinket1 = true })) == "Trinkets")
     check("wizard name: nothing yet", W.Name(W.Fresh()) == nil)
 
+    -- When: every branch checks it, keys too; otherwise is the last branch of /cast and /use.
+    local fire = { name = "Fireball" }
+    expectText("when: in combat", text({ action = fire, only = "enemies", when = { combat = "yes" },
+        keys = { shift = { action = sheep, unit = "focus" } } }), "#showtooltip\n/cast [mod:shift,combat,@focus,"
+        .. "harm,nodead] Polymorph; [combat,@mouseover,harm,nodead][combat] Fireball")
+    expectText("when: otherwise", text({ action = fire, only = "enemies", on = { "default", "none", "none" },
+        when = { stealth = "yes", group = "raid", pet = "no", form = "0" }, otherwise = bolt }),
+        "#showtooltip\n/cast [stealth,group:raid,nopet,noform] Fireball; Frostbolt")
+    expectText("when: a form, out of combat", text({ action = fire, on = { "default", "none", "none" },
+        when = { combat = "no", form = "2", stealth = "no", group = "no", pet = "yes" } }),
+        "#showtooltip\n/cast [nocombat,nostealth,nogroup,pet,form:2] Fireball")
+    expectText("when: otherwise needs a When", text({ action = fire, on = { "default", "none", "none" },
+        otherwise = bolt }), "#showtooltip\n/cast Fireball")
+    expectText("when: a list", text({ command = "castrandom", list = { fire, bolt }, on = { "default", "none", "none" },
+        when = { combat = "yes" }, otherwise = sheep }), "#showtooltip\n/castrandom [combat] Fireball, Frostbolt")
+    expectText("when: /target by name", text({ command = "target", on = { "none", "none", "none" }, byName = "Hogger",
+        when = { combat = "no" } }), "/target [nocombat] Hogger")
+    expectText("when: /target, units then a name", text({ command = "target", on = { "mouseover", "none", "none" },
+        only = "enemies", byName = "Hogger", when = { combat = "no" } }),
+        "/target [nocombat,@mouseover,harm,nodead][nocombat] Hogger")
+    expectText("when: the pet", text({ command = "pet", only = "enemies", on = { "mouseover", "none", "none" },
+        when = { combat = "yes" }, keys = { shift = { pet = "follow" }, ctrl = { pet = "moveto" } } }),
+        "/petattack [nomod:shift/ctrl,combat,@mouseover,harm,nodead]\n/petfollow [mod:shift,combat]\n"
+        .. "/petmoveto [mod:ctrl,combat,@cursor]")
+    check("when: the forms of a character", #W.WhenForms() == 2 and W.WhenForms({ { name = "0" },
+        { name = "1", hint = "Bear Form" } })[3].name == "Bear Form" and W.WhenForms({ { name = "2" } })[3].name
+        == "form 2")
+
     -- A mount: water first, then flying, then the one for anywhere; a key's own before them; off it on a press.
     local ground, flyer, turtle = { name = "Swift Brown Steed" }, { name = "Swift Red Gryphon" }, { name = "Sea Turtle" }
     expectText("mount: one for anywhere", text({ command = "mount", mounts = { ground = ground } }),
@@ -1353,10 +1381,21 @@ do
         check("questions: " .. label, got == want, "\n  got  " .. tostring(got) .. "\n  want " .. want)
     end
 
+    -- When, then for /cast and /use what it casts otherwise.
+    local timed = W.Fresh()
+    check("questions: when, before anything else", steps(timed) == "what,spell,on1,only,on2,keys,when,also,finish",
+        steps(timed))
+    timed.when.combat = "yes"
+    check("questions: otherwise, once When is set", steps(timed):find("when,otherwise,also") ~= nil, steps(timed))
+    Q.Choose(timed, "what", "target")
+    check("questions: no otherwise for /target", steps(timed):find("otherwise") == nil, steps(timed))
+    check("questions: when asks", ask(timed, "when").kind == "when" and ask(W.Fresh(), "otherwise").slot
+        == "otherwise" and ask(W.Fresh(), "otherwise").optional)
+
     -- A mount: one per place, what a press on a mount does, then the keys' own mounts; no units.
     local mount = W.Fresh()
     Q.Choose(mount, "what", "mount")
-    check("questions: a mount", steps(mount) == "what,mountGround,mountFly,mountSwim,offMount,keys,also,finish",
+    check("questions: a mount, no When", steps(mount) == "what,mountGround,mountFly,mountSwim,offMount,keys,also,finish",
         steps(mount))
     mount.keys.alt.active = true
     check("questions: a mount with a key held", steps(mount) == "what,mountGround,mountFly,mountSwim,offMount,keys,"
@@ -1379,7 +1418,7 @@ do
 
     -- A heal on whoever is under the mouse, then on your target if a friend, then on you.
     local spec = W.Fresh()
-    check("questions: a fresh form", steps(spec) == "what,spell,on1,only,on2,keys,also,finish", steps(spec))
+    check("questions: a fresh form", steps(spec) == "what,spell,on1,only,on2,keys,when,also,finish", steps(spec))
     local what = ask(spec, "what")
     check("questions: what the macro does", what.kind == "choice" and what.text == "What should the macro do?"
         and keys(spec, "what") == "cast,use,castsequence,castrandom,target,focus,assist,pet,mount" and what.chosen == "cast"
@@ -1412,7 +1451,7 @@ do
         and find(spec, "on2", "none").name == "Do nothing", keys(spec, "on2"))
     Q.Choose(spec, "on2", "target")
     check("questions: a third, after one that may not be there", steps(spec)
-        == "what,spell,on1,only,on2,on3,keys,also,finish" and ask(spec, "on3").text == "And if you have no target?"
+        == "what,spell,on1,only,on2,on3,keys,when,also,finish" and ask(spec, "on3").text == "And if you have no target?"
         and not find(spec, "on3", "target") and not find(spec, "on3", "mouseover"), steps(spec))
     Q.Choose(spec, "on3", "player")
     macro("a heal: the mouseover, your target, you", spec,
@@ -1431,11 +1470,11 @@ do
         and ask(spec, "only").chosen == "any", anyAlive)
     spec.alive = true
     Q.Choose(spec, "on1", "player")
-    check("questions: nothing after yourself", steps(spec) == "what,spell,on1,keys,also,finish", steps(spec))
+    check("questions: nothing after yourself", steps(spec) == "what,spell,on1,keys,when,also,finish", steps(spec))
     -- The game says what the spell is for: no question about it, and no unit the spell never goes to.
     local bolt = W.Fresh()
     bolt.action, bolt.only, bolt.reaction = { name = "Shadow Bolt" }, "enemies", "enemies"
-    check("questions: the game says it is for enemies: not asked", steps(bolt) == "what,spell,on1,on2,keys,also,finish",
+    check("questions: the game says it is for enemies: not asked", steps(bolt) == "what,spell,on1,on2,keys,when,also,finish",
         steps(bolt))
     check("questions: a spell for enemies goes to no friend", find(bolt, "on1", "arena1") ~= nil
         and not find(bolt, "on1", "player") and not find(bolt, "on1", "pet") and not find(bolt, "on1", "party1")
@@ -1466,7 +1505,7 @@ do
     bolt.keys.shift.action, bolt.keys.shift.reaction = { name = "Shadow Bolt" }, "enemies"
     Q.Choose(bolt, "shiftOn1", "mouseover")
     check("questions: a key's own spell for what it is for", steps(bolt)
-        == "what,spell,on1,on2,keys,shiftCast,shiftOn1,shiftOn2,also,finish"
+        == "what,spell,on1,on2,keys,shiftCast,shiftOn1,shiftOn2,when,also,finish"
         and find(bolt, "shiftOn1", "arena2") ~= nil and not find(bolt, "shiftOn1", "party2")
         and ask(bolt, "shiftOn2").hint == "Or the one there is not an enemy, or is dead."
         and find(bolt, "shiftOn2", "target").name == "On your target, if an enemy"
@@ -1476,11 +1515,11 @@ do
         and find(bolt, "shiftOn1", "arena2") ~= nil and steps(bolt):find("only") == nil, keys(bolt, "shiftOn1"))
     bolt.reaction = nil
     check("questions: asked when the game says nothing", steps(bolt)
-        == "what,spell,on1,only,on2,keys,shiftCast,shiftOn1,shiftOn2,also,finish", steps(bolt))
+        == "what,spell,on1,only,on2,keys,shiftCast,shiftOn1,shiftOn2,when,also,finish", steps(bolt))
     bolt.keys.shift.reaction = "enemies"
     Q.Choose(bolt, "on1", "player")
     check("questions: not for a key's own spell the game says", steps(bolt)
-        == "what,spell,on1,keys,shiftCast,shiftOn1,shiftOn2,also,finish", steps(bolt))
+        == "what,spell,on1,keys,shiftCast,shiftOn1,shiftOn2,when,also,finish", steps(bolt))
     bolt.reaction, bolt.keys.shift.action, bolt.keys.shift.reaction = "enemies", nil, "friends"
     check("questions: a key casting the macro's spell, for what that is for", not find(bolt, "shiftOn1", "party2")
         and find(bolt, "shiftOn1", "arena2") ~= nil, keys(bolt, "shiftOn1"))
@@ -1493,7 +1532,7 @@ do
     spec.action = { name = "Frostbolt" }
     Q.Choose(spec, "on1", "default")
     spec.keys.shift.active = true
-    check("questions: a key held", steps(spec) == "what,spell,on1,keys,shiftCast,shiftOn1,also,finish", steps(spec))
+    check("questions: a key held", steps(spec) == "what,spell,on1,keys,shiftCast,shiftOn1,when,also,finish", steps(spec))
     local cast = ask(spec, "shiftCast")
     check("questions: what the key casts", cast.kind == "spell" and cast.key == "shift" and cast.context
         == "With Shift held" and cast.text == "What should the macro cast instead?", cast.context)
@@ -1503,7 +1542,7 @@ do
     spec.keys.shift.action = { name = "Polymorph" }
     Q.Choose(spec, "shiftOn1", "focus")
     check("questions: friends or enemies after a key's unit", steps(spec)
-        == "what,spell,on1,keys,shiftCast,shiftOn1,only,shiftOn2,also,finish"
+        == "what,spell,on1,keys,shiftCast,shiftOn1,only,shiftOn2,when,also,finish"
         and ask(spec, "shiftOn1").text == "Where should Polymorph go?"
         and ask(spec, "only").text == "Who is Polymorph for?", steps(spec))
     local on = ask(spec, "shiftOn2")
@@ -1520,10 +1559,10 @@ do
         == "Should the macro do something else while you hold Shift, Ctrl or Alt?"
         and ask(spec, "keys", { "shift", "ctrl", "alt", "cmd" }).text
         == "Should the macro do something else while you hold Shift, Ctrl, Alt or Cmd?"
-        and steps(spec, { "shift" }) == "what,spell,on1,keys,shiftCast,shiftOn1,only,shiftOn2,also,finish")
+        and steps(spec, { "shift" }) == "what,spell,on1,keys,shiftCast,shiftOn1,only,shiftOn2,when,also,finish")
     spec.keys.cmd.active = true
     check("questions: Cmd's, on a Mac", ask(spec, "cmdCast").context == "With Cmd held"
-        and steps(spec, { "shift", "ctrl", "alt", "cmd" }):find("ctrlOn1,cmdCast,cmdOn1,also") ~= nil)
+        and steps(spec, { "shift", "ctrl", "alt", "cmd" }):find("ctrlOn1,cmdCast,cmdOn1,when,also") ~= nil)
 
     -- An item; a list; what the macro does changes, and what was picked comes along.
     spec = W.Fresh()
@@ -1534,12 +1573,12 @@ do
     spec.action = { name = "Corruption" }
     Q.Choose(spec, "what", "castsequence")
     check("questions: a list, the spell first", spec.list[1].name == "Corruption" and steps(spec)
-        == "what,list,reset,on1,only,on2,also,finish" and ask(spec, "list").kind == "list"
+        == "what,list,reset,on1,only,on2,when,also,finish" and ask(spec, "list").kind == "list"
         and ask(spec, "list").text == "Pick the spells in the order the macro should cast them"
         and ask(spec, "reset").kind == "reset" and ask(spec, "on1").text == "Where should these spells go?"
         and ask(spec, "only").text == "Who are these spells for?", steps(spec))
     Q.Choose(spec, "what", "castrandom")
-    check("questions: at random, nothing starts it over", steps(spec) == "what,list,on1,only,on2,also,finish"
+    check("questions: at random, nothing starts it over", steps(spec) == "what,list,on1,only,on2,when,also,finish"
         and ask(spec, "list").text == "Pick the spells the macro chooses from", steps(spec))
     spec.list[2] = { name = "Immolate" }
     Q.Choose(spec, "only", "enemies")
@@ -1554,7 +1593,7 @@ do
     spec = W.Fresh()
     spec.reaction = "enemies" -- what the game said for a spell picked before
     Q.Choose(spec, "what", "target")
-    check("questions: /target", steps(spec) == "what,on1,only,on2,keys,also,finish"
+    check("questions: /target", steps(spec) == "what,on1,only,on2,keys,when,also,finish"
         and find(spec, "on1", "party1") ~= nil and find(spec, "on1", "arena1") ~= nil
         and ask(spec, "on1").text == "Who should become your target?"
         and ask(spec, "only").text == "Friends or enemies?"
@@ -1562,32 +1601,32 @@ do
         .. "arena2,arena3,byName" and find(spec, "on1", "mouseover").name == "Whoever is under the mouse"
         and find(spec, "on1", "party1").name == "Party member 1", keys(spec, "on1"))
     Q.Choose(spec, "on1", "byName")
-    check("questions: by name only", steps(spec) == "what,on1,byName,keys,also,finish"
+    check("questions: by name only", steps(spec) == "what,on1,byName,keys,when,also,finish"
         and ask(spec, "on1").chosen == "byName" and ask(spec, "byName").kind == "byName"
         and table.concat(spec.on, ",") == "none,none,none", steps(spec))
     spec.byName = "Hogger"
     macro("target: by name", spec, "/target Hogger")
     Q.Choose(spec, "on1", "mouseover")
-    check("questions: the mouseover, then by name", steps(spec) == "what,on1,only,on2,byName,keys,also,finish"
+    check("questions: the mouseover, then by name", steps(spec) == "what,on1,only,on2,byName,keys,when,also,finish"
         and ask(spec, "on2").chosen == "byName" and keys(spec, "on2"):find(",byName,none$") ~= nil, steps(spec))
     Q.Choose(spec, "only", "enemies")
     macro("target: the mouseover, then by name", spec, "/target [@mouseover,harm,nodead][] Hogger")
     Q.Choose(spec, "on2", "none")
-    check("questions: nobody next, no name", spec.byName == nil and steps(spec) == "what,on1,only,on2,keys,also,finish"
+    check("questions: nobody next, no name", spec.byName == nil and steps(spec) == "what,on1,only,on2,keys,when,also,finish"
         and ask(spec, "on2").chosen == "none")
     spec.keys.shift.active = true
-    check("questions: a key's target, or none", steps(spec):find("keys,shiftOn1,also") ~= nil
+    check("questions: a key's target, or none", steps(spec):find("keys,shiftOn1,when,also") ~= nil
         and find(spec, "shiftOn1", "clear").name == "Clear target" and keys(spec, "shiftOn1"):find(",clear$") ~= nil
         and not keys(spec, "shiftOn1"):find("byName"), keys(spec, "shiftOn1"))
     spec.keys.shift.action, spec.keys.shift.reaction = { name = "Shadow Bolt" }, "enemies" -- from a /cast before
     Q.Choose(spec, "on1", "player")
     Q.Choose(spec, "shiftOn1", "focus")
     check("questions: /target keys take no spell of their own", steps(spec)
-        == "what,on1,keys,shiftOn1,only,shiftOn2,also,finish", steps(spec))
+        == "what,on1,keys,shiftOn1,only,shiftOn2,when,also,finish", steps(spec))
     spec.keys.shift.action, spec.keys.shift.reaction = nil, nil
     Q.Choose(spec, "on1", "mouseover")
     Q.Choose(spec, "shiftOn1", "clear")
-    check("questions: nothing after clearing", steps(spec) == "what,on1,only,on2,keys,shiftOn1,also,finish",
+    check("questions: nothing after clearing", steps(spec) == "what,on1,only,on2,keys,shiftOn1,when,also,finish",
         steps(spec))
     macro("target: Shift clears it", spec, "/cleartarget [mod:shift]\n/stopmacro [mod:shift]\n/target "
         .. "[@mouseover,harm,nodead]")
@@ -1597,7 +1636,7 @@ do
     check("questions: a key's answer keeps the name", spec.byName == "Hogger")
     Q.Choose(spec, "shiftOn1", "focus")
     check("questions: by name for the macro only, not a key", steps(spec)
-        == "what,on1,only,on2,byName,keys,shiftOn1,shiftOn2,also,finish", steps(spec))
+        == "what,on1,only,on2,byName,keys,shiftOn1,shiftOn2,when,also,finish", steps(spec))
     Q.Choose(spec, "shiftOn1", "clear")
     Q.Choose(spec, "on2", "focus")
     Q.Choose(spec, "on3", "party1")
@@ -1618,7 +1657,7 @@ do
     spec = W.Fresh()
     Q.Choose(spec, "what", "pet")
     check("questions: the pet attacks enemies", spec.only == "enemies"
-        and steps(spec) == "what,pet,on1,on2,keys,also,finish"
+        and steps(spec) == "what,pet,on1,on2,keys,when,also,finish"
         and ask(spec, "pet").text == "What should your pet do?" and ask(spec, "pet").chosen == "attack"
         and keys(spec, "pet") == "attack,follow,stay,moveto,passive,defensive,aggressive,dismiss"
         and find(spec, "pet", "follow").hint == "/petfollow", steps(spec))
@@ -1631,11 +1670,11 @@ do
     macro("pet: attack the mouseover", spec, "/petattack [@mouseover,harm,nodead][]")
     Q.Choose(spec, "pet", "follow")
     spec.keys.alt.active = true
-    check("questions: no units but for an attack", steps(spec) == "what,pet,keys,altPet,also,finish"
+    check("questions: no units but for an attack", steps(spec) == "what,pet,keys,altPet,when,also,finish"
         and ask(spec, "altPet").context == "With Alt held" and ask(spec, "altPet").chosen == "passive", steps(spec))
     spec.only = "any"
     Q.Choose(spec, "altPet", "attack")
-    check("questions: a key's attack, on enemies", steps(spec) == "what,pet,keys,altPet,altOn1,also,finish"
+    check("questions: a key's attack, on enemies", steps(spec) == "what,pet,keys,altPet,altOn1,when,also,finish"
         and spec.only == "enemies", steps(spec))
     spec.keys.alt.action, spec.keys.alt.reaction = { name = "Flash Heal" }, "friends" -- from a /cast before
     check("questions: the pet's keys cast nothing of their own", find(spec, "altOn1", "target").name
@@ -1648,7 +1687,7 @@ do
     spec.keys.shift.active = true
     spec.keys.shift.action = { name = "Frostbolt", ranks = { "Rank 1" } }
     check("questions: a rank, not for one learned", steps(spec)
-        == "what,spell,rank,on1,only,on2,keys,shiftCast,shiftOn1,also,finish", steps(spec))
+        == "what,spell,rank,on1,only,on2,keys,shiftCast,shiftOn1,when,also,finish", steps(spec))
     local rank = ask(spec, "rank")
     check("questions: which rank", rank.kind == "choice" and rank.text == "Which rank of Fireball?"
         and keys(spec, "rank") == ",Rank 3,Rank 2,Rank 1" and rank.chosen == ""
@@ -1667,21 +1706,21 @@ do
     -- For yourself only (Demon Armor, a potion): no units to ask about, for the macro or a key that casts it.
     spec = W.Fresh()
     spec.action = { name = "Demon Armor", selfOnly = true }
-    check("questions: for yourself only: no units", steps(spec) == "what,spell,keys,also,finish" and W.SelfOnly(spec),
+    check("questions: for yourself only: no units", steps(spec) == "what,spell,keys,when,also,finish" and W.SelfOnly(spec),
         steps(spec))
     spec.keys.shift.active = true
-    check("questions: a key casting it: none either", steps(spec) == "what,spell,keys,shiftCast,also,finish"
+    check("questions: a key casting it: none either", steps(spec) == "what,spell,keys,shiftCast,when,also,finish"
         and W.SelfOnly(spec, "shift"), steps(spec))
     spec.action = { name = "Fireball" }
     spec.keys.shift.action = { name = "Healthstone", item = true, selfOnly = true }
     check("questions: a key's own, for yourself only", steps(spec)
-        == "what,spell,on1,only,on2,keys,shiftCast,also,finish" and not W.SelfOnly(spec), steps(spec))
+        == "what,spell,on1,only,on2,keys,shiftCast,when,also,finish" and not W.SelfOnly(spec), steps(spec))
     spec.keys.shift.action = nil
     check("questions: a key casting the macro's spell for others", steps(spec)
-        == "what,spell,on1,only,on2,keys,shiftCast,shiftOn1,also,finish", steps(spec))
+        == "what,spell,on1,only,on2,keys,shiftCast,shiftOn1,when,also,finish", steps(spec))
     Q.Choose(spec, "what", "castsequence")
     spec.list = { { name = "Demon Armor", selfOnly = true }, nil, { name = "Soul Link", selfOnly = true } }
-    check("questions: a list for yourself only", steps(spec) == "what,list,reset,also,finish", steps(spec))
+    check("questions: a list for yourself only", steps(spec) == "what,list,reset,when,also,finish", steps(spec))
     spec.list[2] = { name = "Corruption" }
     check("questions: a list with one for others", steps(spec):find("reset,on1") ~= nil, steps(spec))
     spec.list = {}

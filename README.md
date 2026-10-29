@@ -71,6 +71,8 @@ questions; the wizard opens as you left it.
 - **Ride a mount**: which mount, then one where you can fly and one for water (each may stay empty), what a press
   does on a mount (get off, but not in the air; get off anywhere; nothing), and a mount of their own for the keys
   held.
+- **Should the macro work only at certain times?** In or out of combat, in stealth, in a group, with your pet out,
+  in a form; then, for a spell or item, what it casts the rest of the time.
 - **Would you like to add anything else?** The same as the form's Also.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
   the name, saves it and opens it in the editor.
@@ -117,6 +119,9 @@ is set.
   knows what it is for; a key's own spell is checked for what it is for.
 - **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
   fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
+- **When**: only in or out of combat, in stealth or not, in a group, a raid or alone, with your pet out or not, in
+  one of your forms or none; every branch checks it (`[combat,@mouseover,harm,nodead][combat] Fireball`). For
+  `/cast` and `/use` the box after them says what it casts otherwise (`; Frostbolt`).
 - **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
   none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
   first, cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
