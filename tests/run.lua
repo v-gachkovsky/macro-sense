@@ -724,12 +724,13 @@ do
         .. "/cast [noform] [@heal] D\n/cast [harmm] E"
     check("words: #showtooltip", doc(raw, "#show"):find("^#showtooltip / The macro's icon and tooltip") ~= nil)
     check("words: reset=", doc(raw, "reset"):find("^reset= / When the sequence starts over") ~= nil)
-    check("words: nomod the other way round", doc(raw, "nomod") == "nomod / Holds when this does not: / A modifier "
-        .. "key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Without a value, any of them.")
+    check("words: nomod the other way round", doc(raw, "nomod") == "nomod / No modifier key is held: nomod:shift, "
+        .. "no Shift. Without a value, none of them.", doc(raw, "nomod"))
     check("words: a chain of units in words", doc(raw, "party2target") == "@party2target / The target of party "
         .. "member 2", doc(raw, "party2target"))
     check("words: a value", doc(raw, "raid", 1):find("^group / You are in a group") ~= nil, doc(raw, "raid", 1))
-    check("words: noform", doc(raw, "noform"):find("^noform / Holds when this does not: / Your form") ~= nil)
+    check("words: noform", doc(raw, "noform") == "noform / You are not in that form or stance: noform, in none.",
+        doc(raw, "noform"))
     check("words: @heal", doc(raw, "heal"):find("^@heal / Your group's healer") ~= nil)
     check("words: a spell is the game's", doc(raw, "C") == "action C" and doc(raw, "A, B") == "action A")
     check("words: nothing for an error, a bracket or a space", doc(raw, "harmm") == "nil" and doc(raw, "[noform]")

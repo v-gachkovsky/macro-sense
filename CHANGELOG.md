@@ -11,8 +11,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **More one-click fixes** in the status bar: a typo in a command, condition, unit or value (`/cats` → `/cast`,
   `harmm` → `harm`, `@mousover` → `@mouseover`, `mod:shfit`, `reset=tagret`), a missing `]` or `[`, a stray `]`, the
   comma of an empty condition, a value where none belongs (`combat:1`). The tooltip says what the click does.
-- **What a word means**: point at a word in the editor. A command, a condition (`nodead` reads "Holds when this
-  does not: The unit is dead."), a unit, `#showtooltip`, `reset=` get a few plain words; a spell or item shows the
+- **What a word means**: point at a word in the editor. A command, a condition (`nodead` reads "The unit is not
+  dead."), a unit, `#showtooltip`, `reset=` get a few plain words; a spell or item shows the
   game's own tooltip. In English and Ukrainian.
 - A talent or specialization change that breaks macros on your bars says so on the screen (`MacroSense: 2 macros
   on your bars use spells you don't have now`), their names in chat.
