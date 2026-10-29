@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.0] - 2026-10-30
 
 ### Added
 - **Open a macro you have in the wizard**: **Wizard** next to History opens the macro shown with its answers filled
@@ -51,6 +51,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The editor's tooltips (a line's explanation, a word's meaning) no longer show through the wizard or the questions window above it.
 
 ### Changed
+- `/ms bug` and the message after an update name every way to report a bug: GitHub Issues, the comments on
+  CurseForge, or email.
 - **The trash menu lists every deleted macro** (up to 30 per tab), not only the 12 newest. A long menu shows 20
   rows at a time; the mouse wheel or its scroll bar goes through the rest.
 - Plainer words in tooltips and hints, in English and Ukrainian: whole short sentences instead of chains of
