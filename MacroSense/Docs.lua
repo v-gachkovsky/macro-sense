@@ -91,6 +91,47 @@ local CONDITIONS = {
     cursor = "You hold something on the mouse cursor: a spell, an item, a macro.",
 }
 
+-- The same, the other way round: "nodead", "nomod:shift".
+local NOT = {
+    combat = "You are not in combat.",
+    mod = "No modifier key is held: nomod:shift, no Shift. Without a value, none of them.",
+    harm = "The unit is not an enemy you can attack.",
+    help = "The unit is not friendly.",
+    exists = "The unit is not there: nobody is under the mouse, say.",
+    dead = "The unit is not dead.",
+    form = "You are not in that form or stance: noform, in none.",
+    stealth = "You are not in stealth.",
+    mounted = "You are not on a mount.",
+    flying = "You are not flying.",
+    flyable = "You can't fly here.",
+    advflyable = "Skyriding is not allowed here.",
+    swimming = "You are not swimming.",
+    indoors = "You are not indoors.",
+    outdoors = "You are not outdoors.",
+    resting = "You are not in a rested area.",
+    channeling = "You are not channeling a spell, or not that one.",
+    group = "You are not in a group, or not in that kind.",
+    party = "The unit is not in your party.",
+    raid = "The unit is not in your raid.",
+    pet = "Your pet is not out, or not that one.",
+    spec = "That specialization is not active.",
+    known = "You don't know that spell.",
+    talent = "That talent is not chosen.",
+    pvptalent = "That PvP talent is not chosen.",
+    equipped = "You don't wear that kind of item.",
+    btn = "Another mouse button clicked the action button.",
+    bar = "Your action bar is on another page.",
+    bonusbar = "No bonus bar is up, or not that one.",
+    extrabar = "The extra action button is not shown.",
+    overridebar = "No override bar replaces your action bar.",
+    possessbar = "You don't control another creature.",
+    vehicleui = "You are not in a vehicle with its own action bar.",
+    unithasvehicleui = "The unit is not in a vehicle.",
+    canexitvehicle = "You can't leave a vehicle now.",
+    petbattle = "You are not in a pet battle.",
+    cursor = "Nothing is on the mouse cursor.",
+}
+
 local UNITS = {
     target = "The one you have targeted.",
     focus = "A unit you set with /focus: you act on it without targeting it.",
@@ -118,13 +159,12 @@ local META = {
 }
 
 local AT = "On whom the branch acts: @mouseover, @focus, @player... target= is the same."
-local NO = "Holds when this does not:"
 local RESET = "When the sequence starts over: seconds without a press, target, combat, shift, ctrl or alt."
 
 -- Every text, for the translation check.
 function Docs.Texts()
-    local out = { AT, NO, RESET }
-    for _, set in ipairs({ COMMANDS, CONDITIONS, UNITS, META }) do
+    local out = { AT, RESET }
+    for _, set in ipairs({ COMMANDS, CONDITIONS, NOT, UNITS, META }) do
         for _, text in pairs(set) do out[#out + 1] = text end
     end
     return out
@@ -159,9 +199,9 @@ function Docs.At(raw, pos, env)
         -- "nocombat", "nomod": the other way round ("no" first, as Base drops it from "nomod").
         local lower = name:lower()
         local no = lower:sub(1, 2) == "no" and CONDITIONS[base(lower:sub(3))] ~= nil
-        local text = CONDITIONS[base(no and lower:sub(3) or lower)]
+        local text = (no and NOT or CONDITIONS)[base(no and lower:sub(3) or lower)]
         if not text then return nil end
-        return { title = name, lines = no and { L[NO], L[text] } or { L[text] } }
+        return { title = name, lines = { L[text] } }
     elseif kind == "operator" and (word == "@" or word == "target=") then
         return { title = word, lines = { L[AT] } }
     elseif kind == "unit" then

@@ -5013,8 +5013,8 @@ do
     check("word: @", at(letter(18), 1):find("^@ / On whom the branch acts") ~= nil, at(letter(18), 1))
     check("word: a unit", at(letter(21), 1) == "@focus / A unit you set with /focus: you act on it without "
         .. "targeting it.", at(letter(21), 1))
-    check("word: a condition the other way round", at(letter(31), 1) == "nodead / Holds when this does not: / "
-        .. "The unit is dead.", at(letter(31), 1))
+    check("word: a condition the other way round", at(letter(31), 1) == "nodead / The unit is not dead.",
+        at(letter(31), 1))
     check("word: a command of the client's language", at(letter(2), 5):find("^/ziel / Targets a unit") ~= nil,
         at(letter(2), 5))
     local shownSpell
