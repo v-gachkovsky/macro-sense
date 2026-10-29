@@ -248,10 +248,11 @@ C_Item = {
     IsEquippableItem = function(link) return link:find("1234") ~= nil end,
     GetItemIconByID = function(id) return id end,
     GetItemCount = function() return 1 end,
-    -- Item 2411 is a mount (Miscellaneous, Mount).
+    -- Item 2411 is a mount (Miscellaneous, Mount); Fire Ring a ring, Lucky Charm a trinket.
     GetItemInfoInstant = function(link)
         local id = tonumber(link:match("item:(%d+)"))
-        return id, nil, nil, nil, id, id == 2411 and 15 or 0, id == 2411 and 5 or 0
+        local loc = ({ [1234] = "INVTYPE_FINGER", [777] = "INVTYPE_TRINKET" })[id] or ""
+        return id, nil, nil, loc, id, id == 2411 and 15 or 0, id == 2411 and 5 or 0
     end,
     IsHelpfulItem = function(item) return item == "Healthstone" end,
     IsHarmfulItem = function() return false end,
@@ -2694,6 +2695,10 @@ do
     check("wizard: only gear offered", offered(C("equip1")) == "Fire Ring, Lucky Charm", offered(C("equip1")))
     TypeIn(C("equip1"), "Fire Ring")
     Fire(C("equip1"), "OnEnterPressed")
+    Fire(C("equipSlot1"), "OnClick")
+    check("wizard: a ring's slots only", menuItem("Ring 1") ~= nil and menuItem("Trinket 1") == nil
+        and menuItem("Main hand") == nil and menuItem("Default slot") ~= nil)
+    Fire(C("equipSlot1"), "OnClick")
     pick(C("equipSlot1"), "Ring 2")
     pick(C("equipKey1"), "With Shift held")
     check("wizard: a ring in its slot with Shift", shown() == "#showtooltip Fire Ring\n/equipslot [mod:shift] 12 Fire Ring",

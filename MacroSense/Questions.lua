@@ -48,7 +48,8 @@ function Questions.Steps(spec, keys)
         for i = 1, W.EQUIP do
             out[#out + 1] = "equipItem" .. i
             if not spec.equip[i].item then break end
-            out[#out + 1] = "equipSlot" .. i
+            -- A chest piece has nowhere else to go: no question.
+            if #W.EquipSlots(spec.equip[i].item) > 1 then out[#out + 1] = "equipSlot" .. i end
             out[#out + 1] = "equipKey" .. i
         end
         out[#out + 1] = "when"
@@ -359,7 +360,7 @@ function Questions.Ask(spec, step, keys)
     elseif step:match("^equipSlot%d$") then
         local piece = spec.equip[tonumber(step:sub(-1))]
         local answers = {}
-        for _, slot in ipairs(W.equipSlots) do
+        for _, slot in ipairs(W.EquipSlots(piece.item)) do
             answers[#answers + 1] = { key = slot.key, name = L[slot.name],
                 hint = slot.key ~= "" and "/equipslot " .. slot.key or "/equip" }
         end

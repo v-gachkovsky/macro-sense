@@ -339,6 +339,14 @@ local Equippable = C_Item and C_Item.IsEquippableItem or IsEquippableItem
 local ItemIcon = C_Item and C_Item.GetItemIconByID or GetItemIcon
 local ItemCount = C_Item and C_Item.GetItemCount or GetItemCount
 local LAST_BAG = (NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4)
+local InfoInstant = C_Item and C_Item.GetItemInfoInstant or GetItemInfoInstant
+
+-- Where an item goes: "INVTYPE_TRINKET", "INVTYPE_SHIELD"..., nil when the game doesn't say.
+local function EquipLoc(link)
+    if not InfoInstant then return nil end
+    local ok, _, _, _, loc = pcall(InfoInstant, link)
+    return ok and loc ~= "" and loc or nil
+end
 
 -- "[Name]" from a link, without quality / texture markup (crafted reagents carry an atlas icon).
 local function linkName(link)
@@ -360,6 +368,7 @@ function ns.sources.items()
             hint = where == "equipped" and "equipped" or (count > 1 and ("x" .. count) or "item"),
             usable = ItemSpell(link) ~= nil,
             equippable = Equippable(link) and true or false,
+            equipLoc = EquipLoc(link),
         }
     end
     for slot = 1, 19 do add(GetInventoryItemLink("player", slot), "equipped") end
@@ -630,7 +639,7 @@ end
 
 -- Spells that are mounts: the warlock's and the paladin's steeds, the druid's travel forms, Ghost Wolf.
 local MOUNT_SPELLS = { 5784, 23161, 13819, 23214, 34769, 34767, 783, 33943, 40120, 1066, 2645 }
-local ItemInfoInstant = C_Item and C_Item.GetItemInfoInstant or GetItemInfoInstant
+local ItemInfoInstant = InfoInstant
 local MISC, MOUNT = 15, 5 -- the item class Miscellaneous, its subclass Mount
 
 -- Your mounts for the wizard, by name: { name, icon }. Retail has them in its collection, Wrath to Mists in the

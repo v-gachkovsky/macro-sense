@@ -98,7 +98,10 @@ local function Candidates()
     end
     if spec.command == "equip" then
         for _, item in ipairs(ns.sources.items()) do
-            if item.equippable or item.hint == "equipped" then out[#out + 1] = { name = item.name, icon = item.icon, hint = item.hint, item = true } end
+            if item.equippable or item.hint == "equipped" then
+                out[#out + 1] = { name = item.name, icon = item.icon, hint = item.hint, item = true,
+                    equipLoc = item.equipLoc }
+            end
         end
         return out
     end
@@ -232,7 +235,7 @@ local function SpellBox(parent, width, hint, get, set, candidates)
             for _, c in ipairs(candidates()) do
                 local name = c.name:lower()
                 if name == typed:lower() or (name == base and not c.item) then
-                    action = { name = c.name, item = c.item, label = c.label, ranks = c.ranks,
+                    action = { name = c.name, item = c.item, label = c.label, ranks = c.ranks, equipLoc = c.equipLoc,
                         rank = name == base and rank or nil,
                         selfOnly = ns.sources.selfOnly(c.label or c.name, c.item) or nil }
                     break
@@ -683,6 +686,7 @@ local function BuildSteps()
             spec.otherwise = action
         elseif asked and asked.slot == "equip" then
             spec.equip[asked.index].item = action
+            W.FitSlot(spec.equip[asked.index])
         elseif place then
             spec.mounts[place] = action
         elseif key then
@@ -927,12 +931,23 @@ local function Build()
     for i = 1, W.EQUIP do
         local y = -(i - 1) * ROW
         local piece = function() return spec.equip[i] end
+        -- The slots the item can go to; none to choose for a chest piece.
+        local slot = Choice(rows, "equipSlot" .. i, 128, function() return W.EquipSlots(piece().item) end,
+            function() return piece().slot end, function(key) piece().slot = key end)
+        slot:SetPoint("TOPLEFT", X + 238, y - 1)
+        local refresh = slot.Refresh
+        function slot:Refresh()
+            refresh(self)
+            self:SetShown(#W.EquipSlots(piece().item) > 1)
+        end
         local item = SpellBox(rows, 230, i == 1 and L["type an item"] or L["none"], function() return piece().item end,
-            function(action) piece().item = action end)
+            function(action)
+                piece().item = action
+                W.FitSlot(piece())
+                slot:Refresh()
+            end)
         item:SetPoint("TOPLEFT", X, y)
         controls["equip" .. i] = item
-        Choice(rows, "equipSlot" .. i, 128, W.equipSlots, function() return piece().slot end,
-            function(key) piece().slot = key end):SetPoint("TOPLEFT", X + 238, y - 1)
         Choice(rows, "equipKey" .. i, 130, function() return W.EquipKeys(keys) end, function() return piece().key end,
             function(key) piece().key = key end):SetPoint("TOPLEFT", X + 374, y - 1)
     end
