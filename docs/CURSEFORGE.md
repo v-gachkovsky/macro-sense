@@ -25,9 +25,9 @@ bars, which opens that macro. On Retail it's in the addon menu by the minimap to
 
 1. **New (Wizard)** under the macro list. It asks what the macro should do, one question at a time; **All
    options** at its top shows the whole form at once, as here.
-2. **Cast**: a few letters of the spell (or the first letters of its words, in capitals).
+2. **Cast**: a few letters of the spell (or the first letters of its words, in capitals): Shadow Bolt.
 3. **On**: Mouseover, then As usual. **Only**: Enemies, set from the spell.
-4. **With a key held**: Alt casts Immolate on the same units.
+4. **With a key held**: Alt casts Corruption on the mouseover, then as usual; Cmd (on a Mac) Curse of Agony.
 5. **Create macro**: it is saved and opens in the editor.
 
 ![The macro wizard](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/guide-wizard.gif)
@@ -51,11 +51,16 @@ time: what the macro should do, which spell, where it goes (whoever is under the
 under the cursor...) and who then when that one is not there, friends or enemies (only when the game doesn't
 say), what Shift, Ctrl or Alt do, anything else. Each answer shows the macro's words for it, and the macro grows at the bottom as you answer.
 
+![The wizard, step by step](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/wizard-steps.gif)
+
 Or **All options** shows the whole form, where you pick it all at once:
 
 - **the command**: `/cast`, `/use`, `/castsequence` (with what starts it over), `/castrandom`, or `/target`,
   `/focus` and `/assist` on units (party members by key, say; `/target` by name too), or **pet commands**
   (attack your mouseover, follow with Shift, move to the cursor with Ctrl...)
+- **a mount macro**: one button for a flying mount where you can fly, another elsewhere, one for water, another
+  with a key held, your mounts offered first; on a mount it gets you off, but not in the air
+  (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`)
 - **what to cast**: a spell or item, found by a few letters or by the first letters of its words in capitals
 - **on whom, in order**: mouseover, focus, your target, your group's tank or healer, yourself, your pet, party
   members 1-4, target's target, arena enemies 1-3, the cursor, or as usual
@@ -103,6 +108,9 @@ Line numbers sit in a gutter on the left, so "Line 3" in a message is easy to fi
 units, values and spell names each get their own color. Mistakes are **underlined**,
 the status bar names them (hover for the full list, click to go there), and the Save button shows a warning sign:
 
+![Mistakes underlined, fixed with a click on the status bar](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/fix-one-click.gif)
+
+
 - unknown commands and conditions (a typo like `harmm` or `/cats`: a click on the status bar makes it `harm`,
   `/cast`; so it adds a missing `]` or takes out a stray one)
 - a `[` without `]`, or a `]` without `[`
@@ -123,6 +131,10 @@ the status bar names them (hover for the full list, click to go there), and the 
 Saving is still allowed: the editor warns, it doesn't block you. In the macro list, a macro with errors
 stands out with a red name and a warning sign (only warnings: a yellow name), so a broken one is easy to
 find among dozens; hover it to see what's wrong.
+
+![A talent you haven't chosen: the status bar warns](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/talent-editor.png)
+
+![The macro's tooltip on the action bar says why](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/talent-tooltip.png)
 
 **Mac players:** if a macro with `[mod:cmd]` sits on a key macOS itself uses with Cmd (Cmd+Q quits the game,
 Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you, and so does the macro's tooltip on your
@@ -145,12 +157,16 @@ Got a macro from a guide and not sure what it does? Point at a line's number and
 `with Shift held: Polymorph on your focus, if it is an enemy and alive`, `otherwise: Frostbolt`. Point at a
 word for what it means: `nodead`, `@focus`, `/stopmacro`; a spell or item shows the game's own tooltip.
 
+![What a word means, under the mouse](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/word-tips.gif)
+
 ## Shorten
 
 Hit the 255 character limit? **Shorten** writes the same macro in fewer characters and tells you how many
 it saves: `target=` becomes `@`, `[@mouseover,harm] Fear; Fear` becomes `[@mouseover,harm][]Fear`,
 `[pet:Succubus][pet:Incubus]` becomes `[pet:Succubus/Incubus]`, and spaces the game doesn't need go. The
 macro does exactly the same as before, and Ctrl+Z brings the old text back.
+
+![Shorten](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/shorten.gif)
 
 ## History
 
@@ -204,6 +220,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
   macro's plain text from a guide too, and **Copy this macro's text** gives yours as text.
 - **Link a macro in chat** (Share, or Shift-click it in the list): whoever has MacroSense clicks the link, sees
   what the macro holds and imports it.
+
+![A macro linked in chat, and imported from the link](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/share-chat.gif)
 
 ---
 
