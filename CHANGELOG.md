@@ -27,7 +27,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   `/dismount [mounted,noflying]`. Its `#showtooltip` names the same mounts, so on a mount the icon stays the
   mount's, not a question mark.
 - **The wizard puts on gear** ("Put on gear"): up to four items from your bags or what you wear, each in its
-  default slot or one you pick (a trinket, a ring, a hand), always or only with a key held, and an equipment set
+  default slot or one you pick (only those it fits: the other trinket or ring, the off hand for a one-hand
+  weapon), always or only with a key held, and an equipment set
   where the game has them: `/equipslot [mod:shift] 14 Lucky Charm`, `/equipset PvP`.
 - **The wizard's When row**: the macro works only in or out of combat, in stealth or not, in a group, a raid or
   alone, with your pet out or not, in one of your forms or none (`[combat,nostealth,form:1]` on every branch). For

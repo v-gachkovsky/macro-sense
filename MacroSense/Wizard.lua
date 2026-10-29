@@ -40,6 +40,31 @@ Wizard.equipKeys = {
     { key = "none", name = "Without a key", cond = "nomod" },
 }
 
+-- The slots an item can go to, by where the game says it goes (Sources.items' equipLoc): two for a trinket, a ring
+-- or a one-hand weapon, its own only for the rest. An item the game says nothing of (a name typed) gets them all.
+local SLOTS_OF = {
+    INVTYPE_TRINKET = { "13", "14" }, INVTYPE_FINGER = { "11", "12" }, INVTYPE_WEAPON = { "16", "17" },
+}
+function Wizard.EquipSlots(item)
+    local loc = item and item.equipLoc
+    if not loc then return Wizard.equipSlots end
+    local out = { Wizard.equipSlots[1] }
+    for _, key in ipairs(SLOTS_OF[loc] or {}) do
+        for _, slot in ipairs(Wizard.equipSlots) do
+            if slot.key == key then out[#out + 1] = slot end
+        end
+    end
+    return out
+end
+
+-- A piece's slot, kept while its item can go there, else its own.
+function Wizard.FitSlot(piece)
+    for _, slot in ipairs(Wizard.EquipSlots(piece.item)) do
+        if slot.key == piece.slot then return end
+    end
+    piece.slot = ""
+end
+
 -- The choices of when to put a piece on, for the keys of this client (`keys`: Cmd on a Mac).
 function Wizard.EquipKeys(keys)
     local mac = false

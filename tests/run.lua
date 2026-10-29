@@ -1333,6 +1333,20 @@ do
         == "/equipset [nocombat] PvP" and W.Name(gear({ equipSet = "PvP" })) == "PvP")
     check("equip: nothing yet", W.Text(gear({})) == nil and W.Name(gear({})) == "Gear"
         and W.Name(gear({ pieces = { { "Shield" } } })) == "Shield")
+    local function slotKeys(item)
+        local out = {}
+        for _, slot in ipairs(W.EquipSlots(item)) do out[#out + 1] = slot.key end
+        return table.concat(out, ",")
+    end
+    check("equip: the slots an item fits", slotKeys({ equipLoc = "INVTYPE_TRINKET" }) == ",13,14"
+        and slotKeys({ equipLoc = "INVTYPE_FINGER" }) == ",11,12" and slotKeys({ equipLoc = "INVTYPE_WEAPON" })
+        == ",16,17" and slotKeys({ equipLoc = "INVTYPE_CHEST" }) == "" and slotKeys({ name = "Typed" })
+        == ",16,17,13,14,11,12" and slotKeys(nil) == ",16,17,13,14,11,12")
+    local moved = { item = { equipLoc = "INVTYPE_FINGER" }, slot = "13" }
+    W.FitSlot(moved)
+    local kept = { item = { equipLoc = "INVTYPE_TRINKET" }, slot = "14" }
+    W.FitSlot(kept)
+    check("equip: a slot the item can't go to is dropped", moved.slot == "" and kept.slot == "14")
     check("equip: Cmd only on a Mac", #W.EquipKeys({ "shift", "ctrl", "alt" }) == 5
         and #W.EquipKeys({ "shift", "ctrl", "alt", "cmd" }) == 6)
 
@@ -1412,6 +1426,13 @@ do
     equip.equip[1].item = { name = "Shield", item = true }
     check("questions: gear, a piece picked", steps(equip) == "what,equipItem1,equipSlot1,equipKey1,equipItem2,when,"
         .. "finish", steps(equip))
+    local chest = W.Fresh()
+    Q.Choose(chest, "what", "equip")
+    chest.equip[1].item = { name = "Robe", item = true, equipLoc = "INVTYPE_CHEST" }
+    check("questions: a chest piece: no slot to ask", steps(chest) == "what,equipItem1,equipKey1,equipItem2,when,finish",
+        steps(chest))
+    chest.equip[1].item.equipLoc = "INVTYPE_TRINKET"
+    check("questions: a trinket's slots", keys(chest, "equipSlot1") == ",13,14", keys(chest, "equipSlot1"))
     local first, second = ask(equip, "equipItem1"), ask(equip, "equipItem2")
     check("questions: the first piece, the next ones may stay empty", first.kind == "spell" and first.slot == "equip"
         and first.index == 1 and not first.optional and second.optional and second.text == "And another one?")
