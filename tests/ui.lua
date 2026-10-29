@@ -1377,6 +1377,13 @@ do
     NextFrame()
     check("click fixes the name", raw() == "/cast Fireball", raw())
     check("no issue after the fix", statusText() == "", statusText())
+    Type("\n/cats x")
+    Wait(1)
+    edit:ClearFocus()
+    edit:SetCursorPosition(0)
+    Fire(hover(), "OnMouseUp")
+    local at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
+    check("click on an issue with no fix goes to it", edit:HasFocus() and at == #"/cast Fireball\n", at)
     -- Items: names seen in the bags are remembered for later.
     check("seen items remembered", ns.db.itemNames and ns.db.itemNames["Healthstone"] == true)
     -- Pet spells: remembered from every pet seen, so the other pet's spells stay known.

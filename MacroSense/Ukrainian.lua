@@ -277,6 +277,7 @@ ns.locales.uk = {
     ["Line %d: %s"] = "Рядок %d: %s",
     [" (+%d more)"] = " (+ще %d)",
     ["Click to use \"%s\""] = "Клацніть, щоб вставити «%s»",
+    ["Click to go to line %d"] = "Клацніть, щоб перейти до рядка %d",
     ["Discard unsaved changes to this macro?"] = "Відкинути незбережені зміни цього макросу?",
     ["Delete macro \"%s\"?%s"] = "Видалити макрос «%s»?%s",
     ["Yes"] = "Так",
