@@ -78,6 +78,8 @@ ns.data = {
         { name = "outdoors",         hint = "outdoors" },
         { name = "resting",          hint = "in a rested area" },
         { name = "channeling",       hint = "channeling a spell", arg = true },
+        -- [nochanneling] alone, as nomod: a press doesn't cut your channel short. ":Name" still gets the spells.
+        { name = "nochanneling",     hint = "not channeling" },
         { name = "group",            hint = "in a group", arg = true },
         { name = "pet",              hint = "pet is out", arg = true },
         { name = "nopet",            hint = "no pet" },

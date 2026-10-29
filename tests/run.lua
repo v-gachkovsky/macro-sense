@@ -123,6 +123,9 @@ check("condition with value inserts ':'", modItem and modItem.insert == "mod:", 
 local nomodItem = ns.Completion.Get(ctx("/cast [nom|"))[1]
 check("nomod inserts no ':'", nomodItem and nomodItem.insert == "nomod", nomodItem and nomodItem.insert)
 check("nomod: with a value, still the modifiers", names("/cast [nomod:|"):find("^shift,ctrl,alt") ~= nil)
+local nochanItem = ns.Completion.Get(ctx("/cast [nocha|"))[1]
+check("nochanneling offered, with no ':'", nochanItem and nochanItem.insert == "nochanneling",
+    nochanItem and nochanItem.insert)
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
 
@@ -451,6 +454,7 @@ local function issues(raw)
     for _, e in ipairs(H.Errors(raw)) do out[#out + 1] = e.severity .. ":" .. raw:sub(e.from, e.to) end
     return table.concat(out, " ")
 end
+check("nochanneling is no mistake", issues("/cast [nochanneling] X; [nochanneling:Drain Life] Y") == "")
 check("unknown unit is a warning", issues("/cast [@mousover] X") == "warning:mousover", issues("/cast [@mousover] X"))
 check("player name is only a warning", issues("/cast [target=Thrall] X") == "warning:Thrall")
 check("bad value is an error", issues("/cast [btn:7] X") == "error:7", issues("/cast [btn:7] X"))
