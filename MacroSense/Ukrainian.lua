@@ -153,7 +153,7 @@ ns.locales.uk = {
     ["Export all macros (%d)"] = "Експортувати всі макроси (%d)",
     ["The code of every macro of both tabs; imported, each goes into its own tab."] =
         "Код усіх макросів обох вкладок; під час імпорту кожен потрапить у свою вкладку.",
-    ["Import a code..."] = "Імпортувати код...",
+    ["Import a code or text..."] = "Імпортувати код чи текст...",
     -- links in chat (Links.lua)
     ["Link this macro in chat"] = "Посилання на макрос у чат",
     ["Puts a link of it into the chat: players with MacroSense click it to get the macro as saved now, the others "
@@ -175,8 +175,10 @@ ns.locales.uk = {
         .. "number."] = "Макрос, яким %s поділився в чаті: подивіться, що в ньому, тоді імпортуйте. Нічого не "
         .. "замінюється: зайнята назва отримує номер.",
     ["could not ask %s now: try again in a moment"] = "зараз не вдалося спитати в %s: спробуйте за мить",
-    ["Paste a code to make its macros. Nothing is replaced: a taken name gets a number, like \"Fear 2\"."] =
-        "Вставте код, щоб створити його макроси. Нічого не замінюється: зайнята назва отримує номер, як «Fear 2».",
+    ["Paste a code, or a macro's text from a guide, to make its macros. Nothing is replaced: a taken name gets a "
+        .. "number, like \"Fear 2\"."] =
+        "Вставте код або текст макроса з гайду, щоб створити макроси. Нічого не замінюється: зайнята назва отримує "
+        .. "номер, як «Fear 2».",
     ["imported %d of %d macros"] = "імпортовано макросів: %d з %d",
     ["Trash"] = "Кошик",
     ["Macros deleted by this addon, by any other or in the game's macro window land here, and you can bring them "
@@ -310,8 +312,19 @@ ns.locales.uk = {
     ["Press %s to copy the code, then share it: anyone with MacroSense can import it."] =
         "Натисніть %s, щоб скопіювати код, і поділіться ним: будь-хто з MacroSense зможе його імпортувати.",
     ["Import macros"] = "Імпортувати макроси",
-    ["Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number."] =
-        "Вставте код MacroSense (%s). Нічого не замінюється: зайнята назва отримує номер.",
+    ["Paste a MacroSense code, or a macro's text from a guide (%s). Nothing is replaced: a taken name gets a "
+        .. "number."] =
+        "Вставте код MacroSense або текст макроса з гайду (%s). Нічого не замінюється: зайнята назва отримує номер.",
+    ["%d macros in the text:"] = { "У тексті %d макрос:", "У тексті %d макроси:", "У тексті %d макросів:" },
+    ["This is neither a MacroSense code nor a macro: each line of a macro starts with / or #."] =
+        "Це ні код MacroSense, ні макрос: кожен рядок макроса починається з / або #.",
+    ["The macro's text"] = "Текст макроса",
+    ["Press %s to copy the text: for guides, forums and Discord. MacroSense imports it too."] =
+        "Натисніть %s, щоб скопіювати текст: для гайдів, форумів і Discord. MacroSense його теж імпортує.",
+    ["Copy this macro's text"] = "Скопіювати текст макроса",
+    ["Its text as saved, to paste into a guide, a forum or Discord. MacroSense imports such a text too."] =
+        "Його текст (як збережений), щоб вставити в гайд, на форум чи в Discord. MacroSense такий текст теж імпортує.",
+    ["Save the macro first, then copy its text."] = "Спершу збережіть макрос, потім скопіюйте його текст.",
     ["MacroSense: %d macros on your bars use spells you don't have now"] = {
         "MacroSense: %d макрос на ваших панелях має заклинання, якого у вас зараз немає",
         "MacroSense: %d макроси на ваших панелях мають заклинання, яких у вас зараз немає",

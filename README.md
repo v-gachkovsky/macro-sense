@@ -305,11 +305,15 @@ handy when a tab is full. Deleting a macro says where it is before it asks, and 
 another specialization or character have asks first: there it will be gone.
 
 **Share** under the list makes a code of the macro, of the tab or of all your macros: copy it and send it
-(Discord, a forum), and anyone with MacroSense makes the macros with **Share > Import a code**. Before
+(Discord, a forum), and anyone with MacroSense makes the macros with **Share > Import a code or text**. Before
 anything is made, the window says what the code holds and where each macro goes. Nothing is replaced: a
 taken name gets a number (`Fear 2`), and a macro with no free slot in its tab is left out. The code is one
 line of letters and digits, which chat apps leave as it is, ending in a dot, so words around it don't
 matter; a code cut short or changed is refused.
+
+Guides (Wowhead, Icy Veins) and forums write macros as plain text, so **Import a code or text** takes that too:
+paste the macro, or several split by an empty line, and each is made in the tab you are in, named after its first
+spell. **Share > Copy this macro's text** gives the text the other way, to post anywhere.
 
 **Share > Link this macro in chat**, or Shift-click on a macro in the list (yours or an alt's), puts
 `[MacroSense: Fear MO]` into your message, or opens the chat with it, wherever the cursor is. Players with MacroSense see it as a link: a click asks you for the

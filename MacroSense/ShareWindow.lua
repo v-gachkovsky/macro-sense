@@ -31,7 +31,15 @@ local function Preview()
     importBtn:SetEnabled(false)
     if not text:find("%S") then return info:SetText("") end
     local macros, problem = ns.Share.Decode(text)
-    if not macros then return info:SetText("|cff" .. ns.scheme.invalid .. problem .. "|r") end
+    local plain = not macros and ns.Share.FromText(text, ns.db.scope)
+    if plain then
+        macros = plain
+    elseif not macros then
+        if not text:find(ns.Share.PREFIX, 1, true) then
+            problem = L["This is neither a MacroSense code nor a macro: each line of a macro starts with / or #."]
+        end
+        return info:SetText("|cff" .. ns.scheme.invalid .. problem .. "|r")
+    end
     local lines, fit = {}, 0
     for i, p in ipairs(ns.Window.ImportPlan(macros)) do
         local tab = L[SCOPE_NAMES[p.macro.scope]]
@@ -48,7 +56,8 @@ local function Preview()
         if i <= LISTED then lines[#lines + 1] = line end
     end
     if #macros > LISTED then lines[#lines + 1] = string.format(L["... and %d more"], #macros - LISTED) end
-    table.insert(lines, 1, ns.Plural(#macros, "%d macro in the code:", "%d macros in the code:"))
+    table.insert(lines, 1, plain and ns.Plural(#macros, "%d macro in the text:", "%d macros in the text:")
+        or ns.Plural(#macros, "%d macro in the code:", "%d macros in the code:"))
     info:SetText(table.concat(lines, "\n"))
     found = macros
     importBtn:SetEnabled(fit > 0)
@@ -154,13 +163,26 @@ function ShareWindow.Export(macros)
     info:SetText(Names(macros))
 end
 
+-- The text of macro `m` ({ name, body }), selected to copy: for guides, forums and chat.
+function ShareWindow.ExportText(m)
+    code = m.body
+    Open("export")
+    titleText:SetText(L["The macro's text"])
+    hint:SetText(string.format(L["Press %s to copy the text: for guides, forums and Discord. MacroSense imports it "
+        .. "too."], Keys("C")))
+    box:SetText(code)
+    box:HighlightText()
+    info:SetText(m.name)
+end
+
 -- An empty box to paste a code into, or the code of a macro someone linked in chat (`from`: who).
 function ShareWindow.Import(text, from)
     Open("import")
     titleText:SetText(L["Import macros"])
     hint:SetText(from and string.format(L["The macro %s linked in chat: see what it holds, then import it. Nothing is "
         .. "replaced: a taken name gets a number."], from)
-        or string.format(L["Paste a MacroSense code (%s). Nothing is replaced: a taken name gets a number."], Keys("V")))
+        or string.format(L["Paste a MacroSense code, or a macro's text from a guide (%s). Nothing is replaced: a "
+            .. "taken name gets a number."], Keys("V")))
     box:SetText(text or "")
     Preview()
 end

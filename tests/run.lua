@@ -1696,6 +1696,20 @@ do
     check("minimap: a shape it doesn't know is round", at(45, "HEXAGON") == "53.0,53.0", at(45, "HEXAGON"))
 end
 
+-- A macro's text as guides write it: one macro, or several split by empty lines.
+do
+    local S = ns.Share
+    local one = S.FromText("```\n#showtooltip\n/use 13\n/cast [@focus] Polymorph\n```", "character")
+    check("text: one macro, fences dropped", one and #one == 1 and one[1].body == "#showtooltip\n/use 13\n"
+        .. "/cast [@focus] Polymorph" and one[1].name == "Polymorph" and one[1].scope == "character"
+        and one[1].icon == "", one and one[1].body)
+    local two = S.FromText("/startattack\r\n\r\n\r\n/cast Fear", "general")
+    check("text: two, named after a spell or the first command", two and #two == 2 and two[1].name == "startattack"
+        and two[2].name == "Fear", two and two[1].name)
+    check("text: words around it are no macro", S.FromText("Use this macro:\n/cast Fear", "general") == nil
+        and S.FromText("  \n ", "general") == nil)
+end
+
 -- Share: macros as a code and back, whatever a chat app does around it.
 do
     local S = ns.Share
