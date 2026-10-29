@@ -248,6 +248,11 @@ C_Item = {
     IsEquippableItem = function(link) return link:find("1234") ~= nil end,
     GetItemIconByID = function(id) return id end,
     GetItemCount = function() return 1 end,
+    -- Item 2411 is a mount (Miscellaneous, Mount).
+    GetItemInfoInstant = function(link)
+        local id = tonumber(link:match("item:(%d+)"))
+        return id, nil, nil, nil, id, id == 2411 and 15 or 0, id == 2411 and 5 or 0
+    end,
     IsHelpfulItem = function(item) return item == "Healthstone" end,
     IsHarmfulItem = function() return false end,
 }
@@ -2612,6 +2617,24 @@ do
         .. "mod:shift] Swift Brown Steed; [nomounted,flyable] Swift Red Gryphon; [nomounted] Swift Brown Steed\n"
         .. "/dismount [mounted,noflying]" and not C("shiftOn"):IsShown(), C("name").text,
         shown())
+    -- Without a mount collection (Classic): a class's mount spell and the mount items in the bags; no other spells.
+    C_MountJournal = nil
+    gameSpells[5784] = { 136103, "Summon Felsteed" }
+    book[#book + 1] = { "Summon Felsteed", "" }
+    bag[#bag + 1] = "|cff0070dd|Hitem:2411::|h[Black Stallion Bridle]|h|r"
+    ns.InvalidateSources()
+    TypeIn(C("mountFly"), "")
+    Fire(C("mountFly"), "OnEditFocusGained")
+    check("wizard: only mounts, without a collection", offered(C("mountFly")) == "Black Stallion Bridle, Summon Felsteed",
+        offered(C("mountFly")))
+    Fire(C("mountFly"), "OnEscapePressed")
+    Fire(C("mountFly"), "OnEscapePressed")
+    gameSpells[5784], book[#book], bag[#bag] = nil, nil, nil
+    ns.InvalidateSources()
+    TypeIn(C("mountFly"), "fire")
+    check("wizard: no mounts at all: no spells either", not C("mountFly").list:IsShown(), offered(C("mountFly")))
+    TypeIn(C("mountFly"), "Swift Red Gryphon")
+    Fire(C("mountFly"), "OnEnterPressed")
     pick(C("offMount"), "Nothing")
     check("wizard: nothing on a mount", shown() == "#showtooltip\n/cast [mod:shift] Swift Brown Steed; [flyable] "
         .. "Swift Red Gryphon; Swift Brown Steed", shown())

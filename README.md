@@ -102,7 +102,7 @@ is set.
   other units or clear the target / focus, and `/target` can also go by name (a rare, say). **Pet commands**:
   what the pet does without a key (attack, on units in order, follow, stay, move to the cursor, passive,
   defensive, aggressive, dismiss), and with each key held. **Mount**: a mount for anywhere, one where you can fly
-  (from TBC on) and one for water, your mounts offered first, and **On a mount**: what a press does there
+  (from TBC on) and one for water, picked from your mounts only, and **On a mount**: what a press does there
   (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`,
   `/dismount [mounted,noflying]`). A key held calls another mount (a ground one where you could fly).
 - **Cast** / **Use**: the spell or item. Type a few letters, or the first letters of its words in capitals (`FB`),
