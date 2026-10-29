@@ -47,6 +47,35 @@ local function isCondition(name)
     return conditionSet[name:lower()]
 end
 
+-- The extra of an issue whose word is close to one of `names` (lower case): "did you mean", and the fix.
+local function guess(word, names, lead)
+    local best = ns.Spelling and ns.Spelling.SuggestWord(word:lower(), names)
+    if not best then return nil end
+    best = (lead or "") .. best
+    return { short = string.format(L["did you mean \"%s\"?"], best), fix = best }
+end
+
+local function sorted(set)
+    local list = {}
+    for name in pairs(set) do list[#list + 1] = name end
+    table.sort(list)
+    return list
+end
+
+local function namesOf(items)
+    local list = {}
+    for _, item in ipairs(items) do list[#list + 1] = item.name:lower() end
+    return list
+end
+
+-- The extra of an issue fixed by adding `text` at raw position `at` (before it), or taking out from..to.
+local function adding(text, at)
+    return { fix = text, fixFrom = at, fixTo = at - 1, fixTip = string.format(L["Click to add \"%s\""], text) }
+end
+local function removing(text, from, to)
+    return { fix = "", fixFrom = from, fixTo = to, fixTip = string.format(L["Click to remove \"%s\""], text) }
+end
+
 ------------------------------------------------------------------------
 -- Tokenizer: spans { from, to, kind } over raw text (1-based, inclusive)
 ------------------------------------------------------------------------
@@ -82,7 +111,8 @@ local function unitSpan(unit, from, add)
     local to = from + #unit - 1
     local C = ns.Conditions
     if C and not C.IsUnit(unit) and not C.TAGS[unit] and not (Highlight.isMember and Highlight.isMember(unit)) then
-        add(from, to, "unit", string.format(L["unknown unit \"%s\" (fine if it is a player's name)"], unit), "warning")
+        add(from, to, "unit", string.format(L["unknown unit \"%s\" (fine if it is a player's name)"], unit), "warning",
+            guess(unit, namesOf(ns.data.units)))
     else
         add(from, to, "unit")
     end
@@ -113,20 +143,22 @@ local function conditionSpans(s, base, add)
     if isCondition(name) then
         add(at + 1, at + #name, "condition")
     else
-        add(at + 1, at + #name, "error", string.format(L["unknown condition \"%s\""], name))
+        add(at + 1, at + #name, "error", string.format(L["unknown condition \"%s\""], name), nil,
+            guess(name, sorted(conditionSet)))
     end
     local C = ns.Conditions
     if values == "" then
         add(at + #name + 1, at + #name + 1, "error", string.format(L["%s: needs a value"], name))
     elseif values and isCondition(name) and C and not C.TakesValue(name) then
-        add(at + #name + 1, at + #body, "error", string.format(L["%s takes no value"], name:lower()))
+        add(at + #name + 1, at + #body, "error", string.format(L["%s takes no value"], name:lower()), nil,
+            removing(body:sub(#name + 1), at + #name + 1, at + #body))
     elseif values then
         local pos = at + #name + 1
         add(pos, pos, "operator")
         for part, slash in values:gmatch("([^/]*)(/?)") do
             local problem = part ~= "" and C and C.CheckValue(name, part)
             if problem then
-                add(pos + 1, pos + #part, "error", problem)
+                add(pos + 1, pos + #part, "error", problem, nil, guess(part, namesOf(C.Values(name))))
             elseif part ~= "" then
                 add(pos + 1, pos + #part, "value")
             end
@@ -251,7 +283,8 @@ local function resetSpans(reset, from, add, sequence)
         local part = values:sub(start, (slash or #values + 1) - 1)
         if part ~= "" then
             local problem = ns.Conditions and ns.Conditions.CheckReset(part)
-            add(at + start, at + start + #part - 1, problem and "error" or "value", problem or nil)
+            add(at + start, at + start + #part - 1, problem and "error" or "value", problem or nil, nil,
+                problem and guess(part, { "target", "combat", "shift", "ctrl", "alt" }))
         end
         if not slash then break end
         add(at + slash, at + slash, "operator")
@@ -273,7 +306,15 @@ local function argSpans(s, base, add, argKind, sequence, command)
             if close then
                 add(base + i, base + i, "bracket")
             else
-                add(base + i, base + i, "error", L["[ is not closed with ]"])
+                -- The "]" goes after the conditions: up to the first space not after a comma.
+                local k = i + 1
+                while true do
+                    k = k + #s:match("^[^%s;]*", k)
+                    local gap = s:sub(k - 1, k - 1) == "," and s:match("^%s+", k)
+                    if not gap then break end
+                    k = k + #gap
+                end
+                add(base + i, base + i, "error", L["[ is not closed with ]"], nil, adding("]", base + k))
                 close = #s + 1
                 -- One error is enough: the rest of the line still gets colors, not more errors.
                 addCond = function(from, to, kind, message)
@@ -290,7 +331,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
                 local pos = base + i + from - 1
                 if split and not part:find("%S") then
                     local at = base + i + (comma or from - 1) -- the comma next to the gap
-                    addCond(at, at, "error", L["empty condition"])
+                    addCond(at, at, "error", L["empty condition"], nil, removing(",", at, at))
                 else
                     conditionSpans(part, pos, addCond)
                 end
@@ -301,7 +342,10 @@ local function argSpans(s, base, add, argKind, sequence, command)
             if close <= #s then add(base + close, base + close, "bracket") end
             i = close + 1
         elseif c == "]" then
-            add(base + i, base + i, "error", L["] without ["])
+            -- A "[" before the conditions that end here, or none to put one before: the "]" goes.
+            local run = #s:sub(1, i - 1):match("[^%s;%]]*$")
+            add(base + i, base + i, "error", L["] without ["], nil,
+                run > 0 and adding("[", base + i - run) or removing("]", base + i, base + i))
             i = i + 1
         elseif c == ";" or (list and c == ",") then
             add(base + i, base + i, "operator")
@@ -362,7 +406,8 @@ local function lineSpans(line, base, add)
         if Highlight.checkCommand and name ~= "" then problem, short = Highlight.checkCommand(name) end
         add(cmdFrom, cmdTo, "command", problem, "warning", short and { short = short })
     else
-        add(cmdFrom, cmdTo, "error", string.format(L["unknown command \"/%s\""], cmd))
+        add(cmdFrom, cmdTo, "error", string.format(L["unknown command \"/%s\""], cmd), nil,
+            guess(cmd, namesOf(ns.data.commands), "/"))
     end
     local restBase = cmdTo - base
     local rest = line:sub(restBase + 1)
@@ -392,7 +437,8 @@ function Highlight.Spans(raw)
 end
 
 -- Syntax problems: { from, to, message, line, severity = "error" | "warning", short?, fix?, missing? }
--- (raw positions, 1-based, inclusive; fix replaces from..to; missing: a spell the game can't cast now).
+-- (raw positions, 1-based, inclusive; fix replaces from..to, or fixFrom..fixTo when given (fixTo < fixFrom: put in
+-- before fixFrom), fixTip says it; missing: a spell the game can't cast now).
 function Highlight.Errors(raw)
     local out = {}
     for _, span in ipairs(Highlight.Spans(raw)) do
@@ -402,6 +448,7 @@ function Highlight.Errors(raw)
             out[#out + 1] = {
                 from = span[1], to = span[2], message = span[4], line = line, severity = span[5],
                 short = extra.short, fix = extra.fix, missing = extra.missing,
+                fixFrom = extra.fixFrom, fixTo = extra.fixTo, fixTip = extra.fixTip,
             }
         end
     end

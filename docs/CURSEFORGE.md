@@ -103,7 +103,8 @@ Line numbers sit in a gutter on the left, so "Line 3" in a message is easy to fi
 units, values and spell names each get their own color. Mistakes are **underlined**,
 the status bar names them (hover for the full list, click to go there), and the Save button shows a warning sign:
 
-- unknown commands and conditions (a typo like `harmm` or `/cats`)
+- unknown commands and conditions (a typo like `harmm` or `/cats`: a click on the status bar makes it `harm`,
+  `/cast`; so it adds a missing `]` or takes out a stray one)
 - a `[` without `]`, or a `]` without `[`
 - an empty condition: `[harm,,dead]`
 - `@` or `target=` without a unit, `mod:` without a value
