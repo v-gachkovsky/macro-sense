@@ -470,10 +470,10 @@ The CurseForge description is in `docs/CURSEFORGE.md`.
 
 ## Support
 
-MacroSense is free and stays free. If it saves you time and you'd like to say thanks, you can buy me a coffee
-on [Ko-fi](https://ko-fi.com/mortivux) or drop something into my
-[monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ) (any card, Apple Pay or Google Pay). A bug report or a
-kind word helps just as much.
+MacroSense is free. If it helps you, you can support its development:
+
+- [Ko-fi](https://ko-fi.com/mortivux)
+- [monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ)
 
 ## License
 

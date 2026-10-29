@@ -255,9 +255,10 @@ you did, what you expected and what happened (a screenshot helps), plus the outp
 
 ## Support
 
-MacroSense is free and stays free. If it saves you time and you'd like to say thanks, you can buy me a coffee
-on [Ko-fi](https://ko-fi.com/mortivux) or drop something into my
-[monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ) (any card, Apple Pay or Google Pay).
+MacroSense is free. If it helps you, you can support its development:
+
+- [Ko-fi](https://ko-fi.com/mortivux)
+- [monobank jar](https://send.monobank.ua/jar/2GZjyGouqJ)
 
 ---
 
