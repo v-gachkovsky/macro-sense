@@ -1317,13 +1317,15 @@ do
     -- A mount: water first, then flying, then the one for anywhere; a key's own before them; off it on a press.
     local ground, flyer, turtle = { name = "Swift Brown Steed" }, { name = "Swift Red Gryphon" }, { name = "Sea Turtle" }
     expectText("mount: one for anywhere", text({ command = "mount", mounts = { ground = ground } }),
-        "#showtooltip\n/cast [nomounted] Swift Brown Steed\n/dismount [mounted,noflying]")
+        "#showtooltip Swift Brown Steed\n/cast [nomounted] Swift Brown Steed\n/dismount [mounted,noflying]")
     expectText("mount: by place", text({ command = "mount", mounts = { ground = ground, fly = flyer, swim = turtle } }),
-        "#showtooltip\n/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Swift Red Gryphon; [nomounted] "
+        "#showtooltip [swimming] Sea Turtle; [flyable] Swift Red Gryphon; Swift Brown Steed\n"
+        .. "/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Swift Red Gryphon; [nomounted] "
         .. "Swift Brown Steed\n/dismount [mounted,noflying]")
     expectText("mount: a key's own, the same side by side", text({ command = "mount", offMount = "always",
         mounts = { ground = ground, fly = flyer }, keys = { shift = { action = ground }, alt = {} } }),
-        "#showtooltip\n/cast [nomounted,mod:shift] Swift Brown Steed; [nomounted,flyable] Swift Red Gryphon; "
+        "#showtooltip [mod:shift] Swift Brown Steed; [flyable] Swift Red Gryphon; Swift Brown Steed\n"
+        .. "/cast [nomounted,mod:shift] Swift Brown Steed; [nomounted,flyable] Swift Red Gryphon; "
         .. "[nomounted] Swift Brown Steed\n/dismount [mounted]")
     expectText("mount: nothing on a mount", text({ command = "mount", offMount = "no", dismount = true,
         mounts = { fly = flyer, ground = ground } }), "#showtooltip\n/cast [flyable] Swift Red Gryphon; Swift Brown Steed")

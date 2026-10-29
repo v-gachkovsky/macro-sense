@@ -2635,7 +2635,8 @@ do
     Fire(C("shift"), "OnClick")
     TypeIn(C("shiftCast"), "Swift Brown Steed")
     Fire(C("shiftCast"), "OnEnterPressed")
-    check("wizard: a mount for each place, Shift for the ground one", shown() == "#showtooltip\n/cast [nomounted,"
+    check("wizard: a mount for each place, Shift for the ground one", shown() == "#showtooltip [mod:shift] Swift "
+        .. "Brown Steed; [flyable] Swift Red Gryphon; Swift Brown Steed\n/cast [nomounted,"
         .. "mod:shift] Swift Brown Steed; [nomounted,flyable] Swift Red Gryphon; [nomounted] Swift Brown Steed\n"
         .. "/dismount [mounted,noflying]" and not C("shiftOn"):IsShown(), C("name").text,
         shown())
@@ -2791,7 +2792,7 @@ do
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
     check("steps: on a mount", question() == "And when you press it on a mount?" and chosen()
-        == "Get off, not in the air" and shown() == "#showtooltip\n/cast [nomounted] Swift Brown Steed\n"
+        == "Get off, not in the air" and shown() == "#showtooltip Swift Brown Steed\n/cast [nomounted] Swift Brown Steed\n"
         .. "/dismount [mounted,noflying]", shown())
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")

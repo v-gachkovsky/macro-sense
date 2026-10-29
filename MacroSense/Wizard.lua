@@ -436,11 +436,10 @@ local function PetLines(spec)
     return lines
 end
 
--- "/cast [nomounted,mod:shift] Ground; [nomounted,swimming] Water; [nomounted,flyable] Flying; [nomounted] Ground":
--- the keys' mounts, then water, flying and the one for anywhere, side by side as one when the same. On a mount the
--- macro gets you off it ("/dismount [mounted,noflying]"), so it calls none then.
-local function MountLines(spec)
-    local off = spec.offMount ~= "no"
+-- "[nomounted,mod:shift] Ground; [nomounted,swimming] Water; [nomounted,flyable] Flying; [nomounted] Ground": the
+-- keys' mounts, then water, flying and the one for anywhere, side by side as one when the same; `off`: each checks
+-- that you are not on a mount.
+local function MountBranches(spec, off)
     local out = {}
     local function add(cond, action)
         local conds = {}
@@ -468,9 +467,20 @@ local function MountLines(spec)
         local groups = (i == #out and c.groups == "[]") and "" or (c.groups .. " ")
         parts[i] = groups .. Wizard.Spelled(c.action)
     end
-    local lines = { "/cast " .. table.concat(parts, "; ") }
-    if off then lines[2] = spec.offMount == "always" and "/dismount [mounted]" or "/dismount [mounted,noflying]" end
-    return lines
+    return table.concat(parts, "; ")
+end
+
+-- The /cast line and the /dismount after it. On a mount the macro gets you off it ("/dismount [mounted,noflying]"),
+-- so it casts none then; its icon comes from the same branches without that check, so on a mount too it is the
+-- mount's, not "?". Returns the lines, and what #showtooltip names (nil: nothing).
+local function MountLines(spec)
+    local off = spec.offMount ~= "no"
+    local branches = MountBranches(spec, off)
+    if not branches then return nil end
+    local lines = { "/cast " .. branches }
+    if not off then return lines end
+    lines[2] = spec.offMount == "always" and "/dismount [mounted]" or "/dismount [mounted,noflying]"
+    return lines, MountBranches(spec, false)
 end
 
 -- What the macro is named after and shows with trinkets first: the spell or item, a key's, the list's first.
@@ -493,9 +503,10 @@ end
 -- The macro, or nil while there is nothing to cast, use or target.
 function Wizard.Text(spec)
     local target = Wizard.IsTarget(spec.command) or spec.command == "pet" -- no spell, no icon of its own
-    local before, line, after = {}, nil, nil
+    local before, line, after, icon = {}, nil, nil, nil
     if spec.command == "mount" then
-        local lines = MountLines(spec)
+        local lines
+        lines, icon = MountLines(spec)
         line, after = lines and lines[1], lines and lines[2]
     elseif spec.command == "pet" then
         before = PetLines(spec)
@@ -515,7 +526,8 @@ function Wizard.Text(spec)
     local lines = {}
     if not target or #uses > 0 then
         local first = First(spec)
-        lines[1] = #uses > 0 and first and ("#showtooltip " .. Wizard.Spelled(first)) or "#showtooltip"
+        lines[1] = icon and ("#showtooltip " .. icon)
+            or #uses > 0 and first and ("#showtooltip " .. Wizard.Spelled(first)) or "#showtooltip"
     end
     local pet = spec.command == "pet"
     if not pet then
