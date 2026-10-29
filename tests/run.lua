@@ -126,6 +126,17 @@ check("nomod: with a value, still the modifiers", names("/cast [nomod:|"):find("
 local nochanItem = ns.Completion.Get(ctx("/cast [nocha|"))[1]
 check("nochanneling offered, with no ':'", nochanItem and nochanItem.insert == "nochanneling",
     nochanItem and nochanItem.insert)
+check("every condition the other way round too", names("/cast [nomou|") == "nomounted"
+    and names("/cast [nostea|") == "nostealth" and names("/cast [nopar|"):find("^noparty") ~= nil,
+    names("/cast [nomou|") .. " | " .. names("/cast [nostea|") .. " | " .. names("/cast [nopar|"))
+local noknown = ns.Completion.Get(ctx("/cast [noknow|"))[1]
+check("a \"no\" form that needs a value gets ':'", noknown and noknown.insert == "noknown:", noknown and noknown.insert)
+-- A client of an older expansion (Classic Era: 0) is not offered what came later.
+ns.HasExpansion = function(since) return not since or since <= 0 end
+check("skyriding, pet battles, PvP talents not in Classic Era", names("/cast [advfl|") == ""
+    and names("/cast [petba|") == "" and names("/cast [pvpta|") == "" and names("/cast [flyab|") == "flyable,noflyable",
+    names("/cast [advfl|") .. " | " .. names("/cast [flyab|"))
+ns.HasExpansion = nil
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
 
@@ -185,8 +196,9 @@ do
     check("small: names that start with it before a later word", #out == 2 and out[1].name == "Fireball",
         out[1] and out[1].name)
 end
-check("conditions by the letters of a word", names("/cast [nmd|") == "nomod", names("/cast [nmd|"))
-check("letters inside before letters apart", names("/cast [nd|") == "indoors,nomod,nodead", names("/cast [nd|"))
+check("conditions by the letters of a word", names("/cast [nmd|") == "nomod,nomounted", names("/cast [nmd|"))
+check("letters inside before letters apart", names("/cast [nd|"):find("^indoors,noindoors,nomod,nodead") ~= nil,
+    names("/cast [nd|"))
 
 -- Items: /equip wants gear, /use puts items first, /cast puts spells first.
 check("equip items", names("/equip F|") == "Fire Ring", names("/equip F|"))

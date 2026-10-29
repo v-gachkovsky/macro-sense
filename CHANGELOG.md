@@ -7,7 +7,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- Autocomplete offers `[nochanneling]`, so a press doesn't cut your channeled spell short.
+- Autocomplete offers every condition the other way round too (`nochanneling`, `nomounted`, `noflying`,
+  `nostealth`, `noharm`, `nogroup`, `noknown:`...), and `party`, `raid`, `shapeshift`, `modifier`. Conditions a
+  client's game doesn't have yet (`advflyable`, `petbattle`, `pvptalent`, `extrabar`) are not offered there.
 
 ## [0.9.0] - 2026-10-30
 
