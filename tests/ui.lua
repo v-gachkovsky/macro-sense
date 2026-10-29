@@ -4135,6 +4135,11 @@ do
         and C("name").text == "Wiz Edit" and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball",
         shown())
     check("open in wizard: it stays in its tab", not C("tab").shown and not C("tabLabel").shown)
+    ns.db.wizardForm = nil
+    Fire(C("mode"), "OnClick")
+    local function backBy() return C("back").point[2] end
+    check("open in wizard: Back next to Next, not the wider button hidden", C("next").shown and backBy() == C("next"))
+    Fire(C("mode"), "OnClick")
     check("open in wizard: the line it leaves out", C("changed").shown and C("changed").text.text == "1 line will change"
         and tooltip(C("changed")):find("/run print(1)", 1, true) ~= nil, tooltip(C("changed")))
     Fire(C("on1"), "OnClick")

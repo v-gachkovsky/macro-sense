@@ -614,6 +614,9 @@ local function ShowStep()
     controls.next:SetShown(asked.kind ~= "finish")
     controls.next:SetEnabled(Answered())
     createBtn:SetShown(asked.kind == "finish")
+    -- Back next to the button shown: Next, or at the end the button that may be wider (Put in editor).
+    controls.back:ClearAllPoints()
+    controls.back:SetPoint("RIGHT", createBtn:IsShown() and createBtn or controls.next, "LEFT", -6, 0)
 end
 
 -- What is being typed is taken, as if Enter was pressed.
