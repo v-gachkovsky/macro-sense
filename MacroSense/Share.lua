@@ -74,7 +74,7 @@ function Share.Decode(text)
     local digits = text:sub(at + #PREFIX):gsub("%s", ""):match("^([%w+/=]*)%.")
     local plain = digits and FromDigits(digits) -- nil: no dot, the end is missing
     local body, sum = (plain or ""):match("^(.*)" .. SUM .. "(%d+)$")
-    if not body or Sum(body) ~= sum then return nil, L["The code is cut short or changed: copy all of it again."] end
+    if not body or Sum(body) ~= sum then return nil, L["The code is cut short or changed. Copy all of it again."] end
     local macros = {}
     for part in (body .. MACRO):gmatch("(.-)" .. MACRO) do
         local scope, icon, name, macroText = part:match("^(%a)" .. FIELD .. "(.-)" .. FIELD .. "(.-)" .. FIELD .. "(.*)$")

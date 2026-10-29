@@ -511,15 +511,15 @@ local function BuildAlso(parent, prefix)
         { "stopcasting", L["Stop your cast first"], L["For an interrupt or a save: it goes off at once, even in the "
             .. "middle of another cast."] },
         { "trinket1", L["Trinket 1"] },
-        { "nearest", L["Nearest enemy if none"], L["When your target is not an enemy, or is dead, the nearest enemy "
-            .. "becomes the target first (/targetenemy [noharm][dead])."] },
+        { "nearest", L["Nearest enemy if none"], L["If your target isn't an enemy or is dead, the macro first "
+            .. "targets the nearest enemy (/targetenemy [noharm][dead])."] },
         { "startattack", L["Start auto attack"] },
         { "trinket2", L["Trinket 2"], L["Your trinkets go off first (/use 13, /use 14), whenever they are ready."] },
-        { "cancelform", L["Leave your form first"], L["Out of a form or stance first (/cancelform): to heal out of "
-            .. "Bear Form, say."] },
+        { "cancelform", L["Leave your form first"], L["Leaves your form or stance first (/cancelform). For example, "
+            .. "to heal while you are in Bear Form."] },
         { "petattack", L["Pet attacks your target"] },
-        { "dismount", L["Off your mount first"], L["Off the mount first (/dismount [mounted]), so the cast doesn't "
-            .. "fail on it."] },
+        { "dismount", L["Off your mount first"], L["Gets you off your mount first (/dismount [mounted]), so the "
+            .. "spell doesn't fail."] },
     }
     for i, c in ipairs(also) do
         local name = c[1]
@@ -533,8 +533,8 @@ local function BuildAlso(parent, prefix)
         function(action) spec.cancelaura = action end, ns.sources.buffs)
     buff:SetPoint("TOPLEFT", PAD + 120, -74)
     controls[named("cancelaura")] = buff
-    Tip(buff, L["Cancel a buff first"], L["Removes the buff before the rest (/cancelaura Ice Block): leave it empty "
-        .. "for none. It offers the buffs on you now and those you have had."])
+    Tip(buff, L["Cancel a buff first"], L["Removes this buff before anything else (/cancelaura Ice Block). Leave it "
+        .. "empty to keep your buffs. The list shows the buffs you have now and the ones you had before."])
     Text(parent, L["Say in chat"], PAD, -110)
     Choice(parent, named("channel"), 100, W.channels, function() return spec.channel end,
         function(key) spec.channel = key end):SetPoint("TOPLEFT", PAD + 120, -107)
@@ -546,15 +546,15 @@ local function BuildAlso(parent, prefix)
         Update()
     end)
     function say:Refresh() self:SetText(spec.say or "") end
-    Tip(say, L["Say in chat"], L["Said after the rest, in the channel on the left; %t is your target's name. Leave "
-        .. "it empty to say nothing."])
+    Tip(say, L["Say in chat"], L["The macro says this after everything else, in the channel on the left. %t is your "
+        .. "target's name. Leave it empty to say nothing."])
     controls[named("say")] = say
 end
 
 -- Cmd on a key macOS keeps for itself: what it does there.
 local function CmdTip(check)
-    Tip(check, "Cmd", L["On a key macOS uses with Cmd itself (Q quits the game, W, H, Tab, Space...) macOS comes "
-        .. "first: the editor warns when the macro sits on one."])
+    Tip(check, "Cmd", L["macOS uses some keys with Cmd itself: Q quits the game, and W, H, Tab, Space and others do "
+        .. "things too. On those keys macOS acts first, so the editor warns you when the macro is on one."])
 end
 
 ------------------------------------------------------------------------
@@ -985,8 +985,8 @@ local function Build()
         Update()
     end)
     function controls.byName:Refresh() self:SetText(spec.byName or "") end
-    Tip(controls.byName, L["By name"], L["Targets the nearest one with this name, when none of the units above is "
-        .. "there. Leave On empty (-) to target by name only."])
+    Tip(controls.byName, L["By name"], L["If none of the units above is there, the macro targets the nearest one "
+        .. "with this name. Set On to - to target by name only."])
 
     -- What the pet does without a key.
     blocks.pet = Block(34)
@@ -1006,19 +1006,20 @@ local function Build()
             function() return spec.on[i] end, function(key) spec.on[i] = key end)
         d:SetPoint("TOPLEFT", X + (i - 1) * 158, -1)
         if i > 1 then Text(blocks.on, L["then"], X + (i - 1) * 158 - 32, -5, "dim") end
-        Tip(d, i == 1 and L["On"] or L["Then"], i == 1 and (L["Who the macro casts on. As usual: your target, or "
-            .. "you when the game casts on you by itself (Auto Self Cast)."] .. " " .. L["Group's tank or healer: "
-            .. "@tank and @heal, the name of the one with the role in the game's macro, kept up to date."])
-            or L["When the one before is not there, or not the one asked for: this one."])
+        Tip(d, i == 1 and L["On"] or L["Then"], i == 1 and (L["Who the macro casts on. As usual means your target, "
+            .. "or you when the game casts on you by itself (Auto Self Cast)."] .. " " .. L["Group's tank and healer "
+                .. "are @tank and @heal. The game's macro gets the name of whoever has the role, and MacroSense "
+                .. "keeps it up to date."])
+            or L["If the one before isn't there, or isn't who you need, the macro tries this one."])
     end
     Text(blocks.on, L["Only"], PAD, -39)
     local only = Choice(blocks.on, "only", 120, { { key = "any", name = L["Anyone there"] },
         { key = "friends", name = L["Friends"] }, { key = "enemies", name = L["Enemies"] } },
         function() return spec.only end, function(key) spec.only = key end)
     only:SetPoint("TOPLEFT", X, -35)
-    Tip(only, L["Only"], L["What the units above must be: friends, enemies or anyone there. Yourself, As usual and "
-        .. "At the cursor need no check. It follows the spell you pick, when the game knows what it is for; a key's "
-        .. "own spell is checked for what it is for."])
+    Tip(only, L["Only"], L["Who the units above must be: friends, enemies or anyone. Yourself, As usual and At the "
+        .. "cursor aren't checked. When the game knows who a spell is for, this follows the spell you pick. A key's "
+        .. "own spell is checked for who it is for."])
     Check(blocks.on, "alive", L["Alive only"], function() return spec.alive end, function(on) spec.alive = on end)
         :SetPoint("TOPLEFT", X + 136, -35)
 
@@ -1060,8 +1061,8 @@ local function Build()
         local c = Check(blocks.reset, "reset" .. what:gsub("^%l", string.upper), resetNames[what],
             function() return spec.reset[what] end, function(on) spec.reset[what] = on end)
         c:SetPoint("TOPLEFT", x, -30)
-        Tip(c, L["Start over"], L["What makes the sequence begin again from its first spell: a new target, the end "
-            .. "of combat, a press with Shift, Ctrl or Alt held, or some seconds without a press."])
+        Tip(c, L["Start over"], L["What makes the sequence start again from its first spell: a new target, the end "
+            .. "of combat, a press with Shift, Ctrl or Alt held, or a few seconds without a press."])
         x = x + c:GetWidth() + 18
     end
     local timed = Check(blocks.reset, "resetTimed", L["After"], function() return spec.reset.timed end,

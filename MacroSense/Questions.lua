@@ -196,14 +196,14 @@ local function UnitTip(unit)
             .. L["MacroSense puts in the name of the one with the role now, and a new one when your group changes "
                 .. "(out of combat)."]
     end
-    return ({ default = L["The game's own choice: your target, or you when the game casts on you by itself "
+    return ({ default = L["The game decides: your target, or you when the game casts on you by itself "
             .. "(Auto Self Cast)."],
         mouseover = L["The one your mouse points at, in the world or on a frame (party, raid). Your target stays as "
             .. "it is."],
-        cursor = L["For spells cast on the ground, like Blizzard: it lands under the cursor at once, with no circle "
-            .. "to place."],
-        focus = L["A second target you keep an eye on; /focus sets it."],
-        targettarget = L["Whoever your target has targeted: the one a boss attacks, say."] })[unit]
+        cursor = L["For spells you cast on the ground, like Blizzard. The spell lands under the cursor at once, with "
+            .. "no circle to place."],
+        focus = L["A second target you keep an eye on. /focus sets it."],
+        targettarget = L["Whoever your target is targeting, such as the one a boss attacks."] })[unit]
 end
 
 -- The units a step offers: those the command takes there, but none asked about before it in the same order, nor
@@ -275,13 +275,13 @@ local function What()
             tip = L["Each press casts the next spell of the list: the first press the first spell, the next press "
                 .. "the second, and so on."] },
         { key = "castrandom", name = L["One of several at random"], hint = "/castrandom",
-            tip = L["Each press casts one of the spells at random: a random mount, say."] },
+            tip = L["Each press casts one of the spells at random. For example, a random mount."] },
         { key = "target", name = L["Target someone"], hint = "/target" },
         { key = "focus", name = L["Set your focus"], hint = "/focus",
-            tip = L["Your focus is a second target to keep an eye on: to interrupt it or keep it crowd controlled "
-                .. "while you fight another."] },
+            tip = L["Your focus is a second target you keep an eye on. For example, to interrupt it or keep it crowd "
+                .. "controlled while you fight another."] },
         { key = "assist", name = L["Take someone's target"], hint = "/assist",
-            tip = L["Your target becomes the target of someone else: the tank's, say."] },
+            tip = L["You take the same target as someone else, such as the tank."] },
         { key = "pet", name = L["Command your pet"], hint = "/petattack",
             tip = L["Tell your pet to attack, follow you, stay..."] },
         { key = "mount", name = L["Ride a mount"], hint = "/cast",
@@ -396,7 +396,7 @@ function Questions.Ask(spec, step, keys)
     elseif step == "rank" or rest == "Rank" then
         local action = key and spec.keys[key].action or spec.action
         return { kind = "choice", key = key, context = context, text = string.format(L["Which rank of %s?"], action.name),
-            hint = L["Usually the highest you know: it follows when you learn a new one."],
+            hint = L["Usually the highest you know. It updates by itself when you learn a new one."],
             answers = RankAnswers(action), chosen = action.rank or "" }
     elseif step == "list" then
         if spec.command == "castsequence" then
@@ -408,7 +408,7 @@ function Questions.Ask(spec, step, keys)
             hint = L["Each press casts one of them at random."] }
     elseif step == "reset" then
         return { kind = "reset", text = L["When should the sequence start again from the first spell?"],
-            hint = L["Pick any of these, or none: then it starts again only after the last spell."] }
+            hint = L["Pick any of these, or none. With none, it starts again only after the last spell."] }
     elseif step == "pet" or rest == "Pet" then
         return { kind = "choice", key = key, context = context, text = L["What should your pet do?"],
             answers = PetAnswers(), chosen = key and spec.keys[key].pet or spec.pet }
@@ -431,11 +431,11 @@ function Questions.Ask(spec, step, keys)
             chosen = (spec.only == "friends" and not spec.alive) and "dead" or spec.only }
     elseif step == "byName" then
         return { kind = "byName", text = L["What name should it look for?"],
-            hint = L["The nearest one with this name becomes your target: a rare, say."] }
+            hint = L["The nearest one with this name becomes your target, such as a rare."] }
     elseif step == "keys" then
         return { kind = "keys", text = string.format(L["Should the macro do something else while you hold %s?"],
             #keys > 3 and L["Shift, Ctrl, Alt or Cmd"] or L["Shift, Ctrl or Alt"]),
-            hint = L["Pick the keys, or none: for each one, the next questions ask what it does."] }
+            hint = L["Pick the keys you want, or none. For each key, the next questions ask what it does."] }
     elseif step == "also" then
         return { kind = "also", text = L["Would you like to add anything else?"],
             hint = L["Pick any of these, or none."] }
