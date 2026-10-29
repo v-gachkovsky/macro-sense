@@ -36,7 +36,7 @@ local function Preview()
         macros = plain
     elseif not macros then
         if not text:find(ns.Share.PREFIX, 1, true) then
-            problem = L["This is neither a MacroSense code nor a macro: each line of a macro starts with / or #."]
+            problem = L["This is neither a MacroSense code nor a macro. Each line of a macro starts with / or #."]
         end
         return info:SetText("|cff" .. ns.scheme.invalid .. problem .. "|r")
     end
@@ -168,8 +168,8 @@ function ShareWindow.ExportText(m)
     code = m.body
     Open("export")
     titleText:SetText(L["The macro's text"])
-    hint:SetText(string.format(L["Press %s to copy the text: for guides, forums and Discord. MacroSense imports it "
-        .. "too."], Keys("C")))
+    hint:SetText(string.format(L["Press %s to copy the text, then paste it into a guide, a forum or Discord. "
+        .. "MacroSense can import it too."], Keys("C")))
     box:SetText(code)
     box:HighlightText()
     info:SetText(m.name)
@@ -179,10 +179,10 @@ end
 function ShareWindow.Import(text, from)
     Open("import")
     titleText:SetText(L["Import macros"])
-    hint:SetText(from and string.format(L["The macro %s linked in chat: see what it holds, then import it. Nothing is "
-        .. "replaced: a taken name gets a number."], from)
-        or string.format(L["Paste a MacroSense code, or a macro's text from a guide (%s). Nothing is replaced: a "
-            .. "taken name gets a number."], Keys("V")))
+    hint:SetText(from and string.format(L["The macro %s shared in chat. See what is in it, then import it. Nothing "
+        .. "gets replaced: if the name is taken, a number is added to it."], from)
+        or string.format(L["Paste a MacroSense code, or a macro's text from a guide (%s). Nothing gets replaced: if "
+            .. "a name is taken, a number is added to it."], Keys("V")))
     box:SetText(text or "")
     Preview()
 end

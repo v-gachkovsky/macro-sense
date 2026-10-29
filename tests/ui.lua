@@ -1967,8 +1967,8 @@ do
     Fire(copy, "OnClick")
     check("copy: the menu opens under the button", MacroSenseMenu:IsShown() and MacroSenseMenu.point[1] == "TOPRIGHT"
         and MacroSenseMenu.point[2] == copy, MacroSenseMenu.point and MacroSenseMenu.point[1])
-    check("copy: the one being edited, with what the editor shows", itemTip("Duplicate") == "A copy in this tab with "
-        .. "what the editor shows now, under a free name like \"Fear 2\". The macro copied keeps its saved text.",
+    check("copy: the one being edited, with what the editor shows", itemTip("Duplicate") == "Makes a copy in this "
+        .. "tab with the text from the editor, named like \"Fear 2\". The macro you copy keeps its saved text.",
         itemTip("Duplicate"))
     Fire(menuItem("Duplicate"), "OnClick")
     NextFrame()
@@ -1995,8 +1995,8 @@ do
     edit:SetCursorPosition(#edit.text)
     Type("\n/sit")
     Fire(row("Zap 2").copy, "OnClick")
-    check("copy: another one, as saved", itemTip("Duplicate") == "A copy in this tab, under a free name like "
-        .. "\"Fear 2\".", itemTip("Duplicate"))
+    check("copy: another one, as saved", itemTip("Duplicate") == "Makes a copy in this tab, named like \"Fear "
+        .. "2\".", itemTip("Duplicate"))
     local asked, show = 0, StaticPopup_Show
     StaticPopup_Show = function(...)
         asked = asked + 1
@@ -4446,10 +4446,10 @@ do
     Fire(shorten, "OnEnter")
     GameTooltip.AddLine = nil
     check("ukrainian: the shorten tooltip", shortenTip[1] == "Скоротити"
-        and shortenTip[2]:find("^Спробує прибрати зайві пробіли") ~= nil, shortenTip[2])
+        and shortenTip[2]:find("^Робить макрос коротшим") ~= nil, shortenTip[2])
     check("ukrainian: the live preview's tooltip", tip[1] == "Живий перегляд"
-        and tip[3] == "Затискайте модифікатори (Shift, Ctrl, Alt чи Cmd), наводьте мишку, міняйте ціль — "
-        .. "використовуйте все, що є в макросі, щоб побачити, яка саме здібність спрацює і в якій ситуації.", tip[3])
+        and tip[3] == "Затисніть Shift, Ctrl, Alt чи Cmd, наведіть мишу на когось, змініть ціль. Спробуйте все, що "
+        .. "перевіряє макрос, і побачите, що й коли він застосує.", tip[3])
     ns.Popup:Style(ns.scheme, "Fonts\\Code.ttf", 13)
     ns.Popup:Open(edit, { { name = "cast", hint = "cast a spell" } }, 0, 0, 14)
     local row = ns.Popup.rows[1]

@@ -435,10 +435,10 @@ end
 -- The copy menu of another character's macro `m`: into this character's tab or General.
 local function OpenAltCopyMenu(owner, m)
     ns.OpenMenu(owner, {
-        TabItem("character", L["Copy to Character"], L["A copy for this character only, under a free name like "
-            .. "\"Fear 2\"."], function() Window.CopyIn("character", m) end),
-        TabItem("general", L["Copy to General"], L["A copy for all your characters, under a free name like "
-            .. "\"Fear 2\"."], function() Window.CopyIn("general", m) end),
+        TabItem("character", L["Copy to Character"], L["Makes a copy for this character only, named like \"Fear "
+            .. "2\"."], function() Window.CopyIn("character", m) end),
+        TabItem("general", L["Copy to General"], L["Makes a copy for all your characters, named like \"Fear "
+            .. "2\"."], function() Window.CopyIn("general", m) end),
     }, 180, false, true)
 end
 
@@ -973,16 +973,16 @@ local function CopyItems(index)
     end
     -- The macro being edited is copied with what the editor shows.
     local tips = index == state.index and {
-        same = L["A copy in this tab with what the editor shows now, under a free name like \"Fear 2\". The macro "
-            .. "copied keeps its saved text."],
-        character = L["A copy for this character only with what the editor shows now, under a free name like "
-            .. "\"Fear 2\". The macro copied keeps its saved text."],
-        general = L["A copy for all your characters with what the editor shows now, under a free name like "
-            .. "\"Fear 2\". The macro copied keeps its saved text."],
+        same = L["Makes a copy in this tab with the text from the editor, named like \"Fear 2\". The macro you copy "
+            .. "keeps its saved text."],
+        character = L["Makes a copy for this character only, with the text from the editor, named like \"Fear 2\". "
+            .. "The macro you copy keeps its saved text."],
+        general = L["Makes a copy for all your characters, with the text from the editor, named like \"Fear 2\". The "
+            .. "macro you copy keeps its saved text."],
     } or {
-        same = L["A copy in this tab, under a free name like \"Fear 2\"."],
-        character = L["A copy for this character only, under a free name like \"Fear 2\"."],
-        general = L["A copy for all your characters, under a free name like \"Fear 2\"."],
+        same = L["Makes a copy in this tab, named like \"Fear 2\"."],
+        character = L["Makes a copy for this character only, named like \"Fear 2\"."],
+        general = L["Makes a copy for all your characters, named like \"Fear 2\"."],
     }
     local moves = {
         character = L["Into the Character tab, for this character only. Its buttons on your action bars stay, and its "
@@ -1098,26 +1098,26 @@ local function ShareItems()
         }
     end
     return {
-        item(L["Link this macro in chat"], state.index and L["Puts a link of it into the chat: players with "
-            .. "MacroSense click it to get the macro as saved now, the others read its name. Shift-click a macro in "
-            .. "the list does it too."] or L["Save the macro first, then link it."], function()
+        item(L["Link this macro in chat"], state.index and L["Puts a link to it in the chat. Players with MacroSense "
+            .. "can click it to get the macro as it is saved now. Others see only its name. Shift-click on a macro "
+            .. "in the list does the same."] or L["Save the macro first, then link it."], function()
             ns.Links.Insert({ scope = state.scope, name = state.name, icon = state.savedIcon, body = state.body })
         end, not state.index),
-        item(L["Export this macro"], state.index and L["Its code, as saved, to copy and share."]
+        item(L["Export this macro"], state.index and L["The code of the saved macro, to copy and share."]
             or L["Save the macro first, then export it."], function()
             ns.ShareWindow.Export({ { scope = state.scope, name = state.name, icon = state.savedIcon,
                 body = state.body } })
         end, not state.index),
-        item(L["Copy this macro's text"], state.index and L["Its text as saved, to paste into a guide, a forum or "
-            .. "Discord. MacroSense imports such a text too."] or L["Save the macro first, then copy its text."],
+        item(L["Copy this macro's text"], state.index and L["The text of the saved macro, to paste into a guide, a "
+            .. "forum or Discord. MacroSense can import it too."] or L["Save the macro first, then copy its text."],
             function() ns.ShareWindow.ExportText({ name = state.name, body = state.body }) end, not state.index),
         item(string.format(L["Export the %s tab (%d)"], tab, here), L["The code of every macro in this tab."],
             function() ns.ShareWindow.Export(Macros(state.scope)) end, here == 0),
         item(string.format(L["Export all macros (%d)"], general + character),
-            L["The code of every macro of both tabs; imported, each goes into its own tab."],
+            L["The code of every macro in both tabs. On import, each one goes into its own tab."],
             function() ns.ShareWindow.Export(Macros()) end, general + character == 0),
-        item(L["Import a code or text..."], L["Paste a code, or a macro's text from a guide, to make its macros. "
-            .. "Nothing is replaced: a taken name gets a number, like \"Fear 2\"."],
+        item(L["Import a code or text..."], L["Paste a code, or a macro's text from a guide, to add its macros. "
+            .. "Nothing gets replaced: if a name is taken, a number is added to it, like \"Fear 2\"."],
             function() ns.ShareWindow.Import() end),
     }
 end
@@ -1250,8 +1250,8 @@ function Window.RestoreBackup(backup)
 end
 
 StaticPopupDialogs.MACROSENSE_RESTORE_BACKUP = {
-    text = "Restore the backup of %s?\n\nIts macros get their text and icon back and the missing ones are made "
-        .. "again; macros made since stay. A backup of your macros now is made first.",
+    text = "Restore the backup of %s?\n\nYour macros get back the text and icons they had then, and the missing ones "
+        .. "are made again. Macros you made after it stay. First, MacroSense backs up your macros as they are now.",
     button1 = "Yes", button2 = "No",
     OnAccept = function(_, backup) Window.RestoreBackup(backup) end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
@@ -1508,10 +1508,10 @@ local function Build()
         local keys = IsMacClient and IsMacClient() and L["Shift, Ctrl, Alt or Cmd"] or L["Shift, Ctrl or Alt"]
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
         GameTooltip:AddLine(L["Live preview"], 1, 1, 1)
-        GameTooltip:AddLine(L["See exactly how the macro will act: next to each line, what it would do if you "
+        GameTooltip:AddLine(L["See exactly how the macro will act. Next to each line is what it would do if you "
             .. "pressed the macro now."], 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine(string.format(L["Hold modifiers (%s), point the mouse at someone, change your target: use "
-            .. "everything the macro checks to see which ability it uses, and when."], keys), 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(string.format(L["Hold %s, point the mouse at someone, change your target. Try everything "
+            .. "the macro checks, and you see which ability it uses and when."], keys), 0.8, 0.8, 0.8, true)
         GameTooltip:AddLine(L["Point at a line's number or its note to read what the whole line does, in plain "
             .. "words."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
@@ -1540,7 +1540,8 @@ local function Build()
         GameTooltip:AddLine(L["Share"], 1, 1, 1)
         GameTooltip:AddLine(L["Share your macros with other players: just pass them the code made for them. Or add "
             .. "someone else's macros to yours, if you have their code."], 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine(L["Or link a macro in chat: whoever has MacroSense gets it with a click."], 0.8, 0.8, 0.8,
+        GameTooltip:AddLine(L["Or link a macro in chat. Whoever has MacroSense gets it with one "
+            .. "click."], 0.8, 0.8, 0.8,
             true)
         GameTooltip:Show()
     end)
@@ -1550,9 +1551,10 @@ local function Build()
     trashBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Trash"], 1, 1, 1)
-        GameTooltip:AddLine(string.format(L["Macros deleted by this addon, by any other or in the game's macro "
-            .. "window land here, and you can bring them back. The trash keeps the last %d deleted macros of each "
-            .. "tab; older ones are deleted by themselves. The menu shows the %d newest."], ns.History.TRASH,
+        GameTooltip:AddLine(string.format(L["Deleted macros land here, and you can bring them back. It doesn't "
+            .. "matter where you deleted them: here, in another addon or in the game's macro window. The trash keeps "
+            .. "the last %d deleted macros of each tab and deletes older ones by itself. The menu shows the %d "
+            .. "newest."], ns.History.TRASH,
             TRASH_SHOWN), 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
@@ -1659,8 +1661,8 @@ local function Build()
         GameTooltip:AddLine(L["Click: choose an icon"], 1, 1, 1)
         GameTooltip:AddLine(L["Drag: put the macro on an action bar"], 1, 1, 1)
         if state.icon == NEW_ICON then
-            GameTooltip:AddLine(L["Its icon is the question mark: the macro shows the icon of the spell or item it "
-                .. "uses."], 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(L["Its icon is the question mark, so the macro shows the icon of the spell or item "
+                .. "it uses."], 0.8, 0.8, 0.8, true)
         end
         GameTooltip:Show()
     end)
@@ -1706,9 +1708,10 @@ local function Build()
         local undo = IsMacClient and IsMacClient() and "Cmd+Z" or "Ctrl+Z"
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:AddLine(L["Shorten"], 1, 1, 1)
-        GameTooltip:AddLine(L["Tries to remove spaces the game doesn't need, shorten constructs and make the macro "
-            .. "shorter overall, keeping everything it does. For example: target= becomes @, modifier becomes mod, "
-            .. "[pet:Imp][pet:Felhunter] becomes [pet:Imp/Felhunter], [x] Fear; Fear becomes [x][]Fear."], 0.8, 0.8,
+        GameTooltip:AddLine(L["Makes the macro shorter without changing what it does. It removes spaces the game "
+            .. "doesn't need and uses shorter ways to write the same thing. For example, target= becomes @, modifier "
+            .. "becomes mod, [pet:Imp][pet:Felhunter] becomes [pet:Imp/Felhunter], and [x] Fear; Fear becomes "
+            .. "[x][]Fear."], 0.8, 0.8,
             0.8, true)
         GameTooltip:AddLine(self:IsEnabled() and string.format(L["%s brings the old text back."], undo)
             or L["Nothing to shorten here."], 0.8, 0.8, 0.8, true)
@@ -1724,11 +1727,11 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:AddLine(L["History"], 1, 1, 1)
         if self:IsEnabled() then
-            GameTooltip:AddLine(string.format(L["Earlier saved versions of this macro. Pick one to put it in the "
-                .. "editor: Save keeps it, %s takes it back."], undo), 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(string.format(L["Earlier saved versions of this macro. Pick one, and it goes into "
+                .. "the editor. Save keeps it, and %s takes it back."], undo), 0.8, 0.8, 0.8, true)
         else
-            GameTooltip:AddLine(L["When you save a change to this macro, here or in the game's macro window, the "
-                .. "text it had before is kept here."], 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(L["Each time you save a change to this macro, here or in the game's macro window, "
+                .. "the text it had before is kept here."], 0.8, 0.8, 0.8, true)
         end
         GameTooltip:Show()
     end)

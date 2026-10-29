@@ -49,6 +49,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   (`@none` with no tank) when your group changed, and saving it then lost the tags.
 - The editor's tooltips (a line's explanation, a word's meaning) no longer show through the wizard or the questions window above it.
 
+### Changed
+- Plainer words in tooltips and hints, in English and Ukrainian: whole short sentences instead of chains of
+  colons. The Ukrainian says the same thing the same way everywhere (трінкет, стелс, вдягає), and `channeling` is
+  a channeled spell, not any cast.
+
 ## [0.8.1] - 2026-10-29
 
 ### Changed
