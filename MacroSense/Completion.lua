@@ -122,27 +122,50 @@ local function Lower(s)
 end
 Completion.Lower = Lower -- the icon search ignores case the same way
 
--- A name's words, to compare names: lower case, apostrophes dropped, other marks as spaces, and a space at both
--- ends, so that " fire blast " is in " fire blast focus " as whole words.
+-- A name's words, to compare names: lower case, apostrophes dropped, other marks as spaces, a space at both ends
+-- ("Nature's Swiftness" and "natures swiftness" are the same).
 local function Words(s)
     return " " .. (Lower(s):gsub("'", ""):gsub("[%s%p]+", " "):match("^ *(.-) *$")) .. " "
+end
+
+-- Your spells and items with icons, their words (Words) worked out once per list: the list shows an icon for each
+-- macro with the question mark. all = { { icon, words } }, spells first; byWords[words] = icon.
+local named = {}
+local function WithIcons()
+    local spells, items = source("spells"), source("items")
+    if named.spells ~= spells or named.items ~= items then
+        named = { spells = spells, items = items, all = {}, byWords = {} }
+        for _, list in ipairs({ spells, items }) do
+            for _, c in ipairs(list) do
+                if c.icon then
+                    local words = Words(c.name)
+                    named.all[#named.all + 1] = { icon = c.icon, words = words }
+                    named.byWords[words] = named.byWords[words] or c.icon
+                end
+            end
+        end
+    end
+    return named
+end
+
+-- The icon of the spell or item of yours named so, in any case ("fireball", "Shoot"); else the game's for that
+-- name (env.icon: a spell, an item it knows, an equipment slot "13"), or nil.
+local function IconOf(name, env)
+    local icon = WithIcons().byWords[Words(name)]
+    if icon or not (env and env.icon) then return icon end
+    local ok, found = pcall(env.icon, name)
+    return ok and found or nil
 end
 
 -- Words of a macro's name that say whom it is for, not what it casts ("Poly Focus", "Heal MO", "Kick arena1").
 local TARGET_WORDS = { focus = true, mouseover = true, mo = true, target = true, self = true, player = true,
     cursor = true, party = true, arena = true, pet = true, boss = true }
 
--- The icon of the spell or item (of yours: spellbook, bags, gear) a macro is named after, or nil: the longest
--- whose name is in the macro's name as whole words, in any case ("fireball", "Kick Focus": Kick); else the
--- shortest with a word that starts like the macro's first word that is not a target, of 3 letters or more
--- ("Poly MO": Polymorph, "Nova": Frost Nova).
-function Completion.IconFor(name)
-    local macro, all, best = Words(name), {}, nil
-    for _, kind in ipairs({ "spells", "items" }) do
-        for _, c in ipairs(source(kind)) do
-            if c.icon then all[#all + 1] = { icon = c.icon, words = Words(c.name) } end
-        end
-    end
+-- The icon of the spell or item (of yours) a macro is named after, or nil: the longest whose name is in the
+-- macro's name as whole words ("fireball", "Kick Focus": Kick); else the shortest with a word that starts like
+-- the macro's first word that is not a target, of 3 letters or more ("Poly MO": Polymorph, "Nova": Frost Nova).
+local function NameIcon(name)
+    local macro, all, best = Words(name), WithIcons().all, nil
     for _, c in ipairs(all) do
         if macro:find(c.words, 1, true) and (not best or #c.words > #best.words) then best = c end
     end
@@ -156,6 +179,57 @@ function Completion.IconFor(name)
             return best and best.icon
         end
     end
+end
+
+-- Commands whose spells or items the icon can be of.
+local CASTS = { cast = true, use = true, castsequence = true, castrandom = true, userandom = true }
+
+-- Every spell or item a macro's text names, in order, whatever the conditions: "#showtooltip [mod] A; B",
+-- "/cast [x] C; D", "/castsequence reset=5 E, F", "/use 13".
+local function NamedIn(body)
+    local out = {}
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        local meta, shown = line:match("^%s*#(%a+)(.*)$")
+        local cmd, options = line:match("^%s*/(%S+)%s*(.*)$")
+        meta = meta and meta:lower()
+        if meta == "showtooltip" or meta == "show" then
+            options = shown
+        elseif not (cmd and CASTS[ns.Parser.actionCommands[cmd:lower()] or ""]) then
+            options = nil
+        end
+        for clause in ((options or "") .. ";"):gmatch("([^;]*);") do
+            local action = clause:gsub("%b[]", ""):gsub("^%s*reset=%S+", "")
+            for part in (action .. ","):gmatch("([^,]*),") do
+                local name = part:gsub("^%s*!?", ""):gsub("%b()%s*$", ""):match("^%s*(.-)%s*$")
+                if name ~= "" then out[#out + 1] = name end
+            end
+        end
+    end
+    return out
+end
+
+-- The icon for a macro with the question mark, or nil (the question mark). First as the game picks it: what
+-- #showtooltip (or #show) shows now, else the first line that casts or uses something now (Preview.Evaluate;
+-- env.parse is the game's condition check). When that gives none (nothing now, or nothing you have): the first
+-- spell or item the text names, whatever the conditions; last, the one the macro's `name` says.
+function Completion.MacroIcon(body, env, name)
+    local results, meta, first = ns.Preview.Evaluate(body, env), nil, nil
+    for i = 1, results.n do
+        local r = results[i]
+        if r and r.kind == "icon" then
+            meta = r
+            break
+        end
+        first = first or r and r.icon
+    end
+    local now = meta and meta.name or not meta and first
+    local icon = now and IconOf(now, env)
+    if icon then return icon end
+    for _, n in ipairs(NamedIn(body)) do
+        icon = IconOf(n, env)
+        if icon then return icon end
+    end
+    return name and NameIcon(name)
 end
 
 -- Two capitals or more ("DA", "SWP", "CoA"; not "Da" or "D"): then each letter is the first letter of a word.

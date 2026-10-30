@@ -383,11 +383,20 @@ at once, until the next patch of the game. Point at an icon to see its names.
 Drag its dotted corner to show more icons at once. It sits next to the editor; drag it by an empty spot to
 move it away, and drop it next to the editor's right edge to dock it again (its border lights up).
 
-**Tab** or **Enter** in the name goes on to the macro's text. A new macro whose icon you haven't picked gets
-the icon of the spell or item of yours it is named after at that moment: `fireball`, `Kick Focus` (Kick),
-`Poly MO` (Polymorph), `Nova` (Frost Nova). Words like focus, mouseover or arena1 are skipped. With no
-match, or with `#showtooltip` in the text (it needs the question mark to show the spell's icon), the question
-mark stays.
+A new macro starts with `#showtooltip` on the first line, and the cursor waits on the second.
+
+**Tab** or **Enter** in the name goes on to the macro's text. A new macro is saved with the question mark
+unless you pick an icon, so in the game its icon changes the way `#showtooltip` changes it. The editor and the
+list show the icon the game shows, and it changes there too while you hold a key. Where the game shows only
+the question mark (a new macro, or one just saved), MacroSense picks the icon as the game does: of what
+`#showtooltip` shows right now, else of the first line that casts or uses something right now
+(`/cast [mod:shift] Polymorph; Frostbolt` gives Frostbolt, or Polymorph while you hold Shift). If that gives
+nothing (no line works right now, or the item isn't in your bags), the icon is that of the first spell or item
+the text names, whatever its conditions; the game knows the icons of items you don't carry too. Last comes
+the macro's name: `Kick Focus` gives Kick, `Poly MO` Polymorph. Such an icon is greyed while your action bars
+show the question mark, and its tooltip says so. In the editor it follows what you type. An icon
+you picked yourself is saved and shown as it is. In a macro with `#showtooltip` it gets a padlock in its
+corner: the game won't change that icon. To let it, choose the question mark.
 
 Drag a macro from the list, or its icon from the header, onto an action bar. **Shift + right-click** on it
 there opens it in the editor instead of running it, and its tooltip says so: on the game's bars and those of

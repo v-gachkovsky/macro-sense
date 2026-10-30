@@ -106,6 +106,7 @@ function Frame:SetText(t)
 end
 function Frame:GetText() return self.text end
 function Frame:SetTexture(t) self.texture = t end
+function Frame:SetDesaturated(on) self.desaturated = on end
 function Frame:GetValue() return self.value or 0 end
 function Frame:GetVerticalScrollRange() return self.range or 0 end
 function Frame:GetVerticalScroll() return self.vscroll or 0 end
@@ -250,7 +251,11 @@ C_Container = {
 C_Item = {
     GetItemSpell = function(link) return link:find("5512") and "Healthstone" or nil end,
     IsEquippableItem = function(link) return link:find("1234") ~= nil end,
-    GetItemIconByID = function(id) return id end,
+    -- By ID; by name only the items the game knows (in its cache): Minor Healthstone, not in the bags.
+    GetItemIconByID = function(id)
+        if type(id) == "number" then return id end
+        return ({ ["Minor Healthstone"] = 9001 })[id] or 134400 -- the question mark: unknown
+    end,
     GetItemCount = function() return 1 end,
     -- Item 2411 is a mount (Miscellaneous, Mount); Fire Ring a ring, Lucky Charm a trinket.
     GetItemInfoInstant = function(link)
@@ -563,6 +568,16 @@ local function Type(s)
         Fire(edit, "OnTextChanged", true)
         NextFrame()
     end
+end
+-- A new macro with its #showtooltip line deleted, as a player would: the tests below type from an empty text.
+local function Blank()
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    edit.text = ""
+    edit:SetCursorPosition(0)
+    Fire(edit, "OnTextChanged", true)
+    NextFrame()
 end
 -- Arrow key: OnKeyDown, the EditBox moves the cursor a line, then OnArrowPressed.
 local function Arrow(key)
@@ -1282,6 +1297,37 @@ do
     Fire(MacroSenseIconButton, "OnDragStart")
     check("a new macro must be saved first", picked == nil and printed[#printed]:find("save the macro first") ~= nil,
         printed[#printed])
+    -- A new macro starts with #showtooltip, the cursor on the line below; untouched, it has nothing to discard.
+    check("new: #showtooltip already there", ns.Highlight.Strip(edit:GetText()) == "#showtooltip\n",
+        edit:GetText())
+    check("new: the cursor on the second line",
+        ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition()) == #"#showtooltip\n")
+    local asked
+    local ask = ns.Ask
+    ns.Ask = function(which) asked = which end
+    ns.Window.New()
+    check("new: nothing to discard in an untouched one", asked == nil, asked)
+    -- Empty, or only #showtooltip, no name, no icon picked: it goes without asking.
+    local box
+    for _, o in ipairs(created) do if o.kind == "EditBox" and o.maxLetters == 16 then box = o end end
+    local function blankThen(text, name)
+        ns.Window.New()
+        edit.text = text
+        Fire(edit, "OnTextChanged", true)
+        NextFrame()
+        box:SetText(name or "")
+        asked = nil
+        ns.Window.Select(1)
+        return asked
+    end
+    check("new: emptied, not asked", blankThen("") == nil and ns.Highlight.Strip(edit:GetText()) ~= "")
+    check("new: #showtooltip, spaces around, not asked", blankThen("  #ShowTooltip \n\n") == nil)
+    check("new: a line typed, asked", blankThen("#showtooltip\n/sit") == "MACROSENSE_DISCARD")
+    check("new: a name typed, asked", blankThen("#showtooltip\n", "Sit") == "MACROSENSE_DISCARD")
+    box:SetText("")
+    ns.Ask = ask
+    ns.Window.New()
+    ns.Window.Select(1)
     ns.Window.Select(1)
 end
 
@@ -1411,8 +1457,7 @@ do
     end
     ns.Window.Revert()
     NextFrame()
-    ns.Window.New() -- a clean macro: no issues left from the tests above
-    NextFrame()
+    Blank() -- a clean macro: no issues left from the tests above
     edit:SetFocus()
     Type("/cast Firebal")
     Key("ESCAPE", "OnEscapePressed")
@@ -1447,8 +1492,7 @@ do
     Send("UPDATE_MACROS")
 
     -- A spell dropped on the text: on an empty line with /cast, else its name at the cursor.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     onCursor = { "spell", 12, "spell", 5782 } -- Fear
     Fire(edit, "OnReceiveDrag")
@@ -1468,8 +1512,7 @@ do
     check("dropped: a macro is not text", raw():find("\n/use Healthstone$") ~= nil and onCursor ~= nil, raw())
     onCursor = nil
     -- Shift-click on a spell's link while the text has the focus.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     ChatEdit_InsertLink("|cff71d5ff|Hspell:133:0|h[Fireball]|h|r")
     check("shift-click: a spell's name with /cast", raw() == "/cast Fireball", raw())
@@ -1565,8 +1608,7 @@ do
     local journal = C_MountJournal
     C_MountJournal = { GetMountIDs = function() error("no such function") end }
     Send("BAG_UPDATE_DELAYED")
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/cast Fierball")
     Key("ESCAPE", "OnEscapePressed")
@@ -1602,8 +1644,7 @@ do
             if o.isLineNumber and o:IsShown() and tonumber(o.text) == i then return o end
         end
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("#showtooltip\n/cast [mod:alt] Polymorph; Fireball\n/stopmacro [nocombat]\n/cast Frostbolt")
     Key("ESCAPE", "OnEscapePressed")
@@ -1644,8 +1685,7 @@ do
     NextFrame()
     check("preview on again", notes() ~= "" and ns.db.preview == true and box.fill:IsShown(), notes())
     -- The author's macro with the pet out: the pet's spell, on the mouseover enemy.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     local fixtures = dofile("tests/fixtures/macros.lua")
     Type(fixtures.petCC)
     Key("ESCAPE", "OnEscapePressed")
@@ -1656,8 +1696,7 @@ do
     Wait(0.2)
     check("preview: no pet, no match", notes() == "icon: ? | conditions not met", notes())
     -- A note on line 150 only (no line that far had one before); a shorter macro leaves it no trace.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     Type(string.rep("\n", 149) .. "/cast Fireball")
     Key("ESCAPE", "OnEscapePressed")
     NextFrame()
@@ -1669,7 +1708,7 @@ do
     Type("/cast Frostbolt")
     Key("ESCAPE", "OnEscapePressed")
     NextFrame()
-    check("preview: no notes left from a longer macro", notes() == "Frostbolt", notes())
+    check("preview: no notes left from a longer macro", notes() == "icon: Frostbolt | Frostbolt", notes())
     ns.Window.Revert()
     ns.Window.Select(1)
     NextFrame()
@@ -1677,8 +1716,7 @@ end
 
 -- A command that runs is named in the live preview, in the color commands have in the text.
 do
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/startattack")
     Key("ESCAPE", "OnEscapePressed")
@@ -1750,9 +1788,12 @@ do
     Fire(broken, "OnEnter")
     Fire(clean, "OnEnter")
     GameTooltip.AddLine = nil
-    check("list: hover lists the issues, and where it is on the bars", table.concat(tip, "\n")
+    check("list: hover lists the issues, and where it is on the bars", table.concat(tip, "\n", 1, 5)
         == 'Zap broken\nLine 1: unknown condition "harmm"\nNot on your action bars now\nZap clean\nNot on your action bars now',
         table.concat(tip, " / "))
+    -- An icon chosen, with #showtooltip: the padlock, and the tooltip says what it means. Without: none.
+    check("list: a chosen icon with #showtooltip has the padlock", clean.mark:IsShown() and not broken.mark:IsShown()
+        and tip[6] and tip[6]:find("^Icon chosen by you") ~= nil and #tip == 6, tip[6])
     -- Fixed elsewhere (the Blizzard window): the mark goes.
     EditMacro(broken.index, "Zap broken", 1, "/cast [harm] Fireball")
     Send("UPDATE_MACROS")
@@ -1777,8 +1818,7 @@ do
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and tostring(o.label.text):find("^Shorten") then btn = o end
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     local long = "/cast [@mouseover,harm,nodead] Fireball; Fireball"
     local shorter = "/cast [@mouseover,harm,nodead][]Fireball"
@@ -1888,8 +1928,8 @@ do
     NextFrame()
 end
 
--- The name, then Tab or Enter: on to the text. A new macro whose icon was not picked gets the icon of the spell
--- or item it is named after; one picked, a saved macro's, and the question mark of #showtooltip stay.
+-- The name, then Tab or Enter: on to the text. A new macro whose icon was not picked shows the icon the game would
+-- pick for its text (not its name) and is saved with the question mark; one picked is saved as it is.
 do
     local box
     for _, o in ipairs(created) do
@@ -1897,7 +1937,8 @@ do
     end
     local function header()
         for _, o in ipairs(created) do
-            if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then return o.texture end
+            if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture
+                and not tostring(o.texture):find("Lock") then return o.texture end
         end
     end
     local function named(name, key)
@@ -1906,37 +1947,70 @@ do
         Fire(box, key or "OnEnterPressed")
         return header()
     end
-    ns.Window.New()
+    local function saved(name) return select(2, GetMacroInfo(GetMacroIndexByName(name))) end
+    Blank()
+    check("name: Enter goes on to the text", named("Polymorph") and edit:HasFocus() and not box:HasFocus())
+    check("name: Tab too", named("frostbolt", "OnTabPressed") and edit:HasFocus() and not box:HasFocus())
+    check("name: no text yet, the name's", named("Polymorph") == ns.IconTexture(6), header())
+    check("name: none, the question mark", named("Mount") == ns.IconTexture(134400), header())
+    -- As the text is typed: what #showtooltip shows now, else the first line that casts now.
+    Type("#showtooltip\n/cast [mod:shift] Polymorph; Frostbolt")
     NextFrame()
-    check("name: Enter goes on to the text", named("Polymorph") == ns.IconTexture(6) and edit:HasFocus()
-        and not box:HasFocus(), header())
-    check("name: Tab too", named("frostbolt", "OnTabPressed") == ns.IconTexture(5) and edit:HasFocus())
-    check("name: an item", named("Healthstone") == ns.IconTexture(5512))
-    check("name: none found, the question mark again", named("Mount") == ns.IconTexture(134400))
-    edit:SetFocus()
-    Type("#showtooltip")
-    check("name: #showtooltip keeps the question mark", named("Fire Blast") == ns.IconTexture(134400))
-    ns.Window.Revert()
-    ns.Window.New()
+    check("name: the text, the first cast now", header() == ns.IconTexture(5), header())
+    Blank()
+    named("Mount Up")
+    Type("#showtooltip Polymorph\n/cast Frostbolt")
     NextFrame()
-    named("Fire Blast")
+    check("name: the text, the one #showtooltip names", header() == ns.IconTexture(6), header())
     ns.Window.Save()
-    check("name: the icon is saved", select(2, GetMacroInfo(GetMacroIndexByName("Fire Blast"))) == 4)
-    check("name: a saved macro keeps its icon", named("Polymorph") == ns.IconTexture(4) and edit:HasFocus())
+    check("name: saved with the question mark", saved("Mount Up") == 134400, saved("Mount Up"))
+    check("name: then, the game shows the question mark: still the text's", header() == ns.IconTexture(6), header())
     ns.Window.Revert()
-    DeleteMacro(GetMacroIndexByName("Fire Blast"))
+    DeleteMacro(GetMacroIndexByName("Mount Up"))
     Send("UPDATE_MACROS")
-    ns.Window.New()
-    NextFrame()
+    -- Picked: the question mark works as the question mark; another icon is saved as it is.
+    Blank()
     Fire(MacroSenseIconButton, "OnClick")
     local grid = {}
     for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
     Fire(grid[1], "OnClick") -- the question mark, picked
     MacroSenseIconPicker:Hide()
-    check("name: a picked icon stays", named("Polymorph") == ns.IconTexture(134400))
-    ns.Window.New()
+    named("Zap Q")
+    Type("/cast Frostbolt")
     NextFrame()
+    check("name: the question mark picked works as the question mark", header() == ns.IconTexture(5), header())
+    ns.Window.Save()
+    check("name: and is saved so", saved("Zap Q") == 134400, saved("Zap Q"))
+    ns.Window.Revert()
+    DeleteMacro(GetMacroIndexByName("Zap Q"))
+    Send("UPDATE_MACROS")
+    Blank()
+    Fire(MacroSenseIconButton, "OnClick")
+    Fire(grid[2], "OnClick")
+    MacroSenseIconPicker:Hide()
+    named("Zap P")
+    Type("/cast Frostbolt")
+    ns.Window.Save()
+    check("name: an icon picked is saved as it is", saved("Zap P") == grid[2].entry.icon
+        and grid[2].entry.icon ~= 134400, saved("Zap P"))
+    ns.Window.Revert()
+    DeleteMacro(GetMacroIndexByName("Zap P"))
+    Send("UPDATE_MACROS")
+    Blank()
     check("name: picked for the macro before, not this one", named("Polymorph") == ns.IconTexture(6))
+    -- An item not in the bags: the game's icon for its name, before the macro's name.
+    named("Stone")
+    Type("#showtooltip\n/use [nomod] Minor Healthstone\n/cast [mod:alt] Frostbolt")
+    NextFrame()
+    check("name: an item not in the bags, the game's icon", header() == 9001, header())
+    ns.Window.Revert()
+    -- One the game doesn't know: its question mark doesn't count, the next one named does.
+    Blank()
+    named("Stone")
+    Type("#showtooltip\n/use [nomod] Major Healthstone\n/cast [mod:alt] Frostbolt")
+    NextFrame()
+    check("name: an item the game doesn't know, the next one named", header() == ns.IconTexture(5), header())
+    ns.Window.Revert()
     box:SetText("")
     ns.Window.Select(1)
     NextFrame()
@@ -2071,8 +2145,7 @@ do
     ns.Window.Copy("general")
     check("copy: not in combat", select(1, GetNumMacros()) == count and printed[#printed]:find("in combat") ~= nil)
     InCombatLockdown = function() return false end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     ns.Window.Copy("general")
     check("copy: not before the macro is saved", select(1, GetNumMacros()) == count)
     for _, name in ipairs({ "Zap", "Zap 2", "Zap 3", "Zap 4", "Сімнадцять літер", "Сімнадцять літ 2" }) do
@@ -2156,8 +2229,7 @@ do
         for _, o in ipairs(created) do if o.isUnderline and o:IsShown() then n = n + 1 end end
         return n
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/castsequence reset=")
     check("reset: values offered", ns.Popup:IsShown() and ns.Popup.items[1].name == "target",
@@ -2187,8 +2259,7 @@ do
         end
         return ""
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/use 1")
     local items, trinket = ns.Popup.items, nil
@@ -2209,8 +2280,7 @@ do
     check("equipslot: then gear", ns.Popup:IsShown() and ns.Popup.items[1].name == "Fire Ring",
         ns.Popup.items[1] and ns.Popup.items[1].name)
     Key("ESCAPE", "OnEscapePressed")
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/use 23")
     Key("ESCAPE", "OnEscapePressed")
@@ -2233,8 +2303,7 @@ do
     ActionButton1.action = 1 -- the slot with macro 1 on it, which shows Fireball
     actions[1] = { "macro", 133, "spell", text = (GetMacroInfo(1)) }
     BT4Button3 = New("Frame", "BT4Button3") -- not a button: not offered
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/click Act")
     local items = ns.Popup.items
@@ -2249,8 +2318,7 @@ do
     Key("ESCAPE", "OnEscapePressed")
     Wait(1)
     check("click: a frame that is not a button", statusText():find("not a button", 1, true) ~= nil, statusText())
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/click Nope")
     Key("ESCAPE", "OnEscapePressed")
@@ -3426,8 +3494,7 @@ do
     Pick("Export all macros")
     local all = C("box").text
     check("share: both tabs", #ns.Share.Decode(all) == general + character)
-    ns.Window.New()
-    NextFrame()
+    Blank()
     Fire(share, "OnClick")
     check("share: no saved macro, nothing to export", menuItem("Export this macro").item.disabled)
     Fire(share, "OnClick")
@@ -3475,8 +3542,7 @@ do
     C("box"):SetText("/cast [@focus] Polymorph")
     Fire(C("import"), "OnClick")
     local icon = select(2, GetMacroInfo(GetMacroIndexByName("Polymorph")))
-    check("share: no #showtooltip, the icon of its spell", icon ~= nil and icon == ns.Completion.IconFor("Polymorph")
-        and icon ~= 134400, icon)
+    check("share: no icon in the code, the question mark", icon == 134400, icon)
     DeleteMacro(GetMacroIndexByName("Polymorph"))
     Send("UPDATE_MACROS")
 
@@ -3882,8 +3948,10 @@ do
 end
 
 -- The icon chosen for a macro is kept and saved, not the one it shows now: the question mark with
--- #showtooltip shows the spell's, and saving that would fix the macro's icon to it. The header shows what the
--- macro shows, as the list and the action bars do; an icon picked shows as picked until it is saved.
+-- #showtooltip shows the spell's, and saving that would fix the macro's icon to it. With the question mark the
+-- header and the list show the game's icon, or the one found for it (its name, #showtooltip, the first cast) while
+-- the game shows the question mark; an icon picked shows as picked until it is saved. An icon chosen in a macro
+-- with #showtooltip has a padlock: the game would change it, and it stays.
 do
     local m = { name = "Shown", icon = 134400, body = "#showtooltip\n/cast Fireball", perChar = false, shown = 4242 }
     macros[#macros + 1] = m
@@ -3893,22 +3961,47 @@ do
     NextFrame()
     local headerTex, row
     for _, o in ipairs(created) do
-        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then headerTex = o end
+        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture
+            and not tostring(o.texture):find("Lock") then headerTex = o end
         if o.kind == "Button" and o.index == index and o:IsShown() then row = o end
     end
     local function header() return headerTex and headerTex.texture end
-    check("icon: the header shows what the macro shows", header() == 4242, header())
+    local headerMark
+    for _, o in ipairs(created) do
+        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o ~= headerTex
+            and o.texture and tostring(o.texture):find("Lock") then headerMark = o end
+    end
+    check("icon: the header shows what the game shows", header() == 4242, header())
     check("icon: so does the list", row and row.icon.texture == 4242, row and row.icon.texture)
+    check("icon: the question mark, no padlock", headerMark and not headerMark:IsShown() and not row.mark:IsShown())
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(MacroSenseIconButton, "OnEnter")
+    check("icon: no word about it then", #tip == 2, #tip)
     GameTooltip.AddLine = nil
-    check("icon: the tooltip says what the question mark does", tip[3] and tip[3]:find("^Its icon is the question "
-        .. "mark") ~= nil, tip[3])
     m.shown = 4343 -- Shift held: #showtooltip shows another spell
     Wait(0.12)
     check("icon: the header follows the game", header() == 4343, header())
+    check("icon: the list too", row.icon.texture == 4343, row.icon.texture)
+    m.shown = 134400 -- the game shows the question mark (just saved): the one found, its first cast
+    Wait(0.12)
+    local found = ns.IconTexture(ns.Completion.MacroIcon(m.body, ns.previewEnv))
+    check("icon: the game's question mark, the one found", found ~= 134400 and header() == found, header())
+    ns.Window.RefreshList()
+    check("icon: so does the list then", row.icon.texture == found, row.icon.texture)
+    check("icon: greyed then, only a hint", headerTex.desaturated and row.icon.desaturated)
+    local hint = {}
+    GameTooltip.AddLine = function(_, text) hint[#hint + 1] = text end
+    Fire(MacroSenseIconButton, "OnEnter")
+    Fire(row, "OnEnter")
+    Fire(row, "OnLeave")
+    GameTooltip.AddLine = nil
+    local said = table.concat(hint, "\n")
+    check("icon: the tooltips say the bars show the question mark",
+        select(2, said:gsub("On your action bars the game shows the question mark", "")) == 2, said)
     m.shown = 4242
+    Wait(0.12)
+    check("icon: the game's icon again: not greyed", not headerTex.desaturated and not row.icon.desaturated)
     Fire(MacroSenseIconButton, "OnClick")
     local grid = {}
     for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
@@ -3919,10 +4012,11 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(MacroSenseIconButton, "OnEnter")
     GameTooltip.AddLine = nil
-    check("icon: another icon needs no word about the question mark", #tip == 2, #tip)
+    check("icon: one picked with #showtooltip: the padlock, and what it means", headerMark:IsShown()
+        and tip[3] and tip[3]:find("^Icon chosen by you") ~= nil, tip[3])
     Fire(grid[1], "OnClick")
     MacroSenseIconPicker:Hide()
-    check("icon: the question mark again shows the spell's", header() == 4242, header())
+    check("icon: the question mark again shows the game's", header() == 4242 and not headerMark:IsShown(), header())
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/sit")
@@ -4291,8 +4385,7 @@ do
     check("buffs: found as typed", box.list.items[1] and box.list.items[1].name == "Ice Block")
     Fire(box, "OnEscapePressed")
     ns.WizardWindow.Close()
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/cancelaura ")
     names = {}
@@ -5284,8 +5377,7 @@ do
     if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
     ns.Window.SetScope("general")
     ns.Window.Revert()
-    ns.Window.New()
-    NextFrame()
+    Blank()
     SLASH_TARGET2, SLASH_DISMOUNT1, SLASH_DISMOUNT2 = "/ziel", "/dismount", "/absitzen" -- the client's: German
     ns.Window.Restore("/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt\n/startattack\n"
         .. "/cast [@mouseover,help][] Heal\n/cast [form:1] Maul; [spec:2] Wrath\n/ziel [@focus]\n/absitzen")
@@ -5444,8 +5536,7 @@ do
             if r:IsShown() and ns.Highlight.Strip(r.text.text):sub(1, #label) == label then return r end
         end
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     Fire(share, "OnClick")
     check("links: a new macro is saved first", menuItem("Link this macro in chat").item.disabled)
     MacroSenseMenu:Hide()

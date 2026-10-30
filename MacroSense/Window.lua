@@ -7,6 +7,7 @@ local MAX_GENERAL, MAX_CHARACTER = ns.MAX_GENERAL, ns.MAX_CHARACTER
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local MAX_NAME = 16 -- letters, as in the Blizzard macro window
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
+local NEW_BODY = "#showtooltip\n" -- a new macro starts with it, the cursor on the line below
 local COPY_ICON = "Interface\\AddOns\\MacroSense\\Media\\copy"
 local ROW_H = 24
 local MIN_W, MIN_H = 780, 460 -- also the first size
@@ -54,7 +55,11 @@ end
 local function IsDirty()
     if not frame then return false end
     local body, name = code:GetRaw(), nameBox:GetText()
-    if not state.index then return body ~= "" or name ~= "" or state.icon ~= NEW_ICON end
+    -- A new macro without a name, an icon picked or a text (empty, or only #showtooltip) is nothing to keep.
+    if not state.index then
+        local blank = body:lower():match("^%s*$") or body:lower():match("^%s*#showtooltip%s*$")
+        return not (blank and strtrim(name) == "" and state.icon == NEW_ICON)
+    end
     return body ~= state.body or name ~= state.name or state.icon ~= state.savedIcon
 end
 
@@ -220,14 +225,72 @@ local function UpdateStatus()
     end
 end
 
--- The header's icon: the one the macro shows in the game, as the list and the action bars do (the question mark
--- shows the icon of the spell #showtooltip names, and can change with a key held). An icon picked and not saved
--- yet shows as picked; the one saved stays the one chosen.
-local function ShowIcon()
-    local shown = state.index and state.icon == state.savedIcon and select(2, GetMacroInfo(state.index))
-    iconTex:SetTexture(ns.IconTexture(shown or state.icon))
+local function IsQuestionMark(icon)
+    return icon == NEW_ICON or type(icon) == "string" and icon:lower():find("inv_misc_questionmark", 1, true) ~= nil
 end
 
+-- A macro whose icon is the question mark shows in the game the icon of what it casts, and #showtooltip can
+-- change it (a key held). Here too: the game's icon for a saved macro; when the game shows the question mark (a
+-- new macro, or just saved), the one found for its text, else its name (Completion.MacroIcon). Returns the icon,
+-- and true when a saved macro shows the question mark on the action bars now: the one found is only a hint then.
+local function FoundIcon(body, index, name)
+    local shown = index and select(2, GetMacroInfo(index))
+    if shown and not IsQuestionMark(shown) then return shown, false end
+    local found = ns.Completion.MacroIcon(ns.Roles.Fill(body or ""), ns.previewEnv, name)
+    return found or NEW_ICON, index ~= nil and found ~= nil
+end
+
+-- An icon found while the action bars show the question mark: greyed, and its tooltip says why (HintNote).
+local function ShowFound(texture, icon, hint)
+    texture:SetTexture(ns.IconTexture(icon))
+    texture:SetDesaturated(hint)
+    texture.hint = hint
+end
+
+local function AddHintNote()
+    GameTooltip:AddLine(L["On your action bars the game shows the question mark for now: as things are right now "
+        .. "(keys held, your target, items in your bags), the macro wouldn't use anything. The grey icon only "
+        .. "shows what the macro is for."], 0.8, 0.8, 0.8, true)
+end
+
+-- The game's padlock (the pet battle one where the client has pet battles; older clients have the button one).
+local LOCK = C_PetBattles and "Interface\\PetBattles\\PetBattle-LockIcon" or "Interface\\Buttons\\LockButton-Locked-Up"
+
+-- A padlock in the corner of an icon the player chose, in a macro with #showtooltip (or #show): there the game
+-- would change the icon, and the one chosen stays instead.
+local function LockMark(parent, icon, size)
+    local mark = parent:CreateTexture(nil, "OVERLAY")
+    mark:SetTexture(LOCK)
+    mark:SetSize(size, size)
+    mark:SetPoint("TOPLEFT", icon, "TOPLEFT", -2, 2)
+    mark:Hide()
+    return mark
+end
+
+-- An icon chosen (not the question mark) with #showtooltip or #show in the text: the padlock.
+local function Locked(icon, body)
+    return icon ~= nil and not IsQuestionMark(icon) and ("\n" .. (body or ""):lower()):find("\n%s*#show") ~= nil
+end
+
+-- What the padlock means, in the header's and the list's tooltips.
+local function AddLockNote()
+    GameTooltip:AddLine(L["Icon chosen by you: it stays the same, even when #showtooltip would change it. To let "
+        .. "the game pick it, choose the question mark."], 0.8, 0.8, 0.8, true)
+end
+
+-- The header's icon: the one chosen, as the list and the action bars show it. The question mark: as FoundIcon.
+-- An icon picked and not saved yet shows as picked; with #showtooltip in the text, with the padlock.
+local function ShowIcon()
+    if state.icon == NEW_ICON then
+        ShowFound(iconTex, FoundIcon(code:GetRaw(), state.index, nameBox:GetText()))
+    else
+        local shown = state.index and state.icon == state.savedIcon and select(2, GetMacroInfo(state.index))
+        ShowFound(iconTex, shown or state.icon, false)
+    end
+    iconTex.mark:SetShown(Locked(state.icon, code:GetRaw()))
+end
+
+------------------------------------------------------------------------
 ------------------------------------------------------------------------
 -- Live preview: next to each line, what it would do right now
 ------------------------------------------------------------------------
@@ -481,6 +544,7 @@ local function Row(i)
     r.icon:SetSize(ROW_H - 4, ROW_H - 4)
     r.icon:SetPoint("LEFT", 6, 0)
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    r.mark = LockMark(r, r.icon, 14)
     r.text = ns.Text(r, 12)
     r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     r.text:SetPoint("RIGHT", -6, 0)
@@ -524,6 +588,8 @@ local function Row(i)
             AddIssueLines(r.issues or {})
             AddBarsLines(r.scope, r.name)
         end
+        if r.mark:IsShown() then AddLockNote() end
+        if r.icon.hint then AddHintNote() end
         GameTooltip:Show()
     end)
     r:SetScript("OnLeave", function()
@@ -601,6 +667,10 @@ local function UseRow(n, what)
     r.copy:SetShown(what ~= "alt")
     r.remove:SetShown(what ~= "altMacro")
     r.alert:Hide()
+    r.mark:Hide()
+    r.auto = false
+    r.icon:SetDesaturated(false)
+    r.icon.hint = false
     r.text:SetPoint("RIGHT", what == "alt" and r.remove or r.copy, "LEFT", -2, 0)
     r.bg:Hide()
     r.bg:SetAlpha(1)
@@ -629,7 +699,9 @@ local function AltRows(n, q)
                 n = n + 1
                 r = UseRow(n, "altMacro")
                 r.alt, r.macro, r.name = alt, m, m.name
-                r.icon:SetTexture(ns.IconTexture(m.icon))
+                local auto = m.icon == NEW_ICON
+                ShowFound(r.icon, auto and FoundIcon(m.body, nil, m.name) or m.icon, false)
+                r.mark:SetShown(Locked(m.icon, m.body))
                 r.text:SetText(m.name)
                 r:Paint()
             end
@@ -643,6 +715,16 @@ local function AltRows(n, q)
     return n
 end
 
+-- The list's macros with the question mark follow the game's icon too (a key held), as the header does.
+local function FollowRowIcons()
+    for _, r in ipairs(rows) do
+        if r:IsShown() and r.what == "macro" and r.auto then
+            local name, _, body = GetMacroInfo(r.index)
+            if name then ShowFound(r.icon, FoundIcon(body, r.index, name)) end
+        end
+    end
+end
+
 function Window.RefreshList()
     if not frame then return end
     local q = Query()
@@ -654,7 +736,10 @@ function Window.RefreshList()
             n = n + 1
             local r = UseRow(n, "macro")
             r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
-            r.icon:SetTexture(ns.IconTexture(icon))
+            local chosen = ns.MacroIcon(index)
+            r.auto = chosen == NEW_ICON
+            if r.auto then ShowFound(r.icon, FoundIcon(body, index, name)) else ShowFound(r.icon, icon, false) end
+            r.mark:SetShown(Locked(chosen, body))
             r.text:SetText(name)
             -- Marks follow the saved text: the one being edited shows its issues in the editor.
             r.severity, r.issues = MacroIssues(body)
@@ -694,13 +779,13 @@ local function Load(index)
         local text = ns.Roles.Text(index > MAX_GENERAL and "character" or "general", name, body or "")
         state.index, state.name, state.icon, state.body = index, name, ns.MacroIcon(index) or NEW_ICON, text
     else
-        state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, ""
+        state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, NEW_BODY
     end
-    state.savedIcon, state.iconPicked = state.icon, false
+    state.savedIcon = state.icon
     nameBox:SetText(state.name)
     ShowIcon()
     ns.IconPicker.SetCurrent(state.icon)
-    code:SetRaw(state.body, 0)
+    code:SetRaw(state.body, index and 0 or #state.body)
     Window.RefreshList()
     UpdateStatus()
 end
@@ -1064,9 +1149,8 @@ function Window.Import(macros, done)
         for _, p in ipairs(Window.ImportPlan(macros)) do
             if p.name then
                 local m = p.macro
-                -- A text from a guide has no icon: that of the spell it is named after, unless #showtooltip picks.
-                local icon = m.icon ~= "" and m.icon
-                    or not m.body:find("^#show") and ns.Completion.IconFor(p.name) or NEW_ICON
+                -- A text from a guide has no icon: the question mark, so the game shows the spell's.
+                local icon = m.icon ~= "" and m.icon or NEW_ICON
                 CreateMacro(p.name, icon, m.body, m.scope == "character")
                 made, first = made + 1, first or p
             end
@@ -1653,10 +1737,8 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine(L["Click: choose an icon"], 1, 1, 1)
         GameTooltip:AddLine(L["Drag: put the macro on an action bar"], 1, 1, 1)
-        if state.icon == NEW_ICON then
-            GameTooltip:AddLine(L["Its icon is the question mark, so the macro shows the icon of the spell or item "
-                .. "it uses."], 0.8, 0.8, 0.8, true)
-        end
+        if iconTex.mark:IsShown() then AddLockNote() end
+        if iconTex.hint then AddHintNote() end
         GameTooltip:Show()
     end)
     iconFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1665,7 +1747,7 @@ local function Build()
     iconFrame:SetScript("OnClick", function()
         if ns.IconPicker.IsShown() then return ns.IconPicker.Close() end
         ns.IconPicker.Open(frame, state.icon, function(icon)
-            state.icon, state.iconPicked = icon, true
+            state.icon = icon
             ShowIcon()
             UpdateStatus()
         end)
@@ -1676,19 +1758,14 @@ local function Build()
     iconTex:SetPoint("TOPLEFT", 1, -1)
     iconTex:SetPoint("BOTTOMRIGHT", -1, 1)
     iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    iconTex.mark = LockMark(iconFrame, iconTex, 18)
 
     nameBox = ns.Input(main, 220, 16)
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)
     nameBox:SetScript("OnTextChanged", function() UpdateStatus() end)
-    -- Tab or Enter: on to the text. A new macro whose icon was not picked gets the icon of the spell or item it is
-    -- named after (the question mark when none), unless #showtooltip in its text wants the question mark.
+    -- Tab or Enter: on to the text. The question mark's icon may follow the name (ShowIcon).
     local function NameDone()
-        if not state.index and not state.iconPicked and not ("\n" .. code:GetRaw():lower()):find("\n%s*#show") then
-            state.icon = ns.Completion.IconFor(nameBox:GetText()) or NEW_ICON
-            ShowIcon()
-            ns.IconPicker.SetCurrent(state.icon)
-            UpdateStatus()
-        end
+        ShowIcon()
         code:SetFocus()
     end
     nameBox:SetScript("OnEnterPressed", NameDone)
@@ -1857,8 +1934,9 @@ local function Build()
     end
     if ChatEdit_InsertLink then hooksecurefunc("ChatEdit_InsertLink", linked) end
     if ChatFrameUtil and ChatFrameUtil.InsertLink then hooksecurefunc(ChatFrameUtil, "InsertLink", linked) end
-    -- Issues are found a frame after each change: the status bar and the preview follow them.
+    -- Issues are found a frame after each change: the status bar, the preview and a new macro's icon follow them.
     code.onErrors = function()
+        ShowIcon()
         UpdateStatus()
         UpdatePreview()
     end
@@ -1904,6 +1982,7 @@ local function Build()
         sincePreview = 0
         UpdatePreview()
         ShowIcon()
+        FollowRowIcons()
         UpdateExplain()
     end)
 

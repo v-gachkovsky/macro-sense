@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- A new macro starts with `#showtooltip` on the first line, the cursor on the second.
+- A new macro you haven't touched (no name, no icon picked, nothing written but `#showtooltip`) is dropped
+  without asking when you open another macro.
+- A new macro is saved with the question mark unless you picked an icon, so the game shows the spell's icon
+  and changes it as `#showtooltip` does. Before, the icon of the spell it was named after was saved, and stayed
+  the same. Imported macros without an icon get the question mark too.
+- An icon you chose, in a macro with `#showtooltip`, has a padlock in its corner, in the editor and the list:
+  the game won't change that icon, and the tooltip says how to let it (choose the question mark).
+- A macro with the question mark shows the game's icon in the list too, and it changes there while you hold a
+  key. Where the game shows only the question mark (a new macro, or one just saved), MacroSense picks the icon
+  as the game does: of what `#showtooltip` shows right now, else of the first line that casts or uses
+  something right now. If that gives nothing (no line works right now, or the item isn't in your bags), the
+  first spell or item the text names, whatever its conditions (the game knows the icons of items you don't
+  carry); last, the macro's name. Such an icon is greyed while your action bars show the question mark, and
+  its tooltip says why.
+
 ## [0.9.1] - 2026-10-30
 
 ### Added
