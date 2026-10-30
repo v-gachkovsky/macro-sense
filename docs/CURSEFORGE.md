@@ -204,7 +204,9 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - A macro without a chosen icon keeps the question mark, so the game changes its icon as `#showtooltip` does.
   The editor and the list show the game's icon, which changes while you hold a key. Where the game shows only
   the question mark, MacroSense picks the icon as the game does: of what `#showtooltip` shows right now, else
-  of the first line that casts or uses something right now. An icon you picked is saved and shown as it is.
+  of the first line that casts or uses something right now. If that gives nothing, the first spell or item the
+  text names, whatever its conditions, and last the macro's name. An icon you picked is saved and shown as it
+  is.
 - An icon you picked, in a macro with `#showtooltip`, has a padlock: the game won't change it.
 - **Drag** a macro from the list, or its icon from the header, straight onto an action bar.
 - **Shift + right-click** a macro on an action bar to edit it: the editor opens on it instead of the macro

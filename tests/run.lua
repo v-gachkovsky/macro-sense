@@ -1974,8 +1974,9 @@ do
     check("share: a macro without a name", Problem(nameless):find("damaged") ~= nil, Problem(nameless))
 end
 
--- The icon the game shows for a macro with the question mark, picked as the game does: what #showtooltip shows
--- now, else the first line that casts or uses something now. Here no key is held, nothing else is checked.
+-- The icon for a macro with the question mark: as the game picks it (what #showtooltip shows now, else the first
+-- line that casts or uses something now; here no key is held, nothing else is checked); else the first spell or
+-- item the text names; last, the macro's name.
 do
     local spells, items = ns.sources.spells, ns.sources.items
     ns.sources.spells = function()
@@ -1997,7 +1998,7 @@ do
         end
         return nil
     end }
-    local function M(body) return ns.Completion.MacroIcon(body, env) end
+    local function M(body, name) return ns.Completion.MacroIcon(body, env, name) end
     check("macro icon: what #showtooltip names", M("#showtooltip Polymorph\n/cast Frostbolt") == 5
         and M("#show [mod:alt] Kick; frostbolt\n/cast Fireball") == 3)
     check("macro icon: bare #showtooltip, the first line that casts", M("#showtooltip\n/stopcasting\n/cast Fireball") == 1)
@@ -2006,10 +2007,20 @@ do
     check("macro icon: as it is now, no key held", M("#showtooltip\n/cast [mod:shift] Polymorph; Frostbolt") == 3
         and M("/cast [mod:ctrl] Kick\n/cast [nomod] Polymorph") == 5)
     check("macro icon: !, (rank), any case", M("/cast !Frost Nova(Rank 1)") == 4 and M("/cast natures swiftness") == 8)
-    check("macro icon: #showtooltip names none of yours, or nothing now: the question mark",
-        M("#showtooltip Mystery\n/cast Fireball") == nil and M("#showtooltip [mod] Kick\n/cast Fireball") == nil)
-    check("macro icon: nothing", M("#showtooltip\n/say hi\n/cast [mod] Kick") == nil and M("") == nil
-        and M("/cast Iconless") == nil)
+    check("macro icon: nothing now, or none of yours: the first one the text names",
+        M("#showtooltip Mystery\n/cast Fireball") == 1 and M("#showtooltip [mod] Kick\n/cast Fireball") == 9
+        and M("#showtooltip\n/use [nomod] Minor Healthstone\n/cast [mod:alt] Frost Nova") == 4
+        and M("/castsequence [mod] reset=5 Mystery, Polymorph") == 5)
+    check("macro icon: the name last", M("/say hi", "Poly MO") == 5 and M("/cast Kick", "Polymorph") == 9
+        and M("/cast [mod] Mystery", "Kick Focus") == 9 and M("", "nova") == 4)
+    check("macro icon: nothing", M("#showtooltip\n/say hi") == nil and M("") == nil and M("/cast Iconless") == nil
+        and M("/say hi", "Mount") == nil)
+    -- The game's icon for a name: an item not in the bags, an equipment slot.
+    env.icon = function(name) return ({ ["Minor Healthstone"] = 30, ["13"] = 31 })[name] end
+    check("macro icon: the game's for a name", M("/use [nomod] Minor Healthstone\n/cast Kick") == 30
+        and M("/use 13\n/cast [mod] Kick") == 31)
+    env.icon = function() error("the game refuses") end
+    check("macro icon: the game refusing changes nothing", M("/use Mystery\n/cast [mod] Kick") == 9)
     ns.sources.spells, ns.sources.items = spells, items
 end
 

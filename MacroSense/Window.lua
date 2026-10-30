@@ -231,11 +231,11 @@ end
 
 -- A macro whose icon is the question mark shows in the game the icon of what it casts, and #showtooltip can
 -- change it (a key held). Here too: the game's icon for a saved macro; when the game shows the question mark (a
--- new macro, or just saved), the one the game would pick for the text (Completion.MacroIcon).
-local function FoundIcon(body, index)
+-- new macro, or just saved), the one found for its text, else its name (Completion.MacroIcon).
+local function FoundIcon(body, index, name)
     local shown = index and select(2, GetMacroInfo(index))
     if shown and not IsQuestionMark(shown) then return shown end
-    return ns.Completion.MacroIcon(ns.Roles.Fill(body or ""), ns.previewEnv) or NEW_ICON
+    return ns.Completion.MacroIcon(ns.Roles.Fill(body or ""), ns.previewEnv, name) or NEW_ICON
 end
 
 -- The game's padlock (the pet battle one where the client has pet battles; older clients have the button one).
@@ -267,7 +267,7 @@ end
 -- An icon picked and not saved yet shows as picked; with #showtooltip in the text, with the padlock.
 local function ShowIcon()
     local auto = state.icon == NEW_ICON
-    local shown = auto and FoundIcon(code:GetRaw(), state.index)
+    local shown = auto and FoundIcon(code:GetRaw(), state.index, nameBox:GetText())
         or state.index and state.icon == state.savedIcon and select(2, GetMacroInfo(state.index))
     iconTex:SetTexture(ns.IconTexture(shown or state.icon))
     iconTex.mark:SetShown(Locked(state.icon, code:GetRaw()))
@@ -680,7 +680,7 @@ local function AltRows(n, q)
                 r = UseRow(n, "altMacro")
                 r.alt, r.macro, r.name = alt, m, m.name
                 local auto = m.icon == NEW_ICON
-                r.icon:SetTexture(ns.IconTexture(auto and FoundIcon(m.body) or m.icon))
+                r.icon:SetTexture(ns.IconTexture(auto and FoundIcon(m.body, nil, m.name) or m.icon))
                 r.mark:SetShown(Locked(m.icon, m.body))
                 r.text:SetText(m.name)
                 r:Paint()
@@ -700,7 +700,7 @@ local function FollowRowIcons()
     for _, r in ipairs(rows) do
         if r:IsShown() and r.what == "macro" and r.auto then
             local name, _, body = GetMacroInfo(r.index)
-            if name then r.icon:SetTexture(ns.IconTexture(FoundIcon(body, r.index))) end
+            if name then r.icon:SetTexture(ns.IconTexture(FoundIcon(body, r.index, name))) end
         end
     end
 end
@@ -718,7 +718,7 @@ function Window.RefreshList()
             r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
             local chosen = ns.MacroIcon(index)
             r.auto = chosen == NEW_ICON
-            r.icon:SetTexture(ns.IconTexture(r.auto and FoundIcon(body, index) or icon))
+            r.icon:SetTexture(ns.IconTexture(r.auto and FoundIcon(body, index, name) or icon))
             r.mark:SetShown(Locked(chosen, body))
             r.text:SetText(name)
             -- Marks follow the saved text: the one being edited shows its issues in the editor.
@@ -1742,8 +1742,9 @@ local function Build()
     nameBox = ns.Input(main, 220, 16)
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)
     nameBox:SetScript("OnTextChanged", function() UpdateStatus() end)
-    -- Tab or Enter: on to the text.
+    -- Tab or Enter: on to the text. The question mark's icon may follow the name (ShowIcon).
     local function NameDone()
+        ShowIcon()
         code:SetFocus()
     end
     nameBox:SetScript("OnEnterPressed", NameDone)

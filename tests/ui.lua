@@ -250,7 +250,11 @@ C_Container = {
 C_Item = {
     GetItemSpell = function(link) return link:find("5512") and "Healthstone" or nil end,
     IsEquippableItem = function(link) return link:find("1234") ~= nil end,
-    GetItemIconByID = function(id) return id end,
+    -- By ID; by name only the items the game knows (in its cache): Minor Healthstone, not in the bags.
+    GetItemIconByID = function(id)
+        if type(id) == "number" then return id end
+        return ({ ["Minor Healthstone"] = 9001 })[id]
+    end,
     GetItemCount = function() return 1 end,
     -- Item 2411 is a mount (Miscellaneous, Mount); Fire Ring a ring, Lucky Charm a trinket.
     GetItemInfoInstant = function(link)
@@ -1946,7 +1950,8 @@ do
     Blank()
     check("name: Enter goes on to the text", named("Polymorph") and edit:HasFocus() and not box:HasFocus())
     check("name: Tab too", named("frostbolt", "OnTabPressed") and edit:HasFocus() and not box:HasFocus())
-    check("name: the name picks no icon", named("Polymorph") == ns.IconTexture(134400), header())
+    check("name: no text yet, the name's", named("Polymorph") == ns.IconTexture(6), header())
+    check("name: none, the question mark", named("Mount") == ns.IconTexture(134400), header())
     -- As the text is typed: what #showtooltip shows now, else the first line that casts now.
     Type("#showtooltip\n/cast [mod:shift] Polymorph; Frostbolt")
     NextFrame()
@@ -1991,7 +1996,13 @@ do
     DeleteMacro(GetMacroIndexByName("Zap P"))
     Send("UPDATE_MACROS")
     Blank()
-    check("name: picked for the macro before, not this one", named("Polymorph") == ns.IconTexture(134400))
+    check("name: picked for the macro before, not this one", named("Polymorph") == ns.IconTexture(6))
+    -- An item not in the bags: the game's icon for its name, before the macro's name.
+    named("Stone")
+    Type("#showtooltip\n/use [nomod] Minor Healthstone\n/cast [mod:alt] Frostbolt")
+    NextFrame()
+    check("name: an item not in the bags, the game's icon", header() == 9001, header())
+    ns.Window.Revert()
     box:SetText("")
     ns.Window.Select(1)
     NextFrame()

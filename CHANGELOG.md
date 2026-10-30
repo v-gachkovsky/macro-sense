@@ -12,14 +12,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
   without asking when you open another macro.
 - A new macro is saved with the question mark unless you picked an icon, so the game shows the spell's icon
   and changes it as `#showtooltip` does. Before, the icon of the spell it was named after was saved, and stayed
-  the same. The macro's name no longer picks an icon. Imported macros without an icon get the question mark
-  too.
+  the same. Imported macros without an icon get the question mark too.
 - An icon you chose, in a macro with `#showtooltip`, has a padlock in its corner, in the editor and the list:
   the game won't change that icon, and the tooltip says how to let it (choose the question mark).
 - A macro with the question mark shows the game's icon in the list too, and it changes there while you hold a
   key. Where the game shows only the question mark (a new macro, or one just saved), MacroSense picks the icon
   as the game does: of what `#showtooltip` shows right now, else of the first line that casts or uses
-  something right now.
+  something right now. If that gives nothing (no line works right now, or the item isn't in your bags), the
+  first spell or item the text names, whatever its conditions (the game knows the icons of items you don't
+  carry); last, the macro's name.
 
 ## [0.9.1] - 2026-10-30
 

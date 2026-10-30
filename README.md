@@ -390,8 +390,10 @@ unless you pick an icon, so in the game its icon changes the way `#showtooltip` 
 list show the icon the game shows, and it changes there too while you hold a key. Where the game shows only
 the question mark (a new macro, or one just saved), MacroSense picks the icon as the game does: of what
 `#showtooltip` shows right now, else of the first line that casts or uses something right now
-(`/cast [mod:shift] Polymorph; Frostbolt` gives Frostbolt, or Polymorph while you hold Shift). The macro's
-name plays no part. In the editor it follows what you type. An icon
+(`/cast [mod:shift] Polymorph; Frostbolt` gives Frostbolt, or Polymorph while you hold Shift). If that gives
+nothing (no line works right now, or the item isn't in your bags), the icon is that of the first spell or item
+the text names, whatever its conditions; the game knows the icons of items you don't carry too. Last comes
+the macro's name: `Kick Focus` gives Kick, `Poly MO` Polymorph. In the editor it follows what you type. An icon
 you picked yourself is saved and shown as it is. In a macro with `#showtooltip` it gets a padlock in its
 corner: the game won't change that icon. To let it, choose the question mark.
 

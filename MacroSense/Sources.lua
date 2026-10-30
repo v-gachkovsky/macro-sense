@@ -39,9 +39,24 @@ function ns.RegisterActionCommands()
 end
 
 -- The game's own condition check for the live preview: SecureCmdOptionParse is what macros run with.
+local function Try(fn, ...)
+    if not fn then return nil end
+    local ok, value = pcall(fn, ...)
+    return ok and value or nil
+end
 ns.previewEnv = {
     parse = function(options) return SecureCmdOptionParse(options) end,
     sequenceStep = QueryCastSequence and function(sequence) return QueryCastSequence(sequence) end,
+    -- The icon the game has for a name: an equipment slot ("13"), a spell, an item it knows ("item:5512" too),
+    -- even one not in your bags.
+    icon = function(name)
+        local slot = tonumber(name)
+        if slot then return Try(GetInventoryItemTexture, "player", slot) end
+        local spell = Try(C_Spell and C_Spell.GetSpellTexture or GetSpellTexture, name)
+        if spell then return spell end
+        local item = tonumber(name:match("^item:(%d+)")) or name
+        return Try(C_Item and C_Item.GetItemIconByID, item) or Try(GetItemIcon, item)
+    end,
 }
 
 -- Secure commands (/cast, /petmoveto, ...): the game keeps their list from addons, but each alias is a
