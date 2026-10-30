@@ -231,12 +231,12 @@ local function FoundIcon(name, body, index)
     return ns.Completion.MacroIcon(name or "", body or "") or index and select(2, GetMacroInfo(index)) or NEW_ICON
 end
 
--- The ? in the corner of an icon whose icon was not chosen: a question mark with a thick outline and a shadow, no
+-- The ? in the corner of an icon whose icon was not chosen: a red question mark with a thick outline and a shadow, no
 -- frame, big enough to see on any icon.
 local function QuestionMark(parent, icon, size)
     local mark = parent:CreateFontString(nil, "OVERLAY")
     mark:SetFont(ns.UIFont(), size, "THICKOUTLINE")
-    mark:SetTextColor(1, 0.82, 0)
+    mark:SetTextColor(1, 0.2, 0.15) -- red, as the question mark icon
     mark:SetShadowColor(0, 0, 0, 1)
     mark:SetShadowOffset(1, -1)
     mark:SetText("?")
