@@ -253,7 +253,7 @@ C_Item = {
     -- By ID; by name only the items the game knows (in its cache): Minor Healthstone, not in the bags.
     GetItemIconByID = function(id)
         if type(id) == "number" then return id end
-        return ({ ["Minor Healthstone"] = 9001 })[id]
+        return ({ ["Minor Healthstone"] = 9001 })[id] or 134400 -- the question mark: unknown
     end,
     GetItemCount = function() return 1 end,
     -- Item 2411 is a mount (Miscellaneous, Mount); Fire Ring a ring, Lucky Charm a trinket.
@@ -2002,6 +2002,13 @@ do
     Type("#showtooltip\n/use [nomod] Minor Healthstone\n/cast [mod:alt] Frostbolt")
     NextFrame()
     check("name: an item not in the bags, the game's icon", header() == 9001, header())
+    ns.Window.Revert()
+    -- One the game doesn't know: its question mark doesn't count, the next one named does.
+    Blank()
+    named("Stone")
+    Type("#showtooltip\n/use [nomod] Major Healthstone\n/cast [mod:alt] Frostbolt")
+    NextFrame()
+    check("name: an item the game doesn't know, the next one named", header() == ns.IconTexture(5), header())
     ns.Window.Revert()
     box:SetText("")
     ns.Window.Select(1)

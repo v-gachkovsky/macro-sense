@@ -39,10 +39,14 @@ function ns.RegisterActionCommands()
 end
 
 -- The game's own condition check for the live preview: SecureCmdOptionParse is what macros run with.
+-- fn(...), or nil when it fails or gives the question mark: the game's answer for an item it doesn't know.
 local function Try(fn, ...)
     if not fn then return nil end
     local ok, value = pcall(fn, ...)
-    return ok and value or nil
+    if not ok or value == 134400 or type(value) == "string" and value:lower():find("questionmark", 1, true) then
+        return nil
+    end
+    return value
 end
 ns.previewEnv = {
     parse = function(options) return SecureCmdOptionParse(options) end,
