@@ -3961,6 +3961,7 @@ do
     m.shown = 4343 -- Shift held: #showtooltip shows another spell
     Wait(0.12)
     check("icon: the header follows the game", header() == 4343 and headerMark:IsShown(), header())
+    check("icon: the list too", row.icon.texture == 4343, row.icon.texture)
     m.shown = 134400 -- the game shows the question mark (just saved): the one found, its first cast
     Wait(0.12)
     local found = ns.IconTexture(ns.Completion.MacroIcon("Shown", m.body))

@@ -689,6 +689,16 @@ local function AltRows(n, q)
     return n
 end
 
+-- The list's macros with the question mark follow the game's icon too (a key held), as the header does.
+local function FollowRowIcons()
+    for _, r in ipairs(rows) do
+        if r:IsShown() and r.what == "macro" and r.mark:IsShown() then
+            local name, _, body = GetMacroInfo(r.index)
+            if name then r.icon:SetTexture(ns.IconTexture(FoundIcon(name, body, r.index))) end
+        end
+    end
+end
+
 function Window.RefreshList()
     if not frame then return end
     local q = Query()
@@ -1944,6 +1954,7 @@ local function Build()
         sincePreview = 0
         UpdatePreview()
         ShowIcon()
+        FollowRowIcons()
         UpdateExplain()
     end)
 
