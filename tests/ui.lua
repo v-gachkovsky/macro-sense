@@ -1302,7 +1302,27 @@ do
     ns.Ask = function(which) asked = which end
     ns.Window.New()
     check("new: nothing to discard in an untouched one", asked == nil, asked)
+    -- Empty, or only #showtooltip, no name, no icon picked: it goes without asking.
+    local box
+    for _, o in ipairs(created) do if o.kind == "EditBox" and o.maxLetters == 16 then box = o end end
+    local function blankThen(text, name)
+        ns.Window.New()
+        edit.text = text
+        Fire(edit, "OnTextChanged", true)
+        NextFrame()
+        box:SetText(name or "")
+        asked = nil
+        ns.Window.Select(1)
+        return asked
+    end
+    check("new: emptied, not asked", blankThen("") == nil and ns.Highlight.Strip(edit:GetText()) ~= "")
+    check("new: #showtooltip, spaces around, not asked", blankThen("  #ShowTooltip \n\n") == nil)
+    check("new: a line typed, asked", blankThen("#showtooltip\n/sit") == "MACROSENSE_DISCARD")
+    check("new: a name typed, asked", blankThen("#showtooltip\n", "Sit") == "MACROSENSE_DISCARD")
+    box:SetText("")
     ns.Ask = ask
+    ns.Window.New()
+    ns.Window.Select(1)
     ns.Window.Select(1)
 end
 

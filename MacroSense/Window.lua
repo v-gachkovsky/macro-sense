@@ -55,7 +55,11 @@ end
 local function IsDirty()
     if not frame then return false end
     local body, name = code:GetRaw(), nameBox:GetText()
-    if not state.index then return body ~= state.body or name ~= "" or state.icon ~= NEW_ICON end
+    -- A new macro without a name, an icon picked or a text (empty, or only #showtooltip) is nothing to keep.
+    if not state.index then
+        local blank = body:lower():match("^%s*$") or body:lower():match("^%s*#showtooltip%s*$")
+        return not (blank and strtrim(name) == "" and state.icon == NEW_ICON)
+    end
     return body ~= state.body or name ~= state.name or state.icon ~= state.savedIcon
 end
 
