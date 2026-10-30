@@ -231,13 +231,16 @@ local function FoundIcon(name, body, index)
     return ns.Completion.MacroIcon(name or "", body or "") or index and select(2, GetMacroInfo(index)) or NEW_ICON
 end
 
--- The ? in the corner of an icon whose icon was not chosen: an outlined question mark, no frame.
+-- The ? in the corner of an icon whose icon was not chosen: a question mark with a thick outline and a shadow, no
+-- frame, big enough to see on any icon.
 local function QuestionMark(parent, icon, size)
     local mark = parent:CreateFontString(nil, "OVERLAY")
-    mark:SetFont(ns.UIFont(), size, "OUTLINE")
+    mark:SetFont(ns.UIFont(), size, "THICKOUTLINE")
     mark:SetTextColor(1, 0.82, 0)
+    mark:SetShadowColor(0, 0, 0, 1)
+    mark:SetShadowOffset(1, -1)
     mark:SetText("?")
-    mark:SetPoint("TOPLEFT", icon, "TOPLEFT", 1, 0)
+    mark:SetPoint("TOPLEFT", icon, "TOPLEFT", -1, 2)
     mark:Hide()
     return mark
 end
@@ -512,7 +515,7 @@ local function Row(i)
     r.icon:SetSize(ROW_H - 4, ROW_H - 4)
     r.icon:SetPoint("LEFT", 6, 0)
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    r.mark = QuestionMark(r, r.icon, 11)
+    r.mark = QuestionMark(r, r.icon, 16)
     r.text = ns.Text(r, 12)
     r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     r.text:SetPoint("RIGHT", -6, 0)
@@ -1710,7 +1713,7 @@ local function Build()
     iconTex:SetPoint("TOPLEFT", 1, -1)
     iconTex:SetPoint("BOTTOMRIGHT", -1, 1)
     iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    iconTex.mark = QuestionMark(iconFrame, iconTex, 15)
+    iconTex.mark = QuestionMark(iconFrame, iconTex, 22)
 
     nameBox = ns.Input(main, 220, 16)
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)
