@@ -231,10 +231,12 @@ ns.locales.uk = {
     -- Main window: editor
     ["Click: choose an icon"] = "Клацання: вибрати іконку",
     ["Drag: put the macro on an action bar"] = "Перетягування: поставити макрос на панель дій",
-    ["On your action bars the game shows the question mark for now: no line of this macro would work right now "
-        .. "(for example, its item isn't in your bags). This icon only shows what the macro is for."] =
-        "На панелях дій гра зараз показує знак питання: жоден рядок цього макросу зараз не спрацює (наприклад, "
-        .. "його предмета немає в сумках). Ця іконка лише підказує, для чого макрос.",
+    ["On your action bars the game shows the question mark for now: as things are right now (keys held, your "
+        .. "target, items in your bags), the macro wouldn't use anything. With a key held or another target it may. "
+        .. "This icon only shows what the macro is for."] =
+        "Зараз на панелях дій гра показує знак питання: за поточних умов (затиснуті клавіші, ціль, предмети в "
+        .. "сумках) макрос нічого не застосує. Із затиснутою клавішею чи іншою ціллю може застосувати. Ця іконка "
+        .. "лише підказує, для чого макрос.",
     ["Icon chosen by you: it stays the same, even when #showtooltip would change it. To let the game pick it, "
         .. "choose the question mark."] =
         "Іконку вибрали ви: вона не змінюється, навіть коли #showtooltip змінив би її. Щоб гра підбирала її сама, "

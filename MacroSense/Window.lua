@@ -248,9 +248,9 @@ local function ShowFound(texture, icon, hint)
 end
 
 local function AddHintNote()
-    GameTooltip:AddLine(L["On your action bars the game shows the question mark for now: no line of this macro "
-        .. "would work right now (for example, its item isn't in your bags). This icon only shows what the macro "
-        .. "is for."], 0.8, 0.8, 0.8, true)
+    GameTooltip:AddLine(L["On your action bars the game shows the question mark for now: as things are right now "
+        .. "(keys held, your target, items in your bags), the macro wouldn't use anything. With a key held or "
+        .. "another target it may. This icon only shows what the macro is for."], 0.8, 0.8, 0.8, true)
 end
 
 -- The game's padlock (the pet battle one where the client has pet battles; older clients have the button one).
