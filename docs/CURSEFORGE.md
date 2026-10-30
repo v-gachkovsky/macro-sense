@@ -201,9 +201,10 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
   of Pandaria).
 - The icon grid can be resized, moved away from the editor and docked back.
 - A new macro starts with `#showtooltip`, the cursor already on the second line.
-- A new macro gets its icon by itself, unless you chose one: from its name (`Kick Focus`, `Poly MO`), else
-  from the spell `#showtooltip` names, else from the first `/cast` or `/use` that works with no modifier key
-  held.
+- Until a new macro is saved, its header shows the icon it will likely have: from its name (`Kick Focus`,
+  `Poly MO`), else from the spell `#showtooltip` names, else from the first `/cast` or `/use` that works with
+  no modifier key held. It is saved with the question mark, so the game changes the icon as `#showtooltip`
+  does. An icon you picked is saved as it is.
 - **Drag** a macro from the list, or its icon from the header, straight onto an action bar.
 - **Shift + right-click** a macro on an action bar to edit it: the editor opens on it instead of the macro
   running, and the tooltip says so. On the game's bars, Bartender, Dominos and ElvUI.

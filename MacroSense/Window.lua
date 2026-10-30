@@ -230,9 +230,9 @@ local function ShowIcon()
 end
 
 ------------------------------------------------------------------------
--- A new macro whose icon was not picked: the icon of the spell or item it is named after, or the one its
--- #showtooltip names, or the one its first /cast or /use casts with no key held (the question mark when none).
--- Again on Save, when the text is there.
+-- A new macro whose icon was not picked shows, until it is saved, the icon of the spell or item it is named after,
+-- or the one its #showtooltip names, or the one its first /cast or /use casts with no key held (the question mark
+-- when none). It follows the name (Tab, Enter) and the text, and is saved as the question mark (Save).
 local function AutoIcon()
     if state.index or state.iconPicked then return end
     local icon = ns.Completion.MacroIcon(nameBox:GetText(), code:GetRaw()) or NEW_ICON
@@ -807,8 +807,9 @@ function Window.Save()
         -- The game keeps macros sorted by name, so the index may change.
         index = EditMacro(state.index, name, state.icon, written)
     else
-        AutoIcon()
-        index = CreateMacro(name, state.icon or NEW_ICON, written, state.scope == "character")
+        -- An icon the addon found is only shown here: saved, it is the question mark, so the game shows the spell's
+        -- icon and changes it as #showtooltip does. One the player picked is saved as it is.
+        index = CreateMacro(name, state.iconPicked and state.icon or NEW_ICON, written, state.scope == "character")
     end
     if not index or index == 0 then
         if renamed then ns.History.Renamed(state.scope, name, state.name) end
@@ -1080,8 +1081,8 @@ function Window.Import(macros, done)
         for _, p in ipairs(Window.ImportPlan(macros)) do
             if p.name then
                 local m = p.macro
-                -- A text from a guide has no icon: it gets one as a new macro does (AutoIcon).
-                local icon = m.icon ~= "" and m.icon or ns.Completion.MacroIcon(p.name, m.body) or NEW_ICON
+                -- A text from a guide has no icon: the question mark, so the game shows the spell's.
+                local icon = m.icon ~= "" and m.icon or NEW_ICON
                 CreateMacro(p.name, icon, m.body, m.scope == "character")
                 made, first = made + 1, first or p
             end
@@ -1866,8 +1867,9 @@ local function Build()
     end
     if ChatEdit_InsertLink then hooksecurefunc("ChatEdit_InsertLink", linked) end
     if ChatFrameUtil and ChatFrameUtil.InsertLink then hooksecurefunc(ChatFrameUtil, "InsertLink", linked) end
-    -- Issues are found a frame after each change: the status bar and the preview follow them.
+    -- Issues are found a frame after each change: the status bar, the preview and a new macro's icon follow them.
     code.onErrors = function()
+        AutoIcon()
         UpdateStatus()
         UpdatePreview()
     end

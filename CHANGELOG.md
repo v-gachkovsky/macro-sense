@@ -9,10 +9,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 - A new macro starts with `#showtooltip` on the first line, the cursor on the second. Left as it is, it has
   nothing to discard when you open another macro.
-- A new macro's icon: from its name first, as before, then from the spell `#showtooltip` names, then from the
-  first `/cast` or `/use` that works with no modifier key held. It is looked for again when you save. Before,
-  `#showtooltip` in the text always kept the question mark. An icon you picked yourself stays. Imported macros
-  without an icon get theirs the same way.
+- A new macro is saved with the question mark unless you picked an icon, so the game shows the spell's icon
+  and changes it as `#showtooltip` does. Before, the icon of the spell it was named after was saved, and stayed
+  the same. Imported macros without an icon get the question mark too.
+- Until a new macro is saved, its header shows the icon it will likely have, and follows what you type: from
+  its name, else from the spell `#showtooltip` names, else from the first `/cast` or `/use` that works with no
+  modifier key held.
 
 ## [0.9.1] - 2026-10-30
 
