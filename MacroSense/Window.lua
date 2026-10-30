@@ -225,10 +225,17 @@ local function UpdateStatus()
     end
 end
 
+local function IsQuestionMark(icon)
+    return icon == NEW_ICON or type(icon) == "string" and icon:lower():find("inv_misc_questionmark", 1, true) ~= nil
+end
+
 -- A macro whose icon is the question mark shows in the game the icon of what it casts, and #showtooltip can
--- change it. Here it shows the one found for it (Completion.MacroIcon), else the game's, with a ? in the corner.
+-- change it (a key held). Here too, with a ? in the corner: the game's icon for a saved macro; when the game shows
+-- the question mark (a new macro, or just saved), the one found for it (Completion.MacroIcon).
 local function FoundIcon(name, body, index)
-    return ns.Completion.MacroIcon(name or "", body or "") or index and select(2, GetMacroInfo(index)) or NEW_ICON
+    local shown = index and select(2, GetMacroInfo(index))
+    if shown and not IsQuestionMark(shown) then return shown end
+    return ns.Completion.MacroIcon(name or "", body or "") or NEW_ICON
 end
 
 -- The ? in the corner of an icon whose icon was not chosen: a red question mark with a thick outline and a shadow, no
@@ -251,8 +258,8 @@ local function AddQuestionMarkNote()
         .. "spell or item it uses. It can change, for example while you hold a key."], 0.8, 0.8, 0.8, true)
 end
 
--- The header's icon: the one chosen, as the list and the action bars show it. The question mark: the icon found
--- for the text in the editor now, marked. An icon picked and not saved yet shows as picked.
+-- The header's icon: the one chosen, as the list and the action bars show it. The question mark: as FoundIcon,
+-- marked. An icon picked and not saved yet shows as picked.
 local function ShowIcon()
     local auto = state.icon == NEW_ICON
     local shown = auto and FoundIcon(nameBox:GetText(), code:GetRaw(), state.index)

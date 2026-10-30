@@ -13,10 +13,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A new macro is saved with the question mark unless you picked an icon, so the game shows the spell's icon
   and changes it as `#showtooltip` does. Before, the icon of the spell it was named after was saved, and stayed
   the same. Imported macros without an icon get the question mark too.
-- A macro with the question mark has a small **?** in the corner of its icon, in the editor and the list; the
-  tooltip says what it means. The icon shown is the one found for it: from its name, else from the spell
-  `#showtooltip` names, else from the first `/cast` or `/use` that works with no modifier key held. In the
-  editor it follows what you type.
+- A macro with the question mark has a red **?** in the corner of its icon, in the editor and the list; the
+  tooltip says what it means. Its icon is the game's, and changes as in the game while you hold a key. Where
+  the game shows only the question mark (a new macro, or one just saved), the icon is found for it: from its
+  name, else from the spell `#showtooltip` names, else from the first `/cast` or `/use` that works with no
+  modifier key held.
 
 ## [0.9.1] - 2026-10-30
 

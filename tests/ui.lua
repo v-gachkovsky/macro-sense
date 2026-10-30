@@ -3946,9 +3946,8 @@ do
     for _, o in ipairs(created) do
         if o.kind == "FontString" and o.parentFrame == MacroSenseIconButton and o.text == "?" then headerMark = o end
     end
-    local found = ns.IconTexture(ns.Completion.MacroIcon("Shown", m.body))
-    check("icon: the header shows the one found, its first cast", found ~= 4242 and header() == found, header())
-    check("icon: so does the list", row and row.icon.texture == found, row and row.icon.texture)
+    check("icon: the header shows what the game shows", header() == 4242, header())
+    check("icon: so does the list", row and row.icon.texture == 4242, row and row.icon.texture)
     check("icon: both with the ? in the corner", headerMark and headerMark:IsShown() and row.mark:IsShown())
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
@@ -3961,7 +3960,13 @@ do
     GameTooltip.AddLine = nil
     m.shown = 4343 -- Shift held: #showtooltip shows another spell
     Wait(0.12)
-    check("icon: a key held, the one found stays", header() == found, header())
+    check("icon: the header follows the game", header() == 4343 and headerMark:IsShown(), header())
+    m.shown = 134400 -- the game shows the question mark (just saved): the one found, its first cast
+    Wait(0.12)
+    local found = ns.IconTexture(ns.Completion.MacroIcon("Shown", m.body))
+    check("icon: the game's question mark, the one found", found ~= 134400 and header() == found, header())
+    ns.Window.RefreshList()
+    check("icon: so does the list then", row.icon.texture == found, row.icon.texture)
     m.shown = 4242
     Fire(MacroSenseIconButton, "OnClick")
     local grid = {}
@@ -3976,7 +3981,7 @@ do
     check("icon: another icon needs no word about the question mark", #tip == 2 and not headerMark:IsShown(), #tip)
     Fire(grid[1], "OnClick")
     MacroSenseIconPicker:Hide()
-    check("icon: the question mark again shows the one found", header() == found and headerMark:IsShown(), header())
+    check("icon: the question mark again shows the game's", header() == 4242 and headerMark:IsShown(), header())
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/sit")

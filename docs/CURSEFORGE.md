@@ -202,7 +202,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - The icon grid can be resized, moved away from the editor and docked back.
 - A new macro starts with `#showtooltip`, the cursor already on the second line.
 - A macro without a chosen icon keeps the question mark, so the game changes its icon as `#showtooltip` does.
-  The editor and the list mark it with a small **?** and show the icon found for it: from its name
+  The editor and the list mark it with a red **?** and show the game's icon, which changes while you hold a
+  key. Where the game shows only the question mark, the icon is found for it: from its name
   (`Kick Focus`, `Poly MO`), else from the spell `#showtooltip` names, else from the first `/cast` or `/use`
   that works with no modifier key held. An icon you picked is saved and shown as it is.
 - **Drag** a macro from the list, or its icon from the header, straight onto an action bar.
