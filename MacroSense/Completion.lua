@@ -136,13 +136,28 @@ local TARGET_WORDS = { focus = true, mouseover = true, mo = true, target = true,
 -- whose name is in the macro's name as whole words, in any case ("fireball", "Kick Focus": Kick); else the
 -- shortest with a word that starts like the macro's first word that is not a target, of 3 letters or more
 -- ("Poly MO": Polymorph, "Nova": Frost Nova).
-function Completion.IconFor(name)
-    local macro, all, best = Words(name), {}, nil
-    for _, kind in ipairs({ "spells", "items" }) do
-        for _, c in ipairs(source(kind)) do
-            if c.icon then all[#all + 1] = { icon = c.icon, words = Words(c.name) } end
+-- Your spells and items with icons, their words worked out once per list (the list shows a found icon for each
+-- macro with the question mark): all = { { icon, words } }, spells first; byWords[words] = icon.
+local named = {}
+local function WithIcons()
+    local spells, items = source("spells"), source("items")
+    if named.spells ~= spells or named.items ~= items then
+        named = { spells = spells, items = items, all = {}, byWords = {} }
+        for _, list in ipairs({ spells, items }) do
+            for _, c in ipairs(list) do
+                if c.icon then
+                    local words = Words(c.name)
+                    named.all[#named.all + 1] = { icon = c.icon, words = words }
+                    named.byWords[words] = named.byWords[words] or c.icon
+                end
+            end
         end
     end
+    return named
+end
+
+function Completion.IconFor(name)
+    local macro, all, best = Words(name), WithIcons().all, nil
     for _, c in ipairs(all) do
         if macro:find(c.words, 1, true) and (not best or #c.words > #best.words) then best = c end
     end
@@ -160,13 +175,7 @@ end
 
 -- The icon of the spell or item of yours named so, in any case ("fireball", "!Shoot", "Summon Imp(Summon)"), or nil.
 local function IconOf(name)
-    local words = Words((name:gsub("^%s*!", ""):gsub("%b()%s*$", "")))
-    if words == "  " then return nil end
-    for _, kind in ipairs({ "spells", "items" }) do
-        for _, c in ipairs(source(kind)) do
-            if c.icon and Words(c.name) == words then return c.icon end
-        end
-    end
+    return WithIcons().byWords[Words((name:gsub("^%s*!", ""):gsub("%b()%s*$", "")))]
 end
 
 -- What "[conditions] action; ..." does with no modifier key held: the action of the first clause that needs no

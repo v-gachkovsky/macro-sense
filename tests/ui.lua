@@ -1948,7 +1948,8 @@ do
     named("Fire Blast")
     ns.Window.Save()
     check("name: saved as the question mark", select(2, GetMacroInfo(GetMacroIndexByName("Fire Blast"))) == 134400)
-    check("name: a saved macro keeps its icon", named("Polymorph") == ns.IconTexture(134400) and edit:HasFocus())
+    check("name: saved with the question mark, it follows the name", named("Polymorph") == ns.IconTexture(6)
+        and edit:HasFocus())
     ns.Window.Revert()
     DeleteMacro(GetMacroIndexByName("Fire Blast"))
     Send("UPDATE_MACROS")
@@ -1958,7 +1959,7 @@ do
     for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
     Fire(grid[1], "OnClick") -- the question mark, picked
     MacroSenseIconPicker:Hide()
-    check("name: a picked icon stays", named("Polymorph") == ns.IconTexture(134400))
+    check("name: the question mark picked works as the question mark", named("Polymorph") == ns.IconTexture(6))
     edit:SetFocus()
     Type("/cast Frostbolt")
     ns.Window.Save()
@@ -3905,8 +3906,9 @@ do
 end
 
 -- The icon chosen for a macro is kept and saved, not the one it shows now: the question mark with
--- #showtooltip shows the spell's, and saving that would fix the macro's icon to it. The header shows what the
--- macro shows, as the list and the action bars do; an icon picked shows as picked until it is saved.
+-- #showtooltip shows the spell's, and saving that would fix the macro's icon to it. With the question mark the
+-- header and the list show the icon found for it (its name, #showtooltip, the first cast) with a ? in the corner;
+-- an icon picked shows as picked until it is saved.
 do
     local m = { name = "Shown", icon = 134400, body = "#showtooltip\n/cast Fireball", perChar = false, shown = 4242 }
     macros[#macros + 1] = m
@@ -3920,17 +3922,26 @@ do
         if o.kind == "Button" and o.index == index and o:IsShown() then row = o end
     end
     local function header() return headerTex and headerTex.texture end
-    check("icon: the header shows what the macro shows", header() == 4242, header())
-    check("icon: so does the list", row and row.icon.texture == 4242, row and row.icon.texture)
+    local headerMark
+    for _, o in ipairs(created) do
+        if o.kind == "FontString" and o.parentFrame == MacroSenseIconButton and o.text == "?" then headerMark = o end
+    end
+    local found = ns.IconTexture(ns.Completion.MacroIcon("Shown", m.body))
+    check("icon: the header shows the one found, its first cast", found ~= 4242 and header() == found, header())
+    check("icon: so does the list", row and row.icon.texture == found, row and row.icon.texture)
+    check("icon: both with the ? in the corner", headerMark and headerMark:IsShown() and row.mark:IsShown())
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(MacroSenseIconButton, "OnEnter")
+    check("icon: the tooltip says what the ? means", tip[3] and tip[3]:find("^The %? in the corner") ~= nil, tip[3])
+    tip = {}
+    Fire(row, "OnEnter")
+    check("icon: the list's tooltip too", tip[#tip] and tip[#tip]:find("^The %? in the corner") ~= nil, tip[#tip])
+    Fire(row, "OnLeave")
     GameTooltip.AddLine = nil
-    check("icon: the tooltip says what the question mark does", tip[3] and tip[3]:find("^Its icon is the question "
-        .. "mark") ~= nil, tip[3])
     m.shown = 4343 -- Shift held: #showtooltip shows another spell
     Wait(0.12)
-    check("icon: the header follows the game", header() == 4343, header())
+    check("icon: a key held, the one found stays", header() == found, header())
     m.shown = 4242
     Fire(MacroSenseIconButton, "OnClick")
     local grid = {}
@@ -3942,10 +3953,10 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(MacroSenseIconButton, "OnEnter")
     GameTooltip.AddLine = nil
-    check("icon: another icon needs no word about the question mark", #tip == 2, #tip)
+    check("icon: another icon needs no word about the question mark", #tip == 2 and not headerMark:IsShown(), #tip)
     Fire(grid[1], "OnClick")
     MacroSenseIconPicker:Hide()
-    check("icon: the question mark again shows the spell's", header() == 4242, header())
+    check("icon: the question mark again shows the one found", header() == found and headerMark:IsShown(), header())
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/sit")
