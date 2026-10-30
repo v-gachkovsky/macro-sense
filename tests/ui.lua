@@ -1923,8 +1923,8 @@ do
     NextFrame()
 end
 
--- The name, then Tab or Enter: on to the text. A new macro whose icon was not picked gets the icon of the spell
--- or item it is named after; one picked, a saved macro's, and the question mark of #showtooltip stay.
+-- The name, then Tab or Enter: on to the text. A new macro whose icon was not picked shows the icon the game would
+-- pick for its text (not its name) and is saved with the question mark; one picked is saved as it is.
 do
     local box
     for _, o in ipairs(created) do
@@ -1932,7 +1932,8 @@ do
     end
     local function header()
         for _, o in ipairs(created) do
-            if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then return o.texture end
+            if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture
+                and not tostring(o.texture):find("Lock") then return o.texture end
         end
     end
     local function named(name, key)
@@ -1941,57 +1942,56 @@ do
         Fire(box, key or "OnEnterPressed")
         return header()
     end
+    local function saved(name) return select(2, GetMacroInfo(GetMacroIndexByName(name))) end
     Blank()
-    check("name: Enter goes on to the text", named("Polymorph") == ns.IconTexture(6) and edit:HasFocus()
-        and not box:HasFocus(), header())
-    check("name: Tab too", named("frostbolt", "OnTabPressed") == ns.IconTexture(5) and edit:HasFocus())
-    check("name: an item", named("Healthstone") == ns.IconTexture(5512))
-    check("name: none found, the question mark again", named("Mount") == ns.IconTexture(134400))
-    edit:SetFocus()
-    Type("#showtooltip")
-    check("name: the name first, #showtooltip or not", named("Fire Blast") == ns.IconTexture(4))
-    ns.Window.Revert()
-    -- As the text is typed: #showtooltip's spell, else the first /cast with no key held. Saved: the question mark.
-    Blank()
-    named("Mount Up")
+    check("name: Enter goes on to the text", named("Polymorph") and edit:HasFocus() and not box:HasFocus())
+    check("name: Tab too", named("frostbolt", "OnTabPressed") and edit:HasFocus() and not box:HasFocus())
+    check("name: the name picks no icon", named("Polymorph") == ns.IconTexture(134400), header())
+    -- As the text is typed: what #showtooltip shows now, else the first line that casts now.
     Type("#showtooltip\n/cast [mod:shift] Polymorph; Frostbolt")
     NextFrame()
-    check("name: the text, the first cast with no key held", header() == ns.IconTexture(5), header())
+    check("name: the text, the first cast now", header() == ns.IconTexture(5), header())
     Blank()
     named("Mount Up")
     Type("#showtooltip Polymorph\n/cast Frostbolt")
     NextFrame()
     check("name: the text, the one #showtooltip names", header() == ns.IconTexture(6), header())
     ns.Window.Save()
-    check("name: a found icon is saved as the question mark",
-        select(2, GetMacroInfo(GetMacroIndexByName("Mount Up"))) == 134400)
+    check("name: saved with the question mark", saved("Mount Up") == 134400, saved("Mount Up"))
+    check("name: then, the game shows the question mark: still the text's", header() == ns.IconTexture(6), header())
+    ns.Window.Revert()
     DeleteMacro(GetMacroIndexByName("Mount Up"))
     Send("UPDATE_MACROS")
-    Blank()
-    named("Fire Blast")
-    ns.Window.Save()
-    check("name: saved as the question mark", select(2, GetMacroInfo(GetMacroIndexByName("Fire Blast"))) == 134400)
-    check("name: saved with the question mark, it follows the name", named("Polymorph") == ns.IconTexture(6)
-        and edit:HasFocus())
-    ns.Window.Revert()
-    DeleteMacro(GetMacroIndexByName("Fire Blast"))
-    Send("UPDATE_MACROS")
+    -- Picked: the question mark works as the question mark; another icon is saved as it is.
     Blank()
     Fire(MacroSenseIconButton, "OnClick")
     local grid = {}
     for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
     Fire(grid[1], "OnClick") -- the question mark, picked
     MacroSenseIconPicker:Hide()
-    check("name: the question mark picked works as the question mark", named("Polymorph") == ns.IconTexture(6))
-    edit:SetFocus()
+    named("Zap Q")
     Type("/cast Frostbolt")
+    NextFrame()
+    check("name: the question mark picked works as the question mark", header() == ns.IconTexture(5), header())
     ns.Window.Save()
-    check("name: a picked icon stays on Save too", select(2, GetMacroInfo(GetMacroIndexByName("Polymorph"))) == 134400)
+    check("name: and is saved so", saved("Zap Q") == 134400, saved("Zap Q"))
     ns.Window.Revert()
-    DeleteMacro(GetMacroIndexByName("Polymorph"))
+    DeleteMacro(GetMacroIndexByName("Zap Q"))
     Send("UPDATE_MACROS")
     Blank()
-    check("name: picked for the macro before, not this one", named("Polymorph") == ns.IconTexture(6))
+    Fire(MacroSenseIconButton, "OnClick")
+    Fire(grid[2], "OnClick")
+    MacroSenseIconPicker:Hide()
+    named("Zap P")
+    Type("/cast Frostbolt")
+    ns.Window.Save()
+    check("name: an icon picked is saved as it is", saved("Zap P") == grid[2].entry.icon
+        and grid[2].entry.icon ~= 134400, saved("Zap P"))
+    ns.Window.Revert()
+    DeleteMacro(GetMacroIndexByName("Zap P"))
+    Send("UPDATE_MACROS")
+    Blank()
+    check("name: picked for the macro before, not this one", named("Polymorph") == ns.IconTexture(134400))
     box:SetText("")
     ns.Window.Select(1)
     NextFrame()
@@ -3966,7 +3966,7 @@ do
     check("icon: the list too", row.icon.texture == 4343, row.icon.texture)
     m.shown = 134400 -- the game shows the question mark (just saved): the one found, its first cast
     Wait(0.12)
-    local found = ns.IconTexture(ns.Completion.MacroIcon("Shown", m.body))
+    local found = ns.IconTexture(ns.Completion.MacroIcon(m.body, ns.previewEnv))
     check("icon: the game's question mark, the one found", found ~= 134400 and header() == found, header())
     ns.Window.RefreshList()
     check("icon: so does the list then", row.icon.texture == found, row.icon.texture)

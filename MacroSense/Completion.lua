@@ -122,108 +122,45 @@ local function Lower(s)
 end
 Completion.Lower = Lower -- the icon search ignores case the same way
 
--- A name's words, to compare names: lower case, apostrophes dropped, other marks as spaces, and a space at both
--- ends, so that " fire blast " is in " fire blast focus " as whole words.
+-- A name's words, to compare names: lower case, apostrophes dropped, other marks as spaces, a space at both ends
+-- ("Nature's Swiftness" and "natures swiftness" are the same).
 local function Words(s)
     return " " .. (Lower(s):gsub("'", ""):gsub("[%s%p]+", " "):match("^ *(.-) *$")) .. " "
 end
 
--- Words of a macro's name that say whom it is for, not what it casts ("Poly Focus", "Heal MO", "Kick arena1").
-local TARGET_WORDS = { focus = true, mouseover = true, mo = true, target = true, self = true, player = true,
-    cursor = true, party = true, arena = true, pet = true, boss = true }
-
--- The icon of the spell or item (of yours: spellbook, bags, gear) a macro is named after, or nil: the longest
--- whose name is in the macro's name as whole words, in any case ("fireball", "Kick Focus": Kick); else the
--- shortest with a word that starts like the macro's first word that is not a target, of 3 letters or more
--- ("Poly MO": Polymorph, "Nova": Frost Nova).
--- Your spells and items with icons, their words worked out once per list (the list shows a found icon for each
--- macro with the question mark): all = { { icon, words } }, spells first; byWords[words] = icon.
+-- Your spells and items with icons by their words (Words), worked out once per list: the list shows an icon for
+-- each macro with the question mark. A spell before an item of the same name.
 local named = {}
-local function WithIcons()
+local function IconsByWords()
     local spells, items = source("spells"), source("items")
     if named.spells ~= spells or named.items ~= items then
-        named = { spells = spells, items = items, all = {}, byWords = {} }
+        named = { spells = spells, items = items, byWords = {} }
         for _, list in ipairs({ spells, items }) do
             for _, c in ipairs(list) do
-                if c.icon then
-                    local words = Words(c.name)
-                    named.all[#named.all + 1] = { icon = c.icon, words = words }
-                    named.byWords[words] = named.byWords[words] or c.icon
-                end
+                local words = Words(c.name)
+                if c.icon and not named.byWords[words] then named.byWords[words] = c.icon end
             end
         end
     end
-    return named
+    return named.byWords
 end
 
-function Completion.IconFor(name)
-    local macro, all, best = Words(name), WithIcons().all, nil
-    for _, c in ipairs(all) do
-        if macro:find(c.words, 1, true) and (not best or #c.words > #best.words) then best = c end
-    end
-    if best then return best.icon end
-    for word in macro:gmatch("%S+") do
-        if not TARGET_WORDS[word:gsub("%d+$", "")] then
-            if select(2, word:gsub("[^\128-\191]", "")) < 3 then return nil end
-            for _, c in ipairs(all) do
-                if c.words:find(" " .. word, 1, true) and (not best or #c.words < #best.words) then best = c end
-            end
-            return best and best.icon
-        end
-    end
-end
-
--- The icon of the spell or item of yours named so, in any case ("fireball", "!Shoot", "Summon Imp(Summon)"), or nil.
+-- The icon of the spell or item of yours named so, in any case ("fireball", "Shoot"), or nil.
 local function IconOf(name)
-    return WithIcons().byWords[Words((name:gsub("^%s*!", ""):gsub("%b()%s*$", "")))]
+    return IconsByWords()[Words(name)]
 end
 
--- What "[conditions] action; ..." does with no modifier key held: the action of the first clause that needs no
--- key ([mod:shift] does, [nomod] and [combat] don't). Other conditions are not checked: they change on their own.
-local function NoKeyAction(options)
-    for clause in (options .. ";"):gmatch("([^;]*);") do
-        local groups = {}
-        local action = clause:gsub("%b[]", function(g)
-            groups[#groups + 1] = g:sub(2, -2)
-            return ""
-        end)
-        local free = #groups == 0
-        for _, g in ipairs(groups) do
-            local key = false
-            for cond in g:gmatch("[^,]+") do
-                local n = (cond:match("^%s*(%a+)") or ""):lower()
-                if n == "mod" or n == "modifier" then key = true end
-            end
-            if not key then free = true end
-        end
-        if free then return (action:match("^%s*(.-)%s*$")) end
+-- The icon the game shows for a macro with the question mark, or nil (the question mark), picked as the game
+-- does: what #showtooltip (or #show) shows now, else the first line that casts or uses something now.
+-- Preview.Evaluate reads the lines; env.parse is the game's condition check (Preview.Evaluate).
+function Completion.MacroIcon(body, env)
+    local results, first = ns.Preview.Evaluate(body, env), nil
+    for i = 1, results.n do
+        local r = results[i]
+        if r and r.kind == "icon" then return r.name and IconOf(r.name) end
+        first = first or r and r.icon
     end
-end
-
--- The icon a new macro gets, or nil (the question mark): of the spell or item it is named after; else of the one
--- #showtooltip names; else of the first /cast or /use that casts one of yours with no modifier key held.
-function Completion.MacroIcon(name, body)
-    local icon = Completion.IconFor(name)
-    if icon then return icon end
-    local casts = {}
-    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
-        local meta, shown = line:match("^%s*#(%a+)(.*)$")
-        local cmd, options = line:match("^%s*/(%S+)%s*(.*)$")
-        meta = meta and meta:lower()
-        if (meta == "showtooltip" or meta == "show") and shown:find("%S") then
-            local action = NoKeyAction(shown)
-            icon = icon or action and IconOf(action)
-        elseif cmd then
-            local base = ns.Parser.actionCommands[cmd:lower()]
-            if base == "cast" or base == "use" then casts[#casts + 1] = options end
-        end
-    end
-    if icon then return icon end
-    for _, options in ipairs(casts) do
-        local action = NoKeyAction(options)
-        icon = action and IconOf(action)
-        if icon then return icon end
-    end
+    return first and IconOf(first)
 end
 
 -- Two capitals or more ("DA", "SWP", "CoA"; not "Da" or "D"): then each letter is the first letter of a word.

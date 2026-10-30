@@ -1974,48 +1974,42 @@ do
     check("share: a macro without a name", Problem(nameless):find("damaged") ~= nil, Problem(nameless))
 end
 
--- Icon for a macro's name: of the spell or item (yours) it is named after.
+-- The icon the game shows for a macro with the question mark, picked as the game does: what #showtooltip shows
+-- now, else the first line that casts or uses something now. Here no key is held, nothing else is checked.
 do
     local spells, items = ns.sources.spells, ns.sources.items
     ns.sources.spells = function()
-        return { { name = "Blast", icon = 13 }, { name = "Fireball", icon = 1 }, { name = "Fire Blast", icon = 2 },
-            { name = "Frost Nova", icon = 4 }, { name = "Frostbolt", icon = 3 }, { name = "Polymorph", icon = 5 },
-            { name = "Shadow Word: Pain", icon = 6 }, { name = "Pain Suppression", icon = 7 },
-            { name = "Nature's Swiftness", icon = 8 }, { name = "Kick", icon = 9 }, { name = "Focus Magic", icon = 10 },
-            { name = "Огненный шар", icon = 11 }, { name = "Iconless" }, { name = "Healthstone" } }
+        return { { name = "Fireball", icon = 1 }, { name = "Frostbolt", icon = 3 }, { name = "Frost Nova", icon = 4 },
+            { name = "Polymorph", icon = 5 }, { name = "Nature's Swiftness", icon = 8 }, { name = "Kick", icon = 9 },
+            { name = "Iconless" }, { name = "Healthstone" } }
     end
     ns.sources.items = function() return { { name = "Healthstone", icon = 20 }, { name = "Kick", icon = 21 } } end
-    local I = ns.Completion.IconFor
-    check("icon for: named like it, in any case", I("fireball") == 1 and I("FIRE BLAST") == 2 and I("огненный Шар") == 11)
-    check("icon for: marks don't count", I("Natures Swiftness") == 8 and I("Shadow Word Pain") == 6
-        and I("Kick(focus)") == 9 and I("Fire Blast!") == 2)
-    check("icon for: an item; a spell without an icon doesn't count", I("healthstone") == 20)
-    check("icon for: a spell before an item", I("Kick") == 9)
-    check("icon for: in the name as whole words, the longest", I("Fire Blast focus") == 2 and I("MO Kick") == 9
-        and I("Shadow Word: Pain arena1") == 6 and I("Fireballs") ~= 1, tostring(I("Fireballs")))
-    check("icon for: the start of a word, the shortest", I("Poly") == 5 and I("Poly MO") == 5 and I("Frost") == 3
-        and I("Nova") == 4 and I("Swift") == 8 and I("Bolt") == nil, tostring(I("Frost")))
-    check("icon for: target words are skipped", I("Focus Poly") == 5 and I("arena2 poly") == 5)
-    check("icon for: 3 letters at least, of the first other word", I("Fi") == nil and I("SW Pain") == nil
-        and I("Ог") == nil and I("Огн") == 11)
-    check("icon for: nothing", I("Mount") == nil and I("") == nil and I("   ") == nil and I("Focus") == nil)
-    check("icon for: no icon, no match", I("Iconless") == nil)
-    -- A new macro's icon: its name; else what #showtooltip names; else the first cast with no modifier key held.
-    local M = ns.Completion.MacroIcon
-    check("macro icon: the name first", M("Kick Focus", "#showtooltip Polymorph\n/cast Frostbolt") == 9)
-    check("macro icon: then #showtooltip's", M("Mount", "#showtooltip Polymorph\n/cast Frostbolt") == 5
-        and M("Mount", "#show [mod:alt] Kick; frostbolt\n/cast Fireball") == 3)
-    check("macro icon: bare #showtooltip, the first cast", M("Mount", "#showtooltip\n/stopcasting\n/cast Fireball") == 1
-        and M("Mount", "/use Healthstone") == 20)
-    check("macro icon: not one that needs a key", M("Mount", "#showtooltip\n/cast [mod:shift] Polymorph; Frostbolt") == 3
-        and M("Mount", "/cast [modifier:ctrl] Kick\n/cast [@focus,nomod] Polymorph") == 5
-        and M("Mount", "/cast [mod] Kick; [combat] Fire Blast; Fireball") == 2
-        and M("Mount", "/cast [mod:alt][] Kick") == 9)
-    check("macro icon: !, (rank) and a target", M("Mount", "/cast [@mouseover,help] !Frost Nova(Rank 1)") == 4)
-    check("macro icon: #showtooltip names none of yours: the first cast",
-        M("Mount", "#showtooltip Mystery\n/cast Fireball") == 1)
-    check("macro icon: nothing", M("Mount", "#showtooltip\n/say hi\n/cast [mod] Kick") == nil
-        and M("", "") == nil and M("Mount", "/use 13") == nil)
+    -- The game's condition check with no key held: the first clause whose conditions need no key.
+    local env = { parse = function(options)
+        for clause in (options .. ";"):gmatch("([^;]*);") do
+            local groups, free = {}, nil
+            local action = clause:gsub("%b[]", function(g) groups[#groups + 1] = g return "" end)
+            free = #groups == 0
+            for _, g in ipairs(groups) do
+                if not g:lower():find("[%[,]%s*mod") then free = true end
+            end
+            if free then return (action:match("^%s*(.-)%s*$")), nil end
+        end
+        return nil
+    end }
+    local function M(body) return ns.Completion.MacroIcon(body, env) end
+    check("macro icon: what #showtooltip names", M("#showtooltip Polymorph\n/cast Frostbolt") == 5
+        and M("#show [mod:alt] Kick; frostbolt\n/cast Fireball") == 3)
+    check("macro icon: bare #showtooltip, the first line that casts", M("#showtooltip\n/stopcasting\n/cast Fireball") == 1)
+    check("macro icon: no #showtooltip, the first line that casts too", M("/startattack\n/use Healthstone") == 20
+        and M("/cast Kick") == 9)
+    check("macro icon: as it is now, no key held", M("#showtooltip\n/cast [mod:shift] Polymorph; Frostbolt") == 3
+        and M("/cast [mod:ctrl] Kick\n/cast [nomod] Polymorph") == 5)
+    check("macro icon: !, (rank), any case", M("/cast !Frost Nova(Rank 1)") == 4 and M("/cast natures swiftness") == 8)
+    check("macro icon: #showtooltip names none of yours, or nothing now: the question mark",
+        M("#showtooltip Mystery\n/cast Fireball") == nil and M("#showtooltip [mod] Kick\n/cast Fireball") == nil)
+    check("macro icon: nothing", M("#showtooltip\n/say hi\n/cast [mod] Kick") == nil and M("") == nil
+        and M("/cast Iconless") == nil)
     ns.sources.spells, ns.sources.items = spells, items
 end
 
