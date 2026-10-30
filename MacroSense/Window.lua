@@ -238,34 +238,39 @@ local function FoundIcon(name, body, index)
     return ns.Completion.MacroIcon(name or "", body or "") or NEW_ICON
 end
 
--- The ? in the corner of an icon whose icon was not chosen: a red question mark with a thick outline and a shadow, no
--- frame, big enough to see on any icon.
-local function QuestionMark(parent, icon, size)
-    local mark = parent:CreateFontString(nil, "OVERLAY")
-    mark:SetFont(ns.UIFont(), size, "THICKOUTLINE")
-    mark:SetTextColor(1, 0.2, 0.15) -- red, as the question mark icon
-    mark:SetShadowColor(0, 0, 0, 1)
-    mark:SetShadowOffset(1, -1)
-    mark:SetText("?")
-    mark:SetPoint("TOPLEFT", icon, "TOPLEFT", -1, 2)
+-- The game's padlock (the pet battle one where the client has pet battles; older clients have the button one).
+local LOCK = C_PetBattles and "Interface\\PetBattles\\PetBattle-LockIcon" or "Interface\\Buttons\\LockButton-Locked-Up"
+
+-- A padlock in the corner of an icon the player chose, in a macro with #showtooltip (or #show): there the game
+-- would change the icon, and the one chosen stays instead.
+local function LockMark(parent, icon, size)
+    local mark = parent:CreateTexture(nil, "OVERLAY")
+    mark:SetTexture(LOCK)
+    mark:SetSize(size, size)
+    mark:SetPoint("TOPLEFT", icon, "TOPLEFT", -2, 2)
     mark:Hide()
     return mark
 end
 
--- What the ? in the corner means, in the header's and the list's tooltips.
-local function AddQuestionMarkNote()
-    GameTooltip:AddLine(L["The ? in the corner: you haven't chosen an icon, so the macro shows the icon of the "
-        .. "spell or item it uses. It can change, for example while you hold a key."], 0.8, 0.8, 0.8, true)
+-- An icon chosen (not the question mark) with #showtooltip or #show in the text: the padlock.
+local function Locked(icon, body)
+    return icon ~= nil and not IsQuestionMark(icon) and ("\n" .. (body or ""):lower()):find("\n%s*#show") ~= nil
 end
 
--- The header's icon: the one chosen, as the list and the action bars show it. The question mark: as FoundIcon,
--- marked. An icon picked and not saved yet shows as picked.
+-- What the padlock means, in the header's and the list's tooltips.
+local function AddLockNote()
+    GameTooltip:AddLine(L["Icon chosen by you: it stays the same, even when #showtooltip would change it. To let "
+        .. "the game pick it, choose the question mark."], 0.8, 0.8, 0.8, true)
+end
+
+-- The header's icon: the one chosen, as the list and the action bars show it. The question mark: as FoundIcon.
+-- An icon picked and not saved yet shows as picked; with #showtooltip in the text, with the padlock.
 local function ShowIcon()
     local auto = state.icon == NEW_ICON
     local shown = auto and FoundIcon(nameBox:GetText(), code:GetRaw(), state.index)
         or state.index and state.icon == state.savedIcon and select(2, GetMacroInfo(state.index))
     iconTex:SetTexture(ns.IconTexture(shown or state.icon))
-    iconTex.mark:SetShown(auto)
+    iconTex.mark:SetShown(Locked(state.icon, code:GetRaw()))
 end
 
 ------------------------------------------------------------------------
@@ -522,7 +527,7 @@ local function Row(i)
     r.icon:SetSize(ROW_H - 4, ROW_H - 4)
     r.icon:SetPoint("LEFT", 6, 0)
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    r.mark = QuestionMark(r, r.icon, 16)
+    r.mark = LockMark(r, r.icon, 14)
     r.text = ns.Text(r, 12)
     r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     r.text:SetPoint("RIGHT", -6, 0)
@@ -566,7 +571,7 @@ local function Row(i)
             AddIssueLines(r.issues or {})
             AddBarsLines(r.scope, r.name)
         end
-        if r.mark:IsShown() then AddQuestionMarkNote() end
+        if r.mark:IsShown() then AddLockNote() end
         GameTooltip:Show()
     end)
     r:SetScript("OnLeave", function()
@@ -645,6 +650,7 @@ local function UseRow(n, what)
     r.remove:SetShown(what ~= "altMacro")
     r.alert:Hide()
     r.mark:Hide()
+    r.auto = false
     r.text:SetPoint("RIGHT", what == "alt" and r.remove or r.copy, "LEFT", -2, 0)
     r.bg:Hide()
     r.bg:SetAlpha(1)
@@ -675,7 +681,7 @@ local function AltRows(n, q)
                 r.alt, r.macro, r.name = alt, m, m.name
                 local auto = m.icon == NEW_ICON
                 r.icon:SetTexture(ns.IconTexture(auto and FoundIcon(m.name, m.body) or m.icon))
-                r.mark:SetShown(auto)
+                r.mark:SetShown(Locked(m.icon, m.body))
                 r.text:SetText(m.name)
                 r:Paint()
             end
@@ -692,7 +698,7 @@ end
 -- The list's macros with the question mark follow the game's icon too (a key held), as the header does.
 local function FollowRowIcons()
     for _, r in ipairs(rows) do
-        if r:IsShown() and r.what == "macro" and r.mark:IsShown() then
+        if r:IsShown() and r.what == "macro" and r.auto then
             local name, _, body = GetMacroInfo(r.index)
             if name then r.icon:SetTexture(ns.IconTexture(FoundIcon(name, body, r.index))) end
         end
@@ -710,9 +716,10 @@ function Window.RefreshList()
             n = n + 1
             local r = UseRow(n, "macro")
             r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
-            local auto = ns.MacroIcon(index) == NEW_ICON
-            r.icon:SetTexture(ns.IconTexture(auto and FoundIcon(name, body, index) or icon))
-            r.mark:SetShown(auto)
+            local chosen = ns.MacroIcon(index)
+            r.auto = chosen == NEW_ICON
+            r.icon:SetTexture(ns.IconTexture(r.auto and FoundIcon(name, body, index) or icon))
+            r.mark:SetShown(Locked(chosen, body))
             r.text:SetText(name)
             -- Marks follow the saved text: the one being edited shows its issues in the editor.
             r.severity, r.issues = MacroIssues(body)
@@ -1710,7 +1717,7 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:AddLine(L["Click: choose an icon"], 1, 1, 1)
         GameTooltip:AddLine(L["Drag: put the macro on an action bar"], 1, 1, 1)
-        if state.icon == NEW_ICON then AddQuestionMarkNote() end
+        if iconTex.mark:IsShown() then AddLockNote() end
         GameTooltip:Show()
     end)
     iconFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1730,7 +1737,7 @@ local function Build()
     iconTex:SetPoint("TOPLEFT", 1, -1)
     iconTex:SetPoint("BOTTOMRIGHT", -1, 1)
     iconTex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    iconTex.mark = QuestionMark(iconFrame, iconTex, 22)
+    iconTex.mark = LockMark(iconFrame, iconTex, 18)
 
     nameBox = ns.Input(main, 220, 16)
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)

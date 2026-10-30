@@ -386,14 +386,15 @@ move it away, and drop it next to the editor's right edge to dock it again (its 
 A new macro starts with `#showtooltip` on the first line, and the cursor waits on the second.
 
 **Tab** or **Enter** in the name goes on to the macro's text. A new macro is saved with the question mark
-unless you pick an icon, so in the game its icon changes the way `#showtooltip` changes it. In the editor and
-the list such a macro shows a red **?** in the corner of its icon (its tooltip says what it means) and the icon
-the game shows, which changes while you hold a key. Where the game shows only the question mark (a new macro,
-or one just saved), the icon is that of the spell or item of yours it is named after (`fireball`, `Kick Focus`: Kick, `Poly MO`: Polymorph,
+unless you pick an icon, so in the game its icon changes the way `#showtooltip` changes it. The editor and the
+list show the icon the game shows, and it changes there too while you hold a key. Where the game shows only
+the question mark (a new macro, or one just saved), the icon is that of the spell or item of yours it is named
+after (`fireball`, `Kick Focus`: Kick, `Poly MO`: Polymorph,
 `Nova`: Frost Nova; words like focus, mouseover or arena1 are skipped). If the name gives none, the icon is
 the one `#showtooltip` names, else the first `/cast` or `/use` that works with no modifier key held
 (`/cast [mod:shift] Polymorph; Frostbolt` gives Frostbolt). In the editor it follows what you type. An icon
-you picked yourself is saved and shown as it is.
+you picked yourself is saved and shown as it is. In a macro with `#showtooltip` it gets a padlock in its
+corner: the game won't change that icon. To let it, choose the question mark.
 
 Drag a macro from the list, or its icon from the header, onto an action bar. **Shift + right-click** on it
 there opens it in the editor instead of running it, and its tooltip says so: on the game's bars and those of

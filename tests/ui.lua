@@ -1783,9 +1783,12 @@ do
     Fire(broken, "OnEnter")
     Fire(clean, "OnEnter")
     GameTooltip.AddLine = nil
-    check("list: hover lists the issues, and where it is on the bars", table.concat(tip, "\n")
+    check("list: hover lists the issues, and where it is on the bars", table.concat(tip, "\n", 1, 5)
         == 'Zap broken\nLine 1: unknown condition "harmm"\nNot on your action bars now\nZap clean\nNot on your action bars now',
         table.concat(tip, " / "))
+    -- An icon chosen, with #showtooltip: the padlock, and the tooltip says what it means. Without: none.
+    check("list: a chosen icon with #showtooltip has the padlock", clean.mark:IsShown() and not broken.mark:IsShown()
+        and tip[6] and tip[6]:find("^Icon chosen by you") ~= nil and #tip == 6, tip[6])
     -- Fixed elsewhere (the Blizzard window): the mark goes.
     EditMacro(broken.index, "Zap broken", 1, "/cast [harm] Fireball")
     Send("UPDATE_MACROS")
@@ -3927,8 +3930,9 @@ end
 
 -- The icon chosen for a macro is kept and saved, not the one it shows now: the question mark with
 -- #showtooltip shows the spell's, and saving that would fix the macro's icon to it. With the question mark the
--- header and the list show the icon found for it (its name, #showtooltip, the first cast) with a ? in the corner;
--- an icon picked shows as picked until it is saved.
+-- header and the list show the game's icon, or the one found for it (its name, #showtooltip, the first cast) while
+-- the game shows the question mark; an icon picked shows as picked until it is saved. An icon chosen in a macro
+-- with #showtooltip has a padlock: the game would change it, and it stays.
 do
     local m = { name = "Shown", icon = 134400, body = "#showtooltip\n/cast Fireball", perChar = false, shown = 4242 }
     macros[#macros + 1] = m
@@ -3938,29 +3942,27 @@ do
     NextFrame()
     local headerTex, row
     for _, o in ipairs(created) do
-        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture then headerTex = o end
+        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o.texture
+            and not tostring(o.texture):find("Lock") then headerTex = o end
         if o.kind == "Button" and o.index == index and o:IsShown() then row = o end
     end
     local function header() return headerTex and headerTex.texture end
     local headerMark
     for _, o in ipairs(created) do
-        if o.kind == "FontString" and o.parentFrame == MacroSenseIconButton and o.text == "?" then headerMark = o end
+        if o.kind == "Texture" and o.parentFrame == MacroSenseIconButton and o ~= headerTex
+            and o.texture and tostring(o.texture):find("Lock") then headerMark = o end
     end
     check("icon: the header shows what the game shows", header() == 4242, header())
     check("icon: so does the list", row and row.icon.texture == 4242, row and row.icon.texture)
-    check("icon: both with the ? in the corner", headerMark and headerMark:IsShown() and row.mark:IsShown())
+    check("icon: the question mark, no padlock", headerMark and not headerMark:IsShown() and not row.mark:IsShown())
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(MacroSenseIconButton, "OnEnter")
-    check("icon: the tooltip says what the ? means", tip[3] and tip[3]:find("^The %? in the corner") ~= nil, tip[3])
-    tip = {}
-    Fire(row, "OnEnter")
-    check("icon: the list's tooltip too", tip[#tip] and tip[#tip]:find("^The %? in the corner") ~= nil, tip[#tip])
-    Fire(row, "OnLeave")
+    check("icon: no word about it then", #tip == 2, #tip)
     GameTooltip.AddLine = nil
     m.shown = 4343 -- Shift held: #showtooltip shows another spell
     Wait(0.12)
-    check("icon: the header follows the game", header() == 4343 and headerMark:IsShown(), header())
+    check("icon: the header follows the game", header() == 4343, header())
     check("icon: the list too", row.icon.texture == 4343, row.icon.texture)
     m.shown = 134400 -- the game shows the question mark (just saved): the one found, its first cast
     Wait(0.12)
@@ -3979,10 +3981,11 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(MacroSenseIconButton, "OnEnter")
     GameTooltip.AddLine = nil
-    check("icon: another icon needs no word about the question mark", #tip == 2 and not headerMark:IsShown(), #tip)
+    check("icon: one picked with #showtooltip: the padlock, and what it means", headerMark:IsShown()
+        and tip[3] and tip[3]:find("^Icon chosen by you") ~= nil, tip[3])
     Fire(grid[1], "OnClick")
     MacroSenseIconPicker:Hide()
-    check("icon: the question mark again shows the game's", header() == 4242 and headerMark:IsShown(), header())
+    check("icon: the question mark again shows the game's", header() == 4242 and not headerMark:IsShown(), header())
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/sit")

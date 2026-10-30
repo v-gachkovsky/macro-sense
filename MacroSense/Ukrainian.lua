@@ -231,10 +231,10 @@ ns.locales.uk = {
     -- Main window: editor
     ["Click: choose an icon"] = "Клацання: вибрати іконку",
     ["Drag: put the macro on an action bar"] = "Перетягування: поставити макрос на панель дій",
-    ["The ? in the corner: you haven't chosen an icon, so the macro shows the icon of the spell or item it uses. "
-        .. "It can change, for example while you hold a key."] =
-        "«?» у кутку: іконку не вибрано, тож макрос показує іконку заклинання чи предмета, яке застосовує. Вона "
-        .. "може змінюватися, наприклад поки ви тримаєте клавішу.",
+    ["Icon chosen by you: it stays the same, even when #showtooltip would change it. To let the game pick it, "
+        .. "choose the question mark."] =
+        "Іконку вибрали ви: вона не змінюється, навіть коли #showtooltip змінив би її. Щоб гра підбирала її сама, "
+        .. "виберіть знак питання.",
     ["click or drag the icon"] = "клацніть або перетягніть іконку",
     ["Shorten"] = "Скоротити",
     ["Shorten -%d"] = "Скоротити -%d",
