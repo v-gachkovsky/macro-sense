@@ -232,10 +232,10 @@ ns.locales.uk = {
     ["Click: choose an icon"] = "Клацання: вибрати іконку",
     ["Drag: put the macro on an action bar"] = "Перетягування: поставити макрос на панель дій",
     ["On your action bars the game shows the question mark for now: as things are right now (keys held, your "
-        .. "target, items in your bags), the macro wouldn't use anything. This icon only shows what the macro "
+        .. "target, items in your bags), the macro wouldn't use anything. The grey icon only shows what the macro "
         .. "is for."] =
         "Зараз на панелях дій гра показує знак питання: за поточних умов (затиснуті клавіші, ціль, предмети в "
-        .. "сумках) макрос нічого не застосує. Ця іконка лише підказує, для чого макрос.",
+        .. "сумках) макрос нічого не застосує. Сіра іконка лише підказує, для чого макрос.",
     ["Icon chosen by you: it stays the same, even when #showtooltip would change it. To let the game pick it, "
         .. "choose the question mark."] =
         "Іконку вибрали ви: вона не змінюється, навіть коли #showtooltip змінив би її. Щоб гра підбирала її сама, "
