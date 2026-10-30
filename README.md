@@ -385,11 +385,13 @@ move it away, and drop it next to the editor's right edge to dock it again (its 
 
 A new macro starts with `#showtooltip` on the first line, and the cursor waits on the second.
 
-**Tab** or **Enter** in the name goes on to the macro's text. If you deleted the `#showtooltip` line and
-haven't picked an icon, the macro gets the icon of the spell or item of yours it is named after at that moment:
-`fireball`, `Kick Focus` (Kick), `Poly MO` (Polymorph), `Nova` (Frost Nova). Words like focus, mouseover or
-arena1 are skipped. With no match, or with `#showtooltip` in the text (it needs the question mark to show the
-spell's icon), the question mark stays.
+**Tab** or **Enter** in the name goes on to the macro's text. A new macro whose icon you haven't picked gets
+the icon of the spell or item of yours it is named after: `fireball`, `Kick Focus` (Kick), `Poly MO`
+(Polymorph), `Nova` (Frost Nova). Words like focus, mouseover or arena1 are skipped. If the name gives none,
+the icon is the spell or item `#showtooltip` names, and with a bare `#showtooltip`, the first `/cast` or
+`/use` that works without a modifier key held (`/cast [mod:shift] Polymorph; Frostbolt` gives Frostbolt). It
+is looked for again when you save the macro. If nothing fits, the question mark stays. An icon you picked
+yourself always stays.
 
 Drag a macro from the list, or its icon from the header, onto an action bar. **Shift + right-click** on it
 there opens it in the editor instead of running it, and its tooltip says so: on the game's bars and those of

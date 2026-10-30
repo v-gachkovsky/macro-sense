@@ -230,6 +230,20 @@ local function ShowIcon()
 end
 
 ------------------------------------------------------------------------
+-- A new macro whose icon was not picked: the icon of the spell or item it is named after, or the one its
+-- #showtooltip names, or the one its first /cast or /use casts with no key held (the question mark when none).
+-- Again on Save, when the text is there.
+local function AutoIcon()
+    if state.index or state.iconPicked then return end
+    local icon = ns.Completion.MacroIcon(nameBox:GetText(), code:GetRaw()) or NEW_ICON
+    if icon == state.icon then return end
+    state.icon = icon
+    ShowIcon()
+    ns.IconPicker.SetCurrent(icon)
+    UpdateStatus()
+end
+
+------------------------------------------------------------------------
 -- Live preview: next to each line, what it would do right now
 ------------------------------------------------------------------------
 local noteColors -- from the scheme, see ApplyLook
@@ -793,6 +807,7 @@ function Window.Save()
         -- The game keeps macros sorted by name, so the index may change.
         index = EditMacro(state.index, name, state.icon, written)
     else
+        AutoIcon()
         index = CreateMacro(name, state.icon or NEW_ICON, written, state.scope == "character")
     end
     if not index or index == 0 then
@@ -1065,9 +1080,8 @@ function Window.Import(macros, done)
         for _, p in ipairs(Window.ImportPlan(macros)) do
             if p.name then
                 local m = p.macro
-                -- A text from a guide has no icon: that of the spell it is named after, unless #showtooltip picks.
-                local icon = m.icon ~= "" and m.icon
-                    or not m.body:find("^#show") and ns.Completion.IconFor(p.name) or NEW_ICON
+                -- A text from a guide has no icon: it gets one as a new macro does (AutoIcon).
+                local icon = m.icon ~= "" and m.icon or ns.Completion.MacroIcon(p.name, m.body) or NEW_ICON
                 CreateMacro(p.name, icon, m.body, m.scope == "character")
                 made, first = made + 1, first or p
             end
@@ -1681,15 +1695,9 @@ local function Build()
     nameBox = ns.Input(main, 220, 16)
     nameBox:SetPoint("LEFT", iconFrame, "RIGHT", 10, 0)
     nameBox:SetScript("OnTextChanged", function() UpdateStatus() end)
-    -- Tab or Enter: on to the text. A new macro whose icon was not picked gets the icon of the spell or item it is
-    -- named after (the question mark when none), unless #showtooltip in its text wants the question mark.
+    -- Tab or Enter: on to the text, and a new macro gets its icon (AutoIcon).
     local function NameDone()
-        if not state.index and not state.iconPicked and not ("\n" .. code:GetRaw():lower()):find("\n%s*#show") then
-            state.icon = ns.Completion.IconFor(nameBox:GetText()) or NEW_ICON
-            ShowIcon()
-            ns.IconPicker.SetCurrent(state.icon)
-            UpdateStatus()
-        end
+        AutoIcon()
         code:SetFocus()
     end
     nameBox:SetScript("OnEnterPressed", NameDone)

@@ -9,6 +9,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 - A new macro starts with `#showtooltip` on the first line, the cursor on the second. Left as it is, it has
   nothing to discard when you open another macro.
+- A new macro's icon: from its name first, as before, then from the spell `#showtooltip` names, then from the
+  first `/cast` or `/use` that works with no modifier key held. It is looked for again when you save. Before,
+  `#showtooltip` in the text always kept the question mark. An icon you picked yourself stays. Imported macros
+  without an icon get theirs the same way.
 
 ## [0.9.1] - 2026-10-30
 

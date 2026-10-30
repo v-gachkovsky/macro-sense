@@ -2000,6 +2000,22 @@ do
         and I("Ог") == nil and I("Огн") == 11)
     check("icon for: nothing", I("Mount") == nil and I("") == nil and I("   ") == nil and I("Focus") == nil)
     check("icon for: no icon, no match", I("Iconless") == nil)
+    -- A new macro's icon: its name; else what #showtooltip names; else the first cast with no modifier key held.
+    local M = ns.Completion.MacroIcon
+    check("macro icon: the name first", M("Kick Focus", "#showtooltip Polymorph\n/cast Frostbolt") == 9)
+    check("macro icon: then #showtooltip's", M("Mount", "#showtooltip Polymorph\n/cast Frostbolt") == 5
+        and M("Mount", "#show [mod:alt] Kick; frostbolt\n/cast Fireball") == 3)
+    check("macro icon: bare #showtooltip, the first cast", M("Mount", "#showtooltip\n/stopcasting\n/cast Fireball") == 1
+        and M("Mount", "/use Healthstone") == 20)
+    check("macro icon: not one that needs a key", M("Mount", "#showtooltip\n/cast [mod:shift] Polymorph; Frostbolt") == 3
+        and M("Mount", "/cast [modifier:ctrl] Kick\n/cast [@focus,nomod] Polymorph") == 5
+        and M("Mount", "/cast [mod] Kick; [combat] Fire Blast; Fireball") == 2
+        and M("Mount", "/cast [mod:alt][] Kick") == 9)
+    check("macro icon: !, (rank) and a target", M("Mount", "/cast [@mouseover,help] !Frost Nova(Rank 1)") == 4)
+    check("macro icon: #showtooltip names none of yours: the first cast",
+        M("Mount", "#showtooltip Mystery\n/cast Fireball") == 1)
+    check("macro icon: nothing", M("Mount", "#showtooltip\n/say hi\n/cast [mod] Kick") == nil
+        and M("", "") == nil and M("Mount", "/use 13") == nil)
     ns.sources.spells, ns.sources.items = spells, items
 end
 

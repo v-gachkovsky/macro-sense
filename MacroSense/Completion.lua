@@ -158,6 +158,65 @@ function Completion.IconFor(name)
     end
 end
 
+-- The icon of the spell or item of yours named so, in any case ("fireball", "!Shoot", "Summon Imp(Summon)"), or nil.
+local function IconOf(name)
+    local words = Words((name:gsub("^%s*!", ""):gsub("%b()%s*$", "")))
+    if words == "  " then return nil end
+    for _, kind in ipairs({ "spells", "items" }) do
+        for _, c in ipairs(source(kind)) do
+            if c.icon and Words(c.name) == words then return c.icon end
+        end
+    end
+end
+
+-- What "[conditions] action; ..." does with no modifier key held: the action of the first clause that needs no
+-- key ([mod:shift] does, [nomod] and [combat] don't). Other conditions are not checked: they change on their own.
+local function NoKeyAction(options)
+    for clause in (options .. ";"):gmatch("([^;]*);") do
+        local groups = {}
+        local action = clause:gsub("%b[]", function(g)
+            groups[#groups + 1] = g:sub(2, -2)
+            return ""
+        end)
+        local free = #groups == 0
+        for _, g in ipairs(groups) do
+            local key = false
+            for cond in g:gmatch("[^,]+") do
+                local n = (cond:match("^%s*(%a+)") or ""):lower()
+                if n == "mod" or n == "modifier" then key = true end
+            end
+            if not key then free = true end
+        end
+        if free then return (action:match("^%s*(.-)%s*$")) end
+    end
+end
+
+-- The icon a new macro gets, or nil (the question mark): of the spell or item it is named after; else of the one
+-- #showtooltip names; else of the first /cast or /use that casts one of yours with no modifier key held.
+function Completion.MacroIcon(name, body)
+    local icon = Completion.IconFor(name)
+    if icon then return icon end
+    local casts = {}
+    for line in (body .. "\n"):gmatch("([^\n]*)\n") do
+        local meta, shown = line:match("^%s*#(%a+)(.*)$")
+        local cmd, options = line:match("^%s*/(%S+)%s*(.*)$")
+        meta = meta and meta:lower()
+        if (meta == "showtooltip" or meta == "show") and shown:find("%S") then
+            local action = NoKeyAction(shown)
+            icon = icon or action and IconOf(action)
+        elseif cmd then
+            local base = ns.Parser.actionCommands[cmd:lower()]
+            if base == "cast" or base == "use" then casts[#casts + 1] = options end
+        end
+    end
+    if icon then return icon end
+    for _, options in ipairs(casts) do
+        local action = NoKeyAction(options)
+        icon = action and IconOf(action)
+        if icon then return icon end
+    end
+end
+
 -- Two capitals or more ("DA", "SWP", "CoA"; not "Da" or "D"): then each letter is the first letter of a word.
 local function Capitals(s)
     local n = 0
