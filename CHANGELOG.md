@@ -20,7 +20,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   as the game does: of what `#showtooltip` shows right now, else of the first line that casts or uses
   something right now. If that gives nothing (no line works right now, or the item isn't in your bags), the
   first spell or item the text names, whatever its conditions (the game knows the icons of items you don't
-  carry); last, the macro's name.
+  carry); last, the macro's name. Such an icon is greyed while your action bars show the question mark, and
+  its tooltip says why.
 
 ## [0.9.1] - 2026-10-30
 

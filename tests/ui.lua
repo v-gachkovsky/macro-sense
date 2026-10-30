@@ -106,6 +106,7 @@ function Frame:SetText(t)
 end
 function Frame:GetText() return self.text end
 function Frame:SetTexture(t) self.texture = t end
+function Frame:SetDesaturated(on) self.desaturated = on end
 function Frame:GetValue() return self.value or 0 end
 function Frame:GetVerticalScrollRange() return self.range or 0 end
 function Frame:GetVerticalScroll() return self.vscroll or 0 end
@@ -3988,7 +3989,19 @@ do
     check("icon: the game's question mark, the one found", found ~= 134400 and header() == found, header())
     ns.Window.RefreshList()
     check("icon: so does the list then", row.icon.texture == found, row.icon.texture)
+    check("icon: greyed then, only a hint", headerTex.desaturated and row.icon.desaturated)
+    local hint = {}
+    GameTooltip.AddLine = function(_, text) hint[#hint + 1] = text end
+    Fire(MacroSenseIconButton, "OnEnter")
+    Fire(row, "OnEnter")
+    Fire(row, "OnLeave")
+    GameTooltip.AddLine = nil
+    local said = table.concat(hint, "\n")
+    check("icon: the tooltips say the bars show the question mark",
+        select(2, said:gsub("On your action bars the game shows the question mark", "")) == 2, said)
     m.shown = 4242
+    Wait(0.12)
+    check("icon: the game's icon again: not greyed", not headerTex.desaturated and not row.icon.desaturated)
     Fire(MacroSenseIconButton, "OnClick")
     local grid = {}
     for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
