@@ -7,6 +7,7 @@ local MAX_GENERAL, MAX_CHARACTER = ns.MAX_GENERAL, ns.MAX_CHARACTER
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local MAX_NAME = 16 -- letters, as in the Blizzard macro window
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
+local NEW_BODY = "#showtooltip\n" -- a new macro starts with it, the cursor on the line below
 local COPY_ICON = "Interface\\AddOns\\MacroSense\\Media\\copy"
 local ROW_H = 24
 local MIN_W, MIN_H = 780, 460 -- also the first size
@@ -54,7 +55,7 @@ end
 local function IsDirty()
     if not frame then return false end
     local body, name = code:GetRaw(), nameBox:GetText()
-    if not state.index then return body ~= "" or name ~= "" or state.icon ~= NEW_ICON end
+    if not state.index then return body ~= state.body or name ~= "" or state.icon ~= NEW_ICON end
     return body ~= state.body or name ~= state.name or state.icon ~= state.savedIcon
 end
 
@@ -694,13 +695,13 @@ local function Load(index)
         local text = ns.Roles.Text(index > MAX_GENERAL and "character" or "general", name, body or "")
         state.index, state.name, state.icon, state.body = index, name, ns.MacroIcon(index) or NEW_ICON, text
     else
-        state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, ""
+        state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, NEW_BODY
     end
     state.savedIcon, state.iconPicked = state.icon, false
     nameBox:SetText(state.name)
     ShowIcon()
     ns.IconPicker.SetCurrent(state.icon)
-    code:SetRaw(state.body, 0)
+    code:SetRaw(state.body, index and 0 or #state.body)
     Window.RefreshList()
     UpdateStatus()
 end

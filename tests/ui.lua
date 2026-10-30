@@ -564,6 +564,16 @@ local function Type(s)
         NextFrame()
     end
 end
+-- A new macro with its #showtooltip line deleted, as a player would: the tests below type from an empty text.
+local function Blank()
+    ns.Window.New()
+    NextFrame()
+    edit:SetFocus()
+    edit.text = ""
+    edit:SetCursorPosition(0)
+    Fire(edit, "OnTextChanged", true)
+    NextFrame()
+end
 -- Arrow key: OnKeyDown, the EditBox moves the cursor a line, then OnArrowPressed.
 local function Arrow(key)
     Fire(edit, "OnKeyDown", key)
@@ -1282,6 +1292,17 @@ do
     Fire(MacroSenseIconButton, "OnDragStart")
     check("a new macro must be saved first", picked == nil and printed[#printed]:find("save the macro first") ~= nil,
         printed[#printed])
+    -- A new macro starts with #showtooltip, the cursor on the line below; untouched, it has nothing to discard.
+    check("new: #showtooltip already there", ns.Highlight.Strip(edit:GetText()) == "#showtooltip\n",
+        edit:GetText())
+    check("new: the cursor on the second line",
+        ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition()) == #"#showtooltip\n")
+    local asked
+    local ask = ns.Ask
+    ns.Ask = function(which) asked = which end
+    ns.Window.New()
+    check("new: nothing to discard in an untouched one", asked == nil, asked)
+    ns.Ask = ask
     ns.Window.Select(1)
 end
 
@@ -1411,8 +1432,7 @@ do
     end
     ns.Window.Revert()
     NextFrame()
-    ns.Window.New() -- a clean macro: no issues left from the tests above
-    NextFrame()
+    Blank() -- a clean macro: no issues left from the tests above
     edit:SetFocus()
     Type("/cast Firebal")
     Key("ESCAPE", "OnEscapePressed")
@@ -1447,8 +1467,7 @@ do
     Send("UPDATE_MACROS")
 
     -- A spell dropped on the text: on an empty line with /cast, else its name at the cursor.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     onCursor = { "spell", 12, "spell", 5782 } -- Fear
     Fire(edit, "OnReceiveDrag")
@@ -1468,8 +1487,7 @@ do
     check("dropped: a macro is not text", raw():find("\n/use Healthstone$") ~= nil and onCursor ~= nil, raw())
     onCursor = nil
     -- Shift-click on a spell's link while the text has the focus.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     ChatEdit_InsertLink("|cff71d5ff|Hspell:133:0|h[Fireball]|h|r")
     check("shift-click: a spell's name with /cast", raw() == "/cast Fireball", raw())
@@ -1565,8 +1583,7 @@ do
     local journal = C_MountJournal
     C_MountJournal = { GetMountIDs = function() error("no such function") end }
     Send("BAG_UPDATE_DELAYED")
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/cast Fierball")
     Key("ESCAPE", "OnEscapePressed")
@@ -1602,8 +1619,7 @@ do
             if o.isLineNumber and o:IsShown() and tonumber(o.text) == i then return o end
         end
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("#showtooltip\n/cast [mod:alt] Polymorph; Fireball\n/stopmacro [nocombat]\n/cast Frostbolt")
     Key("ESCAPE", "OnEscapePressed")
@@ -1644,8 +1660,7 @@ do
     NextFrame()
     check("preview on again", notes() ~= "" and ns.db.preview == true and box.fill:IsShown(), notes())
     -- The author's macro with the pet out: the pet's spell, on the mouseover enemy.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     local fixtures = dofile("tests/fixtures/macros.lua")
     Type(fixtures.petCC)
     Key("ESCAPE", "OnEscapePressed")
@@ -1656,8 +1671,7 @@ do
     Wait(0.2)
     check("preview: no pet, no match", notes() == "icon: ? | conditions not met", notes())
     -- A note on line 150 only (no line that far had one before); a shorter macro leaves it no trace.
-    ns.Window.New()
-    NextFrame()
+    Blank()
     Type(string.rep("\n", 149) .. "/cast Fireball")
     Key("ESCAPE", "OnEscapePressed")
     NextFrame()
@@ -1669,7 +1683,7 @@ do
     Type("/cast Frostbolt")
     Key("ESCAPE", "OnEscapePressed")
     NextFrame()
-    check("preview: no notes left from a longer macro", notes() == "Frostbolt", notes())
+    check("preview: no notes left from a longer macro", notes() == "icon: Frostbolt | Frostbolt", notes())
     ns.Window.Revert()
     ns.Window.Select(1)
     NextFrame()
@@ -1677,8 +1691,7 @@ end
 
 -- A command that runs is named in the live preview, in the color commands have in the text.
 do
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/startattack")
     Key("ESCAPE", "OnEscapePressed")
@@ -1777,8 +1790,7 @@ do
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and tostring(o.label.text):find("^Shorten") then btn = o end
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     local long = "/cast [@mouseover,harm,nodead] Fireball; Fireball"
     local shorter = "/cast [@mouseover,harm,nodead][]Fireball"
@@ -1906,8 +1918,7 @@ do
         Fire(box, key or "OnEnterPressed")
         return header()
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     check("name: Enter goes on to the text", named("Polymorph") == ns.IconTexture(6) and edit:HasFocus()
         and not box:HasFocus(), header())
     check("name: Tab too", named("frostbolt", "OnTabPressed") == ns.IconTexture(5) and edit:HasFocus())
@@ -1917,8 +1928,7 @@ do
     Type("#showtooltip")
     check("name: #showtooltip keeps the question mark", named("Fire Blast") == ns.IconTexture(134400))
     ns.Window.Revert()
-    ns.Window.New()
-    NextFrame()
+    Blank()
     named("Fire Blast")
     ns.Window.Save()
     check("name: the icon is saved", select(2, GetMacroInfo(GetMacroIndexByName("Fire Blast"))) == 4)
@@ -1926,16 +1936,14 @@ do
     ns.Window.Revert()
     DeleteMacro(GetMacroIndexByName("Fire Blast"))
     Send("UPDATE_MACROS")
-    ns.Window.New()
-    NextFrame()
+    Blank()
     Fire(MacroSenseIconButton, "OnClick")
     local grid = {}
     for _, o in ipairs(created) do if o.kind == "Button" and o.entry and o:IsShown() then grid[#grid + 1] = o end end
     Fire(grid[1], "OnClick") -- the question mark, picked
     MacroSenseIconPicker:Hide()
     check("name: a picked icon stays", named("Polymorph") == ns.IconTexture(134400))
-    ns.Window.New()
-    NextFrame()
+    Blank()
     check("name: picked for the macro before, not this one", named("Polymorph") == ns.IconTexture(6))
     box:SetText("")
     ns.Window.Select(1)
@@ -2071,8 +2079,7 @@ do
     ns.Window.Copy("general")
     check("copy: not in combat", select(1, GetNumMacros()) == count and printed[#printed]:find("in combat") ~= nil)
     InCombatLockdown = function() return false end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     ns.Window.Copy("general")
     check("copy: not before the macro is saved", select(1, GetNumMacros()) == count)
     for _, name in ipairs({ "Zap", "Zap 2", "Zap 3", "Zap 4", "Сімнадцять літер", "Сімнадцять літ 2" }) do
@@ -2156,8 +2163,7 @@ do
         for _, o in ipairs(created) do if o.isUnderline and o:IsShown() then n = n + 1 end end
         return n
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/castsequence reset=")
     check("reset: values offered", ns.Popup:IsShown() and ns.Popup.items[1].name == "target",
@@ -2187,8 +2193,7 @@ do
         end
         return ""
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/use 1")
     local items, trinket = ns.Popup.items, nil
@@ -2209,8 +2214,7 @@ do
     check("equipslot: then gear", ns.Popup:IsShown() and ns.Popup.items[1].name == "Fire Ring",
         ns.Popup.items[1] and ns.Popup.items[1].name)
     Key("ESCAPE", "OnEscapePressed")
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/use 23")
     Key("ESCAPE", "OnEscapePressed")
@@ -2233,8 +2237,7 @@ do
     ActionButton1.action = 1 -- the slot with macro 1 on it, which shows Fireball
     actions[1] = { "macro", 133, "spell", text = (GetMacroInfo(1)) }
     BT4Button3 = New("Frame", "BT4Button3") -- not a button: not offered
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/click Act")
     local items = ns.Popup.items
@@ -2249,8 +2252,7 @@ do
     Key("ESCAPE", "OnEscapePressed")
     Wait(1)
     check("click: a frame that is not a button", statusText():find("not a button", 1, true) ~= nil, statusText())
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/click Nope")
     Key("ESCAPE", "OnEscapePressed")
@@ -3426,8 +3428,7 @@ do
     Pick("Export all macros")
     local all = C("box").text
     check("share: both tabs", #ns.Share.Decode(all) == general + character)
-    ns.Window.New()
-    NextFrame()
+    Blank()
     Fire(share, "OnClick")
     check("share: no saved macro, nothing to export", menuItem("Export this macro").item.disabled)
     Fire(share, "OnClick")
@@ -4291,8 +4292,7 @@ do
     check("buffs: found as typed", box.list.items[1] and box.list.items[1].name == "Ice Block")
     Fire(box, "OnEscapePressed")
     ns.WizardWindow.Close()
-    ns.Window.New()
-    NextFrame()
+    Blank()
     edit:SetFocus()
     Type("/cancelaura ")
     names = {}
@@ -5284,8 +5284,7 @@ do
     if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
     ns.Window.SetScope("general")
     ns.Window.Revert()
-    ns.Window.New()
-    NextFrame()
+    Blank()
     SLASH_TARGET2, SLASH_DISMOUNT1, SLASH_DISMOUNT2 = "/ziel", "/dismount", "/absitzen" -- the client's: German
     ns.Window.Restore("/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt\n/startattack\n"
         .. "/cast [@mouseover,help][] Heal\n/cast [form:1] Maul; [spec:2] Wrath\n/ziel [@focus]\n/absitzen")
@@ -5444,8 +5443,7 @@ do
             if r:IsShown() and ns.Highlight.Strip(r.text.text):sub(1, #label) == label then return r end
         end
     end
-    ns.Window.New()
-    NextFrame()
+    Blank()
     Fire(share, "OnClick")
     check("links: a new macro is saved first", menuItem("Link this macro in chat").item.disabled)
     MacroSenseMenu:Hide()

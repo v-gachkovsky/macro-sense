@@ -200,8 +200,10 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
   any spell that uses an icon, known to you or not, or of your items (achievements too, on Retail and Mists
   of Pandaria).
 - The icon grid can be resized, moved away from the editor and docked back.
-- A new macro gets its icon from its name: **Tab** or **Enter** after the name goes on to the text and picks
-  the icon of your spell or item the macro is named after (`Kick Focus`, `Poly MO`), unless you chose one.
+- A new macro starts with `#showtooltip`, the cursor already on the second line.
+- Without `#showtooltip`, a new macro gets its icon from its name: **Tab** or **Enter** after the name goes on
+  to the text and picks the icon of your spell or item the macro is named after (`Kick Focus`, `Poly MO`),
+  unless you chose one.
 - **Drag** a macro from the list, or its icon from the header, straight onto an action bar.
 - **Shift + right-click** a macro on an action bar to edit it: the editor opens on it instead of the macro
   running, and the tooltip says so. On the game's bars, Bartender, Dominos and ElvUI.
