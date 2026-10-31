@@ -83,6 +83,7 @@ A mistake is underlined in red, and the bar at the bottom says what is wrong. A 
 is clear.
 
 <p align="center"><img src="guide/shot-3-preview.png" width="720" alt="Next to the line: what it does right now"></p>
+<p align="center"><img src="guide/shot-3-explain.png" width="720" alt="The line's number explains the whole line"></p>
 
 **Step 6. Save.** Press **Save**, or **Ctrl+S** (Cmd+S on a Mac).
 

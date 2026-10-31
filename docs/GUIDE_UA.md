@@ -83,6 +83,7 @@ Shadow Bolt можна взяти будь-яке своє заклинання.
 виправлення очевидне, клацання по смужці його зробить.
 
 <p align="center"><img src="guide/shot-3-preview.png" width="720" alt="Біля рядка видно, що він робить зараз"></p>
+<p align="center"><img src="guide/shot-3-explain.png" width="720" alt="Номер рядка пояснює весь рядок"></p>
 
 **Крок 6. Збережіть.** Натисніть **Зберегти** або **Ctrl+S** (Cmd+S на Mac).
 
