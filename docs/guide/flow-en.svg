@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+<rect width="900" height="600" rx="12" fill="#1f1f1f"/>
+<text x="450.0" y="34.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="600" fill="#cccccc" text-anchor="middle">Each press, the game tries the parts from left to right</text>
+<text x="60.0" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#c586c0" textLength="51.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">/cast</text>
+<text x="121.2" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[</text>
+<text x="131.4" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#9cdcfe" textLength="30.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">mod</text>
+<text x="162.0" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#cccccc" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:</text>
+<text x="172.2" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#4fc1ff" textLength="51.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">shift</text>
+<text x="223.2" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#cccccc" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">,</text>
+<text x="233.4" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#4ec9b0" textLength="61.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">@focus</text>
+<text x="294.6" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">]</text>
+<text x="315.0" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ce9178" textLength="91.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Polymorph</text>
+<text x="406.8" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#cccccc" textLength="20.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">; </text>
+<text x="427.2" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[</text>
+<text x="437.4" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#4ec9b0" textLength="102.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">@mouseover</text>
+<text x="539.4" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#cccccc" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">,</text>
+<text x="549.6" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#9cdcfe" textLength="40.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">harm</text>
+<text x="590.4" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">]</text>
+<text x="600.6" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="20.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[]</text>
+<text x="631.2" y="70" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ce9178" textLength="91.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Frostbolt</text>
+<rect x="60" y="120" width="380" height="112" rx="10" fill="#181818" stroke="#3a3a3a"/>
+<text x="80.0" y="152" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[</text>
+<text x="90.2" y="152" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#9cdcfe" textLength="30.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">mod</text>
+<text x="120.8" y="152" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#cccccc" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:</text>
+<text x="131.0" y="152" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#4fc1ff" textLength="51.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">shift</text>
+<text x="182.0" y="152" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#cccccc" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">,</text>
+<text x="192.2" y="152" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#4ec9b0" textLength="61.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">@focus</text>
+<text x="253.4" y="152" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">]</text>
+<text x="80.0" y="182.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">Is Shift held,</text>
+<text x="80.0" y="201.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">and do you have a focus?</text>
+<line x1="440" y1="176.0" x2="554" y2="176.0" stroke="#3fb950" stroke-width="2"/><path d="M554,176.0 l-7,-4 v8 z" fill="#3fb950" transform="rotate(0,554,176.0)"/>
+<text x="498.0" y="166.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#3fb950" text-anchor="middle">yes</text>
+<rect x="560" y="146.0" width="300" height="60" rx="10" fill="#14261a" stroke="#3fb950"/>
+<text x="710.0" y="182.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#cccccc" text-anchor="middle">Polymorph on your focus</text>
+<line x1="120" y1="232" x2="120" y2="260" stroke="#f85149" stroke-width="2"/><path d="M120,260 l-7,-4 v8 z" fill="#f85149" transform="rotate(90,120,260)"/>
+<text x="140.0" y="254.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#f85149" text-anchor="start">no</text>
+<rect x="60" y="268" width="380" height="112" rx="10" fill="#181818" stroke="#3a3a3a"/>
+<text x="80.0" y="300" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[</text>
+<text x="90.2" y="300" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#4ec9b0" textLength="102.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">@mouseover</text>
+<text x="192.2" y="300" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#cccccc" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">,</text>
+<text x="202.4" y="300" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#9cdcfe" textLength="40.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">harm</text>
+<text x="243.2" y="300" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="10.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">]</text>
+<text x="80.0" y="330.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">Is there an enemy</text>
+<text x="80.0" y="349.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">under the mouse?</text>
+<line x1="440" y1="324.0" x2="554" y2="324.0" stroke="#3fb950" stroke-width="2"/><path d="M554,324.0 l-7,-4 v8 z" fill="#3fb950" transform="rotate(0,554,324.0)"/>
+<text x="498.0" y="314.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#3fb950" text-anchor="middle">yes</text>
+<rect x="560" y="294.0" width="300" height="60" rx="10" fill="#14261a" stroke="#3fb950"/>
+<text x="710.0" y="330.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#cccccc" text-anchor="middle">Frostbolt on that enemy</text>
+<line x1="120" y1="380" x2="120" y2="408" stroke="#f85149" stroke-width="2"/><path d="M120,408 l-7,-4 v8 z" fill="#f85149" transform="rotate(90,120,408)"/>
+<text x="140.0" y="402.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#f85149" text-anchor="start">no</text>
+<rect x="60" y="416" width="380" height="112" rx="10" fill="#181818" stroke="#3a3a3a"/>
+<text x="80.0" y="448" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="17" fill="#ffd700" textLength="20.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[]</text>
+<text x="80.0" y="478.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">Empty brackets:</text>
+<text x="80.0" y="497.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">always true</text>
+<line x1="440" y1="472.0" x2="554" y2="472.0" stroke="#3fb950" stroke-width="2"/><path d="M554,472.0 l-7,-4 v8 z" fill="#3fb950" transform="rotate(0,554,472.0)"/>
+<rect x="560" y="442.0" width="300" height="60" rx="10" fill="#14261a" stroke="#3fb950"/>
+<text x="710.0" y="478.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="600" fill="#cccccc" text-anchor="middle">Frostbolt on your target</text>
+<text x="450.0" y="578.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="middle">the first part that fits is cast; the rest of the line is skipped</text>
+</svg>

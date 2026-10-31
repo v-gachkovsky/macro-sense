@@ -749,6 +749,13 @@ do
         doc(raw, "noform"))
     check("words: @heal", doc(raw, "heal"):find("^@heal / Your group's healer") ~= nil)
     check("words: a spell is the game's", doc(raw, "C") == "action C" and doc(raw, "A, B") == "action A")
+    local bang = "/cast [nomod] !Shoot; !Stealth"
+    check("words: ! only turns it on", doc(bang, "!"):find("^! / Only turns it on, never off") ~= nil
+        and doc(bang, "!", 2):find("^! / Only turns it on") ~= nil, doc(bang, "!"))
+    check("words: the spell after ! is the game's", doc(bang, "Shoot") == "action Shoot", doc(bang, "Shoot"))
+    local ctx = ns.Parser.GetContext("/cast !Sha", 10)
+    check("words: after !, the list offers the name and the ! stays", ctx and ctx.kind == "action" and ctx.prefix
+        == "Sha" and ns.Parser.Apply("/cast !Sha", 10, ctx, "Shadow Bolt") == "/cast !Shadow Bolt")
     check("words: nothing for an error, a bracket or a space", doc(raw, "harmm") == "nil" and doc(raw, "[noform]")
         == "nil" and doc(raw, " B") == "nil")
 end
@@ -856,6 +863,8 @@ do
         { "/cast [mod:shift,@focus][combat,@target] X", "X on your focus, with Shift held |   if not, on your target, "
             .. "in combat" },
         { "/cast [foo] X", "X" },
+        { "/cast [nomod] !Shoot; !Stealth", "with no key held: Shoot (only turns it on) | otherwise: Stealth "
+            .. "(only turns it on)" },
         { "/cast [", "(none)" },
         { "   ", "(none)" },
         { "#bogus", "(none)" },

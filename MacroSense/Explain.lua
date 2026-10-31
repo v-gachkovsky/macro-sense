@@ -317,6 +317,8 @@ local function Does(cmd, action, g)
             what = string.format(L["one of %s at random"], List(action))
         else
             what = Explain.Name(action)
+            -- "!Shoot": only turns it on, a press doesn't stop it.
+            if action:match("^%s*!") then what = string.format(L["%s (only turns it on)"], what) end
         end
         unit = unit or ((#g.checks > 0 or g.exists ~= nil) and L["your target"]) or nil
         if cursor then return string.format(L["%s at the cursor"], what), L["at the cursor"] end

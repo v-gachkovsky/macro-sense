@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="300" viewBox="0 0 900 300">
+<rect width="900" height="300" rx="12" fill="#1f1f1f"/>
+<rect x="40" y="30" width="400" height="240" rx="10" fill="#181818" stroke="#4aa3ff"/>
+<text x="64" y="74" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="700" fill="#4aa3ff">Загальні</text>
+<text x="64.0" y="104.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="400" fill="#cccccc" text-anchor="start">до 120 макросів</text>
+<text x="64.0" y="130.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">для всіх персонажів облікового запису</text>
+<rect x="74" y="158" width="74" height="74" rx="8" fill="#181818" stroke="#4aa3ff" stroke-width="1.5"/>
+<rect x="82" y="166" width="74" height="74" rx="8" fill="#181818" stroke="#4aa3ff" stroke-width="1.5"/>
+<rect x="90" y="174" width="74" height="74" rx="8" fill="#181818" stroke="#4aa3ff" stroke-width="1.5"/>
+<text x="127" y="214" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="30" fill="#4aa3ff" text-anchor="middle">/</text>
+<line x1="164" y1="203" x2="222" y2="203" stroke="#3a3a3a" stroke-width="2" stroke-dasharray="4 4"/>
+<circle cx="240" cy="190.6" r="11.0" fill="#4aa3ff"/><path d="M221.3,226.9 a18.7,18.7 0 0 1 37.4,0 z" fill="#4aa3ff"/>
+
+<circle cx="302" cy="190.6" r="11.0" fill="#8b949e"/><path d="M283.3,226.9 a18.7,18.7 0 0 1 37.4,0 z" fill="#8b949e"/>
+
+<circle cx="364" cy="190.6" r="11.0" fill="#8b949e"/><path d="M345.3,226.9 a18.7,18.7 0 0 1 37.4,0 z" fill="#8b949e"/>
+<text x="302.0" y="254.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#cccccc" text-anchor="middle">ви + альти</text>
+<rect x="470" y="30" width="400" height="240" rx="10" fill="#181818" stroke="#4ec9b0"/>
+<text x="494" y="74" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="700" fill="#4ec9b0">Персонаж</text>
+<text x="494.0" y="104.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="400" fill="#cccccc" text-anchor="start">до 30 макросів</text>
+<text x="494.0" y="130.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#cccccc" text-anchor="start">лише для персонажа, яким ви граєте</text>
+<rect x="504" y="158" width="74" height="74" rx="8" fill="#181818" stroke="#4ec9b0" stroke-width="1.5"/>
+<rect x="512" y="166" width="74" height="74" rx="8" fill="#181818" stroke="#4ec9b0" stroke-width="1.5"/>
+<rect x="520" y="174" width="74" height="74" rx="8" fill="#181818" stroke="#4ec9b0" stroke-width="1.5"/>
+<text x="557" y="214" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="30" fill="#4ec9b0" text-anchor="middle">/</text>
+<line x1="594" y1="203" x2="652" y2="203" stroke="#3a3a3a" stroke-width="2" stroke-dasharray="4 4"/>
+<circle cx="670" cy="190.6" r="11.0" fill="#4ec9b0"/><path d="M651.3,226.9 a18.7,18.7 0 0 1 37.4,0 z" fill="#4ec9b0"/>
+<text x="670.0" y="254.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="14" font-weight="400" fill="#cccccc" text-anchor="middle">ви</text>
+</svg>

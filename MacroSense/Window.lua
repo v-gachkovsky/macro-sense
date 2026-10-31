@@ -1544,6 +1544,18 @@ local function Build()
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
 
+    -- Macros in short, and the link to the full guide.
+    local help = ns.Button(title, "?", 24, function() ns.HelpWindow.Toggle() end)
+    help:SetPoint("RIGHT", close, "LEFT", -6, 0)
+    help:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip:AddLine(L["Macros in short"], 1, 1, 1)
+        GameTooltip:AddLine(L["What macros are and how to make them, with a link to the full guide."], 0.8, 0.8, 0.8,
+            true)
+        GameTooltip:Show()
+    end)
+    help:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- The language: the texts are made in it, so switching it reloads the interface (asked in the new language).
     local languageDrop = ns.Dropdown(title, 104, function()
         return { { key = "en", name = L["English"] }, { key = "uk", name = L["Ukrainian"] } }
@@ -1551,7 +1563,7 @@ local function Build()
         ns.db.language = key
         if key ~= ns.language then ns.Ask("MACROSENSE_RELOAD", nil, nil, nil, key) end
     end)
-    languageDrop:SetPoint("RIGHT", close, "LEFT", -10, 0)
+    languageDrop:SetPoint("RIGHT", help, "LEFT", -10, 0)
     languageDrop:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
         GameTooltip:AddLine(L["Language"], 1, 1, 1)

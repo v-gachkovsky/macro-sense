@@ -4,6 +4,16 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Macros, step by step**: a guide in English and Ukrainian (`docs/GUIDE.md`, `docs/GUIDE_UA.md`) on what
+  macros are, what they can do and how to make them with MacroSense, with pictures and ready-made macros.
+- **?** in the editor's title bar, and `/ms help`: macros in short, with the link to the guide to copy.
+- The `!` of `/cast !Shoot` or `!Stealth` explains itself under the mouse: it only turns the spell on, so a press
+  doesn't stop your shooting or take you out of stealth. The line's explanation says so too:
+  `Shoot (only turns it on)`.
+
 ## [0.9.2] - 2026-10-30
 
 ### Changed

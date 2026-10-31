@@ -160,10 +160,13 @@ local META = {
 
 local AT = "On whom the branch acts: @mouseover, @focus, @player... target= is the same."
 local RESET = "When the sequence starts over: seconds without a press, target, combat, shift, ctrl or alt."
+local BANG = "Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a "
+    .. "form. With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
+    .. "out of stealth."
 
 -- Every text, for the translation check.
 function Docs.Texts()
-    local out = { AT, RESET }
+    local out = { AT, RESET, BANG }
     for _, set in ipairs({ COMMANDS, CONDITIONS, NOT, UNITS, META }) do
         for _, text in pairs(set) do out[#out + 1] = text end
     end
@@ -204,6 +207,8 @@ function Docs.At(raw, pos, env)
         return { title = name, lines = { L[text] } }
     elseif kind == "operator" and (word == "@" or word == "target=") then
         return { title = word, lines = { L[AT] } }
+    elseif kind == "operator" and word == "!" then
+        return { title = "!", lines = { L[BANG] } }
     elseif kind == "unit" then
         local u = word:lower()
         local lines = { (ns.Explain.Unit(u):gsub("^%l", string.upper)) }

@@ -24,10 +24,46 @@ ns.locales.uk = {
     ["  Please describe what you did, what you expected and what happened; a screenshot helps."] =
         "  Опишіть, що ви робили, чого очікували і що сталося; знімок екрана теж допоможе.",
     ["debug %s"] = "налагодження: %s",
-    ["/ms - open the editor; /ms minimap - hide or show the minimap button; /ms bug - details for a bug report; "
-        .. "/ms autocomplete | debug - toggle"] =
-        "/ms — відкрити редактор; /ms minimap — сховати чи показати кнопку біля мінікарти; /ms bug — подробиці "
-        .. "для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
+    ["/ms - open the editor; /ms help - macros in short; /ms minimap - hide or show the minimap button; "
+        .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
+        "/ms — відкрити редактор; /ms help — коротко про макроси; /ms minimap — сховати чи показати кнопку біля "
+        .. "мінікарти; /ms bug — подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
+    ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
+        .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
+        .. "out of stealth."] =
+        "Лише вмикає, ніколи не вимикає. Деякі заклинання одне натискання вмикає, а наступне вимикає: Shoot, Auto "
+        .. "Shot, Stealth, Prowl, форми. Із ! натискання, коли воно вже увімкнене, нічого не вимикає: !Shoot не "
+        .. "зупиняє стрільбу, !Stealth не виводить зі стелсу.",
+    ["%s (only turns it on)"] = "%s (лише вмикає)",
+    -- Macros in short (HelpWindow)
+    ["Macros in short"] = "Коротко про макроси",
+    ["What macros are and how to make them, with a link to the full guide."] =
+        "Що таке макроси і як їх робити, з посиланням на повний гайд.",
+    ["What a macro is"] = "Що таке макрос",
+    ["A button that does several things at once, or a different thing depending on the moment. You put it on an "
+        .. "action bar and press it like a spell."] =
+        "Кнопка, яка робить кілька речей одразу або різне залежно від ситуації. Її ставлять на панель дій і "
+        .. "натискають, як заклинання.",
+    ["How to make one"] = "Як його зробити",
+    ["Press New, give it a name, write its lines (a list suggests commands and spells as you type), Save, then "
+        .. "drag it onto an action bar. Or press New (Wizard): it asks a few simple questions and writes the macro "
+        .. "for you."] =
+        "Натисніть «Новий», дайте назву, напишіть рядки (поки ви пишете, список підказує команди й заклинання), "
+        .. "натисніть «Зберегти» і перетягніть макрос на панель дій. Або натисніть «Майстер»: він поставить кілька "
+        .. "простих питань і напише макрос за вас.",
+    ["How a line reads"] = "Як читається рядок",
+    ["/cast [mod:shift,@focus] Polymorph; Frostbolt: with Shift held, Polymorph on your focus; otherwise "
+        .. "Frostbolt. The game takes the first part whose conditions in [ ] are all true, and [ ] with nothing "
+        .. "inside is always true."] =
+        "/cast [mod:shift,@focus] Polymorph; Frostbolt: із затиснутим Shift — Polymorph на ваш фокус, інакше — "
+        .. "Frostbolt. Гра бере першу частину, усі умови якої в [ ] виконуються, а порожні [ ] виконуються завжди.",
+    ["Help as you go"] = "Підказки під час роботи",
+    ["Point at a word in the editor to see what it means, and at a line's number to read the whole line in plain "
+        .. "words. Next to each line is what it would do right now."] =
+        "Наведіть мишу на слово в редакторі, щоб дізнатися, що воно означає, а на номер рядка — щоб прочитати весь "
+        .. "рядок простими словами. Біля кожного рядка видно, що він зробив би прямо зараз.",
+    ["The full guide, with pictures and ready-made macros"] = "Повний гайд, з ілюстраціями та готовими макросами",
+    ["%s copies it; open it in your browser."] = "%s копіює посилання; відкрийте його в браузері.",
 
     -- Main window: header
     ["English"] = "Англійська",
