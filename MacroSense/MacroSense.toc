@@ -32,6 +32,7 @@ WizardRead.lua
 Practice.lua
 Questions.lua
 Roles.lua
+Ranks.lua
 Widgets.lua
 Popup.lua
 CodeBox.lua

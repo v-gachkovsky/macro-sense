@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -2317,6 +2317,22 @@ do
         MAX_CHARACTER_MACROS = 40 } }) == "150/40")
     check("macro slots: Classic globals", slots(nil, 36, 18) == "36/18", slots(nil, 36, 18))
     check("macro slots: neither", slots(nil) == "120/30", slots(nil))
+end
+
+-- Ranks: a new rank of a spell, and the macros that cast it with no rank.
+do
+    local R = ns.Ranks
+    local count = R.Count({ { name = "Shadow Bolt", ranks = { "Rank 1", "Rank 2" } }, { name = "Fear", ranks = {} } })
+    check("ranks: counted, a spell with none left out", count["Shadow Bolt"] == 2 and count.Fear == nil)
+    local learned = R.Learned({ ["Shadow Bolt"] = 2, Immolate = 1 }, { ["Shadow Bolt"] = 3, Immolate = 1, Corruption = 1 })
+    check("ranks: a new rank learned; a spell new to the book is none", #learned == 1 and learned[1] == "Shadow Bolt",
+        table.concat(learned, ","))
+    local sb = { "Shadow Bolt" }
+    check("ranks: a macro with no rank uses it", R.Uses("#showtooltip\n/cast [mod:shift] Fear; shadow bolt", sb))
+    check("ranks: one with a rank does not", not R.Uses("/cast Shadow Bolt(Rank 2)", sb)
+        and not R.Uses("/cast Shadow Bolt (Rank 2)", sb))
+    check("ranks: with a rank once and none after", R.Uses("/cast [mod] Shadow Bolt(Rank 1); Shadow Bolt", sb))
+    check("ranks: another spell's macro does not", not R.Uses("/cast Immolate", sb))
 end
 
 check("default scheme exists", ns.FindByKey(ns.schemes, ns.DEFAULT_SCHEME) ~= nil)

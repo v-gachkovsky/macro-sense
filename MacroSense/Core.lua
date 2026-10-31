@@ -102,6 +102,7 @@ local function SpellsChangedSoon(talents)
         ns.Window.SpellsChanged()
         ns.ActionBars.Tint()
         ns.ActionBars.TellBroken(talentsChanged)
+        ns.Ranks.Update()
         talentsChanged = false
     end)
 end
@@ -140,6 +141,7 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "PLAYER_LOGIN" then
         ns.RegisterActionCommands()
         ns.History.Scan()
+        ns.Ranks.Update()
         ns.Window.DailyBackup()
         ns.RememberBuffs()
         ns.MinimapButton.Update()
@@ -149,8 +151,9 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "UNIT_AURA" then
         RememberBuffsSoon()
     elseif event == "PLAYER_REGEN_ENABLED" then
-        -- Action buttons can't be set up in combat: those made during it are set up now.
+        -- Action buttons and macros can't be changed in combat: what waited for it is done now.
         ns.ActionBars.Setup()
+        ns.Ranks.Update()
     elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player")
         or TALENT_EVENTS[event] then
         SpellsChangedSoon(TALENT_EVENTS[event])

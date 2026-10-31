@@ -6112,6 +6112,53 @@ do
     opened("share", function() ns.ShareWindow.Import() end, function() ns.ShareWindow.Close() end)
 end
 
+-- A new rank of a spell: the macros that cast it with no rank are saved again, changed and put back, as one would
+-- by hand; the history keeps no version of it, and in combat it waits.
+do
+    local spells, edits = ns.sources.spells, {}
+    local ranks = 2
+    ns.sources.spells = function()
+        local list = {}
+        for i = 1, ranks do list[i] = "Rank " .. i end
+        return { { name = "Shadow Bolt", ranks = list }, { name = "Fear", ranks = { "Rank 1" } } }
+    end
+    CreateMacro("Rk A", NEW_ICON or 134400, "#showtooltip\n/cast Shadow Bolt", false)
+    CreateMacro("Rk B", 134400, "/cast Shadow Bolt(Rank 2)", false)
+    CreateMacro("Rk C", 134400, "/cast Fear", true)
+    ns.History.Scan()
+    ns.Ranks.Update()
+    local editMacro = EditMacro
+    EditMacro = function(index, ...)
+        local name = GetMacroInfo(index)
+        edits[name] = (edits[name] or 0) + 1
+        local at = editMacro(index, ...)
+        Send("UPDATE_MACROS")
+        return at
+    end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    ns.Ranks.Update()
+    check("ranks: nothing new, nothing saved", next(edits) == nil)
+    ranks = 3
+    ns.Ranks.Update()
+    check("ranks: the macro with no rank saved twice, as it was", edits["Rk A"] == 2
+        and body("Rk A") == "#showtooltip\n/cast Shadow Bolt", tostring(edits["Rk A"]))
+    check("ranks: the one with a rank and another spell's left alone", not edits["Rk B"] and not edits["Rk C"])
+    check("ranks: no version in the history", #ns.History.Versions(ns.History.Store("general"), "Rk A", "") == 0
+        and ns.History.Store("general")["Rk A"] == nil)
+    edits = {}
+    InCombatLockdown = function() return true end
+    ranks = 4
+    ns.Ranks.Update()
+    check("ranks: in combat, it waits", next(edits) == nil)
+    InCombatLockdown = function() return false end
+    ns.Ranks.Update()
+    check("ranks: after combat, saved", edits["Rk A"] == 2)
+    EditMacro = editMacro
+    for _, name in ipairs({ "Rk A", "Rk B", "Rk C" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    ns.History.Scan()
+    ns.sources.spells = spells
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)
