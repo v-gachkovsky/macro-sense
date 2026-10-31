@@ -24,9 +24,9 @@ ns.locales.uk = {
     ["  Please describe what you did, what you expected and what happened; a screenshot helps."] =
         "  Опишіть, що ви робили, чого очікували і що сталося; знімок екрана теж допоможе.",
     ["debug %s"] = "налагодження: %s",
-    ["/ms - open the editor; /ms help - macros in short; /ms minimap - hide or show the minimap button; "
+    ["/ms - open the editor; /ms help - the macro guide; /ms minimap - hide or show the minimap button; "
         .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
-        "/ms — відкрити редактор; /ms help — коротко про макроси; /ms minimap — сховати чи показати кнопку біля "
+        "/ms — відкрити редактор; /ms help — довідка з макросів; /ms minimap — сховати чи показати кнопку біля "
         .. "мінікарти; /ms bug — подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
     ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
         .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
@@ -35,34 +35,218 @@ ns.locales.uk = {
         .. "Shot, Stealth, Prowl, форми. Із ! натискання, коли воно вже увімкнене, нічого не вимикає: !Shoot не "
         .. "зупиняє стрільбу, !Stealth не виводить зі стелсу.",
     ["%s (only turns it on)"] = "%s (лише вмикає)",
-    -- Macros in short (HelpWindow)
-    ["Macros in short"] = "Коротко про макроси",
-    ["What macros are and how to make them, with a link to the full guide."] =
-        "Що таке макроси і як їх робити, з посиланням на повний гайд.",
+    -- The macro guide (HelpWindow)
+    ["Macro guide"] = "Довідка з макросів",
+    ["What macros are, what they can do and how to make them, with ready-made macros."] =
+        "Що таке макроси, що вони вміють і як їх робити, з готовими макросами.",
     ["What a macro is"] = "Що таке макрос",
-    ["A button that does several things at once, or a different thing depending on the moment. You put it on an "
-        .. "action bar and press it like a spell."] =
-        "Кнопка, яка робить кілька речей одразу або різне залежно від ситуації. Її ставлять на панель дій і "
-        .. "натискають, як заклинання.",
-    ["How to make one"] = "Як його зробити",
-    ["Press New, give it a name, write its lines (a list suggests commands and spells as you type), Save, then "
-        .. "drag it onto an action bar. Or press New (Wizard): it asks a few simple questions and writes the macro "
-        .. "for you."] =
-        "Натисніть «Новий», дайте назву, напишіть рядки (поки ви пишете, список підказує команди й заклинання), "
-        .. "натисніть «Зберегти» і перетягніть макрос на панель дій. Або натисніть «Майстер»: він поставить кілька "
-        .. "простих питань і напише макрос за вас.",
+    ["A macro is a button that does several things at once, or a different thing depending on the moment. You put it "
+        .. "on an action bar like a spell and press it the same way. Inside are lines of text, one command each:"] =
+        "Макрос — це кнопка, яка робить кілька речей одразу або різне залежно від ситуації. Її ставлять на панель "
+        .. "дій, як заклинання, і натискають так само. Усередині — рядки тексту, по одній команді в кожному:",
+    ["Press it, and the game reads the lines from the top and does what they say: here, it casts Fireball."] =
+        "Коли ви натискаєте макрос, гра читає рядки згори вниз і робить, що в них написано. Тут — кастує Fireball.",
+    ["General macros, up to 120, are the same for every character on your account. Character macros, up to 30, "
+        .. "belong to the character you play. A macro holds at most 255 characters, about five or six lines."] =
+        "Загальних макросів може бути до 120, і вони однакові для всіх персонажів облікового запису. Макросів "
+        .. "персонажа — до 30, і вони лише для персонажа, яким ви граєте. Макрос має щонайбільше 255 символів, це "
+        .. "приблизно п'ять-шість рядків.",
+    ["Your first macro"] = "Перший макрос",
+    ["Let's make a macro that casts Shadow Bolt at the enemy under your mouse, or at your target when you point at "
+        .. "nobody. Swap in any spell of yours."] =
+        "Зробімо макрос, який кастує Shadow Bolt у ворога під мишею, а якщо там нікого немає — у вашу ціль. Замість "
+        .. "Shadow Bolt можна взяти будь-яке своє заклинання.",
+    ["Pick the Character tab and press New under the list. The new macro already has #showtooltip on its first line, "
+        .. "and the cursor waits on the second."] =
+        "Виберіть вкладку «Персонаж» і натисніть «Новий» під списком. У новому макросі вже є #showtooltip у першому "
+        .. "рядку, а курсор стоїть на другому.",
+    ["Type a name at the top, such as Bolt MO (MO for mouseover), and press Tab."] =
+        "Угорі введіть назву, наприклад Bolt MO (MO — це mouseover, «під мишею»), і натисніть Tab.",
+    ["Type /ca and take /cast from the list with Tab. Type [@ and pick mouseover, then type ,harm and ]. Then a few "
+        .. "letters of the spell, and pick it."] =
+        "Наберіть /ca і вставте /cast зі списку клавішею Tab. Наберіть [@ і виберіть mouseover, потім наберіть ,harm "
+        .. "і ]. Далі кілька літер заклинання, і виберіть його.",
+    ["Add [] before the spell name. It means \"otherwise, as usual\", so with nobody under the mouse the spell goes to "
+        .. "your target:"] =
+        "Додайте [] перед назвою заклинання. Це означає «інакше — як зазвичай», тож коли під мишею нікого немає, "
+        .. "заклинання полетить у вашу ціль:",
+    ["Next to the line, the editor shows what it would do right now. Point at the line's number to read the whole "
+        .. "line in plain words."] =
+        "Біля рядка редактор показує, що той зробив би прямо зараз. Наведіть мишу на номер рядка, щоб прочитати весь "
+        .. "рядок простими словами.",
+    ["Press Save, then drag the macro from the list onto an action bar. Done."] =
+        "Натисніть «Зберегти» і перетягніть макрос зі списку на панель дій. Готово.",
+    ["New macro"] = "Новий макрос",
+    ["The wizard"] = "Майстер",
+    ["You don't have to write anything: New (Wizard) under the list makes the macro for you."] =
+        "Писати нічого не обов'язково: «Майстер» під списком зробить макрос за вас.",
+    ["Step by step, it asks one question at a time: what the macro should do, which spell, on whom, and if not, on "
+        .. "whom then, what Shift, Ctrl or Alt change, when it works. All options in its title bar shows the whole "
+        .. "form at once instead."] =
+        "Покроково він ставить по одному питанню: що має робити макрос, яке заклинання, на кого, а якщо ні — то на "
+        .. "кого тоді, що змінюють Shift, Ctrl чи Alt, коли він працює. «Усі параметри» в його заголовку натомість "
+        .. "показують усю форму одразу.",
+    ["The macro grows at the bottom of the wizard as you answer. Create macro saves it and opens it in the editor."] =
+        "Поки ви відповідаєте, макрос з'являється внизу майстра. «Створити» зберігає його й відкриває в редакторі.",
+    ["To change a macro you have with the same questions, open it and press Wizard above its text."] =
+        "Щоб змінити наявний макрос тими самими питаннями, відкрийте його й натисніть «У майстрі» над текстом.",
+    ["Open the wizard"] = "Відкрити майстра",
     ["How a line reads"] = "Як читається рядок",
-    ["/cast [mod:shift,@focus] Polymorph; Frostbolt: with Shift held, Polymorph on your focus; otherwise "
-        .. "Frostbolt. The game takes the first part whose conditions in [ ] are all true, and [ ] with nothing "
-        .. "inside is always true."] =
-        "/cast [mod:shift,@focus] Polymorph; Frostbolt: із затиснутим Shift — Polymorph на ваш фокус, інакше — "
-        .. "Frostbolt. Гра бере першу частину, усі умови якої в [ ] виконуються, а порожні [ ] виконуються завжди.",
-    ["Help as you go"] = "Підказки під час роботи",
-    ["Point at a word in the editor to see what it means, and at a line's number to read the whole line in plain "
-        .. "words. Next to each line is what it would do right now."] =
-        "Наведіть мишу на слово в редакторі, щоб дізнатися, що воно означає, а на номер рядка — щоб прочитати весь "
-        .. "рядок простими словами. Біля кожного рядка видно, що він зробив би прямо зараз.",
-    ["The full guide, with pictures and ready-made macros"] = "Повний гайд, з ілюстраціями та готовими макросами",
+    ["The command: what to do. /cast casts a spell, /use uses an item."] =
+        "Команда: що зробити. /cast кастує заклинання, /use використовує предмет.",
+    ["Conditions: when this part works. All of them in one pair of brackets must be true."] =
+        "Умови: коли ця частина спрацьовує. Усі умови в одних дужках мають виконуватися разом.",
+    ["On whom. Without it, the spell goes to your target as usual."] =
+        "На кого. Без цього заклинання йде у вашу ціль, як зазвичай.",
+    ["The spell or item."] = "Заклинання чи предмет.",
+    ["Otherwise: the game tries the next part."] = "Інакше: гра пробує наступну частину.",
+    ["Two pairs of brackets in a row: this, or else that, for the same spell."] =
+        "Дві пари дужок поспіль: це, а якщо ні — то те, для того самого заклинання.",
+    ["Empty brackets are always true: otherwise, as usual."] =
+        "Порожні дужки виконуються завжди: інакше — як зазвичай.",
+    ["Two more things you will meet in macros:"] = "Ще дві речі, які трапляються в макросах:",
+    ["Only turns it on: a press doesn't stop your shooting or take you out of stealth."] =
+        "Лише вмикає: натискання не зупиняє стрільбу й не виводить зі стелсу.",
+    ["A setting, not a command: the macro shows the tooltip of what it would cast, and its icon while the macro's "
+        .. "icon is the question mark."] =
+        "Налаштування, а не команда: макрос показує підказку того, що скастує, а поки іконка макросу — знак питання, "
+        .. "то й його іконку.",
+    ["How the game picks"] = "Як гра вибирає",
+    ["On each line, the game reads the parts from left to right and takes the first one whose conditions are all "
+        .. "true. The rest of the line is skipped."] =
+        "У кожному рядку гра читає частини зліва направо й бере першу, усі умови якої виконуються. Решту рядка вона "
+        .. "пропускає.",
+    ["Is Shift held, and do you have a focus? Then Polymorph on your focus."] =
+        "Затиснуто Shift і у вас є фокус? Тоді Polymorph на ваш фокус.",
+    ["If not: is there an enemy under the mouse? Then Frostbolt on it."] =
+        "Якщо ні: під мишею є ворог? Тоді Frostbolt у нього.",
+    ["If not: Frostbolt on your target."] = "Якщо ні: Frostbolt у вашу ціль.",
+    ["So put the special cases first and the usual one last."] =
+        "Тож особливі випадки ставте першими, а звичайний — останнім.",
+    ["One press casts only one spell that starts the global cooldown. Lines after it still run if they don't need "
+        .. "it: /startattack, a trinket, a chat line."] =
+        "Одне натискання кастує лише одне заклинання, яке запускає глобальний кулдаун. Рядки після нього все одно "
+        .. "виконуються, якщо кулдаун їм не потрібен: /startattack, трінкет, рядок у чат.",
+    ["What macros can do"] = "Що вміють макроси",
+    ["Type / in the editor to see every command your game has, addons' too. Point at a command to read what it does."] =
+        "Наберіть / у редакторі, і побачите всі команди вашої гри, зокрема й команди аддонів. Наведіть мишу на "
+        .. "команду, щоб прочитати, що вона робить.",
+    ["Conditions and units"] = "Умови та юніти",
+    ["Each condition works the other way round with no in front: nocombat, nomod, nodead."] =
+        "Кожна умова працює й навпаки, якщо додати no спереду: nocombat, nomod, nodead.",
+    ["The units, for @:"] = "Юніти для @:",
+    ["Type [ in the editor for every condition, and [@ for every unit."] =
+        "Наберіть [ у редакторі, щоб побачити всі умови, і [@ — усі юніти.",
+    ["What macros can't do"] = "Чого макроси не вміють",
+    ["Think for you"] = "Думати за вас",
+    ["A macro can't check your health, a cooldown or how long a buff lasts. It knows only what conditions can say."] =
+        "Макрос не може перевірити ваше здоров'я, кулдаун чи скільки ще триватиме баф. Він знає лише те, що можуть "
+        .. "сказати умови.",
+    ["Cast at once"] = "Кастувати все одразу",
+    ["One spell with the global cooldown per press."] = "Одне заклинання з глобальним кулдауном за одне натискання.",
+    ["Press itself"] = "Натискатися самостійно",
+    ["Every cast needs your key press or click."] = "Кожен каст потребує вашого натискання клавіші чи клацання.",
+    ["Be long"] = "Бути довгим",
+    ["255 characters at most. Shorten at the top writes the same macro in fewer."] =
+        "Щонайбільше 255 символів. «Скоротити» вгорі записує той самий макрос коротше.",
+    ["Cast from /run"] = "Кастувати з /run",
+    ["Lua in a macro can't cast or target."] = "Lua в макросі не може кастувати чи брати в ціль.",
+    ["Ready-made macros"] = "Готові макроси",
+    ["Create puts the macro into the tab that is open, under a free name, and opens it. Change the spell names to "
+        .. "yours."] =
+        "«Створити» додає макрос у відкриту вкладку під вільною назвою й відкриває його. Замініть назви заклинань на "
+        .. "свої.",
+    ["Heal whoever is under the mouse; if nobody, your target if it is a friend; if not, you:"] =
+        "Лікує того, хто під мишею; якщо там нікого — вашу ціль, якщо вона друг; інакше — вас:",
+    ["Interrupt your focus, or your target:"] = "Переривання фокуса або цілі:",
+    ["Another spell with Shift held:"] = "Інше заклинання із затиснутим Shift:",
+    ["A trinket with your big spell:"] = "Трінкет разом із великим заклинанням:",
+    ["Two curses in turn, from the start on a new target:"] = "Два прокляття по черзі, з початку на новій цілі:",
+    ["Shoot with a wand, and keep shooting however often you press:"] =
+        "Стрільба з жезла, яку не зупиняють повторні натискання:",
+    ["The pet attacks what you point at, and follows you with Shift:"] =
+        "Улюбленець атакує того, на кого ви наводите мишу, а з Shift іде за вами:",
+    ["One mount button:"] = "Одна кнопка для всіх маунтів:",
+    ["Create"] = "Створити",
+    ["Typing less"] = "Менше набирати",
+    ["The list that comes up as you type doesn't need the whole word, or even its start:"] =
+        "Списку, що з'являється, поки ви пишете, не потрібне ціле слово і навіть не обов'язково його початок:",
+    ["Shadow Bolt: capitals are the first letters of the words."] = "Shadow Bolt: великі літери — перші літери слів.",
+    ["Curse of Agony: small words may be left out, or typed in small letters."] =
+        "Curse of Agony: короткі слова можна пропустити або набрати малими.",
+    ["Shadow Word: Pain: a space goes on to the next word."] =
+        "Shadow Word: Pain: пробіл переходить до наступного слова.",
+    ["nocombat: letters in order, from the start of the word, with others between them."] =
+        "nocombat: літери по порядку від початку слова, з іншими між ними.",
+    ["mounted: the same for conditions, commands and units."] = "mounted: так само для умов, команд і юнітів.",
+    ["Tab or Enter takes the highlighted one, Up and Down move through the list, Esc closes it."] =
+        "Tab або Enter вставляє виділене, стрілки вгору й униз гортають список, Esc його закриває.",
+    ["The full guide"] = "Повний гайд",
+    ["The full guide, with pictures and more examples, is on GitHub. Copy the link and open it in your browser:"] =
+        "Повний гайд з ілюстраціями та іншими прикладами — на GitHub. Скопіюйте посилання й відкрийте його в "
+        .. "браузері:",
+    -- Practice (Practice.lua, HelpWindow)
+    ["Practice"] = "Практика",
+    ["A few tasks with your own spells. Write each macro in the editor: press New there, write it, then press Check "
+        .. "here. Answer shows one way to write it."] =
+        "Кілька завдань із вашими власними заклинаннями. Пишіть кожен макрос у редакторі: натисніть там «Новий», "
+        .. "напишіть його, а потім натисніть «Перевірити» тут. «Відповідь» показує один зі способів його написати.",
+    ["The tasks need a spell of yours for enemies. Learn one, then open this section again."] =
+        "Для завдань потрібне ваше заклинання проти ворогів. Вивчіть таке й відкрийте цей розділ знову.",
+    ["Task %d"] = "Завдання %d",
+    ["done"] = "виконано",
+    ["Check"] = "Перевірити",
+    ["Answer"] = "Відповідь",
+    ["One way to write it:"] = "Один зі способів:",
+    ["The macro should cast with /cast."] = "Макрос має кастувати через /cast.",
+    ["The macro casts %s; the task wants %s."] = "Макрос кастує %s, а завдання просить %s.",
+    ["Cast %s at the enemy under your mouse, or at your target when you point at nobody."] =
+        "Кастуйте %s у ворога під мишею, а якщо там нікого немає — у вашу ціль.",
+    ["First, the macro should go to the unit under the mouse: @mouseover."] =
+        "Спершу макрос має йти на того, хто під мишею: @mouseover.",
+    ["When nobody is under the mouse, it should go to your target: add [] after the first brackets."] =
+        "Коли під мишею нікого немає, він має йти у вашу ціль: додайте [] після перших дужок.",
+    ["Add harm next to @mouseover, so the macro casts at the unit under the mouse only when it is an enemy."] =
+        "Додайте harm поруч із @mouseover, щоб макрос кастував у того, хто під мишею, лише коли це ворог.",
+    ["Cast %s as usual, and %s on your focus while you hold Shift."] =
+        "Кастуйте %s як зазвичай, а поки ви тримаєте Shift — %s на ваш фокус.",
+    ["With Shift held, the macro should cast %s: [mod:shift] before it."] =
+        "Із затиснутим Shift макрос має кастувати %s: [mod:shift] перед ним.",
+    ["With Shift held, the macro casts %s; the task wants %s."] =
+        "Із затиснутим Shift макрос кастує %s, а завдання просить %s.",
+    ["With Shift held, %s should go to your focus: @focus."] = "Із затиснутим Shift %s має йти на ваш фокус: @focus.",
+    ["Without Shift, the spell should go to your target, as usual."] =
+        "Без Shift заклинання має йти у вашу ціль, як зазвичай.",
+    ["Stop whatever you are casting, then cast %s at your focus, or at your target when you have no focus."] =
+        "Перервіть те, що кастуєте, а потім кастуйте %s у ваш фокус, а якщо фокуса немає — у вашу ціль.",
+    ["Add /stopcasting on a line before the cast."] = "Додайте /stopcasting окремим рядком перед кастом.",
+    ["First, the macro should go to your focus: @focus."] = "Спершу макрос має йти на ваш фокус: @focus.",
+    ["When you have no focus, it should go to your target: add harm next to @focus, then []."] =
+        "Коли фокуса немає, він має йти у вашу ціль: додайте harm поруч із @focus, а потім [].",
+    ["Cast %s, then %s, one each press, starting over on a new target."] =
+        "Кастуйте %s, потім %s, по одному за натискання, і починайте з початку на новій цілі.",
+    ["The macro should use /castsequence."] = "Макрос має використовувати /castsequence.",
+    ["The list should be %s, then %s, split by a comma."] = "Список має бути таким: %s, потім %s, через кому.",
+    ["It should start over on a new target: reset=target."] =
+        "Він має починатися з початку на новій цілі: reset=target.",
+    ["Send your pet to attack the enemy under your mouse, or your target when you point at nobody."] =
+        "Пошліть улюбленця атакувати ворога під мишею, а якщо там нікого немає — вашу ціль.",
+    ["The macro should send your pet with /petattack."] = "Макрос має посилати улюбленця через /petattack.",
+    ["First, the pet should go to the unit under the mouse: @mouseover."] =
+        "Спершу улюбленець має йти на того, хто під мишею: @mouseover.",
+    ["Add harm next to @mouseover, so the pet goes only for an enemy."] =
+        "Додайте harm поруч із @mouseover, щоб улюбленець ішов лише на ворога.",
+    ["Cast %s on a friend under your mouse; if there is none, on your target if it is a friend; if not, on yourself."] =
+        "Кастуйте %s на друга під мишею; якщо там нікого немає — на вашу ціль, якщо вона друг; інакше — на себе.",
+    ["Then to your target, if it is a friend: [help] with no @, after the first brackets."] =
+        "Потім на вашу ціль, якщо вона друг: [help] без @, після перших дужок.",
+    ["Last, to yourself: [@player]."] = "Останнім — на себе: [@player].",
+    ["Add help to the brackets, so the macro casts only at friends."] =
+        "Додайте help у дужки, щоб макрос кастував лише на друзів.",
+    ["Write the macro in the editor first."] = "Спершу напишіть макрос у редакторі.",
+    ["This macro is not one the task asks for. Start from the task's words, line by line."] =
+        "Це не той макрос, який просить завдання. Почніть зі слів завдання, рядок за рядком.",
+    ["Right: the macro does what the task asks."] = "Правильно: макрос робить те, що просить завдання.",
     ["%s copies it; open it in your browser."] = "%s копіює посилання; відкрийте його в браузері.",
 
     -- Main window: header

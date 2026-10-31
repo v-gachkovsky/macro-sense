@@ -29,6 +29,7 @@ Share.lua
 Backups.lua
 Wizard.lua
 WizardRead.lua
+Practice.lua
 Questions.lua
 Roles.lua
 Widgets.lua

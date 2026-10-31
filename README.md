@@ -16,8 +16,10 @@
 > prints the details to include.
 
 **New to macros?** [Macros, step by step](docs/GUIDE.md) explains what macros are, what they can do and how to
-make them, with pictures and ready-made macros. In game, **?** in the editor's title bar (or `/ms help`) sums
-it up.
+make them, with pictures and ready-made macros. In game, **?** in the editor's title bar (or `/ms help`) opens
+the same guide in short, section by section, and **Create** next to a ready-made macro makes it for you. Its
+**Practice** gives tasks with your own spells and class: write the macro in the editor, and **Check** says whether
+it does what the task asks, or what to change.
 
 ## Overview
 
@@ -421,7 +423,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 ## Commands
 
 - `/ms` - open / close the editor
-- `/ms help` - macros in short, with a link to the [full guide](docs/GUIDE.md)
+- `/ms help` - the macro guide in game, with ready-made macros and a link to the [full guide](docs/GUIDE.md)
 - `/ms minimap` - hide / show the minimap button
 - `/ms bug` - print the versions to include in a bug report
 - `/ms autocomplete` - toggle autocomplete
