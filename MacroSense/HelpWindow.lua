@@ -113,6 +113,9 @@ local function Sections()
                 { "[@mouseover,harm][]", L["Two pairs of brackets in a row: this, or else that, for the same "
                     .. "spell."] },
                 { "[]", L["Empty brackets are always true: otherwise, as usual."] },
+            } },
+            { "p", L["Two more things you will meet in macros:"] },
+            { "rows", {
                 { "!Shoot", L["Only turns it on: a press doesn't stop your shooting or take you out of stealth."] },
                 { "#showtooltip", L["A setting, not a command: the macro shows the tooltip of what it would cast, "
                     .. "and its icon while the macro's icon is the question mark."] },

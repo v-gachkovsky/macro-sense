@@ -104,6 +104,7 @@ ns.locales.uk = {
         "Дві пари дужок поспіль: це, а якщо ні — то те, для того самого заклинання.",
     ["Empty brackets are always true: otherwise, as usual."] =
         "Порожні дужки виконуються завжди: інакше — як зазвичай.",
+    ["Two more things you will meet in macros:"] = "Ще дві речі, які трапляються в макросах:",
     ["Only turns it on: a press doesn't stop your shooting or take you out of stealth."] =
         "Лише вмикає: натискання не зупиняє стрільбу й не виводить зі стелсу.",
     ["A setting, not a command: the macro shows the tooltip of what it would cast, and its icon while the macro's "
