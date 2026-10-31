@@ -6207,7 +6207,11 @@ do
     local names = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end
     local count = #W.Planned()
+    -- Some clients answer nothing, though the macro is made: it counts, and goes on the bars.
+    local answers = CreateMacro
+    CreateMacro = function(...) answers(...) end
     Fire(W.Control("create"), "OnClick")
+    CreateMacro = answers
     local made = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do
         local name = GetMacroInfo(index)
@@ -6217,10 +6221,29 @@ do
         and not W.IsShown(), #made .. " of " .. count)
     check("book window: Frostbolt's macro on the bar in place of the spell", actions[7][1] == "macro"
         and actions[7].text == "Frostbolt", tostring(actions[7][1]))
+    -- A macro the game refused is told in chat by name, and not remembered as made.
+    local createMacro, printedBefore = CreateMacro, #printed
+    DeleteMacro(GetMacroIndexByName("Fire Blast"))
+    W.Open()
+    check("book window: with the pet's macro made, no other one at first", planned().Pet == nil)
+    check("book window: a spell whose macro you deleted is told so, not checked", rows()["Fire Blast"].state == "deleted"
+        and planned()["Fire Blast"] == nil)
+    for i, r in ipairs(W.Rows()) do
+        if r.spell.name == "Fire Blast" then Fire(W.RowFrame(i).check, "OnClick") end
+    end
+    CreateMacro = function(name, ...)
+        if name == "Fire Blast" then error("refused") end
+        return createMacro(name, ...)
+    end
+    Fire(W.Control("create"), "OnClick")
+    CreateMacro = createMacro
+    local said = printed[printedBefore + 1] or ""
+    check("book window: a refused macro is told by name", said:find('could not make the macro "Fire Blast"', 1, true)
+        ~= nil, said)
     W.Open()
     check("book window: the next time, Frostbolt has a macro and is not checked", rows().Frostbolt.state == "has"
         and rows().Frostbolt.macro == "Frostbolt" and planned().Frostbolt == nil)
-    check("book window: nothing left to make but the pet", count > 1 and #W.Planned() == 1 and planned().Pet ~= nil,
+    check("book window: nothing left to make", count > 1 and #W.Planned() == 0,
         tostring(#W.Planned()))
     W.Close()
     for _, name in ipairs(made) do DeleteMacro(GetMacroIndexByName(name)) end

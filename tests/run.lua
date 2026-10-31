@@ -2409,6 +2409,10 @@ do
     check("book: joined to a spell that is joined itself", problems.Polymorph ~= nil)
     choices.join["Polymorph"] = nil
 
+    check("book: a macro that commands the pet", B.PetMacro({ { name = "A", body = "/cast X" },
+        { name = "P", body = "#showtooltip\n/petattack [@mouseover]" } }) == "P")
+    check("book: with a pet macro already, none at first", B.Fresh({ class = "HUNTER", pet = true, petMacro = "P" }).pet
+        == nil)
     local pet = B.Fresh({ class = "HUNTER", pet = true })
     check("book: a hunter gets /startattack off, the pet on", pet.startattack == false and pet.pet ~= nil)
     pet.pet.ctrl = "stay"

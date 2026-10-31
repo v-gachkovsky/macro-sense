@@ -117,7 +117,17 @@ function Spellbook.Kit()
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + character do add("character", index) end
     kit.free = ns.MAX_CHARACTER - character
     kit.pet = (HasPetSpells and HasPetSpells() ~= nil) or class == "HUNTER" or class == "WARLOCK"
+    kit.petMacro = Spellbook.PetMacro(kit.macros)
     return kit
+end
+
+-- The name of a macro that commands the pet (/petattack, /petfollow...), or nil.
+function Spellbook.PetMacro(macros)
+    for _, m in ipairs(macros) do
+        for line in m.body:gmatch("[^\n]+") do
+            if line:match("^%s*/pet%a") then return m.name end
+        end
+    end
 end
 
 -- What MacroSense remembers of the spellbook, per character: { seen = spell -> true (offered once), made = spell ->
@@ -149,12 +159,13 @@ function Spellbook.Rows(kit, journal)
     return rows
 end
 
--- The choices of a fresh form: spells at your target, as on the action bars; /startattack for the classes that fight in melee; /stopcasting for interrupts; the pet attacks the
--- enemy under the mouse, or the target, and follows with Shift.
+-- The choices of a fresh form: spells at your target, as on the action bars; /startattack for the classes that
+-- fight in melee; /stopcasting for interrupts; the pet, unless some macro commands it already, attacks the enemy
+-- under the mouse, or the target, and follows with Shift.
 function Spellbook.Fresh(kit)
     return { picked = {}, units = { harm = "target", help = "target" }, unitOf = {}, join = {}, lower = {},
         startattack = MELEE[kit.class or ""] == true, stopcasting = true, bars = true,
-        pet = kit.pet and { none = "attack", shift = "follow" } or nil, petMouseover = true }
+        pet = kit.pet and not kit.petMacro and { none = "attack", shift = "follow" } or nil, petMouseover = true }
 end
 
 -- Where a spell of `kind` goes: { units in order }, and what they must be.

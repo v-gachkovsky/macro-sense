@@ -186,10 +186,15 @@ function SpellbookWindow.Create()
     local made, names, placed = {}, {}, 0
     for _, m in ipairs(macros) do
         local name = ns.Window.FreeName(m.name)
-        local index = CreateMacro(name, NEW_ICON, m.body, true)
+        local ok, answer = pcall(CreateMacro, name, NEW_ICON, m.body, true)
+        -- Made is what the game has now, whatever it answered: the answer differs between its clients.
+        local index = GetMacroIndexByName(name)
         if index and index > 0 then
             names[#names + 1] = { name = name, macro = m }
             for _, spell in ipairs(m.spells) do made[spell] = { name = name, body = m.body } end
+        else
+            ns.Print("could not make the macro \"%s\" (the game said: %s)", name, tostring(answer))
+            if ns.db.debug then ns.Print("its text: %s", (m.body:gsub("\n", " | "))) end
         end
     end
     -- After all are made: the game sorts the macros by name, their numbers change with each new one.
