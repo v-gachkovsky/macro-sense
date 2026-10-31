@@ -13,7 +13,7 @@
 
 1. [What a macro is](#1-what-a-macro-is)
 2. [Your first macro](#2-your-first-macro)
-3. [The same macro with the wizard](#3-the-same-macro-with-the-wizard)
+3. [The wizard: questions or a form](#3-the-wizard-questions-or-a-form)
 4. [How a macro line reads](#4-how-a-macro-line-reads)
 5. [How the game picks what to do](#5-how-the-game-picks-what-to-do)
 6. [What macros can do](#6-what-macros-can-do)
@@ -104,21 +104,81 @@ bar. Done: press it in game.
 > cast. It changes as whatever the macro's conditions check changes: you hold a modifier key, point at a target,
 > set a focus, and so on. Pick an icon yourself, and it stays as you picked it.
 
-## 3. The same macro with the wizard
+## 3. The wizard: questions or a form
 
-You don't have to write anything. **New (Wizard)** under the list asks a few questions in plain words and
-writes the macro for you:
+You don't have to write anything. **New (Wizard)** under the list makes the macro for you, in one of two ways:
 
-1. **What should the macro do?** Cast a spell.
-2. **Which spell?** Type a few letters of it and pick it.
-3. **Where should it go?** On whoever is under the mouse. And if nobody is? On your target as usual.
-4. Keys, conditions and extras: skip them for now.
-5. A name, and who keeps the macro: all your characters or only this one. **Create macro**.
+- **Step by step**: one question at a time, in plain words. The wizard opens like this the first time. Good if
+  you have never written a macro.
+- **All options**: the whole form at once, every choice in view. Good once you know what you want.
+
+The button in the wizard's title bar switches between them, and the answers you gave stay. The wizard opens
+the way you left it. As you answer, the macro it makes grows at the bottom of the window, with its colors and
+length.
+
+### Step by step
 
 <p align="center"><img src="wizard-steps.gif" width="720" alt="The wizard, step by step"></p>
 
-The macro opens in the editor, ready to put on a bar. To change it later with the same questions, open it and
-press **Wizard** above the text.
+The same Shadow Bolt macro as in section 2, question by question:
+
+1. **What should the macro do?** Choose **Cast a spell**. The other answers: use an item, several spells in
+   turn, one of several at random, target someone, set your focus, take someone's target, command your pet,
+   ride a mount, put on gear.
+2. **Which spell?** Type a few letters, `Shad`, and pick **Shadow Bolt**. Picking it goes on to the next
+   question by itself.
+3. **Where should Shadow Bolt go?** Choose **Whoever is under the mouse**. Each answer shows the words it puts
+   into the macro (`@mouseover`), and its tooltip says what they mean.
+4. **And if nobody is under the mouse?** Choose **Your target, as usual**. The wizard asks "and if not?" up to
+   three times, so a heal can go to the unit under the mouse, then your target, then you.
+5. **Who is it for?** Asked only when the game doesn't say. Shadow Bolt is for enemies, so this question is
+   skipped. For an item, or a spell that can go to both, choose friends, enemies or anyone.
+6. **Should the macro do something else while you hold Shift, Ctrl or Alt?** Skip it for now. Pick a key, and
+   the next questions ask what that key casts, and where.
+7. **Should the macro work only at certain times?** In combat or out of it, in stealth, in a group, with your
+   pet out, in a form. Skip it for now.
+8. **Would you like to add anything else?** Stop your cast first, use a trinket, start auto attack, say
+   something in chat. Skip it for now.
+9. **Almost done: name your macro.** Type `Bolt MO` and choose who keeps it: all your characters or only this
+   one. **Create macro**.
+
+**< Back** goes back with your answers kept, **Next >** goes on with the one chosen. The macro opens in the
+editor, ready to put on a bar.
+
+### All options
+
+<p align="center"><img src="guide-wizard.gif" width="720" alt="The wizard's form"></p>
+
+The form has the same choices as the questions, each in its own row:
+
+| Row | What it sets | In the macro |
+|---|---|---|
+| **Command** | what the macro does: a spell or item, a list in turn, one at random, target, focus, assist, pet, mount, gear | `/cast`, `/castsequence`, `/target`... |
+| **Cast** / **Use** | the spell or item: a few letters, or the first letters of its words in capitals (`SB`) | `Shadow Bolt` |
+| **On** | on whom, up to three in order: as usual, your target, mouseover, focus, yourself, a party member, at the cursor... | `[@mouseover][]` |
+| **Only** | friends, enemies or anyone; **Alive only** | `harm`, `help`, `nodead` |
+| **With a key held** | for Shift, Ctrl, Alt (Cmd on a Mac): another spell, or the same on someone else | `[mod:shift]...;` |
+| **When** | only in or out of combat, in stealth, in a group, with your pet, in a form, and what it does otherwise | `[combat]` |
+| **Also** | stop your cast first, a trinket, start attack, leave your form, cancel a buff, a chat line | `/stopcasting`, `/use 13` |
+| **Name** and **Tab** | the macro's name, and General or Character | |
+
+A few of what you can get:
+
+| You choose | You get |
+|---|---|
+| Shadow Bolt; On: Mouseover, then As usual; Only: Enemies | `/cast [@mouseover,harm,nodead][] Shadow Bolt` |
+| Flash Heal; On: Mouseover, then Your target, then Yourself; Only: Friends | `/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal` |
+| Counterspell on Focus, then As usual; Also: stop your cast first | `/stopcasting`, then `/cast [@focus,harm,nodead][] Counterspell` |
+| Frostbolt; Shift: Polymorph on Focus; Also: trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
+| Mount: Steed, Gryphon where you can fly, Sea Turtle in water | `/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed` |
+
+### A macro you already have
+
+Open a macro and press **Wizard** above its text. The wizard opens with its answers filled in. Change what you
+like with a few clicks, then **Put in editor**: the new text goes into the editor, and **Save** keeps it
+(**Ctrl+Z** takes it back). It works for any macro the wizard could have made, also one typed by hand or taken
+from a guide. If the wizard would write some lines its own way, or has no place for them (`/run`, a second
+`/cast`), it says so before it opens, and the window lists them under **lines will change**.
 
 ## 4. How a macro line reads
 
