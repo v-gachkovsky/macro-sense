@@ -107,6 +107,7 @@ end
 function Frame:GetText() return self.text end
 function Frame:SetTexture(t) self.texture = t end
 function Frame:SetDesaturated(on) self.desaturated = on end
+function Frame:SetBackdropColor(r, g, b, a) self.backdropColor = { r, g, b, a } end
 function Frame:GetValue() return self.value or 0 end
 function Frame:GetVerticalScrollRange() return self.range or 0 end
 function Frame:GetVerticalScroll() return self.vscroll or 0 end
@@ -6027,6 +6028,11 @@ do
     end
     Fire(nav("Ready-made macros"), "OnClick")
     check("guide: a section's button shows it", H.Control("section") == "Ready-made macros")
+    local accent = { ns.RGB(ns.scheme.accent) }
+    local function lit(title) return nav(title).backdropColor and nav(title).backdropColor[1] == accent[1]
+        and nav(title).backdropColor[3] == accent[3] end
+    check("guide: the section shown in the accent color, the others not", lit("Ready-made macros")
+        and not lit("What a macro is"))
     local count = select(2, GetNumMacros())
     ns.Window.SetScope("character")
     NextFrame()
