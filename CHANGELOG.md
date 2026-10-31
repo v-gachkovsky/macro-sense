@@ -6,6 +6,16 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Macros from the Spellbook** ("From Spellbook" in the editor, or `/ms book`): macros for the spells of your
+  spellbook, many at once. Check the spells; each macro names its spell with no rank, so it always casts the
+  highest rank you know. Choose where attacks and helpful spells go (the unit under the mouse, your target or your
+  focus), whether attacks start auto attack and interrupts stop your cast first. When there is not enough room,
+  join a spell to another one's macro on Shift, Ctrl, Alt or Cmd; a spell with ranks can have a lower rank on a key
+  too. A hunter or warlock gets one macro for the pet: what it does with no key and with each key. The macros go
+  into the character's tab and onto the action bars in place of their spells. Spells that some macro casts
+  already are left out, and next time only the spells you learned since are checked.
+
 ### Fixed
 - Classic: after you learn a new rank of a spell, a macro that casts it with no rank (`/cast Shadow Bolt`) kept
   showing and casting the old one until you edited it. MacroSense now saves such macros again by itself, after

@@ -2062,7 +2062,7 @@ do
         if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizard = o end
     end
     check("copy: New and New (Wizard) in one row, the list down to it", wizard.point[1] == "BOTTOMRIGHT"
-        and wizard.point[3] == 36 and MacroSenseListScroll.point[3] == 66)
+        and wizard.point[3] == 36 and MacroSenseListScroll.point[3] == 94)
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(copy, "OnEnter")
@@ -6157,6 +6157,77 @@ do
     for _, name in ipairs({ "Rk A", "Rk B", "Rk C" }) do DeleteMacro(GetMacroIndexByName(name)) end
     ns.History.Scan()
     ns.sources.spells = spells
+end
+
+-- Macros from the spellbook: the window offers the spells of the book, makes their macros in the character's tab
+-- and puts each one on the bars in place of its spell; the next time the spells with a macro are not checked.
+do
+    local W = ns.SpellbookWindow
+    gameSpells[116] = { 1053, "Frostbolt" }
+    actions[7] = { "spell", 116 }
+    -- The book's first tab is General (Attack, racials): its spells are offered unchecked. Here it is empty.
+    local lines, line = C_SpellBook.GetNumSpellBookSkillLines, C_SpellBook.GetSpellBookSkillLineInfo
+    C_SpellBook.GetNumSpellBookSkillLines = function() return 2 end
+    C_SpellBook.GetSpellBookSkillLineInfo = function(i)
+        if i == 1 then return { itemIndexOffset = 0, numSpellBookItems = 0 } end
+        return line(i)
+    end
+    ns.InvalidateSources("spells")
+    ns.char.spellbook = nil
+    InCombatLockdown = function() return true end
+    W.Open()
+    check("book window: not in combat", not W.IsShown())
+    InCombatLockdown = function() return false end
+    SlashCmdList.MACROSENSE("book")
+    local function rows()
+        local out = {}
+        for _, r in ipairs(W.Rows()) do out[r.spell.name] = r end
+        return out
+    end
+    local function planned()
+        local out = {}
+        for _, m in ipairs(W.Planned()) do out[m.name] = m.body end
+        return out
+    end
+    check("book window: /ms book opens it, a row per spell", W.IsShown() and rows().Frostbolt ~= nil
+        and rows()["Fire Blast"] ~= nil)
+    check("book window: Frostbolt at the mouseover enemy, else the target", planned().Frostbolt
+        == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", planned().Frostbolt)
+    check("book window: a warlock gets a macro for the pet", planned().Pet ~= nil, planned().Pet)
+    local tip = {}
+    local addLine = GameTooltip.AddLine
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    for i, r in ipairs(W.Rows()) do
+        if r.spell.name == "Frostbolt" then Fire(W.RowFrame(i), "OnEnter") end
+    end
+    GameTooltip.AddLine = addLine
+    check("book window: a spell's macro under the mouse", tip[2] == 'Macro "Frostbolt":'
+        and tip[4] == "/cast [@mouseover,harm,nodead][] Frostbolt", table.concat(tip, " | "))
+
+    local names = {}
+    for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end
+    local count = #W.Planned()
+    Fire(W.Control("create"), "OnClick")
+    local made = {}
+    for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do
+        local name = GetMacroInfo(index)
+        if not names[name] then made[#made + 1] = name end
+    end
+    check("book window: the macros made in the character's tab, the window closed", #made == count
+        and not W.IsShown(), #made .. " of " .. count)
+    check("book window: Frostbolt's macro on the bar in place of the spell", actions[7][1] == "macro"
+        and actions[7].text == "Frostbolt", tostring(actions[7][1]))
+    W.Open()
+    check("book window: the next time, Frostbolt has a macro and is not checked", rows().Frostbolt.state == "has"
+        and rows().Frostbolt.macro == "Frostbolt" and planned().Frostbolt == nil)
+    check("book window: nothing left to make but the pet", count > 1 and #W.Planned() == 1 and planned().Pet ~= nil,
+        tostring(#W.Planned()))
+    W.Close()
+    for _, name in ipairs(made) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    actions[7], gameSpells[116], ns.char.spellbook = nil, nil, nil
+    C_SpellBook.GetNumSpellBookSkillLines, C_SpellBook.GetSpellBookSkillLineInfo = lines, line
+    ns.InvalidateSources("spells")
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

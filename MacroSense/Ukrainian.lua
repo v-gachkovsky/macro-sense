@@ -24,9 +24,9 @@ ns.locales.uk = {
     ["  Please describe what you did, what you expected and what happened; a screenshot helps."] =
         "  Опишіть, що ви робили, чого очікували і що сталося; знімок екрана теж допоможе.",
     ["debug %s"] = "налагодження: %s",
-    ["/ms - open the editor; /ms help - the macro guide; /ms minimap - hide or show the minimap button; "
+    ["/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms minimap - hide or show the minimap button; "
         .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
-        "/ms — відкрити редактор; /ms help — довідка з макросів; /ms minimap — сховати чи показати кнопку біля "
+        "/ms — відкрити редактор; /ms help — довідка з макросів; /ms book — макроси з книги заклинань; /ms minimap — сховати чи показати кнопку біля "
         .. "мінікарти; /ms bug — подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
     ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
         .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
@@ -1548,4 +1548,41 @@ ns.locales.uk = {
     ["%s already has a spell on this key."] = "У макросі %s на цій клавіші вже є заклинання.",
     ["Join it to a spell that gets a macro of its own."] =
         "Приєднайте його до заклинання, яке отримує власний макрос.",
+    ["From Spellbook"] = "З книги заклинань",
+    ["Macros from the Spellbook"] = "Макроси з книги заклинань",
+    ["Make macros for the spells in your spellbook, many at once. Pick the spells, where they go and what Shift, Ctrl "
+        .. "or Alt do. Spells that have a macro already are left out, and next time only the spells you learned since "
+        .. "are offered."] = "Макроси для заклинань із вашої книги, багато за раз. Оберіть заклинання, у кого вони "
+        .. "летять і що роблять Shift, Ctrl чи Alt. Заклинання, які вже мають макрос, пропускаються, а наступного разу "
+        .. "запропоновано буде лише те, що ви вивчили відтоді.",
+    ["Check the spells to make macros for. A macro names the spell with no rank, so it always casts the highest rank "
+        .. "you know. Point at a spell to see its macro."] = "Позначте заклинання, для яких зробити макроси. Макрос "
+        .. "називає заклинання без рангу, тож завжди кастує найвищий ранг, який ви знаєте. Наведіть мишу на "
+        .. "заклинання, щоб побачити його макрос.",
+    ["Already in the macro \"%s\""] = "Уже є в макросі «%s»",
+    ["You deleted its macro"] = "Ви видалили його макрос",
+    ["Left out last time"] = "Пропущене минулого разу",
+    ["new"] = "нове",
+    ["Own macro"] = "Власний макрос",
+    ["With %s"] = "Разом із %s",
+    ["No lower rank"] = "Без нижчого рангу",
+    ["+ %s"] = "+ %s",
+    ["Macro \"%s\":"] = "Макрос «%s»:",
+    ["Attacks go to"] = "Атаки летять у",
+    ["Helpful spells go to"] = "Корисні заклинання — у",
+    ["The enemy under the mouse, else your target"] = "Ворога під мишею, інакше в ціль",
+    ["The friend under the mouse, else your target"] = "Друга під мишею, інакше в ціль",
+    ["Your focus, else your target"] = "Фокус, інакше в ціль",
+    ["Start auto attack with each attack"] = "Вмикати автоатаку з кожною атакою",
+    ["Stop your cast before an interrupt"] = "Зупиняти свій каст перед перериванням",
+    ["Put them on the bars in place of the spells"] = "Поставити на панелі замість заклинань",
+    ["A macro for your pet"] = "Макрос для улюбленця",
+    ["No key"] = "Без клавіші",
+    ["Nothing"] = "Нічого",
+    ["Attack the enemy under the mouse first"] = "Спершу атакувати ворога під мишею",
+    ["Macros: %d. Free slots: %d."] = "Макросів: %d. Вільних місць: %d.",
+    ["Not enough room: leave some spells out, or join them to others on a key."] =
+        "Не вистачає місця: зніміть галочки з кількох заклинань або приєднайте їх до інших на клавішу.",
+    ["Create macros (%d)"] = "Створити макроси (%d)",
+    ["macros made: %d; put on the action bars: %d"] = "створено макросів: %d; поставлено на панелі: %d",
 }
