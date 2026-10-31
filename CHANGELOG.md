@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.10.0] - 2026-10-31
 
 ### Added
 - **Macros, step by step**: a guide in English and Ukrainian (`docs/GUIDE.md`, `docs/GUIDE_UA.md`) on what
