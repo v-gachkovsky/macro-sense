@@ -281,7 +281,8 @@ Type `[` in the editor and every condition comes up; after `[@`, every unit. Poi
 - **Press itself.** Every cast needs your key press or click.
 - **Be longer than 255 characters.** MacroSense counts them at the bottom; **Shorten** at the top writes the same
   macro in fewer.
-- **Cast spells from `/run`.** Lua in a macro can show text or change settings, but it can't cast or target.
+- **Cast spells from `/run`.** `/run` and `/script` run small programs: they can show text or change game
+  settings, but can't cast a spell or target anyone.
 
 ## 9. Ready-made macros
 

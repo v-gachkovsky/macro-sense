@@ -150,7 +150,10 @@ ns.locales.uk = {
     ["255 characters at most. Shorten at the top writes the same macro in fewer."] =
         "Щонайбільше 255 символів. «Скоротити» вгорі записує той самий макрос коротше.",
     ["Cast from /run"] = "Кастувати з /run",
-    ["Lua in a macro can't cast or target."] = "Lua в макросі не може кастувати чи брати в ціль.",
+    ["/run and /script run small programs: they can show text or change game settings, but can't cast a spell or "
+        .. "target anyone."] =
+        "/run і /script запускають маленькі програми: вони можуть показати текст чи змінити налаштування гри, але "
+        .. "не можуть кастувати заклинання чи брати когось у ціль.",
     ["Ready-made macros"] = "Готові макроси",
     ["Create puts the macro into the tab that is open, under a free name, and opens it. Change the spell names to "
         .. "yours."] =
