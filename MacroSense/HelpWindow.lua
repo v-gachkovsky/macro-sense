@@ -75,9 +75,9 @@ local function Sections()
             { "p", L["Let's make a macro that casts Shadow Bolt at the enemy under your mouse, or at your target "
                 .. "when you point at nobody. Swap in any spell of yours."] },
             { "list", {
-                { "1", L["Pick the Character tab and press New under the list. The new macro already has "
-                    .. "#showtooltip on its first line, and the cursor waits on the second."] },
-                { "2", L["Type a name at the top, such as Bolt MO (MO for mouseover), and press Tab."] },
+                { "1", L["Pick the \"Character\" tab and press \"New\". The new macro already has #showtooltip on "
+                    .. "its first line, and the cursor waits on the second."] },
+                { "2", L["Type a name, such as Bolt MO (MO for mouseover), and press Tab."] },
                 { "3", L["Type /ca and take /cast from the list with Tab. Type [@ and pick mouseover, then type "
                     .. ",harm and ]. Then a few letters of the spell, and pick it."] },
                 { "4", L["Add [] before the spell name. It means \"otherwise, as usual\", so with nobody under the "
@@ -87,18 +87,18 @@ local function Sections()
             { "list", {
                 { "5", L["Next to the line, the editor shows what it would do right now. Point at the line's number "
                     .. "to read the whole line in plain words."] },
-                { "6", L["Press Save, then drag the macro from the list onto an action bar. Done."] },
+                { "6", L["Press \"Save\", then drag the macro from the list onto an action bar. Done."] },
             } },
             { "button", L["New macro"], function() ns.Window.Make() end },
         } },
         { L["The wizard"], {
-            { "p", L["You don't have to write anything: New (Wizard) under the list makes the macro for you."] },
+            { "p", L["You don't have to write anything: \"New (Wizard)\" makes the macro for you."] },
             { "p", L["Step by step, it asks one question at a time: what the macro should do, which spell, on whom, "
-                .. "and if not, on whom then, what Shift, Ctrl or Alt change, when it works. All options in its "
-                .. "title bar shows the whole form at once instead."] },
-            { "p", L["The macro grows at the bottom of the wizard as you answer. Create macro saves it and opens it "
-                .. "in the editor."] },
-            { "p", L["To change a macro you have with the same questions, open it and press Wizard above its text."] },
+                .. "and if not, on whom then, what Shift, Ctrl or Alt change, when it works. \"All options\" shows "
+                .. "the whole form at once instead."] },
+            { "p", L["The macro grows in the wizard as you answer. \"Create macro\" saves it and opens it in the "
+                .. "editor."] },
+            { "p", L["To change a macro you have with the same questions, open it and press \"Wizard\"."] },
             { "button", L["Open the wizard"], function() ns.WizardWindow.Open(ns.db.scope) end },
         } },
         { L["How a line reads"], {
@@ -152,14 +152,14 @@ local function Sections()
                     .. "knows only what conditions can say."] },
                 { L["Cast at once"], L["One spell with the global cooldown per press."] },
                 { L["Press itself"], L["Every cast needs your key press or click."] },
-                { L["Be long"], L["255 characters at most. Shorten at the top writes the same macro in fewer."] },
+                { L["Be long"], L["255 characters at most. \"Shorten\" writes the same macro in fewer."] },
                 { L["Cast from /run"], L["/run and /script run small programs: they can show text or change game "
                     .. "settings, but can't cast a spell or target anyone."] },
             } },
         } },
         { L["Ready-made macros"], {
-            { "p", L["Create puts the macro into the tab that is open, under a free name, and opens it. Change the "
-                .. "spell names to yours."] },
+            { "p", L["\"Create\" puts the macro into the tab that is open, under a free name, and opens it. Change "
+                .. "the spell names to yours."] },
             { "p", L["Heal whoever is under the mouse; if nobody, your target if it is a friend; if not, you:"] },
             { "code", "#showtooltip\n/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal", "Heal MO" },
             { "p", L["Interrupt your focus, or your target:"] },
@@ -190,8 +190,8 @@ local function Sections()
             { "p", L["Tab or Enter takes the highlighted one, Up and Down move through the list, Esc closes it."] },
         } },
         { L["Practice"], {
-            { "p", L["A few tasks with your own spells. Write each macro in the editor: press New there, write it, "
-                .. "then press Check here. Answer shows one way to write it."] },
+            { "p", L["A few tasks with your own spells. Write each macro in the editor: press \"New\" there, write "
+                .. "it, then press \"Check\" here. \"Answer\" shows one way to write it."] },
             { "tasks" },
         } },
         { L["The full guide"], {

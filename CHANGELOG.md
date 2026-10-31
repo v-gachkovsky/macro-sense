@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- The guide has a map of the MacroSense window: a screenshot with its parts numbered, and what each one is for.
+- The guide and the guide in game name buttons and tabs in quotes ("New (Wizard)", «Майстер») and no longer say
+  where they are ("under the list", "at the top"): the map shows it.
+
 ## [0.10.0] - 2026-10-31
 
 ### Added

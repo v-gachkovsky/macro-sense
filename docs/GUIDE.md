@@ -12,15 +12,16 @@
 **In this guide**
 
 1. [What a macro is](#1-what-a-macro-is)
-2. [Your first macro](#2-your-first-macro)
-3. [The wizard: questions or a form](#3-the-wizard-questions-or-a-form)
-4. [How a macro line reads](#4-how-a-macro-line-reads)
-5. [How the game picks what to do](#5-how-the-game-picks-what-to-do)
-6. [What macros can do](#6-what-macros-can-do)
-7. [Conditions and targets](#7-conditions-and-targets)
-8. [What macros can't do](#8-what-macros-cant-do)
-9. [Ready-made macros](#9-ready-made-macros)
-10. [MacroSense helps along the way](#10-macrosense-helps-along-the-way)
+2. [The MacroSense window](#2-the-macrosense-window)
+3. [Your first macro](#3-your-first-macro)
+4. [The wizard: questions or a form](#4-the-wizard-questions-or-a-form)
+5. [How a macro line reads](#5-how-a-macro-line-reads)
+6. [How the game picks what to do](#6-how-the-game-picks-what-to-do)
+7. [What macros can do](#7-what-macros-can-do)
+8. [Conditions and targets](#8-conditions-and-targets)
+9. [What macros can't do](#9-what-macros-cant-do)
+10. [Ready-made macros](#10-ready-made-macros)
+11. [MacroSense helps along the way](#11-macrosense-helps-along-the-way)
 
 ---
 
@@ -40,13 +41,36 @@ Macros are kept in two places:
 
 <p align="center"><img src="guide/kinds-en.svg" width="720" alt="General macros are shared by all your characters, character macros belong to one"></p>
 
-- **General**: up to 120, the same for every character on your account. Good for things anyone can use:
+- "General": up to 120, the same for every character on your account. Good for things anyone can use:
   a mount, a hearthstone, a chat message.
-- **Character**: up to 30, only for the character you play. Good for a class's spells.
+- "Character": up to 30, only for the character you play. Good for a class's spells.
 
 A macro is at most **255 characters** long. That is about five or six lines.
 
-## 2. Your first macro
+## 2. The MacroSense window
+
+<p align="center"><img src="guide/map-en.png" width="860" alt="The MacroSense window, its parts numbered"></p>
+
+1. "General" and "Character": which macros the list shows, and how many each tab holds.
+2. The search, and "Not on action bars": find a macro by its name or text, or keep only those on no bar.
+3. The list of macros. A click opens one. The two squares copy it, "x" deletes it. In the "Character" tab,
+   your other characters' macros are at the bottom.
+4. "New" starts an empty macro, "New (Wizard)" makes one from a few questions.
+5. "Share" sends macros as a code or a chat link, "Trash" brings deleted ones back, "Backups" keeps copies of
+   all your macros.
+6. The macro's icon and name. A click on the icon picks another one; drag the icon onto an action bar.
+7. "Wizard" changes this macro with the wizard's questions, "History" shows its earlier texts, "Shorten" writes
+   it in fewer characters.
+8. The macro's text, with line numbers. Point at a number to read the line in plain words, and at a word to see
+   what it means.
+9. The live preview: what each line would do right now.
+10. The status bar: where the cursor is, how long the macro is (255 characters at most), "Unsaved changes", and
+    what is wrong with the macro, if anything. A click on a mistake fixes it when the fix is clear; point at it to
+    see them all.
+11. "Revert" brings back the saved text, "Save" saves the macro.
+12. "Live preview" on or off, the font and its size, the colors, the language, and "?" for the macro guide.
+
+## 3. Your first macro
 
 Let's make a macro that casts **Shadow Bolt** at the enemy under your mouse, or at your target when you point at
 nobody. Swap in any spell of yours.
@@ -55,13 +79,12 @@ nobody. Swap in any spell of yours.
 
 <p align="center"><img src="guide/shot-1-open-en.png" width="720" alt="MacroSense open: the list of macros on the left, the editor on the right"></p>
 
-On the left is the list of your macros, with the **General** and **Character** tabs. On the right is the
-editor with the open macro.
+Section 2 shows every part of the window.
 
-**Step 2. Pick the tab and press New.** Choose **Character** for a class spell, then **New** under the list. A
-new macro already has `#showtooltip` on its first line, and the cursor waits on the second.
+**Step 2. Pick the tab and press "New".** Choose "Character" for a class spell, then "New". A new
+macro already has `#showtooltip` on its first line, and the cursor waits on the second.
 
-**Step 3. Name it.** Type a name at the top, up to 16 letters, for example `Bolt MO` ("MO" for mouseover).
+**Step 3. Name it.** Type a name, up to 16 letters, for example `Bolt MO` ("MO" for mouseover).
 Press **Tab** or **Enter** to go on to the text.
 
 **Step 4. Write the text.** Type `/ca`: a list comes up with `/cast` on top. **Tab** or **Enter** takes it.
@@ -80,8 +103,8 @@ you point at an enemy, `conditions not met` when you don't.
 
 <p align="center"><img src="guide/shot-3-preview-en.png" width="720" alt="Next to the line: what it does right now"></p>
 
-Point at the line's number to read the whole line in plain words. A mistake is underlined in red, and the bar at
-the bottom says what is wrong. A click there fixes it when the fix is clear.
+Point at the line's number to read the whole line in plain words. A mistake is underlined in red, and the status bar
+says what is wrong. A click there fixes it when the fix is clear.
 
 <p align="center"><img src="guide/shot-3-explain-en.png" width="720" alt="The line's number explains the whole line"></p>
 
@@ -93,7 +116,7 @@ means "otherwise, as usual":
 /cast [@mouseover,harm][] Shadow Bolt
 ```
 
-**Step 6. Save.** Press **Save**, or **Ctrl+S** (Cmd+S on a Mac).
+**Step 6. Save.** Press "Save", or **Ctrl+S** (Cmd+S on a Mac).
 
 **Step 7. Put it on a bar.** Drag the macro from the list, or its icon from the top of the editor, onto an action
 bar. Done: press it in game.
@@ -104,15 +127,15 @@ bar. Done: press it in game.
 > cast. It changes as whatever the macro's conditions check changes: you hold a modifier key, point at a target,
 > set a focus, and so on. Pick an icon yourself, and it stays as you picked it.
 
-## 3. The wizard: questions or a form
+## 4. The wizard: questions or a form
 
-You don't have to write anything. **New (Wizard)** under the list makes the macro for you, in one of two ways:
+You don't have to write anything. "New (Wizard)" makes the macro for you, in one of two ways:
 
-- **Step by step**: one question at a time, in plain words. The wizard opens like this the first time. Good if
+- "Step by step": one question at a time, in plain words. The wizard opens like this the first time. Good if
   you have never written a macro.
-- **All options**: the whole form at once, every choice in view. Good once you know what you want.
+- "All options": the whole form at once, every choice in view. Good once you know what you want.
 
-The button in the wizard's title bar switches between them, and the answers you gave stay. The wizard opens
+"All options" and "Step by step" switch between them, and the answers you gave stay. The wizard opens
 the way you left it. As you answer, the macro it makes grows at the bottom of the window, with its colors and
 length.
 
@@ -120,29 +143,29 @@ length.
 
 <p align="center"><img src="wizard-steps.gif" width="720" alt="The wizard, step by step"></p>
 
-The same Shadow Bolt macro as in section 2, question by question:
+The same Shadow Bolt macro as in section 3, question by question:
 
-1. **What should the macro do?** Choose **Cast a spell**. The other answers: use an item, several spells in
+1. **"What should the macro do?"** Choose "Cast a spell". The other answers: use an item, several spells in
    turn, one of several at random, target someone, set your focus, take someone's target, command your pet,
    ride a mount, put on gear.
-2. **Which spell?** Type a few letters, `Shad`, and pick **Shadow Bolt**. Picking it goes on to the next
+2. **"Which spell?"** Type a few letters, `Shad`, and pick **Shadow Bolt**. Picking it goes on to the next
    question by itself.
-3. **Where should Shadow Bolt go?** Choose **Whoever is under the mouse**. Each answer shows the words it puts
+3. **"Where should Shadow Bolt go?"** Choose "Whoever is under the mouse". Each answer shows the words it puts
    into the macro (`@mouseover`), and its tooltip says what they mean.
-4. **And if nobody is under the mouse?** Choose **Your target, as usual**. The wizard asks "and if not?" up to
+4. **"And if nobody is under the mouse?"** Choose "Your target, as usual". The wizard asks "and if not?" up to
    three times, so a heal can go to the unit under the mouse, then your target, then you.
-5. **Who is it for?** Asked only when the game doesn't say. Shadow Bolt is for enemies, so this question is
+5. **"Who is it for?"** Asked only when the game doesn't say. Shadow Bolt is for enemies, so this question is
    skipped. For an item, or a spell that can go to both, choose friends, enemies or anyone.
-6. **Should the macro do something else while you hold Shift, Ctrl or Alt?** Skip it for now. Pick a key, and
+6. **"Should the macro do something else while you hold Shift, Ctrl or Alt?"** Skip it for now. Pick a key, and
    the next questions ask what that key casts, and where.
-7. **Should the macro work only at certain times?** In combat or out of it, in stealth, in a group, with your
+7. **"Should the macro work only at certain times?"** In combat or out of it, in stealth, in a group, with your
    pet out, in a form. Skip it for now.
-8. **Would you like to add anything else?** Stop your cast first, use a trinket, start auto attack, say
+8. **"Would you like to add anything else?"** Stop your cast first, use a trinket, start auto attack, say
    something in chat. Skip it for now.
-9. **Almost done: name your macro.** Type `Bolt MO` and choose who keeps it: all your characters or only this
-   one. **Create macro**.
+9. **"Almost done: name your macro"**. Type `Bolt MO` and choose who keeps it: all your characters or only this
+   one. "Create macro".
 
-**< Back** goes back with your answers kept, **Next >** goes on with the one chosen. The macro opens in the
+"< Back" goes back with your answers kept, "Next >" goes on with the one chosen. The macro opens in the
 editor, ready to put on a bar.
 
 ### All options
@@ -153,14 +176,14 @@ The form has the same choices as the questions, each in its own row:
 
 | Row | What it sets | In the macro |
 |---|---|---|
-| **Command** | what the macro does: a spell or item, a list in turn, one at random, target, focus, assist, pet, mount, gear | `/cast`, `/castsequence`, `/target`... |
-| **Cast** / **Use** | the spell or item: a few letters, or the first letters of its words in capitals (`SB`) | `Shadow Bolt` |
-| **On** | on whom, up to three in order: as usual, your target, mouseover, focus, yourself, a party member, at the cursor... | `[@mouseover][]` |
-| **Only** | friends, enemies or anyone; **Alive only** | `harm`, `help`, `nodead` |
-| **With a key held** | for Shift, Ctrl, Alt (Cmd on a Mac): another spell, or the same on someone else | `[mod:shift]...;` |
-| **When** | only in or out of combat, in stealth, in a group, with your pet, in a form, and what it does otherwise | `[combat]` |
-| **Also** | stop your cast first, a trinket, start attack, leave your form, cancel a buff, a chat line | `/stopcasting`, `/use 13` |
-| **Name** and **Tab** | the macro's name, and General or Character | |
+| "Command" | what the macro does: a spell or item, a list in turn, one at random, target, focus, assist, pet, mount, gear | `/cast`, `/castsequence`, `/target`... |
+| "Cast" / "Use" | the spell or item: a few letters, or the first letters of its words in capitals (`SB`) | `Shadow Bolt` |
+| "On" | on whom, up to three in order: as usual, your target, mouseover, focus, yourself, a party member, at the cursor... | `[@mouseover][]` |
+| "Only" | friends, enemies or anyone; "Alive only" | `harm`, `help`, `nodead` |
+| "With a key held" | for Shift, Ctrl, Alt (Cmd on a Mac): another spell, or the same on someone else | `[mod:shift]...;` |
+| "When" | only in or out of combat, in stealth, in a group, with your pet, in a form, and what it does otherwise | `[combat]` |
+| "Also" | stop your cast first, a trinket, start attack, leave your form, cancel a buff, a chat line | `/stopcasting`, `/use 13` |
+| "Name" and "Tab" | the macro's name, and General or Character | |
 
 A few of what you can get:
 
@@ -174,13 +197,13 @@ A few of what you can get:
 
 ### A macro you already have
 
-Open a macro and press **Wizard** above its text. The wizard opens with its answers filled in. Change what you
-like with a few clicks, then **Put in editor**: the new text goes into the editor, and **Save** keeps it
+Open a macro and press "Wizard". The wizard opens with its answers filled in. Change what you
+like with a few clicks, then "Put in editor": the new text goes into the editor, and "Save" keeps it
 (**Ctrl+Z** takes it back). It works for any macro the wizard could have made, also one typed by hand or taken
 from a guide. If the wizard would write some lines its own way, or has no place for them (`/run`, a second
-`/cast`), it says so before it opens, and the window lists them under **lines will change**.
+`/cast`), it says so before it opens, and the window lists them under "lines will change".
 
-## 4. How a macro line reads
+## 5. How a macro line reads
 
 <p align="center"><img src="guide/anatomy-en.svg" width="860" alt="The parts of a macro line"></p>
 
@@ -200,7 +223,7 @@ from a guide. If the wizard would write some lines its own way, or has no place 
 A line that starts with `#` is not a command but a setting. `#showtooltip` makes the macro show the tooltip of
 the spell it would cast, and its icon too while the macro's icon is the question mark.
 
-## 5. How the game picks what to do
+## 6. How the game picks what to do
 
 On each line, the game reads the choices from left to right and takes **the first one whose conditions are
 all true**. The rest of that line is skipped. Then it goes on to the next line.
@@ -213,7 +236,7 @@ Most spells start the global cooldown, the short pause after a cast. **One press
 Lines after it still run if they don't need the cooldown: `/startattack`, `/use` for a trinket, a chat
 message.
 
-## 6. What macros can do
+## 7. What macros can do
 
 | What | Commands | Example |
 |---|---|---|
@@ -236,7 +259,7 @@ message.
 Type `/` in the MacroSense editor to see every command your game has, addons' too. Point at a command to read
 what it does.
 
-## 7. Conditions and targets
+## 8. Conditions and targets
 
 The conditions you will use most. Each of them works the other way round with `no` in front: `nocombat`,
 `nomod`, `nodead`.
@@ -273,18 +296,18 @@ The units for `@`:
 
 Type `[` in the editor and every condition comes up; after `[@`, every unit. Point at one to read what it means.
 
-## 8. What macros can't do
+## 9. What macros can't do
 
 - **Think for you in combat.** A macro can't check your health, a cooldown or a buff's time and choose by that.
   It reads only what the conditions above can say.
-- **Cast several spells at once.** One spell with the global cooldown per press (see section 5).
+- **Cast several spells at once.** One spell with the global cooldown per press (see section 6).
 - **Press itself.** Every cast needs your key press or click.
-- **Be longer than 255 characters.** MacroSense counts them at the bottom; **Shorten** at the top writes the same
+- **Be longer than 255 characters.** MacroSense counts them as you type; "Shorten" writes the same
   macro in fewer.
 - **Cast spells from `/run`.** `/run` and `/script` run small programs: they can show text or change game
   settings, but can't cast a spell or target anyone.
 
-## 9. Ready-made macros
+## 10. Ready-made macros
 
 Copy any of these into a new macro and change the spell names to yours.
 
@@ -341,21 +364,21 @@ Without `!`, a second press would stop the shooting.
 /dismount [mounted,noflying]
 ```
 
-Guides on Wowhead or Icy Veins write macros as plain text. Paste them with **Share > Import a code or text**,
+Guides on Wowhead or Icy Veins write macros as plain text. Paste them with "Share > Import a code or text",
 and MacroSense makes the macros for you.
 
-## 10. MacroSense helps along the way
+## 11. MacroSense helps along the way
 
 - **Autocomplete**: commands, conditions, units, your spells and items as you type. `SWP` finds Shadow Word:
   Pain.
-- **Live preview**: what each line would do right now, changing as you hold keys or change target.
+- "Live preview": what each line would do right now, changing as you hold keys or change target.
 - **Explanations**: point at a line's number to read it in plain words, at a word for what it means.
 - **Error checks**: mistakes underlined, a one-click fix for the clear ones, a warning for a spell you can't cast
   now.
-- **Shorten**: the same macro in fewer characters.
-- **History**, **Trash**, **Backups**: earlier texts, deleted macros and saved copies of all of them.
-- **Share**: a code to send a macro to a friend, or a link in chat.
-- **Wizard** above the text: change a macro with the wizard's questions.
+- "Shorten": the same macro in fewer characters.
+- "History", "Trash", "Backups": earlier texts, deleted macros and saved copies of all of them.
+- "Share": a code to send a macro to a friend, or a link in chat.
+- "Wizard": change a macro with the wizard's questions.
 
 ### Typing less: a few letters find the word
 
