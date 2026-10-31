@@ -56,12 +56,12 @@ ns.locales.uk = {
         .. "nobody. Swap in any spell of yours."] =
         "Зробімо макрос, який кастує Shadow Bolt у ворога під мишею, а якщо там нікого немає — у вашу ціль. Замість "
         .. "Shadow Bolt можна взяти будь-яке своє заклинання.",
-    ["Pick the Character tab and press New under the list. The new macro already has #showtooltip on its first line, "
-        .. "and the cursor waits on the second."] =
-        "Виберіть вкладку «Персонаж» і натисніть «Новий» під списком. У новому макросі вже є #showtooltip у першому "
-        .. "рядку, а курсор стоїть на другому.",
-    ["Type a name at the top, such as Bolt MO (MO for mouseover), and press Tab."] =
-        "Угорі введіть назву, наприклад Bolt MO (MO — це mouseover, «під мишею»), і натисніть Tab.",
+    ["Pick the \"Character\" tab and press \"New\". The new macro already has #showtooltip on its first line, and "
+        .. "the cursor waits on the second."] =
+        "Виберіть вкладку «Персонаж» і натисніть «Новий». У новому макросі вже є #showtooltip у першому рядку, а "
+        .. "курсор стоїть на другому.",
+    ["Type a name, such as Bolt MO (MO for mouseover), and press Tab."] =
+        "Введіть назву, наприклад Bolt MO (MO — це mouseover, «під мишею»), і натисніть Tab.",
     ["Type /ca and take /cast from the list with Tab. Type [@ and pick mouseover, then type ,harm and ]. Then a few "
         .. "letters of the spell, and pick it."] =
         "Наберіть /ca і вставте /cast зі списку клавішею Tab. Наберіть [@ і виберіть mouseover, потім наберіть ,harm "
@@ -74,22 +74,22 @@ ns.locales.uk = {
         .. "line in plain words."] =
         "Біля рядка редактор показує, що той зробив би прямо зараз. Наведіть мишу на номер рядка, щоб прочитати весь "
         .. "рядок простими словами.",
-    ["Press Save, then drag the macro from the list onto an action bar. Done."] =
+    ["Press \"Save\", then drag the macro from the list onto an action bar. Done."] =
         "Натисніть «Зберегти» і перетягніть макрос зі списку на панель дій. Готово.",
     ["New macro"] = "Новий макрос",
     ["The wizard"] = "Майстер",
-    ["You don't have to write anything: New (Wizard) under the list makes the macro for you."] =
-        "Писати нічого не обов'язково: «Майстер» під списком зробить макрос за вас.",
+    ["You don't have to write anything: \"New (Wizard)\" makes the macro for you."] =
+        "Писати нічого не обов'язково: «Майстер» зробить макрос за вас.",
     ["Step by step, it asks one question at a time: what the macro should do, which spell, on whom, and if not, on "
-        .. "whom then, what Shift, Ctrl or Alt change, when it works. All options in its title bar shows the whole "
-        .. "form at once instead."] =
+        .. "whom then, what Shift, Ctrl or Alt change, when it works. \"All options\" shows the whole form at once "
+        .. "instead."] =
         "Покроково він ставить по одному питанню: що має робити макрос, яке заклинання, на кого, а якщо ні — то на "
-        .. "кого тоді, що змінюють Shift, Ctrl чи Alt, коли він працює. «Усі параметри» в його заголовку натомість "
-        .. "показують усю форму одразу.",
-    ["The macro grows at the bottom of the wizard as you answer. Create macro saves it and opens it in the editor."] =
-        "Поки ви відповідаєте, макрос з'являється внизу майстра. «Створити» зберігає його й відкриває в редакторі.",
-    ["To change a macro you have with the same questions, open it and press Wizard above its text."] =
-        "Щоб змінити наявний макрос тими самими питаннями, відкрийте його й натисніть «У майстрі» над текстом.",
+        .. "кого тоді, що змінюють Shift, Ctrl чи Alt, коли він працює. «Усі параметри» натомість показують усю "
+        .. "форму одразу.",
+    ["The macro grows in the wizard as you answer. \"Create macro\" saves it and opens it in the editor."] =
+        "Поки ви відповідаєте, макрос з'являється в майстрі. «Створити» зберігає його й відкриває в редакторі.",
+    ["To change a macro you have with the same questions, open it and press \"Wizard\"."] =
+        "Щоб змінити наявний макрос тими самими питаннями, відкрийте його й натисніть «У майстрі».",
     ["Open the wizard"] = "Відкрити майстра",
     ["How a line reads"] = "Як читається рядок",
     ["The command: what to do. /cast casts a spell, /use uses an item."] =
@@ -147,16 +147,16 @@ ns.locales.uk = {
     ["Press itself"] = "Натискатися самостійно",
     ["Every cast needs your key press or click."] = "Кожен каст потребує вашого натискання клавіші чи клацання.",
     ["Be long"] = "Бути довгим",
-    ["255 characters at most. Shorten at the top writes the same macro in fewer."] =
-        "Щонайбільше 255 символів. «Скоротити» вгорі записує той самий макрос коротше.",
+    ["255 characters at most. \"Shorten\" writes the same macro in fewer."] =
+        "Щонайбільше 255 символів. «Скоротити» записує той самий макрос коротше.",
     ["Cast from /run"] = "Кастувати з /run",
     ["/run and /script run small programs: they can show text or change game settings, but can't cast a spell or "
         .. "target anyone."] =
         "/run і /script запускають маленькі програми: вони можуть показати текст чи змінити налаштування гри, але "
         .. "не можуть кастувати заклинання чи брати когось у ціль.",
     ["Ready-made macros"] = "Готові макроси",
-    ["Create puts the macro into the tab that is open, under a free name, and opens it. Change the spell names to "
-        .. "yours."] =
+    ["\"Create\" puts the macro into the tab that is open, under a free name, and opens it. Change the spell names "
+        .. "to yours."] =
         "«Створити» додає макрос у відкриту вкладку під вільною назвою й відкриває його. Замініть назви заклинань на "
         .. "свої.",
     ["Heal whoever is under the mouse; if nobody, your target if it is a friend; if not, you:"] =
@@ -190,8 +190,8 @@ ns.locales.uk = {
         .. "браузері:",
     -- Practice (Practice.lua, HelpWindow)
     ["Practice"] = "Практика",
-    ["A few tasks with your own spells. Write each macro in the editor: press New there, write it, then press Check "
-        .. "here. Answer shows one way to write it."] =
+    ["A few tasks with your own spells. Write each macro in the editor: press \"New\" there, write it, then press "
+        .. "\"Check\" here. \"Answer\" shows one way to write it."] =
         "Кілька завдань із вашими власними заклинаннями. Пишіть кожен макрос у редакторі: натисніть там «Новий», "
         .. "напишіть його, а потім натисніть «Перевірити» тут. «Відповідь» показує один зі способів його написати.",
     ["The tasks need a spell of yours for enemies. Learn one, then open this section again."] =
