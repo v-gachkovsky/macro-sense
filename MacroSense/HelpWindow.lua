@@ -153,7 +153,8 @@ local function Sections()
                 { L["Cast at once"], L["One spell with the global cooldown per press."] },
                 { L["Press itself"], L["Every cast needs your key press or click."] },
                 { L["Be long"], L["255 characters at most. Shorten at the top writes the same macro in fewer."] },
-                { L["Cast from /run"], L["Lua in a macro can't cast or target."] },
+                { L["Cast from /run"], L["/run and /script run small programs: they can show text or change game "
+                    .. "settings, but can't cast a spell or target anyone."] },
             } },
         } },
         { L["Ready-made macros"], {
