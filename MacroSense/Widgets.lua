@@ -227,6 +227,7 @@ end
 -- Menus: one shared list frame for dropdowns and menu buttons
 ------------------------------------------------------------------------
 local MENU_ROWS = 20 -- rows a menu shows at a time; the wheel and its scroll bar go through the rest
+local MENU_MAX_W = 340 -- a longer item goes on to a second line
 local menu = CreateFrame("Frame", "MacroSenseMenu", UIParent, "BackdropTemplate")
 menu:SetFrameStrata("FULLSCREEN_DIALOG")
 menu:SetClampedToScreen(true)
@@ -243,8 +244,7 @@ local function MenuRow(i)
     r.bg:SetAllPoints()
     r.text = ns.Text(r, 12)
     r.text:SetPoint("LEFT", 8, 0)
-    r.text:SetPoint("RIGHT", -8, 0)
-    r.text:SetWordWrap(false)
+    r.text:SetWordWrap(true)
     -- An x at the end of a row whose item can be removed (item.onRemove).
     r.remove = ns.RowButton(r, "x", "invalid", function(on) r.bg:SetShown(on or r.current) end,
         function() return r.item.removeTip end, function()
@@ -278,20 +278,26 @@ menu:SetScript("OnUpdate", function(self)
     end
 end)
 
--- The rows show the items from `menu.offset` on.
+-- The rows show the items from `menu.offset` on, each as high as its text: a long one on two lines.
 local function FillMenu()
+    local y = 2
     for i, r in ipairs(menu.rows) do
         local item = menu.items[menu.offset + i]
         r:SetShown(i <= MENU_ROWS and item ~= nil)
-        if item then
+        if item and i <= MENU_ROWS then
             r.item, r.current = item, item.current
             r.bg:SetShown(r.current)
+            r.text:SetWidth(menu.textWidth - (item.onRemove and 16 or 0))
             r.text:SetText(item.name)
             r.text:SetAlpha(item.disabled and 0.45 or 1)
             r.remove:SetShown(item.onRemove ~= nil)
-            r.text:SetPoint("RIGHT", item.onRemove and -24 or -8, 0)
+            local h = math.max(20, math.ceil(r.text:GetStringHeight()) + 6)
+            r:SetHeight(h)
+            r:SetPoint("TOPLEFT", 2, -y)
+            y = y + h
         end
     end
+    menu:SetHeight(y + 2)
     if menu.bar then menu.bar:SetPosition(menu.offset) end
 end
 
@@ -320,16 +326,18 @@ local function OpenMenu(owner, items, width, up, right)
     end
     local scrolls = #items > MENU_ROWS
     menu.bar:SetRange(#items - shown, shown)
-    -- As wide as the longest row, in any language.
-    local w = math.max(width, 180)
-    for i, item in ipairs(items) do
-        menu.rows[1].text:SetText(item.name)
-        w = math.max(w, menu.rows[1].text:GetStringWidth() + (item.onRemove and 32 or 16))
+    -- As wide as the longest row, in any language, up to MENU_MAX_W: the longer ones wrap.
+    local w, text = math.max(width, 180), menu.rows[1].text
+    local measure = text.GetUnboundedStringWidth or text.GetStringWidth
+    for _, item in ipairs(items) do
+        text:SetText(item.name)
+        w = math.max(w, measure(text) + (item.onRemove and 32 or 16))
     end
-    FillMenu()
+    w = math.min(w, math.max(width, MENU_MAX_W))
     for _, r in ipairs(menu.rows) do r:SetPoint("RIGHT", menu, "RIGHT", scrolls and -12 or -2, 0) end
     menu:SetWidth(w + (scrolls and 10 or 0))
-    menu:SetHeight(shown * 20 + 4)
+    menu.textWidth = w - 16
+    FillMenu()
     menu:ClearAllPoints()
     local side = right and "RIGHT" or "LEFT"
     if up then

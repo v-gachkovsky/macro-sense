@@ -149,11 +149,10 @@ function Spellbook.Rows(kit, journal)
     return rows
 end
 
--- The choices of a fresh form: harmful spells at the enemy under the mouse, or the target; helpful ones the same at
--- friends; /startattack for the classes that fight in melee; /stopcasting for interrupts; the pet attacks the
+-- The choices of a fresh form: spells at your target, as on the action bars; /startattack for the classes that fight in melee; /stopcasting for interrupts; the pet attacks the
 -- enemy under the mouse, or the target, and follows with Shift.
 function Spellbook.Fresh(kit)
-    return { picked = {}, units = { harm = "mouseover", help = "mouseover" }, unitOf = {}, join = {}, lower = {},
+    return { picked = {}, units = { harm = "target", help = "target" }, unitOf = {}, join = {}, lower = {},
         startattack = MELEE[kit.class or ""] == true, stopcasting = true, bars = true,
         pet = kit.pet and { none = "attack", shift = "follow" } or nil, petMouseover = true }
 end

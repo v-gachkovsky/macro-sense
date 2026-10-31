@@ -2367,7 +2367,9 @@ do
         and row("Frostbolt").checked and row("Berserking").state == "offer" and not row("Berserking").checked)
 
     local choices = B.Fresh(kit)
-    check("book: a mage gets no /startattack at first; no pet", choices.startattack == false and choices.pet == nil)
+    check("book: a mage gets no /startattack at first; no pet; spells at the target", choices.startattack == false
+        and choices.pet == nil and choices.units.harm == "target" and choices.units.help == "target")
+    choices.units = { harm = "mouseover", help = "mouseover" }
     for _, name in ipairs({ "Frostbolt", "Frost Nova", "Counterspell", "Polymorph", "Flash Heal" }) do
         choices.picked[name] = true
     end

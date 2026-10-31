@@ -16,6 +16,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   into the character's tab and onto the action bars in place of their spells. Spells that some macro casts
   already are left out, and next time only the spells you learned since are checked.
 
+### Changed
+- A long choice in a drop-down list goes on to a second line instead of being cut off.
+
 ### Fixed
 - Classic: after you learn a new rank of a spell, a macro that casts it with no rank (`/cast Shadow Bolt`) kept
   showing and casting the old one until you edited it. MacroSense now saves such macros again by itself, after

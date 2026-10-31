@@ -141,7 +141,7 @@ function Frame:GetNumLines()
     return 1
 end
 function Frame:GetStringHeight()
-    return (select(2, tostring(self.text):gsub("\n", "")) + 1) * rowHeight(self)
+    return math.max(select(2, tostring(self.text):gsub("\n", "")) + 1, self:GetNumLines()) * rowHeight(self)
 end
 function Frame:SetPoint(...) self.point = { ... } end
 function Frame:GetLeft() return self.left end
@@ -4182,7 +4182,7 @@ do
     local rows = Rows()
     check("backups: an x on each backup", not rows[1].remove:IsShown() and rows[2].remove:IsShown()
         and rows[#rows].remove:IsShown())
-    check("backups: the name stops before the x", rows[1].text.point[2] == -8 and rows[2].text.point[2] == -24)
+    check("backups: the name stops before the x", rows[1].text.width - rows[2].text.width == 16)
     tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(rows[2].remove, "OnEnter")
@@ -6191,8 +6191,8 @@ do
     end
     check("book window: /ms book opens it, a row per spell", W.IsShown() and rows().Frostbolt ~= nil
         and rows()["Fire Blast"] ~= nil)
-    check("book window: Frostbolt at the mouseover enemy, else the target", planned().Frostbolt
-        == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", planned().Frostbolt)
+    check("book window: Frostbolt at the target", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
+        planned().Frostbolt)
     check("book window: a warlock gets a macro for the pet", planned().Pet ~= nil, planned().Pet)
     local tip = {}
     local addLine = GameTooltip.AddLine
@@ -6202,7 +6202,7 @@ do
     end
     GameTooltip.AddLine = addLine
     check("book window: a spell's macro under the mouse", tip[2] == 'Macro "Frostbolt":'
-        and tip[4] == "/cast [@mouseover,harm,nodead][] Frostbolt", table.concat(tip, " | "))
+        and tip[4] == "/cast Frostbolt", table.concat(tip, " | "))
 
     local names = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end
@@ -6228,6 +6228,22 @@ do
     actions[7], gameSpells[116], ns.char.spellbook = nil, nil, nil
     C_SpellBook.GetNumSpellBookSkillLines, C_SpellBook.GetSpellBookSkillLineInfo = lines, line
     ns.InvalidateSources("spells")
+end
+
+-- A menu as wide as its longest item, up to 340: a longer one goes on to a second line, its row as high.
+do
+    wrapLines = true
+    local long = string.rep("word ", 60)
+    local d = ns.Dropdown(UIParent, 120, function()
+        return { { key = "a", name = "Short" }, { key = "b", name = long } }
+    end, function() return "a" end, function() end)
+    Fire(d, "OnClick")
+    local rows = MacroSenseMenu.rows
+    check("menu: at most 340 wide, the long item wrapped and its row higher", MacroSenseMenu.width == 340
+        and rows[1].height == 20 and rows[2].height > 20 and rows[2].point[3] == -22,
+        tostring(MacroSenseMenu.width) .. " " .. tostring(rows[2].height))
+    MacroSenseMenu:Hide()
+    wrapLines = false
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

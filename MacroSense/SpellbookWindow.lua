@@ -209,13 +209,19 @@ function SpellbookWindow.Create()
     if ns.Window.RefreshList then ns.Window.RefreshList() end
 end
 
--- A dropdown on the right with its label before it.
-local function Labeled(parent, label, y, width, getItems, getValue, onSelect, name)
+-- A dropdown on the right with its label before it; with `above`, the label over it and the dropdown as wide as
+-- the column, for long choices.
+local function Labeled(parent, label, y, width, getItems, getValue, onSelect, name, above)
     local text = ns.Text(parent, 12)
     text:SetPoint("TOPLEFT", 0, y - 4)
     text:SetText(label)
     local d = ns.Dropdown(parent, width, getItems, getValue, onSelect)
-    d:SetPoint("TOPRIGHT", 0, y)
+    if above then
+        d:SetPoint("TOPLEFT", 0, y - 22)
+        d:SetPoint("RIGHT")
+    else
+        d:SetPoint("TOPRIGHT", 0, y)
+    end
     controls[name] = d
     return d
 end
@@ -298,14 +304,14 @@ local function Build()
         function(key)
             choices.units.harm = key
             Refresh()
-        end, "harm")
-    y = y - 30
+        end, "harm", true)
+    y = y - 54
     Labeled(side, L["Helpful spells go to"], y, 150, targets("help"), function() return choices.units.help end,
         function(key)
             choices.units.help = key
             Refresh()
-        end, "help")
-    y = y - 36
+        end, "help", true)
+    y = y - 60
     Check(side, L["Start auto attack with each attack"], y, function() return choices.startattack end,
         function(on) choices.startattack = on end, "startattack")
     y = y - 26
