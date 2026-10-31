@@ -53,7 +53,7 @@ nobody. Swap in any spell of yours.
 
 **Step 1. Open MacroSense.** Type `/ms` in chat, or click the MacroSense button by the minimap.
 
-<p align="center"><img src="guide/shot-1-open.png" width="720" alt="MacroSense open: the list of macros on the left, the editor on the right"></p>
+<p align="center"><img src="guide/shot-1-open-en.png" width="720" alt="MacroSense open: the list of macros on the left, the editor on the right"></p>
 
 On the left is the list of your macros, with the **General** and **Character** tabs. On the right is the
 editor with the open macro.
@@ -68,7 +68,7 @@ Press **Tab** or **Enter** to go on to the text.
 Type `[@` and pick `@mouseover`, then a comma and `harm` (an enemy), then `]`. After the `]`, type a few letters
 of the spell and take it from the list.
 
-<p align="center"><img src="guide/shot-2-autocomplete.png" width="720" alt="Autocomplete offers spells as you type"></p>
+<p align="center"><img src="guide/shot-2-autocomplete-en.png" width="720" alt="Autocomplete offers spells as you type"></p>
 
 Now add `[]` before the spell name. It means "otherwise, as usual". The line becomes:
 
@@ -82,15 +82,15 @@ you point at an enemy, `Shadow Bolt` otherwise. Point at the line's number to re
 A mistake is underlined in red, and the bar at the bottom says what is wrong. A click there fixes it when the fix
 is clear.
 
-<p align="center"><img src="guide/shot-3-preview.png" width="720" alt="Next to the line: what it does right now"></p>
-<p align="center"><img src="guide/shot-3-explain.png" width="720" alt="The line's number explains the whole line"></p>
+<p align="center"><img src="guide/shot-3-preview-en.png" width="720" alt="Next to the line: what it does right now"></p>
+<p align="center"><img src="guide/shot-3-explain-en.png" width="720" alt="The line's number explains the whole line"></p>
 
 **Step 6. Save.** Press **Save**, or **Ctrl+S** (Cmd+S on a Mac).
 
 **Step 7. Put it on a bar.** Drag the macro from the list, or its icon from the top of the editor, onto an action
 bar. Done: press it in game.
 
-<p align="center"><img src="guide/shot-4-bar.png" width="720" alt="The macro dragged onto an action bar"></p>
+<p align="center"><img src="guide/shot-4-bar-en.png" width="720" alt="The macro dragged onto an action bar"></p>
 
 > **The icon.** Leave the question mark as the macro's icon, and the game shows the icon of the spell it would
 > cast, changing with the keys you hold. Pick an icon yourself, and it stays as you picked it.
