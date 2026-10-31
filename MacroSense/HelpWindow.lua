@@ -353,7 +353,8 @@ local function Show(i)
     for j, f in pairs(built) do f:SetShown(j == i) end
     scroll:SetScrollChild(built[i])
     scroll:SetVerticalScroll(0)
-    for j, b in ipairs(navButtons) do b:SetAlpha(j == i and 1 or 0.6) end
+    -- The section shown in the theme's accent color: the mouse lights the others, not this one.
+    for j, b in ipairs(navButtons) do b:SetAccent(j == i) end
     controls.section = sections[i][1]
 end
 

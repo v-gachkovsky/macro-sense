@@ -54,7 +54,8 @@ function ns.Text(parent, size, colorKey)
     return fs
 end
 
--- Flat button. `accent` = filled with the accent color (primary action).
+-- Flat button. `accent` = filled with the accent color (primary action); b:SetAccent(on) changes it (the one
+-- chosen of a few).
 function ns.Button(parent, label, width, onClick, accent)
     local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
     b:SetSize(width or 80, 22)
@@ -76,6 +77,10 @@ function ns.Button(parent, label, width, onClick, accent)
     b:SetScript("OnEnable", function() paint(false) end)
     b:SetScript("OnDisable", function() paint(false) end)
     b:SetScript("OnClick", onClick)
+    function b:SetAccent(on)
+        accent = on
+        paint(false)
+    end
     -- A disabled button still shows its tooltip (it says why it is disabled).
     if b.SetMotionScriptsWhileDisabled then b:SetMotionScriptsWhileDisabled(true) end
     ns.OnStyle(function() paint(false) end)
