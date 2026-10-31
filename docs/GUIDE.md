@@ -70,20 +70,28 @@ of the spell and take it from the list.
 
 <p align="center"><img src="guide/shot-2-autocomplete-en.png" width="720" alt="Autocomplete offers spells as you type"></p>
 
-Now add `[]` before the spell name. It means "otherwise, as usual". The line becomes:
+```
+#showtooltip
+/cast [@mouseover,harm] Shadow Bolt
+```
+
+**Step 5. Check it.** Next to each line the editor says what it would do right now: `Shadow Bolt @mouseover` while
+you point at an enemy, `conditions not met` when you don't.
+
+<p align="center"><img src="guide/shot-3-preview-en.png" width="720" alt="Next to the line: what it does right now"></p>
+
+Point at the line's number to read the whole line in plain words. A mistake is underlined in red, and the bar at
+the bottom says what is wrong. A click there fixes it when the fix is clear.
+
+<p align="center"><img src="guide/shot-3-explain-en.png" width="720" alt="The line's number explains the whole line"></p>
+
+Pointing at nobody, the macro does nothing yet. To cast at your target then, add `[]` before the spell name. It
+means "otherwise, as usual":
 
 ```
 #showtooltip
 /cast [@mouseover,harm][] Shadow Bolt
 ```
-
-**Step 5. Check it.** Next to each line the editor says what it would do right now: `Shadow Bolt @mouseover` while
-you point at an enemy, `Shadow Bolt` otherwise. Point at the line's number to read the whole line in plain words.
-A mistake is underlined in red, and the bar at the bottom says what is wrong. A click there fixes it when the fix
-is clear.
-
-<p align="center"><img src="guide/shot-3-preview-en.png" width="720" alt="Next to the line: what it does right now"></p>
-<p align="center"><img src="guide/shot-3-explain-en.png" width="720" alt="The line's number explains the whole line"></p>
 
 **Step 6. Save.** Press **Save**, or **Ctrl+S** (Cmd+S on a Mac).
 
