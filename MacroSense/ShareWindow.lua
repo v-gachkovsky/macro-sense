@@ -65,6 +65,7 @@ end
 
 local function Build()
     frame = CreateFrame("Frame", "MacroSenseShare", UIParent, "BackdropTemplate")
+    frame:HookScript("OnShow", function() ns.Window.ClearFocus() end) -- the keys come here, not to the editor
     table.insert(UISpecialFrames, "MacroSenseShare") -- Esc closes it
     frame:SetFrameStrata("MEDIUM") -- with the game's windows; below StaticPopup dialogs (unsaved changes are asked)
     frame:SetToplevel(true)

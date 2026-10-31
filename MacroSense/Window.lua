@@ -119,6 +119,15 @@ local function When(t)
 end
 
 -- Like Shorten: the text goes into the editor, Save keeps it, undo takes it back.
+-- Another window of MacroSense opened over the editor: the keys go there, not into the text behind it.
+function Window.ClearFocus()
+    if not frame then return end
+    code.edit:ClearFocus()
+    nameBox:ClearFocus()
+    search:ClearFocus()
+    ns.Popup:Hide()
+end
+
 -- The text in the editor now, saved or not (the guide's practice checks it).
 function Window.Text() return code and code:GetRaw() or "" end
 

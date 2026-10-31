@@ -135,6 +135,7 @@ end
 
 local function Create()
     frame = CreateFrame("Frame", "MacroSenseIconPicker", UIParent, "BackdropTemplate")
+    frame:HookScript("OnShow", function() ns.Window.ClearFocus() end) -- the keys come here, not to the editor
     table.insert(UISpecialFrames, "MacroSenseIconPicker")
     frame:SetFrameStrata("MEDIUM") -- with the game's windows, as the editor
     frame:SetToplevel(true)
