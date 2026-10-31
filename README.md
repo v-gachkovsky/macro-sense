@@ -17,7 +17,9 @@
 
 **New to macros?** [Macros, step by step](docs/GUIDE.md) explains what macros are, what they can do and how to
 make them, with pictures and ready-made macros. In game, **?** in the editor's title bar (or `/ms help`) opens
-the same guide in short, section by section, and **Create** next to a ready-made macro makes it for you.
+the same guide in short, section by section, and **Create** next to a ready-made macro makes it for you. Its
+**Practice** gives tasks with your own spells and class: write the macro in the editor, and **Check** says whether
+it does what the task asks, or what to change.
 
 ## Overview
 

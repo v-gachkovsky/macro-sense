@@ -6017,7 +6017,8 @@ do
     local titles = H.Titles()
     check("guide: it opens on its first section", H.IsShown() and H.Control("section") == "What a macro is",
         H.Control("section"))
-    check("guide: eleven sections", #titles == 11 and titles[11] == "The full guide", #titles)
+    check("guide: twelve sections", #titles == 12 and titles[11] == "Practice" and titles[12] == "The full guide",
+        #titles)
     check("guide: in the layer of the game's windows", MacroSenseHelp.strata == "MEDIUM" and MacroSenseHelp.toplevel)
     local function nav(title)
         for _, o in ipairs(created) do
@@ -6047,6 +6048,29 @@ do
     Fire(H.Control("Open the wizard"), "OnClick")
     check("guide: Open the wizard opens it", MacroSenseWizard:IsShown())
     MacroSenseWizard:Hide()
+    -- Practice: the tasks use your spells; Check reads the editor, Answer shows one way to write it.
+    Fire(nav("Practice"), "OnClick")
+    local checkBtn, result = H.Control("check mouseover"), H.Control("result mouseover")
+    check("guide: practice, a task with your spell", checkBtn ~= nil)
+    local spell = ns.Practice.Kit().harm[1]
+    ns.Window.Make()
+    NextFrame()
+    edit.text = "/cast " .. spell
+    Fire(edit, "OnTextChanged", true)
+    NextFrame()
+    Fire(checkBtn, "OnClick")
+    check("guide: practice, what to change", ns.Highlight.Strip(result.text):find("@mouseover", 1, true) ~= nil
+        and not (ns.db.practice or {}).mouseover, result.text)
+    edit.text = "#showtooltip\n/cast [harm,@mouseover] [] " .. spell
+    Fire(edit, "OnTextChanged", true)
+    NextFrame()
+    Fire(checkBtn, "OnClick")
+    check("guide: practice, right, and kept as done", ns.Highlight.Strip(result.text):find("^Right") ~= nil
+        and ns.db.practice.mouseover == true, result.text)
+    Fire(H.Control("answer mouseover"), "OnClick")
+    check("guide: practice, the answer", ns.Highlight.Strip(result.text):find("[@mouseover,harm][]", 1, true) ~= nil,
+        result.text)
+    ns.Window.Revert()
     Fire(nav("The full guide"), "OnClick")
     local link = H.Control("link")
     check("guide: the full guide's link, in English", link.text

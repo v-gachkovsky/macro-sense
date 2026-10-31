@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -2031,6 +2031,57 @@ do
     env.icon = function() error("the game refuses") end
     check("macro icon: the game refusing changes nothing", M("/use Mystery\n/cast [mod] Kick") == 9)
     ns.sources.spells, ns.sources.items = spells, items
+end
+
+-- Practice: tasks with your own spells, checked by what the macro does, not how it is written.
+do
+    local P = ns.Practice
+    local function ids(kit)
+        local out = {}
+        for _, t in ipairs(P.Tasks(kit)) do out[#out + 1] = t.id end
+        return table.concat(out, " ")
+    end
+    local kit = { harm = { "Shadow Bolt", "Corruption" }, help = {}, interrupt = nil, pet = true }
+    check("practice: the tasks your spells allow", ids(kit) == "mouseover shift sequence pet", ids(kit))
+    check("practice: a healer's", ids({ harm = { "Smite" }, help = { "Flash Heal" }, interrupt = "Silence",
+        pet = false }) == "mouseover interrupt heal")
+    check("practice: no spell for enemies, no task of it", ids({ harm = {}, help = {}, pet = false }) == "")
+    local tasks = {}
+    for _, t in ipairs(P.Tasks({ harm = { "Shadow Bolt", "Corruption" }, help = { "Flash Heal" },
+        interrupt = "Counterspell", pet = true })) do tasks[t.id] = t end
+    check("practice: the task names your spells", tasks.mouseover.goal:find("Shadow Bolt", 1, true) ~= nil
+        and tasks.shift.goal:find("Corruption", 1, true) ~= nil)
+    local all = true
+    for id, t in pairs(tasks) do
+        local ok, said = P.Check(t, t.answer)
+        if not ok then all = false; print("  answer of " .. id .. ": " .. said) end
+    end
+    check("practice: each task's answer is right", all)
+    local function says(id, text) return select(2, P.Check(tasks[id], text)) end
+    check("practice: written otherwise, still right", select(1, P.Check(tasks.mouseover,
+        "/cast [harm,@mouseover] [] shadow bolt")) and select(1, P.Check(tasks.shift,
+        "/cast [@focus,mod:shift] Corruption; Shadow Bolt")))
+    check("practice: nothing written", says("mouseover", "  ") == "Write the macro in the editor first.")
+    check("practice: another spell", says("mouseover", "/cast [@mouseover,harm][] Fireball")
+        == "The macro casts Fireball; the task wants Shadow Bolt.", says("mouseover", "/cast Fireball"))
+    check("practice: no mouseover", says("mouseover", "/cast Shadow Bolt"):find("@mouseover", 1, true) ~= nil)
+    check("practice: no fallback", says("mouseover", "/cast [@mouseover,harm] Shadow Bolt"):find("add []", 1, true)
+        ~= nil)
+    check("practice: no harm", says("mouseover", "/cast [@mouseover][] Shadow Bolt"):find("harm", 1, true) ~= nil)
+    check("practice: no Shift", says("shift", "/cast Shadow Bolt"):find("[mod:shift]", 1, true) ~= nil)
+    check("practice: Shift, not on the focus", says("shift", "/cast [mod:shift] Corruption; Shadow Bolt")
+        :find("@focus", 1, true) ~= nil)
+    check("practice: no /stopcasting", says("interrupt", "/cast [@focus,harm][] Counterspell")
+        :find("/stopcasting", 1, true) ~= nil)
+    check("practice: the list in the other order", says("sequence", "/castsequence reset=target Corruption, Shadow Bolt")
+        :find("Shadow Bolt, then Corruption", 1, true) ~= nil)
+    check("practice: no reset", says("sequence", "/castsequence Shadow Bolt, Corruption"):find("reset=target", 1, true)
+        ~= nil)
+    check("practice: the pet", says("pet", "/petfollow"):find("/petattack", 1, true) ~= nil)
+    check("practice: the heal's order", says("heal", "/cast [@mouseover,help,nodead][@player] Flash Heal")
+        :find("[help]", 1, true) ~= nil)
+    check("practice: not a macro of this kind", says("mouseover", "/run print(1)"):find("not one the task", 1, true)
+        ~= nil)
 end
 
 -- Ukrainian: texts in the chosen language, counts in their three forms, and every translation keeps the %s and

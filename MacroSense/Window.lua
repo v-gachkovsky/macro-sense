@@ -119,6 +119,9 @@ local function When(t)
 end
 
 -- Like Shorten: the text goes into the editor, Save keeps it, undo takes it back.
+-- The text in the editor now, saved or not (the guide's practice checks it).
+function Window.Text() return code and code:GetRaw() or "" end
+
 function Window.Restore(body)
     code:SetRaw(body, #body, true)
     code:SetFocus()

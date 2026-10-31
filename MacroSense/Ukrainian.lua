@@ -184,6 +184,68 @@ ns.locales.uk = {
     ["The full guide, with pictures and more examples, is on GitHub. Copy the link and open it in your browser:"] =
         "Повний гайд з ілюстраціями та іншими прикладами — на GitHub. Скопіюйте посилання й відкрийте його в "
         .. "браузері:",
+    -- Practice (Practice.lua, HelpWindow)
+    ["Practice"] = "Практика",
+    ["A few tasks with your own spells. Write each macro in the editor: press New there, write it, then press Check "
+        .. "here. Answer shows one way to write it."] =
+        "Кілька завдань із вашими власними заклинаннями. Пишіть кожен макрос у редакторі: натисніть там «Новий», "
+        .. "напишіть його, а потім натисніть «Перевірити» тут. «Відповідь» показує один зі способів його написати.",
+    ["The tasks need a spell of yours for enemies. Learn one, then open this section again."] =
+        "Для завдань потрібне ваше заклинання проти ворогів. Вивчіть таке й відкрийте цей розділ знову.",
+    ["Task %d"] = "Завдання %d",
+    ["done"] = "виконано",
+    ["Check"] = "Перевірити",
+    ["Answer"] = "Відповідь",
+    ["One way to write it:"] = "Один зі способів:",
+    ["The macro should cast with /cast."] = "Макрос має кастувати через /cast.",
+    ["The macro casts %s; the task wants %s."] = "Макрос кастує %s, а завдання просить %s.",
+    ["Cast %s at the enemy under your mouse, or at your target when you point at nobody."] =
+        "Кастуйте %s у ворога під мишею, а якщо там нікого немає — у вашу ціль.",
+    ["First, the macro should go to the unit under the mouse: @mouseover."] =
+        "Спершу макрос має йти на того, хто під мишею: @mouseover.",
+    ["When nobody is under the mouse, it should go to your target: add [] after the first brackets."] =
+        "Коли під мишею нікого немає, він має йти у вашу ціль: додайте [] після перших дужок.",
+    ["Add harm next to @mouseover, so the macro casts at the unit under the mouse only when it is an enemy."] =
+        "Додайте harm поруч із @mouseover, щоб макрос кастував у того, хто під мишею, лише коли це ворог.",
+    ["Cast %s as usual, and %s on your focus while you hold Shift."] =
+        "Кастуйте %s як зазвичай, а поки ви тримаєте Shift — %s на ваш фокус.",
+    ["With Shift held, the macro should cast %s: [mod:shift] before it."] =
+        "Із затиснутим Shift макрос має кастувати %s: [mod:shift] перед ним.",
+    ["With Shift held, the macro casts %s; the task wants %s."] =
+        "Із затиснутим Shift макрос кастує %s, а завдання просить %s.",
+    ["With Shift held, %s should go to your focus: @focus."] = "Із затиснутим Shift %s має йти на ваш фокус: @focus.",
+    ["Without Shift, the spell should go to your target, as usual."] =
+        "Без Shift заклинання має йти у вашу ціль, як зазвичай.",
+    ["Stop whatever you are casting, then cast %s at your focus, or at your target when you have no focus."] =
+        "Перервіть те, що кастуєте, а потім кастуйте %s у ваш фокус, а якщо фокуса немає — у вашу ціль.",
+    ["Add /stopcasting on a line before the cast."] = "Додайте /stopcasting окремим рядком перед кастом.",
+    ["First, the macro should go to your focus: @focus."] = "Спершу макрос має йти на ваш фокус: @focus.",
+    ["When you have no focus, it should go to your target: add harm next to @focus, then []."] =
+        "Коли фокуса немає, він має йти у вашу ціль: додайте harm поруч із @focus, а потім [].",
+    ["Cast %s, then %s, one each press, starting over on a new target."] =
+        "Кастуйте %s, потім %s, по одному за натискання, і починайте з початку на новій цілі.",
+    ["The macro should use /castsequence."] = "Макрос має використовувати /castsequence.",
+    ["The list should be %s, then %s, split by a comma."] = "Список має бути таким: %s, потім %s, через кому.",
+    ["It should start over on a new target: reset=target."] =
+        "Він має починатися з початку на новій цілі: reset=target.",
+    ["Send your pet to attack the enemy under your mouse, or your target when you point at nobody."] =
+        "Пошліть улюбленця атакувати ворога під мишею, а якщо там нікого немає — вашу ціль.",
+    ["The macro should send your pet with /petattack."] = "Макрос має посилати улюбленця через /petattack.",
+    ["First, the pet should go to the unit under the mouse: @mouseover."] =
+        "Спершу улюбленець має йти на того, хто під мишею: @mouseover.",
+    ["Add harm next to @mouseover, so the pet goes only for an enemy."] =
+        "Додайте harm поруч із @mouseover, щоб улюбленець ішов лише на ворога.",
+    ["Cast %s on a friend under your mouse; if there is none, on your target if it is a friend; if not, on yourself."] =
+        "Кастуйте %s на друга під мишею; якщо там нікого немає — на вашу ціль, якщо вона друг; інакше — на себе.",
+    ["Then to your target, if it is a friend: [help] with no @, after the first brackets."] =
+        "Потім на вашу ціль, якщо вона друг: [help] без @, після перших дужок.",
+    ["Last, to yourself: [@player]."] = "Останнім — на себе: [@player].",
+    ["Add help to the brackets, so the macro casts only at friends."] =
+        "Додайте help у дужки, щоб макрос кастував лише на друзів.",
+    ["Write the macro in the editor first."] = "Спершу напишіть макрос у редакторі.",
+    ["This macro is not one the task asks for. Start from the task's words, line by line."] =
+        "Це не той макрос, який просить завдання. Почніть зі слів завдання, рядок за рядком.",
+    ["Right: the macro does what the task asks."] = "Правильно: макрос робить те, що просить завдання.",
     ["%s copies it; open it in your browser."] = "%s копіює посилання; відкрийте його в браузері.",
 
     -- Main window: header

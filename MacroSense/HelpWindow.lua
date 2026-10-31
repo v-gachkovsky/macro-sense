@@ -40,6 +40,7 @@ end
 --   { "list", { { head, text } } }   two columns: a short heading and its words
 --   { "button", label, onClick }
 --   { "link" }                       the full guide's link, to copy
+--   { "tasks" }                      the practice tasks with your spells (Practice.lua), each with Check and Answer
 local function Sections()
     local rows = {}
     for _, c in ipairs({ "cast", "use", "castsequence", "castrandom", "stopcasting", "stopmacro", "startattack",
@@ -184,6 +185,11 @@ local function Sections()
             } },
             { "p", L["Tab or Enter takes the highlighted one, Up and Down move through the list, Esc closes it."] },
         } },
+        { L["Practice"], {
+            { "p", L["A few tasks with your own spells. Write each macro in the editor: press New there, write it, "
+                .. "then press Check here. Answer shows one way to write it."] },
+            { "tasks" },
+        } },
         { L["The full guide"], {
             { "p", L["The full guide, with pictures and more examples, is on GitHub. Copy the link and open it in "
                 .. "your browser:"] },
@@ -267,6 +273,52 @@ local function BuildSection(i, section)
             local btn = ns.Button(f, b[2], 160, b[3])
             place(btn, 22)
             controls[b[2]] = btn
+        elseif kind == "tasks" then
+            local tasks = ns.Practice.Tasks(ns.Practice.Kit())
+            if #tasks == 0 then
+                local fs = ns.Text(f, 13, "dim")
+                fs:SetWidth(TEXT_W)
+                fs:SetWordWrap(true)
+                fs:SetText(L["The tasks need a spell of yours for enemies. Learn one, then open this section again."])
+                place(fs, Height(fs))
+            end
+            ns.db.practice = ns.db.practice or {}
+            for n, task in ipairs(tasks) do
+                local head = ns.Text(f, 14)
+                local function mark()
+                    local done = ns.db.practice[task.id]
+                    head:SetText(string.format(L["Task %d"], n)
+                        .. (done and ("  |cff" .. ns.scheme.type .. L["done"] .. "|r") or ""))
+                end
+                mark()
+                place(head, 16, 6)
+                local goal = ns.Text(f, 13)
+                goal:SetWidth(TEXT_W)
+                goal:SetWordWrap(true)
+                goal:SetText(task.goal)
+                place(goal, Height(goal), 8)
+                local result = ns.Text(f, 12, "dim")
+                result:SetWidth(TEXT_W)
+                result:SetWordWrap(true)
+                local check = ns.Button(f, L["Check"], 100, function()
+                    local ok, said = ns.Practice.Check(task, ns.Window.Text())
+                    result:SetText("|cff" .. (ok and ns.scheme.type or ns.scheme.warning) .. said .. "|r")
+                    if ok then
+                        ns.db.practice[task.id] = true
+                        mark()
+                    end
+                end)
+                local answer = ns.Button(f, L["Answer"], 100, function()
+                    result:SetText(L["One way to write it:"] .. "\n"
+                        .. ns.Highlight.Colorize(task.answer, ns.TokenColors(ns.scheme)))
+                end)
+                answer:SetPoint("LEFT", check, "RIGHT", 8, 0)
+                place(check, 22, 6)
+                result:SetFont(CodeFont(), 12, "")
+                place(result, 64, 14)
+                controls["check " .. task.id], controls["answer " .. task.id] = check, answer
+                controls["result " .. task.id] = result
+            end
         elseif kind == "link" then
             local link = ns.Input(f, TEXT_W)
             local function select()
