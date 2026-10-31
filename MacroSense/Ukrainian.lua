@@ -1587,4 +1587,5 @@ ns.locales.uk = {
     ["macros made: %d; put on the action bars: %d"] = "створено макросів: %d; поставлено на панелі: %d",
     ["could not make the macro \"%s\" (the game said: %s)"] = "не вдалося створити макрос «%s» (гра відповіла: %s)",
     ["its text: %s"] = "його текст: %s",
+    ["making %d macros..."] = "створюю макроси: %d...",
 }

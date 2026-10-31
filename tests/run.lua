@@ -2421,7 +2421,9 @@ do
         and petMacros[1].body == "/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]\n"
         .. "/petfollow [mod:shift]\n/petstay [mod:ctrl]", petMacros[1].body)
 
-    B.Remember(journal, rows, { Frostbolt = { name = "Frostbolt", body = "x" } })
+    B.Remember(journal, rows, { Frostbolt = { name = "Frostbolt", body = "x" } }, { Polymorph = true })
+    check("book: a spell whose macro the game didn't make is not seen", journal.seen.Polymorph == nil
+        and journal.seen["Frost Nova"] == true)
     kit.spells[#kit.spells + 1] = spell("Blink", "self")
     rows = B.Rows(kit, journal)
     check("book: the next time, a macro made and gone is deleted", row("Frostbolt").state == "deleted"

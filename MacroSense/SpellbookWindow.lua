@@ -177,41 +177,64 @@ local function SlotsWith(spell)
     return out
 end
 
--- The planned macros into the character's tab; each spell's action buttons get its macro, if asked; what was made
--- is remembered for the next time.
+-- The planned macros into the character's tab, one at a time: the game makes only a few at once and drops the rest
+-- without a word. One it hasn't made is tried again a second later, then told in chat. Then each spell's action
+-- buttons get its macro, if asked, and what was made is remembered for the next time.
+local STEP, RETRY = 0.3, 1
 function SpellbookWindow.Create()
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     Refresh()
     if #macros == 0 or #macros > kit.free or next(problems) then return end
-    local made, names, placed = {}, {}, 0
-    for _, m in ipairs(macros) do
-        local name = ns.Window.FreeName(m.name)
-        local ok, answer = pcall(CreateMacro, name, NEW_ICON, m.body, true)
+    local queue, offered, book, bars = macros, rows, journal, choices.bars
+    local made, names, failed = {}, {}, {}
+    SpellbookWindow.Close()
+    ns.Print("making %d macros...", #queue)
+
+    local function finish()
+        -- After all are made: the game sorts the macros by name, their numbers change with each new one.
+        local placed = 0
+        if bars and not InCombatLockdown() then
+            for _, n in ipairs(names) do
+                local spell = n.macro.spells[1]
+                if spell then
+                    local slots = SlotsWith(spell)
+                    ns.ActionBars.Place(GetMacroIndexByName(n.name), slots)
+                    placed = placed + #slots
+                end
+            end
+        end
+        ns.Spellbook.Remember(book, offered, made, failed)
+        ns.Print("macros made: %d; put on the action bars: %d", #names, placed)
+        if ns.Window.RefreshList then ns.Window.RefreshList() end
+    end
+
+    local function step(i, again)
+        local m = queue[i]
+        if not m then return finish() end
+        if InCombatLockdown() then
+            ns.Print("macros cannot be changed in combat")
+            for j = i, #queue do
+                for _, spell in ipairs(queue[j].spells) do failed[spell] = true end
+            end
+            return finish()
+        end
+        local name = again or ns.Window.FreeName(m.name)
+        local _, answer = pcall(CreateMacro, name, NEW_ICON, m.body, true)
         -- Made is what the game has now, whatever it answered: the answer differs between its clients.
         local index = GetMacroIndexByName(name)
         if index and index > 0 then
             names[#names + 1] = { name = name, macro = m }
             for _, spell in ipairs(m.spells) do made[spell] = { name = name, body = m.body } end
+        elseif not again then
+            return C_Timer.After(RETRY, function() step(i, name) end)
         else
             ns.Print("could not make the macro \"%s\" (the game said: %s)", name, tostring(answer))
             if ns.db.debug then ns.Print("its text: %s", (m.body:gsub("\n", " | "))) end
+            for _, spell in ipairs(m.spells) do failed[spell] = true end
         end
+        C_Timer.After(STEP, function() step(i + 1) end)
     end
-    -- After all are made: the game sorts the macros by name, their numbers change with each new one.
-    if choices.bars then
-        for _, n in ipairs(names) do
-            local spell = n.macro.spells[1]
-            if spell then
-                local slots = SlotsWith(spell)
-                ns.ActionBars.Place(GetMacroIndexByName(n.name), slots)
-                placed = placed + #slots
-            end
-        end
-    end
-    ns.Spellbook.Remember(journal, rows, made)
-    ns.Print("macros made: %d; put on the action bars: %d", #names, placed)
-    SpellbookWindow.Close()
-    if ns.Window.RefreshList then ns.Window.RefreshList() end
+    step(1)
 end
 
 -- A dropdown on the right with its label before it; with `above`, the label over it and the dropdown as wide as

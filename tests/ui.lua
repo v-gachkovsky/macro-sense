@@ -6207,10 +6207,16 @@ do
     local names = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end
     local count = #W.Planned()
-    -- Some clients answer nothing, though the macro is made: it counts, and goes on the bars.
-    local answers = CreateMacro
-    CreateMacro = function(...) answers(...) end
+    -- Some clients answer nothing, though the macro is made: it counts, and goes on the bars. And the game makes
+    -- only a few at once, dropping the rest without a word: one at a time, they are all made.
+    local answers, at, inARow = CreateMacro, nil, 0
+    CreateMacro = function(...)
+        inARow = at == now and inARow + 1 or 1
+        at = now
+        if inARow <= 3 then answers(...) end
+    end
     Fire(W.Control("create"), "OnClick")
+    Wait(5)
     CreateMacro = answers
     local made = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do
@@ -6236,8 +6242,9 @@ do
         return createMacro(name, ...)
     end
     Fire(W.Control("create"), "OnClick")
+    Wait(5)
     CreateMacro = createMacro
-    local said = printed[printedBefore + 1] or ""
+    local said = printed[printedBefore + 2] or ""
     check("book window: a refused macro is told by name", said:find('could not make the macro "Fire Blast"', 1, true)
         ~= nil, said)
     W.Open()

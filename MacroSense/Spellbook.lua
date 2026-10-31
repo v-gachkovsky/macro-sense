@@ -245,9 +245,12 @@ function Spellbook.Plan(kit, choices)
 end
 
 -- After the macros are made: every spell offered is seen, and those made remembered with their macro as written
--- (`made`: spell -> { name, body }, the names the game took).
-function Spellbook.Remember(journal, rows, made)
-    for _, row in ipairs(rows) do journal.seen[row.spell.name] = true end
+-- (`made`: spell -> { name, body }, the names the game took). A spell whose macro the game didn't make (`failed`)
+-- is offered again as before.
+function Spellbook.Remember(journal, rows, made, failed)
+    for _, row in ipairs(rows) do
+        if not (failed and failed[row.spell.name]) then journal.seen[row.spell.name] = true end
+    end
     for spell, m in pairs(made) do journal.made[spell] = { name = m.name, body = m.body } end
 end
 
