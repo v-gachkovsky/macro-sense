@@ -64,8 +64,9 @@ A macro is at most **255 characters** long. That is about five or six lines.
 8. The macro's text, with line numbers. Point at a number to read the line in plain words, and at a word to see
    what it means.
 9. The live preview: what each line would do right now.
-10. Where the cursor is, how long the macro is (255 characters at most), and what is wrong with it, if anything.
-    A click there fixes a clear mistake.
+10. The status bar: where the cursor is, how long the macro is (255 characters at most), "Unsaved changes", and
+    what is wrong with the macro, if anything. A click on a mistake fixes it when the fix is clear; point at it to
+    see them all.
 11. "Revert" brings back the saved text, "Save" saves the macro.
 12. "Live preview" on or off, the font and its size, the colors, the language, and "?" for the macro guide.
 
