@@ -101,7 +101,8 @@ bar. Done: press it in game.
 <p align="center"><img src="guide/shot-4-bar-en.png" width="720" alt="The macro dragged onto an action bar"></p>
 
 > **The icon.** Leave the question mark as the macro's icon, and the game shows the icon of the spell it would
-> cast, changing with the keys you hold. Pick an icon yourself, and it stays as you picked it.
+> cast. It changes as whatever the macro's conditions check changes: you hold a modifier key, point at a target,
+> set a focus, and so on. Pick an icon yourself, and it stays as you picked it.
 
 ## 3. The same macro with the wizard
 
