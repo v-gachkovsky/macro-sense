@@ -30,6 +30,7 @@ Backups.lua
 Wizard.lua
 WizardRead.lua
 Practice.lua
+Spellbook.lua
 Questions.lua
 Roles.lua
 Ranks.lua

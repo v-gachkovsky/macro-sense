@@ -207,7 +207,7 @@ local function retailSpells(add, later)
                     local other = spec or (item.isOffSpec and line.name) or nil
                     if item.itemType == Enum.SpellBookItemType.Spell then
                         local base = item.actionID ~= item.spellID and item.actionID and SpellName(item.actionID)
-                        add(item.name, item.iconID, item.subName, other, base, item.spellID or item.actionID)
+                        add(item.name, item.iconID, item.subName, other, base, item.spellID or item.actionID, tab == 1)
                     elseif future and item.itemType == future then
                         later(item.name, item.spellID or item.actionID, other)
                     end
@@ -229,7 +229,7 @@ local function classicSpells(add, later)
             if (kind == "SPELL" or kind == "FUTURESPELL") and not IsPassiveSpell(slot, book) then
                 local name, sub = GetSpellBookItemName(slot, book)
                 if kind == "SPELL" then
-                    add(name, GetSpellBookItemTexture(slot, book), sub, spec, nil, id)
+                    add(name, GetSpellBookItemTexture(slot, book), sub, spec, nil, id, tab == 1)
                 else
                     later(name, id, spec)
                 end
@@ -241,22 +241,24 @@ end
 local laterCache -- the spells of the book you learn later, made with spellCache
 
 -- Each spell: { name, icon, ranks, offSpec = the specialization it is for when it is not yours now, and its hint,
--- base = the name of the spell it replaces, id = its spell ID (the highest rank's) }.
+-- base = the name of the spell it replaces, id = its spell ID (the highest rank's), general = in the book's first
+-- tab only (Attack, racials, professions) }.
 function ns.sources.spells()
     if spellCache then return spellCache end
     local seen, out, later = {}, {}, {}
     -- Older flavors list every learned rank: one entry per name, its ranks ("Rank 1", ...) in spellbook order.
-    local function add(name, icon, sub, spec, base, id)
+    local function add(name, icon, sub, spec, base, id, general)
         if not name then return end
         local spell = seen[name]
         if not spell then
-            spell = { name = name, icon = icon, ranks = {}, offSpec = spec, hint = spec }
+            spell = { name = name, icon = icon, ranks = {}, offSpec = spec, hint = spec, general = general or nil }
             seen[name] = spell
             out[#out + 1] = spell
         elseif not spec then -- your specialization has it too
             spell.offSpec, spell.hint = nil, nil
         end
         if base and base ~= name then spell.base = base end
+        if not general then spell.general = nil end
         spell.id = id or spell.id
         if sub and sub ~= "" then table.insert(spell.ranks, sub) end
     end

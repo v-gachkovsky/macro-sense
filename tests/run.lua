@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -2333,6 +2333,95 @@ do
         and not R.Uses("/cast Shadow Bolt (Rank 2)", sb))
     check("ranks: with a rank once and none after", R.Uses("/cast [mod] Shadow Bolt(Rank 1); Shadow Bolt", sb))
     check("ranks: another spell's macro does not", not R.Uses("/cast Immolate", sb))
+end
+
+-- Macros from the spellbook.
+do
+    local B = ns.Spellbook
+    local casts = B.Casts("#showtooltip\n/cast [mod:shift,@focus] !Frost Nova; Frostbolt(Rank 2)\n"
+        .. "/castsequence reset=target Fireball, Fire Blast\n/say Polymorph")
+    check("book: what a macro casts, no rank, no !, a sequence's each; chat is none", casts["frost nova"]
+        and casts.frostbolt and casts.fireball and casts["fire blast"] and not casts.polymorph)
+    check("book: a name that fits stays", B.Name("Frostbolt") == "Frostbolt")
+    check("book: a long name with a colon", B.Name("Shadow Word: Pain") == "SW: Pain", B.Name("Shadow Word: Pain"))
+    check("book: a long name in initials", B.Name("Blessing of Kings") == "BoK", B.Name("Blessing of Kings"))
+    check("book: initials in Cyrillic", B.Name("Благословення королів") == "Бк", B.Name("Благословення королів"))
+
+    local function spell(name, kind, more)
+        local s = { name = name, kind = kind, ranks = {} }
+        for k, v in pairs(more or {}) do s[k] = v end
+        return s
+    end
+    local kit = { class = "MAGE", free = 3, macros = { { name = "FB", body = "/cast [@focus] Fireball" } }, spells = {
+        spell("Fireball", "harm"), spell("Frostbolt", "harm", { ranks = { "Rank 1", "Rank 2", "Rank 3" } }),
+        spell("Frost Nova", "self"), spell("Counterspell", "harm", { interrupt = true }),
+        spell("Polymorph", "harm", { control = true }), spell("Flash Heal", "help", { ranks = { "Rank 1", "Rank 2" } }),
+        spell("Berserking", "self", { general = true }),
+    } }
+    local journal = B.Journal({})
+    local rows = B.Rows(kit, journal)
+    local function row(name) for _, r in ipairs(rows) do if r.spell.name == name then return r end end end
+    check("book: a spell a macro casts is had, by the macro's name", row("Fireball").state == "has"
+        and row("Fireball").macro == "FB" and not row("Fireball").checked)
+    check("book: the first time, offered and checked; the first tab's not checked", row("Frostbolt").state == "offer"
+        and row("Frostbolt").checked and row("Berserking").state == "offer" and not row("Berserking").checked)
+
+    local choices = B.Fresh(kit)
+    check("book: a mage gets no /startattack at first; no pet", choices.startattack == false and choices.pet == nil)
+    for _, name in ipairs({ "Frostbolt", "Frost Nova", "Counterspell", "Polymorph", "Flash Heal" }) do
+        choices.picked[name] = true
+    end
+    local macros, problems = B.Plan(kit, choices)
+    local function body(name) for _, m in ipairs(macros) do if m.name == name then return m.body end end end
+    check("book: a harmful spell at the mouseover enemy, else the target", body("Frostbolt")
+        == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", body("Frostbolt"))
+    check("book: a spell for nobody else, plain", body("Frost Nova") == "#showtooltip\n/cast Frost Nova",
+        body("Frost Nova"))
+    check("book: an interrupt stops casting first", body("Counterspell")
+        == "#showtooltip\n/stopcasting\n/cast [@mouseover,harm,nodead][] Counterspell", body("Counterspell"))
+    check("book: a helpful spell at the mouseover friend", body("Flash Heal")
+        == "#showtooltip\n/cast [@mouseover,help,nodead][] Flash Heal", body("Flash Heal"))
+    check("book: one macro per spell, nothing wrong", #macros == 5 and next(problems) == nil, tostring(#macros))
+
+    choices.startattack = true
+    choices.unitOf["Frostbolt"] = "target"
+    macros = B.Plan(kit, choices)
+    check("book: /startattack for an attack, not for Polymorph", body("Frostbolt")
+        == "#showtooltip\n/startattack\n/cast Frostbolt" and not body("Polymorph"):find("startattack"),
+        body("Frostbolt"))
+
+    choices.join["Frost Nova"] = { into = "Frostbolt", key = "shift" }
+    choices.lower["Flash Heal"] = { rank = "Rank 1", key = "alt" }
+    macros, problems = B.Plan(kit, choices)
+    check("book: a spell joined on Shift; no /startattack with a spell not an attack", body("Frostbolt")
+        == "#showtooltip\n/cast [mod:shift] Frost Nova; Frostbolt" and body("Frost Nova") == nil, body("Frostbolt"))
+    check("book: a lower rank on Alt", body("Flash Heal") == "#showtooltip\n/cast [mod:alt,@mouseover,help,nodead]"
+        .. "[mod:alt] Flash Heal(Rank 1); [@mouseover,help,nodead][] Flash Heal", body("Flash Heal"))
+    check("book: the joined spell is in its macro", macros[1].spells[2] == "Frost Nova", macros[1].spells[2])
+    choices.join["Polymorph"] = { into = "Frostbolt", key = "shift" }
+    macros, problems = B.Plan(kit, choices)
+    check("book: a key taken twice", problems.Polymorph ~= nil and problems.Polymorph:find("Frostbolt") ~= nil,
+        problems.Polymorph)
+    choices.join["Polymorph"] = { into = "Frost Nova", key = "ctrl" }
+    macros, problems = B.Plan(kit, choices)
+    check("book: joined to a spell that is joined itself", problems.Polymorph ~= nil)
+    choices.join["Polymorph"] = nil
+
+    local pet = B.Fresh({ class = "HUNTER", pet = true })
+    check("book: a hunter gets /startattack off, the pet on", pet.startattack == false and pet.pet ~= nil)
+    pet.pet.ctrl = "stay"
+    local petMacros = B.Plan({ spells = {} }, pet)
+    check("book: the pet's macro: attack the mouseover enemy, Shift follows, Ctrl stays", petMacros[1].pet
+        and petMacros[1].body == "/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]\n"
+        .. "/petfollow [mod:shift]\n/petstay [mod:ctrl]", petMacros[1].body)
+
+    B.Remember(journal, rows, { Frostbolt = { name = "Frostbolt", body = "x" } })
+    kit.spells[#kit.spells + 1] = spell("Blink", "self")
+    rows = B.Rows(kit, journal)
+    check("book: the next time, a macro made and gone is deleted", row("Frostbolt").state == "deleted"
+        and not row("Frostbolt").checked)
+    check("book: one left out is skipped", row("Frost Nova").state == "skipped" and not row("Frost Nova").checked)
+    check("book: one learned since is new and checked", row("Blink").state == "new" and row("Blink").checked)
 end
 
 check("default scheme exists", ns.FindByKey(ns.schemes, ns.DEFAULT_SCHEME) ~= nil)

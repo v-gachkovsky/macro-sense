@@ -1543,4 +1543,9 @@ ns.locales.uk = {
         .. "маунта або вдягають спорядження.",
     ["%d lines will come out different or be left out."] = { "%d рядок вийде інакшим або зникне.",
         "%d рядки вийдуть інакшими або зникнуть.", "%d рядків вийдуть інакшими або зникнуть." },
+    -- Macros from the spellbook
+    ["The macro would be longer than %d characters."] = "Макрос вийде довшим за %d символів.",
+    ["%s already has a spell on this key."] = "У макросі %s на цій клавіші вже є заклинання.",
+    ["Join it to a spell that gets a macro of its own."] =
+        "Приєднайте його до заклинання, яке отримує власний макрос.",
 }
