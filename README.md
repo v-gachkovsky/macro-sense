@@ -284,7 +284,9 @@ Drag a spell, mount or item from your spellbook, bags or action bars onto the te
 typing: its name goes in at the cursor, after `/cast` or `/use` on an empty line.
 
 Point at a word for what it means: a command (`/stopmacro`), a condition (`nodead`, `mod:shift`), a unit
-(`@focus`, `@party2target`), `#showtooltip`, `reset=`. A spell or item shows the game's own tooltip.
+(`@focus`, `@party2target`), `#showtooltip`, `reset=`, the `!` of `!Shoot` (only turns it on: a press doesn't stop
+your shooting or take you out of stealth). A spell or item shows the game's own tooltip. A line with `!` says so
+in plain words too: `Shoot (only turns it on)`.
 
 <p align="center"><img src="docs/word-tips.gif" width="720" alt="What a word means, under the mouse"></p>
 

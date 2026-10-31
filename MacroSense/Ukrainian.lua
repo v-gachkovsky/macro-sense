@@ -28,6 +28,13 @@ ns.locales.uk = {
         .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
         "/ms — відкрити редактор; /ms help — коротко про макроси; /ms minimap — сховати чи показати кнопку біля "
         .. "мінікарти; /ms bug — подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
+    ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
+        .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
+        .. "out of stealth."] =
+        "Лише вмикає, ніколи не вимикає. Деякі заклинання одне натискання вмикає, а наступне вимикає: Shoot, Auto "
+        .. "Shot, Stealth, Prowl, форми. Із ! натискання, коли воно вже увімкнене, нічого не вимикає: !Shoot не "
+        .. "зупиняє стрільбу, !Stealth не виводить зі стелсу.",
+    ["%s (only turns it on)"] = "%s (лише вмикає)",
     -- Macros in short (HelpWindow)
     ["Macros in short"] = "Коротко про макроси",
     ["What macros are and how to make them, with a link to the full guide."] =

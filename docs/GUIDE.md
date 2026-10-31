@@ -132,6 +132,9 @@ press **Wizard** above the text.
 - **`;`** separates the choices: "otherwise".
 - **Two pairs of brackets in a row**, `[...][...]`, mean "this, or else that" for the same spell.
 - **Empty brackets** `[]` are always true: "otherwise, as usual".
+- **`!` before a spell** means "only turn it on". A press turns some spells on and off: Shoot, Auto Shot,
+  Stealth, Prowl, a form. With `!`, pressing again while it is on keeps it on: `/cast !Shoot` doesn't stop your
+  shooting, `/cast !Stealth` doesn't take you out of stealth. Point at the `!` in the editor to read this.
 
 A line that starts with `#` is not a command but a setting. `#showtooltip` makes the macro show the tooltip of
 the spell it would cast, and its icon too while the macro's icon is the question mark.
@@ -255,6 +258,13 @@ Heals whoever is under the mouse; if nobody, your target if it is a friend; if n
 #showtooltip
 /castsequence reset=target Corruption, Curse of Agony
 ```
+
+**Shoot with a wand, and keep shooting however often you press:**
+```
+#showtooltip
+/cast !Shoot
+```
+Without `!`, a second press would stop the shooting.
 
 **The pet attacks what you point at, follows with Shift:**
 ```
