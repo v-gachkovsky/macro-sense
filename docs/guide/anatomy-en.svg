@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="420" viewBox="0 0 980 420">
+<rect width="980" height="420" rx="12" fill="#1f1f1f"/>
+<rect x="40" y="170" width="900" height="62" rx="8" fill="#181818" stroke="#3a3a3a"/>
+<text x="70.0" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#c586c0" textLength="63.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">/cast</text>
+<text x="145.6" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#ffd700" textLength="12.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[</text>
+<text x="158.2" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#9cdcfe" textLength="37.8" lengthAdjust="spacingAndGlyphs" xml:space="preserve">mod</text>
+<text x="196.0" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#cccccc" textLength="12.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">:</text>
+<text x="208.6" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#4fc1ff" textLength="63.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">shift</text>
+<text x="271.6" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#cccccc" textLength="12.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">,</text>
+<text x="284.2" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#4ec9b0" textLength="75.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">@focus</text>
+<text x="359.8" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#ffd700" textLength="12.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">]</text>
+<text x="385.0" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#ce9178" textLength="113.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Polymorph</text>
+<text x="498.4" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#cccccc" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">; </text>
+<text x="523.6" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#ffd700" textLength="12.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[</text>
+<text x="536.2" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#4ec9b0" textLength="126.0" lengthAdjust="spacingAndGlyphs" xml:space="preserve">@mouseover</text>
+<text x="662.2" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#cccccc" textLength="12.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">,</text>
+<text x="674.8" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#9cdcfe" textLength="50.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">harm</text>
+<text x="725.2" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#ffd700" textLength="12.6" lengthAdjust="spacingAndGlyphs" xml:space="preserve">]</text>
+<text x="737.8" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#ffd700" textLength="25.2" lengthAdjust="spacingAndGlyphs" xml:space="preserve">[]</text>
+<text x="775.6" y="210" font-family="DejaVu Sans Mono, Menlo, Consolas, monospace" font-size="21" fill="#ce9178" textLength="113.4" lengthAdjust="spacingAndGlyphs" xml:space="preserve">Frostbolt</text>
+<path d="M70.0,166 v-8 H133.0 v8 M101.5,158 v-16" fill="none" stroke="#c586c0" stroke-width="1.6"/>
+<text x="101.5" y="110.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#c586c0" text-anchor="middle">Command</text>
+<text x="101.5" y="129.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8b949e" text-anchor="middle">what to do</text>
+<path d="M145.6,166 v-8 H372.4 v8 M259.0,158 v-16" fill="none" stroke="#ffd700" stroke-width="1.6"/>
+<text x="259.0" y="110.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#ffd700" text-anchor="middle">Conditions</text>
+<text x="259.0" y="129.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8b949e" text-anchor="middle">when this part works</text>
+<path d="M385.0,166 v-8 H498.4 v8 M441.7,158 v-16" fill="none" stroke="#ce9178" stroke-width="1.6"/>
+<text x="441.7" y="110.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#ce9178" text-anchor="middle">Spell</text>
+<text x="441.7" y="129.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8b949e" text-anchor="middle">what to cast</text>
+<path d="M503.4,166 v-86" stroke="#cccccc" stroke-width="1.6"/>
+<text x="511.4" y="64.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#cccccc" text-anchor="start">; otherwise</text>
+<text x="511.4" y="83.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8b949e" text-anchor="start">try the next part</text>
+<path d="M158.2,238 v8 H271.6 v-8 M214.9,246 v16" fill="none" stroke="#4fc1ff" stroke-width="1.6"/>
+<text x="214.9" y="288.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#4fc1ff" text-anchor="middle">Shift is held</text>
+<path d="M284.2,238 v8 H359.8 v-8 M322.0,246 v16" fill="none" stroke="#4ec9b0" stroke-width="1.6"/>
+<path d="M322.0,254 v62" stroke="#4ec9b0" stroke-width="1.6"/>
+<text x="322.0" y="350.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#4ec9b0" text-anchor="middle">on your focus</text>
+<path d="M523.6,238 v8 H737.8 v-8 M630.7,246 v16" fill="none" stroke="#4ec9b0" stroke-width="1.6"/>
+<text x="630.7" y="288.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#4ec9b0" text-anchor="middle">on an enemy</text>
+<text x="630.7" y="307.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8b949e" text-anchor="middle">under the mouse</text>
+<path d="M737.8,238 v8 H763.0 v-8 M750.4,246 v16" fill="none" stroke="#ffd700" stroke-width="1.6"/>
+<path d="M750.4,254 v62" stroke="#ffd700" stroke-width="1.6"/>
+<text x="750.4" y="350.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#ffd700" text-anchor="middle">[ ] empty:</text>
+<text x="750.4" y="369.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8b949e" text-anchor="middle">otherwise, as usual</text>
+<path d="M775.6,238 v8 H889.0 v-8 M832.3,246 v16" fill="none" stroke="#ce9178" stroke-width="1.6"/>
+<text x="832.3" y="288.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#ce9178" text-anchor="middle">Spell</text>
+<text x="832.3" y="307.0" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="400" fill="#8b949e" text-anchor="middle">the same for both</text>
+</svg>

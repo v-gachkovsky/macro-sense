@@ -6002,6 +6002,36 @@ do
     check("the icons come over the editor when opened", raised and raised > 0, raised)
 end
 
+-- Macros in short: the ? in the editor's title bar and /ms help open it. The link is the guide in MacroSense's
+-- language, to copy: typing into it puts it back.
+do
+    MacroSenseFrame:Show()
+    local helpBtn
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "?" and o:IsShown() then helpBtn = o end
+    end
+    check("help: a ? in the title bar", helpBtn ~= nil)
+    Fire(helpBtn, "OnClick")
+    check("help: it opens", ns.HelpWindow.IsShown())
+    local link = ns.HelpWindow.Control("link")
+    check("help: the guide's link, in English", link.text
+        == "https://github.com/v-gachkovsky/macro-sense/blob/main/docs/GUIDE.md", link.text)
+    link.text = "x"
+    Fire(link, "OnTextChanged", true)
+    check("help: typed over, the link comes back", link.text == ns.HelpWindow.URL(), link.text)
+    check("help: in the layer of the game's windows", MacroSenseHelp.strata == "MEDIUM" and MacroSenseHelp.toplevel)
+    Fire(helpBtn, "OnClick")
+    check("help: the ? closes it", not ns.HelpWindow.IsShown())
+    SlashCmdList.MACROSENSE("help")
+    check("help: /ms help opens it", ns.HelpWindow.IsShown())
+    local language = ns.language
+    ns.language = "uk"
+    check("help: in Ukrainian, the Ukrainian guide", ns.HelpWindow.URL():find("/GUIDE_UA%.md$") ~= nil)
+    ns.language = language
+    ns.HelpWindow.Toggle()
+    check("help: closed again", not ns.HelpWindow.IsShown())
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)

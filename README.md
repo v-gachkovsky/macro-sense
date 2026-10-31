@@ -15,6 +15,10 @@
 > feature, please [open an issue](https://github.com/v-gachkovsky/macro-sense/issues): I read every report and try to fix things fast. `/ms bug` in game
 > prints the details to include.
 
+**New to macros?** [Macros, step by step](docs/GUIDE.md) explains what macros are, what they can do and how to
+make them, with pictures and ready-made macros. In game, **?** in the editor's title bar (or `/ms help`) sums
+it up.
+
 ## Overview
 
 The Blizzard macro window is a plain text box. MacroSense opens your macros in a real editor: it suggests
@@ -415,6 +419,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 ## Commands
 
 - `/ms` - open / close the editor
+- `/ms help` - macros in short, with a link to the [full guide](docs/GUIDE.md)
 - `/ms minimap` - hide / show the minimap button
 - `/ms bug` - print the versions to include in a bug report
 - `/ms autocomplete` - toggle autocomplete

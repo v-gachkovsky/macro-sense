@@ -39,6 +39,7 @@ IconNames.lua
 IconPicker.lua
 WizardWindow.lua
 ShareWindow.lua
+HelpWindow.lua
 Links.lua
 Window.lua
 MinimapButton.lua
