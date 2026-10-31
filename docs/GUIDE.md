@@ -356,6 +356,24 @@ and MacroSense makes the macros for you.
 - **Share**: a code to send a macro to a friend, or a link in chat.
 - **Wizard** above the text: change a macro with the wizard's questions.
 
+### Typing less: a few letters find the word
+
+The list that comes up as you type doesn't need the whole word, or even its start:
+
+| You type | It finds | How |
+|---|---|---|
+| `SB` | Shadow Bolt | **Capitals** are the first letters of the words |
+| `SWP` | Shadow Word: Pain | as many words as you like |
+| `CA` or `CoA` | Curse of Agony | small words may be left out, or typed in small letters |
+| `sh wo` | Shadow Word: Pain | a **space** goes on to the next word |
+| `fi` | Soul Fire | small letters: a name that starts so, then a word that starts so |
+| `nct` | `nocombat` | **letters in order**, from the start of the word, with others between them |
+| `mntd` | `mounted` | the same for conditions, commands and units |
+| `nmd` | `nomod`, `nomounted` | the best matches come first |
+
+Capitals that are no name's first letters count as small ones, so Caps Lock doesn't get in the way. **Tab** or
+**Enter** takes the highlighted one, **Up** and **Down** move through the list, **Esc** closes it.
+
 Each of them is described in full in the [README](../README.md).
 
 Found something wrong, or missing something? Type `/ms bug` in game and tell me: in the comments on
