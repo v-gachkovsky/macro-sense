@@ -9,7 +9,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 - **Macros, step by step**: a guide in English and Ukrainian (`docs/GUIDE.md`, `docs/GUIDE_UA.md`) on what
   macros are, what they can do and how to make them with MacroSense, with pictures and ready-made macros.
-- **?** in the editor's title bar, and `/ms help`: macros in short, with the link to the guide to copy.
+- **?** in the editor's title bar, and `/ms help`: the macro guide in game, section by section: what a macro is,
+  your first macro, the wizard, how a line reads and how the game picks, commands, conditions and units, what
+  macros can't do, ready-made macros with a **Create** button, typing less, and the full guide's link to copy.
 - The `!` of `/cast !Shoot` or `!Stealth` explains itself under the mouse: it only turns the spell on, so a press
   doesn't stop your shooting or take you out of stealth. The line's explanation says so too:
   `Shoot (only turns it on)`.

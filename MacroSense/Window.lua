@@ -1544,14 +1544,14 @@ local function Build()
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
 
-    -- Macros in short, and the link to the full guide.
+    -- The macro guide (HelpWindow).
     local help = ns.Button(title, "?", 24, function() ns.HelpWindow.Toggle() end)
     help:SetPoint("RIGHT", close, "LEFT", -6, 0)
     help:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
-        GameTooltip:AddLine(L["Macros in short"], 1, 1, 1)
-        GameTooltip:AddLine(L["What macros are and how to make them, with a link to the full guide."], 0.8, 0.8, 0.8,
-            true)
+        GameTooltip:AddLine(L["Macro guide"], 1, 1, 1)
+        GameTooltip:AddLine(L["What macros are, what they can do and how to make them, with ready-made macros."],
+            0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     help:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -2017,6 +2017,15 @@ end
 -- The editor on macro `index`, opened if it is closed (Shift + right-click on an action bar). Unsaved changes
 -- to another macro are asked about first; the macro's own stay. Below Build, like Toggle: it may build the
 -- window, and a local function is only seen after it.
+-- The guide's buttons (HelpWindow): the editor shown, then a new macro, or one made from `body` in the tab that
+-- is open, under a free name.
+function Window.Make(name, body)
+    if not frame then Build() end
+    frame:Show()
+    if not body then return Window.New() end
+    Window.Import({ { scope = state.scope, name = name, icon = "", body = body } })
+end
+
 function Window.Open(index)
     if not frame then Build() end
     frame:Show()

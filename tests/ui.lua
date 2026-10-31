@@ -6002,34 +6002,68 @@ do
     check("the icons come over the editor when opened", raised and raised > 0, raised)
 end
 
--- Macros in short: the ? in the editor's title bar and /ms help open it. The link is the guide in MacroSense's
--- language, to copy: typing into it puts it back.
+-- The macro guide: the ? in the editor's title bar and /ms help open it, on its first section. A section's
+-- button shows it; a ready-made macro's Create makes it in the open tab; the last section has the full guide's
+-- link in MacroSense's language, to copy: typing into it puts it back.
 do
     MacroSenseFrame:Show()
     local helpBtn
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and o.label.text == "?" and o:IsShown() then helpBtn = o end
     end
-    check("help: a ? in the title bar", helpBtn ~= nil)
+    check("guide: a ? in the title bar", helpBtn ~= nil)
     Fire(helpBtn, "OnClick")
-    check("help: it opens", ns.HelpWindow.IsShown())
-    local link = ns.HelpWindow.Control("link")
-    check("help: the guide's link, in English", link.text
+    local H = ns.HelpWindow
+    local titles = H.Titles()
+    check("guide: it opens on its first section", H.IsShown() and H.Control("section") == "What a macro is",
+        H.Control("section"))
+    check("guide: eleven sections", #titles == 11 and titles[11] == "The full guide", #titles)
+    check("guide: in the layer of the game's windows", MacroSenseHelp.strata == "MEDIUM" and MacroSenseHelp.toplevel)
+    local function nav(title)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == title and o:IsShown() then return o end
+        end
+    end
+    Fire(nav("Ready-made macros"), "OnClick")
+    check("guide: a section's button shows it", H.Control("section") == "Ready-made macros")
+    local count = select(2, GetNumMacros())
+    ns.Window.SetScope("character")
+    NextFrame()
+    Fire(H.Control("create Wand"), "OnClick")
+    local index = GetMacroIndexByName("Wand")
+    check("guide: Create makes the macro in the open tab and opens it", index > 0
+        and select(2, GetNumMacros()) == count + 1 and select(3, GetMacroInfo(index)) == "#showtooltip\n/cast !Shoot"
+        and ns.Highlight.Strip(edit:GetText()) == "#showtooltip\n/cast !Shoot", select(2, GetNumMacros()))
+    Fire(H.Control("create Wand"), "OnClick")
+    check("guide: again, under a free name", GetMacroIndexByName("Wand 2") > 0)
+    DeleteMacro(GetMacroIndexByName("Wand 2"))
+    DeleteMacro(GetMacroIndexByName("Wand"))
+    Send("UPDATE_MACROS")
+    Fire(nav("Your first macro"), "OnClick")
+    Fire(H.Control("New macro"), "OnClick")
+    check("guide: New macro starts one in the editor", ns.Highlight.Strip(edit:GetText()) == "#showtooltip\n",
+        edit:GetText())
+    Fire(nav("The wizard"), "OnClick")
+    Fire(H.Control("Open the wizard"), "OnClick")
+    check("guide: Open the wizard opens it", MacroSenseWizard:IsShown())
+    MacroSenseWizard:Hide()
+    Fire(nav("The full guide"), "OnClick")
+    local link = H.Control("link")
+    check("guide: the full guide's link, in English", link.text
         == "https://github.com/v-gachkovsky/macro-sense/blob/main/docs/GUIDE.md", link.text)
     link.text = "x"
     Fire(link, "OnTextChanged", true)
-    check("help: typed over, the link comes back", link.text == ns.HelpWindow.URL(), link.text)
-    check("help: in the layer of the game's windows", MacroSenseHelp.strata == "MEDIUM" and MacroSenseHelp.toplevel)
+    check("guide: typed over, the link comes back", link.text == H.URL(), link.text)
     Fire(helpBtn, "OnClick")
-    check("help: the ? closes it", not ns.HelpWindow.IsShown())
+    check("guide: the ? closes it", not H.IsShown())
     SlashCmdList.MACROSENSE("help")
-    check("help: /ms help opens it", ns.HelpWindow.IsShown())
+    check("guide: /ms help opens it where it was", H.IsShown() and H.Control("section") == "The full guide")
     local language = ns.language
     ns.language = "uk"
-    check("help: in Ukrainian, the Ukrainian guide", ns.HelpWindow.URL():find("/GUIDE_UA%.md$") ~= nil)
+    check("guide: in Ukrainian, the Ukrainian guide", H.URL():find("/GUIDE_UA%.md$") ~= nil)
     ns.language = language
-    ns.HelpWindow.Toggle()
-    check("help: closed again", not ns.HelpWindow.IsShown())
+    H.Toggle()
+    check("guide: closed again", not H.IsShown())
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

@@ -173,6 +173,12 @@ function Docs.Texts()
     return out
 end
 
+-- What a command, condition or unit means (the guide's tables, HelpWindow), or nil.
+function Docs.Text(kind, name)
+    local text = ({ command = COMMANDS, condition = CONDITIONS, unit = UNITS })[kind][name]
+    return text and L[text]
+end
+
 local function base(name)
     local C = ns.Conditions
     return C and C.Base(name) or name

@@ -20,7 +20,7 @@ bars, which opens that macro. On Retail it's in the addon menu by the minimap to
 **New to macros?** [Macros, step by step](https://github.com/v-gachkovsky/macro-sense/blob/main/docs/GUIDE.md)
 explains what macros are, what they can do and how to make them, with pictures and ready-made macros
 ([українською](https://github.com/v-gachkovsky/macro-sense/blob/main/docs/GUIDE_UA.md)). In game, **?** in the
-editor's title bar sums it up.
+editor's title bar opens it in short, section by section, and **Create** next to a ready-made macro makes it.
 
 ---
 
@@ -249,7 +249,7 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 | Command | Action |
 |---------|--------|
 | `/ms` | Open or close the editor (also `/macrosense`, `/msense`) |
-| `/ms help` | Macros in short, with a link to the full guide |
+| `/ms help` | The macro guide in game, with ready-made macros |
 | `/ms minimap` | Hide or show the minimap button |
 | `/ms bug` | Print the versions to include in a bug report |
 | `/ms autocomplete` | Turn autocomplete on or off |
