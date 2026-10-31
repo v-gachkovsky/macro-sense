@@ -822,6 +822,7 @@ local function Build()
     end
 
     frame = CreateFrame("Frame", "MacroSenseWizard", UIParent, "BackdropTemplate")
+    frame:HookScript("OnShow", function() ns.Window.ClearFocus() end) -- the keys come here, not to the editor
     table.insert(UISpecialFrames, "MacroSenseWizard") -- Esc closes it
     frame:SetFrameStrata("MEDIUM") -- with the game's windows, as the editor
     frame:SetToplevel(true)

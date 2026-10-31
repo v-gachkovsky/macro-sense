@@ -358,6 +358,7 @@ end
 
 local function Build()
     frame = CreateFrame("Frame", "MacroSenseHelp", UIParent, "BackdropTemplate")
+    frame:HookScript("OnShow", function() ns.Window.ClearFocus() end) -- the keys come here, not to the editor
     table.insert(UISpecialFrames, "MacroSenseHelp") -- Esc closes it
     frame:SetFrameStrata("MEDIUM")
     frame:SetToplevel(true)

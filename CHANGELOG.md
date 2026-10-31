@@ -19,6 +19,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   doesn't stop your shooting or take you out of stealth. The line's explanation says so too:
   `Shoot (only turns it on)`.
 
+### Fixed
+- Opening another MacroSense window (the guide, the wizard, the icons, Share) takes the keys from the editor:
+  typing no longer goes into the macro text hidden behind it.
+
 ## [0.9.2] - 2026-10-30
 
 ### Changed

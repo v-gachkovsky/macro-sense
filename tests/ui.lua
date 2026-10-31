@@ -6090,6 +6090,22 @@ do
     check("guide: closed again", not H.IsShown())
 end
 
+-- Another window of MacroSense opened: the editor lets the keys go, they don't type into the text behind it.
+do
+    MacroSenseFrame:Show()
+    local function opened(name, open, close)
+        edit:SetFocus()
+        open()
+        local ok = not edit:HasFocus()
+        close()
+        check("focus: " .. name .. " takes the keys from the editor", ok)
+    end
+    opened("the guide", function() ns.HelpWindow.Open() end, function() MacroSenseHelp:Hide() end)
+    opened("the wizard", function() ns.WizardWindow.Open("general") end, function() MacroSenseWizard:Hide() end)
+    opened("the icons", function() Fire(MacroSenseIconButton, "OnClick") end, function() MacroSenseIconPicker:Hide() end)
+    opened("share", function() ns.ShareWindow.Import() end, function() ns.ShareWindow.Close() end)
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)
