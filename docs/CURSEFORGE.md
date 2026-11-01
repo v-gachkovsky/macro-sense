@@ -28,7 +28,7 @@ editor's title bar opens it in short, section by section, and **Create** next to
 
 **A macro from the wizard**
 
-1. **New (Wizard)** under the macro list. It asks what the macro should do, one question at a time; **All
+1. **New (Wizard)**. It asks what the macro should do, one question at a time; **All
    options** at its top shows the whole form at once, as here.
 2. **Cast**: a few letters of the spell (or the first letters of its words, in capitals): Shadow Bolt.
 3. **On**: Mouseover, then As usual. **Only**: Enemies, set from the spell.
@@ -86,6 +86,26 @@ The macro shows as you choose; **Create macro** saves it and opens it in the edi
 **Already have a macro?** **Wizard** above the text opens it in the wizard with its answers filled in, also one
 typed by hand or taken from a guide. Change it with a few clicks, and **Put in editor**: Save keeps the new text,
 Ctrl+Z takes it back. Lines the wizard writes its own way, or has no place for, are listed before anything changes.
+
+---
+
+## Macros from the spellbook
+
+**From Spellbook** (or `/ms book`) makes macros for the spells of your spellbook, many at once. Each names its
+spell with no rank, so in the Classic clients it always casts the highest rank you know, also after you learn a
+new one.
+
+- Attacks and helpful spells go to your target, the unit under the mouse or your focus: for all of them, or one
+  spell on its own.
+- Short of macro slots? Put a spell into another spell's macro on Shift, Ctrl or Alt (Cmd on a Mac).
+- Classic clients: a cheaper **lower rank** on a key, to heal a little or to waste an enemy's dispel or a
+  warrior's Spell Reflection.
+- Auto attack with each attack (never with Sap or Polymorph, which it would break); interrupts stop your cast
+  first; one macro for a hunter's or warlock's pet, by key.
+- The macros go into the character's tab and onto your action bars in place of their spells. Spells with a macro
+  already are left out, and next time only the spells you learned since are offered.
+
+In the Classic clients, a macro with `/cast Shadow Bolt` now follows the new rank as soon as you learn it.
 
 ## Autocomplete
 
@@ -250,6 +270,7 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 |---------|--------|
 | `/ms` | Open or close the editor (also `/macrosense`, `/msense`) |
 | `/ms help` | The macro guide in game, with ready-made macros |
+| `/ms book` | Macros from the spellbook |
 | `/ms minimap` | Hide or show the minimap button |
 | `/ms bug` | Print the versions to include in a bug report |
 | `/ms autocomplete` | Turn autocomplete on or off |
