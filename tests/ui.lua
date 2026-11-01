@@ -6018,8 +6018,8 @@ do
     local titles = H.Titles()
     check("guide: it opens on its first section", H.IsShown() and H.Control("section") == "What a macro is",
         H.Control("section"))
-    check("guide: twelve sections", #titles == 12 and titles[11] == "Practice" and titles[12] == "The full guide",
-        #titles)
+    check("guide: thirteen sections", #titles == 13 and titles[4] == "From the spellbook" and titles[12] == "Practice"
+        and titles[13] == "The full guide", #titles)
     check("guide: in the layer of the game's windows", MacroSenseHelp.strata == "MEDIUM" and MacroSenseHelp.toplevel)
     local function nav(title)
         for _, o in ipairs(created) do

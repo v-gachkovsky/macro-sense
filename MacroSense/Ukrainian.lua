@@ -1609,4 +1609,23 @@ ns.locales.uk = {
         .. "макрос. «Разом із» іншим заклинанням: воно йде в макрос того заклинання і кастується, поки ви тримаєте "
         .. "клавішу. Так економляться місця для макросів.",
     ["You know only one rank of this spell."] = "Ви знаєте лише один ранг цього заклинання.",
+    ["From the spellbook"] = "З книги заклинань",
+    ["\"From Spellbook\" makes macros for many spells of your spellbook at once. Tick the spells, and each gets a "
+        .. "macro that names its spell with no rank: in the Classic clients it always casts the highest rank you know. "
+        .. "Point at a spell to see its macro."] = "«З книги заклинань» робить макроси для багатьох заклинань із вашої "
+        .. "книги за раз. Позначте заклинання, і кожне отримає макрос, який називає його без рангу: у Classic він "
+        .. "завжди кастує найвищий ранг, який ви знаєте. Наведіть мишу на заклинання, щоб побачити його макрос.",
+    ["Where the spells go: your target, the unit under the mouse or your focus. For all of them on the right; for one "
+        .. "spell in its row, where \"—\" keeps the choice for all."] = "Куди летять заклинання: у вашу ціль, у того, "
+        .. "хто під мишею, або у фокус. Для всіх — праворуч; для одного заклинання — у його рядку, де «—» лишає "
+        .. "загальний вибір.",
+    ["\"With\" another spell puts this one into that spell's macro, on the key you pick. This saves macro slots."] =
+        "«Разом із» іншим заклинанням кладе це заклинання в макрос того, на вибрану клавішу. Так економляться місця "
+        .. "для макросів.",
+    ["A cheaper rank on a key: to heal a little, or to waste an enemy's dispel or a warrior's Spell Reflection."] =
+        "Дешевший ранг на клавішу: щоб підлікувати потроху або змусити ворога витратити розвіювання чи Spell "
+        .. "Reflection воїна.",
+    ["Spells that some macro casts already are not ticked. Next time, only the spells you learned since are."] =
+        "Заклинання, які вже кастує якийсь макрос, стоять без галочки. Наступного разу галочки стоятимуть лише на "
+        .. "тих, що ви вивчили відтоді.",
 }

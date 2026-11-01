@@ -55,7 +55,8 @@ A macro is at most **255 characters** long. That is about five or six lines.
 2. The search, and "Not on action bars": find a macro by its name or text, or keep only those on no bar.
 3. The list of macros. A click opens one. The two squares copy it, "x" deletes it. In the "Character" tab,
    your other characters' macros are at the bottom.
-4. "New" starts an empty macro, "New (Wizard)" makes one from a few questions.
+4. "From Spellbook" makes macros for many spells of your spellbook at once, "New" starts an empty macro,
+   "New (Wizard)" makes one from a few questions.
 5. "Share" sends macros as a code or a chat link, "Trash" brings deleted ones back, "Backups" keeps copies of
    all your macros.
 6. The macro's icon and name. A click on the icon picks another one; drag the icon onto an action bar.
@@ -202,6 +203,40 @@ like with a few clicks, then "Put in editor": the new text goes into the editor,
 (**Ctrl+Z** takes it back). It works for any macro the wizard could have made, also one typed by hand or taken
 from a guide. If the wizard would write some lines its own way, or has no place for them (`/run`, a second
 `/cast`), it says so before it opens, and the window lists them under "lines will change".
+
+### Many macros at once: from the spellbook
+
+"From Spellbook" (or `/ms book`) opens a window with the spells of your spellbook. Tick the ones to make
+macros for, and each gets its own: `#showtooltip` and `/cast` with the spell's name and no rank. In the Classic
+clients a spell with no rank is always its highest rank you know, so the macro keeps up as you learn new ones.
+Point at a spell to see its macro.
+
+On the right you choose for all the spells at once:
+
+- **"Attacks go to"** and **"Helpful spells go to"**: your target, the unit under the mouse (or your target when
+  you point at nobody), or your focus (or your target).
+- "Start auto attack with each attack": `/startattack` before attacks, but not before spells that keep an enemy
+  out of the fight, such as Sap or Polymorph, which it would break.
+- "Stop your cast before an interrupt": `/stopcasting` before Kick, Counterspell and the like.
+- "Put them on the bars in place of the spells": each macro takes its spell's places on your action bars.
+- "A macro for your pet" (hunters and warlocks): what the pet does with no key held, and with each key.
+
+Each ticked spell's row has more, for that spell only:
+
+- "Target": where this spell goes, over the choice for all. "—" keeps that choice.
+- "Macro": "Own macro", or "With" another spell. Then the spell goes into that spell's macro and is cast while
+  you hold the key you pick in "Key". This saves macro slots: a character has 30.
+- "Lower rank" (Classic clients): a cheaper rank on a key. It costs less mana: to heal a little, to put a cheap
+  spell on an enemy for them to dispel, or to waste a warrior's Spell Reflection on it.
+
+```
+#showtooltip
+/cast [mod:shift] Shadow Bolt(Rank 1); Shadow Bolt
+```
+
+The count at the bottom shows how many macros you would make and how many slots are free; "Create macros" makes
+them. Spells that some macro casts already are not ticked, nor those you left out before, but you can still tick
+them. Next time, only the spells you learned since are ticked.
 
 ## 5. How a macro line reads
 

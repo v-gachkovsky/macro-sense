@@ -2,7 +2,7 @@
 
 <p align="center">
   A macro editor for <b>World of Warcraft</b> that knows macros<br>
-  macro wizard · autocomplete · syntax highlighting · error checks · live preview · icon picker
+  macro wizard · macros from the spellbook · autocomplete · syntax highlighting · error checks · live preview · icon picker
 </p>
 
 <p align="center">
@@ -27,7 +27,8 @@ The Blizzard macro window is a plain text box. MacroSense opens your macros in a
 commands, conditions, units, spells and items as you type, colors the syntax, underlines mistakes and
 shows next to each line what it would do right now. The macros are the game's own (`CreateMacro` / `EditMacro`), so the Blizzard window, action bars and other
 addons see every change. **New (Wizard)** builds them from a few simple questions, or from a form: mouseover,
-focus, party members, modifier keys, trinkets and more.
+focus, party members, modifier keys, trinkets and more. "From Spellbook" makes macros for the spells of your
+spellbook, many at once.
 
 Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), the **MacroSense** button in
 the title bar of the Blizzard macro window, or **Shift + right-click** on a macro on an action bar, which opens
@@ -163,6 +164,34 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | /target Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/target [mod:shift,@party2,help,nodead]...[@party1,help,nodead]` |
 | Pet: Attack on Mouseover, then As usual; Shift: Follow; Ctrl: Move to the cursor | `/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]`, `/petfollow [mod:shift]`, `/petmoveto [mod:ctrl,@cursor]` |
 | Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
+
+## Macros from the spellbook
+
+"From Spellbook" (or `/ms book`) makes macros for the spells of your spellbook, many at once. Tick the spells:
+each gets a macro that names its spell with no rank, so in the Classic clients it always casts the highest rank
+you know, also after you learn a new one. Point at a spell to see its macro.
+
+- **Where they go.** Attacks and helpful spells go to your target at first. Pick the enemy (or the friend) under
+  the mouse, or your focus, for all of them at once. "Target" on a spell's row sends only that spell elsewhere;
+  "—" keeps the choice for all.
+- **Not enough slots.** A character has 30 macro slots, and the count at the bottom shows how many you would use.
+  "Macro" on a row puts the spell into another spell's macro, cast while you hold Shift, Ctrl or Alt (Cmd on a
+  Mac): `/cast [mod:shift] Frost Nova; Frostbolt`.
+- **Lower rank** (Classic clients) puts a cheaper rank of the spell on a key: to heal a little, to put a cheap
+  spell on an enemy for them to dispel, or to waste a warrior's Spell Reflection on it:
+  `/cast [mod:shift] Shadow Bolt(Rank 1); Shadow Bolt`.
+- **Auto attack** starts with each attack if you tick it (it is on at first for the classes that fight in
+  melee), but never with spells that keep an enemy out of the fight, such as Sap or Polymorph: it would break
+  them. Interrupts stop your cast first.
+- **The pet.** Hunters and warlocks get one macro for the pet: what it does with no key held, and with each key.
+- **On the bars.** The macros go into the character's tab, and onto the action bars in place of their spells.
+
+Spells that some macro casts already are not ticked, nor those you left out before; you can still tick them.
+Next time, only the spells you learned since are ticked. If the game doesn't make a macro, the chat says which.
+
+**A new rank.** In the Classic clients a macro with `/cast Shadow Bolt` kept the rank it had when you learned a
+new one, until you edited it. MacroSense now saves such macros again by itself, after combat if you are in one,
+and the history keeps no version of it.
 
 ## Autocomplete
 
@@ -424,6 +453,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 
 - `/ms` - open / close the editor
 - `/ms help` - the macro guide in game, with ready-made macros and a link to the [full guide](docs/GUIDE.md)
+- `/ms book` - macros from the spellbook
 - `/ms minimap` - hide / show the minimap button
 - `/ms bug` - print the versions to include in a bug report
 - `/ms autocomplete` - toggle autocomplete
@@ -453,6 +483,9 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Wizard.lua`: the wizard's form as macro text. Pure Lua.
 - `MacroSense/WizardRead.lua`: a macro back in the wizard's form, and the lines it would write otherwise. Pure Lua.
 - `MacroSense/Questions.lua`: the wizard's form as questions, one at a time. Pure Lua.
+- `MacroSense/Spellbook.lua`: macros from the spellbook: the spells to offer, the macros the choices make, what
+  was made before. Pure Lua; the spellbook comes in a kit made in game.
+- `MacroSense/Ranks.lua`: macros saved again when a spell gets a new rank. Which spells and macros is pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
 - `MacroSense/Share.lua`: macros as a code and back. Pure Lua.
@@ -468,6 +501,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/IconNames.lua`: names for the game's icons from its spells and achievements, looked up in
   the background.
 - `MacroSense/WizardWindow.lua`: the wizard's window.
+- `MacroSense/SpellbookWindow.lua`: the window of macros from the spellbook.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 - `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
@@ -476,7 +510,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 ### Tests
 
 ```sh
-lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, explanations, shorten, history, wizard, its questions, schemes, shortcuts, minimap, icon names, share codes, backups
+lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, explanations, shorten, history, wizard, its questions, macros from the spellbook, new ranks, schemes, shortcuts, minimap, icon names, share codes, backups
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 

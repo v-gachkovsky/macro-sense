@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- The guide, the guide in game (a section of its own), the README and the CurseForge page tell about Macros from
+  the Spellbook and `/ms book`.
+
 ## [0.11.0] - 2026-11-01
 
 ### Added

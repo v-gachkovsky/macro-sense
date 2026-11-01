@@ -101,6 +101,23 @@ local function Sections()
             { "p", L["To change a macro you have with the same questions, open it and press \"Wizard\"."] },
             { "button", L["Open the wizard"], function() ns.WizardWindow.Open(ns.db.scope) end },
         } },
+        { L["From the spellbook"], {
+            { "p", L["\"From Spellbook\" makes macros for many spells of your spellbook at once. Tick the spells, "
+                .. "and each gets a macro that names its spell with no rank: in the Classic clients it always casts "
+                .. "the highest rank you know. Point at a spell to see its macro."] },
+            { "list", {
+                { L["Target"], L["Where the spells go: your target, the unit under the mouse or your focus. For all "
+                    .. "of them on the right; for one spell in its row, where \"—\" keeps the choice for all."] },
+                { L["Macro"], L["\"With\" another spell puts this one into that spell's macro, on the key you pick. "
+                    .. "This saves macro slots."] },
+                { L["Lower rank"], L["A cheaper rank on a key: to heal a little, or to waste an enemy's dispel or a "
+                    .. "warrior's Spell Reflection."] },
+            } },
+            { "code", "#showtooltip\n/cast [mod:shift] Shadow Bolt(Rank 1); Shadow Bolt" },
+            { "p", L["Spells that some macro casts already are not ticked. Next time, only the spells you learned "
+                .. "since are."] },
+            { "button", L["Macros from the Spellbook"], function() ns.SpellbookWindow.Open() end },
+        } },
         { L["How a line reads"], {
             { "code", LINE },
             { "rows", {
