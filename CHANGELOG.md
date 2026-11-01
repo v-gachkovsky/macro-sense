@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Classic: after you learn a new rank of a spell, a macro that casts it with no rank (`/cast Shadow Bolt`) kept
+  showing and casting the old one until you edited it. MacroSense now saves such macros again by itself, after
+  combat if you are in one. Their text stays the same, and the history keeps no version of it.
+
 ## [0.10.1] - 2026-10-31
 
 ### Changed
