@@ -7,8 +7,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **In-game** color scheme: the windows take the game's own dialog background and border, the main buttons are red
-  with gold letters and the checks gold, as in the game's windows; each client draws them in its own art.
+- **In-game** color scheme: the windows take the game's own dialog background and border, and the buttons, check
+  boxes, input fields and dropdowns are the game's own: red buttons with gold letters, its check boxes, its input
+  frames and arrows. Each client draws them in its own art.
 
 ## [0.11.1] - 2026-11-01
 

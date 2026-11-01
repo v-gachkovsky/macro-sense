@@ -6365,9 +6365,22 @@ do
     check("game look: a panel inside lets the background show", title and title.backdropColor[4] == 0.6,
         title and tostring(title.backdropColor[4]))
     check("game look: the menu stays solid", MacroSenseMenu.backdropColor[4] == 1, tostring(MacroSenseMenu.backdropColor[4]))
+    local function shown(file)
+        local n = 0
+        for _, o in ipairs(created) do
+            if o.texture == file and o:IsShown() then n = n + 1 end
+        end
+        return n
+    end
+    check("game look: the game's buttons, check boxes, input and dropdown frames, arrows",
+        shown("Interface\\Buttons\\UI-Panel-Button-Up") > 0 and shown("Interface\\Buttons\\UI-CheckBox-Up") > 0
+        and shown("Interface\\Common\\Common-Input-Border") > 0
+        and shown("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up") > 0 and MacroSenseSearch.backdrop == nil)
     look("darkmodern")
     check("game look: another scheme takes it all back", not edge:IsShown() and frame.backdrop.edgeSize == 1
-        and title.backdropColor[4] == 1)
+        and title.backdropColor[4] == 1 and shown("Interface\\Buttons\\UI-Panel-Button-Up") == 0
+        and shown("Interface\\Buttons\\UI-CheckBox-Up") == 0 and shown("Interface\\Common\\Common-Input-Border") == 0
+        and MacroSenseSearch.backdrop.edgeSize == 1)
     look(before)
 end
 
