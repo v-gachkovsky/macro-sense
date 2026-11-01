@@ -6202,6 +6202,8 @@ do
     for i, r in ipairs(W.Rows()) do if r.spell.name == "Frostbolt" then frostRow = W.RowFrame(i) end end
     check("book window: a spell's own target, none at first", frostRow.unit:IsShown()
         and frostRow.unit.label.text == "—", frostRow.unit.label.text)
+    check("book window: one rank known: the lower rank shown, dim, \"—\"", frostRow.rank:IsShown()
+        and not frostRow.rank:IsEnabled() and frostRow.rank.label.text == "—" and W.Control("column3"):IsShown())
     Fire(frostRow.unit, "OnClick")
     Fire(MacroSenseMenu.rows[2], "OnClick")
     check("book window: Mouseover for Frostbolt only", planned().Frostbolt

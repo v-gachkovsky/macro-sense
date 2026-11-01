@@ -72,9 +72,9 @@ local function Row(i)
         choices.join[name] = into ~= "" and { into = into, key = (choices.join[name] or {}).key or keys[1] } or nil
         Refresh()
     end)
-    -- A lower rank too, where the spell has ranks.
+    -- A lower rank too, where the spell has more than one: "—" for none.
     r.rank = ns.Dropdown(r, 96, function()
-        local items = { { key = "", name = L["No lower rank"] } }
+        local items = { { key = "", name = "—" } }
         local ranks = r.row.spell.ranks
         for n = 1, #ranks - 1 do items[#items + 1] = { key = ranks[n], name = string.format(L["+ %s"], ranks[n]) } end
         return items
@@ -101,6 +101,15 @@ local function Row(i)
     end)
     r.key:SetPoint("RIGHT", -4, 0)
     r.rank:SetPoint("RIGHT", r.key, "LEFT", -4, 0)
+    r.rank:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Lower rank"], 1, 1, 1)
+        GameTooltip:AddLine(#r.row.spell.ranks > 1 and L["A lower rank of the spell, cast while you hold the key. It "
+            .. "costs less mana: healers use it to heal a little without spending much."]
+            or L["You know only one rank of this spell."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    r.rank:HookScript("OnLeave", function() GameTooltip:Hide() end)
     r.join:SetPoint("RIGHT", r.rank, "LEFT", -4, 0)
     -- Where this spell goes, over the choice for all: "—" keeps that one.
     r.unit = ns.Dropdown(r, 104, function()
@@ -150,7 +159,9 @@ local function ShowRow(r, row)
     r.join:SetShown(picked and true or false)
     r.unit:SetShown(picked and spell.kind ~= "self" or false)
     r.unit:Refresh()
-    r.rank:SetShown(picked and not joined and #spell.ranks > 1 or false)
+    -- In the clients with ranks; dim with one rank known, its tooltip says why.
+    r.rank:SetShown(picked and not joined and kit.ranks or false)
+    r.rank:SetEnabled(#spell.ranks > 1)
     r.key:SetShown(picked and (joined or lower) and true or false)
     r.join:Refresh()
     r.rank:Refresh()
@@ -475,6 +486,7 @@ function SpellbookWindow.Open()
     end
     if not frame then Build() end -- its controls read the choices as they are made
     controls.petBlock:SetShown(kit.pet and true or false)
+    controls.column3:SetShown(kit.ranks) -- Lower rank: Retail has no ranks
     frame:Show()
     frame:Raise()
     Refresh()

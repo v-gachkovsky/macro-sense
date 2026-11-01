@@ -118,6 +118,11 @@ function Spellbook.Kit()
     kit.free = ns.MAX_CHARACTER - character
     kit.pet = (HasPetSpells and HasPetSpells() ~= nil) or class == "HUNTER" or class == "WARLOCK"
     kit.petMacro = Spellbook.PetMacro(kit.macros)
+    -- Whether the spells have ranks here (the older flavors).
+    kit.ranks = false
+    for _, s in ipairs(kit.spells) do
+        if #s.ranks > 0 then kit.ranks = true end
+    end
     return kit
 end
 
