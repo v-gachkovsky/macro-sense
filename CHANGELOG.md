@@ -11,7 +11,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the Spellbook and `/ms book`.
 
 ### Fixed
-- Macros from the Spellbook: a spell's macro shows by the mouse, also over the spell's name, where it didn't show
+- Macros from the Spellbook: a spell's macro shows just over the mouse, also over the spell's name, where it didn't show
   at all; a click on the check shows it as it is now.
 
 ## [0.11.0] - 2026-11-01

@@ -164,6 +164,7 @@ function CreateFrame(kind, name, parent)
     return o
 end
 UIParent = New("Frame")
+function UIParent:GetEffectiveScale() return 1 end
 
 ------------------------------------------------------------------------
 -- Fake game API
@@ -6225,13 +6226,14 @@ do
         and tip[4] == "/cast Frostbolt", table.concat(tip, " | "))
     tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    cursorX, cursorY = 500, 300
     for i, r in ipairs(W.Rows()) do
         if r.spell.name == "Frostbolt" then Fire(W.RowFrame(i).check, "OnEnter") end
     end
     GameTooltip.AddLine = addLine
     check("book window: the same over the spell's name, by the cursor", tip[1] == "Frostbolt"
-        and tip[4] == "/cast Frostbolt" and GameTooltip.anchor == "ANCHOR_CURSOR_RIGHT", table.concat(tip, " | ")
-        .. " " .. tostring(GameTooltip.anchor))
+        and tip[4] == "/cast Frostbolt" and GameTooltip.anchor == "ANCHOR_NONE" and GameTooltip.point[1] == "BOTTOM"
+        and GameTooltip.point[5] == 312, table.concat(tip, " | ") .. " " .. tostring(GameTooltip.anchor))
 
     local names = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end

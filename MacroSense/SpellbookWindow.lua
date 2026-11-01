@@ -129,11 +129,15 @@ local function Row(i)
         GameTooltip:Show()
     end)
     r.unit:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    -- The macro the spell gets, by the mouse: over the row and over the spell's name, which is a button of its own;
-    -- a click on the check shows the macro as it is now.
+    -- The macro the spell gets, just over the mouse, where the cursor doesn't cover it: over the row and over the
+    -- spell's name, which is a button of its own; a click on the check shows the macro as it is now.
     local function Tip(owner)
         local spell = r.row.spell.name
-        GameTooltip:SetOwner(owner, "ANCHOR_CURSOR_RIGHT", 16, -16)
+        GameTooltip:SetOwner(owner, "ANCHOR_NONE")
+        local x, y = GetCursorPosition()
+        local scale = UIParent:GetEffectiveScale()
+        GameTooltip:ClearAllPoints()
+        GameTooltip:SetPoint("BOTTOM", UIParent, "BOTTOMLEFT", x / scale, y / scale + 12)
         GameTooltip:AddLine(spell, 1, 1, 1)
         local m = choices.picked[spell] and MacroOf(spell)
         if m then
