@@ -4,15 +4,15 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.11.1] - 2026-11-01
 
 ### Changed
 - The guide, the guide in game (a section of its own), the README and the CurseForge page tell about Macros from
-  the Spellbook and `/ms book`.
+  the Spellbook and `/ms book`, with a screenshot of its window; the window map shows the new button.
 
 ### Fixed
-- Macros from the Spellbook: a spell's macro shows just over the mouse, also over the spell's name, where it didn't show
-  at all; a click on the check shows it as it is now.
+- Macros from the Spellbook: a spell's macro shows just over the mouse, also over the spell's name, where it
+  didn't show at all; a click on the check shows it as it is now.
 - Macros from the Spellbook: without a macro for the pet, its choices are dim and show "—" instead of looking
   usable.
 
