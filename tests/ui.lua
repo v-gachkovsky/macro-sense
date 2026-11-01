@@ -6193,6 +6193,10 @@ do
         and rows()["Fire Blast"] ~= nil)
     check("book window: Frostbolt at the target", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
         planned().Frostbolt)
+    local columns = {}
+    for i = 1, 5 do columns[i] = W.Control("column" .. i).label.text end
+    check("book window: the columns named", table.concat(columns, ",") == "Spell,Key,Lower rank,Macro,Target",
+        table.concat(columns, ","))
     -- A spell's own target goes over the choice for all; "—" gives it back.
     local frostRow
     for i, r in ipairs(W.Rows()) do if r.spell.name == "Frostbolt" then frostRow = W.RowFrame(i) end end

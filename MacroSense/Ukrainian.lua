@@ -1592,4 +1592,19 @@ ns.locales.uk = {
     ["\"—\" goes where the choice for all attacks or helpful spells says. Pick another to send only this spell "
         .. "elsewhere."] = "«—» — туди, куди вказано для всіх атак чи корисних заклинань. Оберіть інше, щоб лише це "
         .. "заклинання летіло деінде.",
+    ["Spell"] = "Заклинання",
+    ["Key"] = "Клавіша",
+    ["Lower rank"] = "Нижчий ранг",
+    ["Check a spell to make a macro for it. A spell with no check box ticked has a macro already, or you left it out "
+        .. "before: you can still tick it."] = "Позначте заклинання, щоб зробити для нього макрос. Заклинання без "
+        .. "галочки вже має макрос або ви пропустили його раніше. Його все одно можна позначити.",
+    ["The key to hold for a spell joined to another macro, or for a lower rank."] =
+        "Клавіша, яку треба тримати для заклинання, приєднаного до іншого макросу, або для нижчого рангу.",
+    ["A lower rank of the spell, cast while you hold the key. It costs less mana: healers use it to heal a little "
+        .. "without spending much."] = "Нижчий ранг заклинання, який кастується, поки ви тримаєте клавішу. Він "
+        .. "коштує менше мани: хілери так лікують потроху, не витрачаючи багато.",
+    ["\"Own macro\": the spell gets a macro of its own. \"With\" another spell: it goes into that spell's macro and "
+        .. "is cast while you hold the key. This saves macro slots."] = "«Власний макрос»: заклинання отримує свій "
+        .. "макрос. «Разом із» іншим заклинанням: воно йде в макрос того заклинання і кастується, поки ви тримаєте "
+        .. "клавішу. Так економляться місця для макросів.",
 }

@@ -324,9 +324,49 @@ local function Build()
     intro:SetText(L["Check the spells to make macros for. A macro names the spell with no rank, so it always casts "
         .. "the highest rank you know. Point at a spell to see its macro."])
 
+    -- The columns' names over the rows, each with what it is for under the mouse; as wide as the row's
+    -- dropdowns, from the right.
+    local head = CreateFrame("Frame", nil, frame)
+    head:SetPoint("TOPLEFT", PAD, -34 - PAD - 40)
+    head:SetSize(LIST_W, 20)
+    local function Column(label, width, tipTitle, tip)
+        local c = CreateFrame("Button", nil, head)
+        c:SetSize(width, 20)
+        c.label = ns.Text(c, 11, "dim")
+        c.label:SetPoint("LEFT", 8, 0)
+        c.label:SetText(label)
+        c:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_TOP")
+            GameTooltip:AddLine(tipTitle, 1, 1, 1)
+            GameTooltip:AddLine(tip, 0.8, 0.8, 0.8, true)
+            GameTooltip:Show()
+        end)
+        c:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        controls["column" .. #head.columns + 1] = c
+        head.columns[#head.columns + 1] = c
+        return c
+    end
+    head.columns = {}
+    local spellCol = Column(L["Spell"], 160, L["Spell"], L["Check a spell to make a macro for it. A spell with no "
+        .. "check box ticked has a macro already, or you left it out before: you can still tick it."])
+    spellCol:SetPoint("LEFT", 16, 0)
+    local key = Column(L["Key"], 62, L["Key"], L["The key to hold for a spell joined to another macro, or for a "
+        .. "lower rank."])
+    key:SetPoint("RIGHT", -4, 0)
+    local rank = Column(L["Lower rank"], 96, L["Lower rank"], L["A lower rank of the spell, cast while you hold the "
+        .. "key. It costs less mana: healers use it to heal a little without spending much."])
+    rank:SetPoint("RIGHT", key, "LEFT", -4, 0)
+    local macro = Column(L["Macro"], 120, L["Macro"], L["\"Own macro\": the spell gets a macro of its own. \"With\" "
+        .. "another spell: it goes into that spell's macro and is cast while you hold the key. This saves macro "
+        .. "slots."])
+    macro:SetPoint("RIGHT", rank, "LEFT", -4, 0)
+    local target = Column(L["Target"], 104, L["Where this spell goes"], L["\"—\" goes where the choice for all "
+        .. "attacks or helpful spells says. Pick another to send only this spell elsewhere."])
+    target:SetPoint("RIGHT", macro, "LEFT", -4, 0)
+
     -- The spells, scrolling.
     list = CreateFrame("ScrollFrame", nil, frame)
-    list:SetPoint("TOPLEFT", PAD, -34 - PAD - 40)
+    list:SetPoint("TOPLEFT", PAD, -34 - PAD - 62)
     list:SetPoint("BOTTOMLEFT", PAD, PAD)
     list:SetWidth(LIST_W)
     ns.AttachScrollBar(list, ROW_H * 3)
