@@ -167,6 +167,8 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 
 ## Macros from the spellbook
 
+<p align="center"><img src="docs/guide/shot-5-book-en.png" width="720" alt="Macros from the Spellbook"></p>
+
 "From Spellbook" (or `/ms book`) makes macros for the spells of your spellbook, many at once. Tick the spells:
 each gets a macro that names its spell with no rank, so in the Classic clients it always casts the highest rank
 you know, also after you learn a new one. Point at a spell to see its macro.

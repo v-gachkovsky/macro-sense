@@ -91,6 +91,8 @@ Ctrl+Z takes it back. Lines the wizard writes its own way, or has no place for, 
 
 ## Macros from the spellbook
 
+![Macros from the Spellbook](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/guide/shot-5-book-en.png)
+
 **From Spellbook** (or `/ms book`) makes macros for the spells of your spellbook, many at once. Each names its
 spell with no rank, so in the Classic clients it always casts the highest rank you know, also after you learn a
 new one.
