@@ -129,10 +129,11 @@ local function Row(i)
         GameTooltip:Show()
     end)
     r.unit:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    -- The macro the spell gets, under the mouse.
-    r:SetScript("OnEnter", function(self)
-        local spell = self.row.spell.name
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    -- The macro the spell gets, by the mouse: over the row and over the spell's name, which is a button of its own;
+    -- a click on the check shows the macro as it is now.
+    local function Tip(owner)
+        local spell = r.row.spell.name
+        GameTooltip:SetOwner(owner, "ANCHOR_CURSOR_RIGHT", 16, -16)
         GameTooltip:AddLine(spell, 1, 1, 1)
         local m = choices.picked[spell] and MacroOf(spell)
         if m then
@@ -141,8 +142,12 @@ local function Row(i)
         end
         if problems[spell] then GameTooltip:AddLine(problems[spell], 1, 0.3, 0.3, true) end
         GameTooltip:Show()
-    end)
+    end
+    r:SetScript("OnEnter", Tip)
     r:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    r.check:HookScript("OnEnter", Tip)
+    r.check:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    r.check:HookScript("OnClick", Tip)
     return r
 end
 

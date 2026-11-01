@@ -348,7 +348,7 @@ function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
 function GetLooseMacroIcons(t) t[#t + 1] = "My_Skull" end
 function GetLooseMacroItemIcons(t) t[#t + 1] = "My_Potion" end
 GameTooltip = New("GameTooltip")
-function GameTooltip:SetOwner(owner) self.owner = owner end
+function GameTooltip:SetOwner(owner, anchor) self.owner, self.anchor = owner, anchor end
 function GameTooltip:GetOwner() return self.owner end
 function GameTooltip:SetAction(slot) return actions[slot] ~= nil end
 function hooksecurefunc(t, name, hook)
@@ -6223,6 +6223,15 @@ do
     GameTooltip.AddLine = addLine
     check("book window: a spell's macro under the mouse", tip[2] == 'Macro "Frostbolt":'
         and tip[4] == "/cast Frostbolt", table.concat(tip, " | "))
+    tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    for i, r in ipairs(W.Rows()) do
+        if r.spell.name == "Frostbolt" then Fire(W.RowFrame(i).check, "OnEnter") end
+    end
+    GameTooltip.AddLine = addLine
+    check("book window: the same over the spell's name, by the cursor", tip[1] == "Frostbolt"
+        and tip[4] == "/cast Frostbolt" and GameTooltip.anchor == "ANCHOR_CURSOR_RIGHT", table.concat(tip, " | ")
+        .. " " .. tostring(GameTooltip.anchor))
 
     local names = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end
