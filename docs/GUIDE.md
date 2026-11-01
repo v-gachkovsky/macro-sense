@@ -206,6 +206,8 @@ from a guide. If the wizard would write some lines its own way, or has no place 
 
 ### Many macros at once: from the spellbook
 
+<p align="center"><img src="guide/shot-5-book-en.png" width="860" alt="Macros from the Spellbook: the spells with their choices on the left, the choices for all on the right"></p>
+
 "From Spellbook" (or `/ms book`) opens a window with the spells of your spellbook. Tick the ones to make
 macros for, and each gets its own: `#showtooltip` and `/cast` with the spell's name and no rank. In the Classic
 clients a spell with no rank is always its highest rank you know, so the macro keeps up as you learn new ones.
