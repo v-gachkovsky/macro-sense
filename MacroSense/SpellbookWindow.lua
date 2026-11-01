@@ -8,8 +8,8 @@ local L = ns.L
 local SpellbookWindow = {}
 ns.SpellbookWindow = SpellbookWindow
 
-local WIDTH, HEIGHT, PAD, ROW_H = 820, 560, 14, 28
-local LIST_W = 470
+local WIDTH, HEIGHT, PAD, ROW_H = 940, 560, 14, 28
+local LIST_W = 590
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
 local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
 local SpellName = C_Spell and C_Spell.GetSpellName or GetSpellInfo
@@ -102,6 +102,23 @@ local function Row(i)
     r.key:SetPoint("RIGHT", -4, 0)
     r.rank:SetPoint("RIGHT", r.key, "LEFT", -4, 0)
     r.join:SetPoint("RIGHT", r.rank, "LEFT", -4, 0)
+    -- Where this spell goes, over the choice for all: "—" keeps that one.
+    r.unit = ns.Dropdown(r, 104, function()
+        return { { key = "", name = "—" }, { key = "mouseover", name = L["Mouseover"] },
+            { key = "target", name = L["Your target"] }, { key = "focus", name = L["Focus"] } }
+    end, function() return choices.unitOf[r.row.spell.name] or "" end, function(unit)
+        choices.unitOf[r.row.spell.name] = unit ~= "" and unit or nil
+        Refresh()
+    end)
+    r.unit:SetPoint("RIGHT", r.join, "LEFT", -4, 0)
+    r.unit:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Where this spell goes"], 1, 1, 1)
+        GameTooltip:AddLine(L["\"—\" goes where the choice for all attacks or helpful spells says. Pick another to "
+            .. "send only this spell elsewhere."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    r.unit:HookScript("OnLeave", function() GameTooltip:Hide() end)
     -- The macro the spell gets, under the mouse.
     r:SetScript("OnEnter", function(self)
         local spell = self.row.spell.name
@@ -131,6 +148,8 @@ local function ShowRow(r, row)
     r.state:SetText(not picked and State(row) or "")
     local joined, lower = choices.join[spell.name], choices.lower[spell.name]
     r.join:SetShown(picked and true or false)
+    r.unit:SetShown(picked and spell.kind ~= "self" or false)
+    r.unit:Refresh()
     r.rank:SetShown(picked and not joined and #spell.ranks > 1 or false)
     r.key:SetShown(picked and (joined or lower) and true or false)
     r.join:Refresh()

@@ -6193,6 +6193,20 @@ do
         and rows()["Fire Blast"] ~= nil)
     check("book window: Frostbolt at the target", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
         planned().Frostbolt)
+    -- A spell's own target goes over the choice for all; "—" gives it back.
+    local frostRow
+    for i, r in ipairs(W.Rows()) do if r.spell.name == "Frostbolt" then frostRow = W.RowFrame(i) end end
+    check("book window: a spell's own target, none at first", frostRow.unit:IsShown()
+        and frostRow.unit.label.text == "—", frostRow.unit.label.text)
+    Fire(frostRow.unit, "OnClick")
+    Fire(MacroSenseMenu.rows[2], "OnClick")
+    check("book window: Mouseover for Frostbolt only", planned().Frostbolt
+        == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt" and planned()["Fire Blast"]
+        == "#showtooltip\n/cast Fire Blast", planned().Frostbolt)
+    Fire(frostRow.unit, "OnClick")
+    Fire(MacroSenseMenu.rows[1], "OnClick")
+    check("book window: \"—\" goes back to the choice for all", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
+        planned().Frostbolt)
     check("book window: a warlock gets a macro for the pet", planned().Pet ~= nil, planned().Pet)
     local tip = {}
     local addLine = GameTooltip.AddLine

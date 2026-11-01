@@ -1588,4 +1588,8 @@ ns.locales.uk = {
     ["could not make the macro \"%s\" (the game said: %s)"] = "не вдалося створити макрос «%s» (гра відповіла: %s)",
     ["its text: %s"] = "його текст: %s",
     ["making %d macros..."] = "створюю макроси: %d...",
+    ["Where this spell goes"] = "Куди летить це заклинання",
+    ["\"—\" goes where the choice for all attacks or helpful spells says. Pick another to send only this spell "
+        .. "elsewhere."] = "«—» — туди, куди вказано для всіх атак чи корисних заклинань. Оберіть інше, щоб лише це "
+        .. "заклинання летіло деінде.",
 }
