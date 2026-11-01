@@ -141,7 +141,7 @@ function Frame:GetNumLines()
     return 1
 end
 function Frame:GetStringHeight()
-    return (select(2, tostring(self.text):gsub("\n", "")) + 1) * rowHeight(self)
+    return math.max(select(2, tostring(self.text):gsub("\n", "")) + 1, self:GetNumLines()) * rowHeight(self)
 end
 function Frame:SetPoint(...) self.point = { ... } end
 function Frame:GetLeft() return self.left end
@@ -2062,7 +2062,7 @@ do
         if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizard = o end
     end
     check("copy: New and New (Wizard) in one row, the list down to it", wizard.point[1] == "BOTTOMRIGHT"
-        and wizard.point[3] == 36 and MacroSenseListScroll.point[3] == 66)
+        and wizard.point[3] == 36 and MacroSenseListScroll.point[3] == 94)
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(copy, "OnEnter")
@@ -4182,7 +4182,7 @@ do
     local rows = Rows()
     check("backups: an x on each backup", not rows[1].remove:IsShown() and rows[2].remove:IsShown()
         and rows[#rows].remove:IsShown())
-    check("backups: the name stops before the x", rows[1].text.point[2] == -8 and rows[2].text.point[2] == -24)
+    check("backups: the name stops before the x", rows[1].text.width - rows[2].text.width == 16)
     tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(rows[2].remove, "OnEnter")
@@ -6157,6 +6157,169 @@ do
     for _, name in ipairs({ "Rk A", "Rk B", "Rk C" }) do DeleteMacro(GetMacroIndexByName(name)) end
     ns.History.Scan()
     ns.sources.spells = spells
+end
+
+-- Macros from the spellbook: the window offers the spells of the book, makes their macros in the character's tab
+-- and puts each one on the bars in place of its spell; the next time the spells with a macro are not checked.
+do
+    local W = ns.SpellbookWindow
+    gameSpells[116] = { 1053, "Frostbolt" }
+    actions[7] = { "spell", 116 }
+    -- The book's first tab is General (Attack, racials): its spells are offered unchecked. Here it is empty.
+    local lines, line = C_SpellBook.GetNumSpellBookSkillLines, C_SpellBook.GetSpellBookSkillLineInfo
+    C_SpellBook.GetNumSpellBookSkillLines = function() return 2 end
+    C_SpellBook.GetSpellBookSkillLineInfo = function(i)
+        if i == 1 then return { itemIndexOffset = 0, numSpellBookItems = 0 } end
+        return line(i)
+    end
+    ns.InvalidateSources("spells")
+    ns.char.spellbook = nil
+    InCombatLockdown = function() return true end
+    W.Open()
+    check("book window: not in combat", not W.IsShown())
+    InCombatLockdown = function() return false end
+    SlashCmdList.MACROSENSE("book")
+    local function rows()
+        local out = {}
+        for _, r in ipairs(W.Rows()) do out[r.spell.name] = r end
+        return out
+    end
+    local function planned()
+        local out = {}
+        for _, m in ipairs(W.Planned()) do out[m.name] = m.body end
+        return out
+    end
+    check("book window: /ms book opens it, a row per spell", W.IsShown() and rows().Frostbolt ~= nil
+        and rows()["Fire Blast"] ~= nil)
+    check("book window: Frostbolt at the target", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
+        planned().Frostbolt)
+    local columns = {}
+    for i = 1, 5 do columns[i] = W.Control("column" .. i).label.text end
+    check("book window: the columns named", table.concat(columns, ",") == "Spell,Key,Lower rank,Macro,Target",
+        table.concat(columns, ","))
+    -- A spell's own target goes over the choice for all; "—" gives it back.
+    local frostRow
+    for i, r in ipairs(W.Rows()) do if r.spell.name == "Frostbolt" then frostRow = W.RowFrame(i) end end
+    check("book window: a spell's own target, none at first", frostRow.unit:IsShown()
+        and frostRow.unit.label.text == "—", frostRow.unit.label.text)
+    check("book window: one rank known: the lower rank shown, dim, \"—\"", frostRow.rank:IsShown()
+        and not frostRow.rank:IsEnabled() and frostRow.rank.label.text == "—" and W.Control("column3"):IsShown())
+    Fire(frostRow.unit, "OnClick")
+    Fire(MacroSenseMenu.rows[2], "OnClick")
+    check("book window: Mouseover for Frostbolt only", planned().Frostbolt
+        == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt" and planned()["Fire Blast"]
+        == "#showtooltip\n/cast Fire Blast", planned().Frostbolt)
+    Fire(frostRow.unit, "OnClick")
+    Fire(MacroSenseMenu.rows[1], "OnClick")
+    check("book window: \"—\" goes back to the choice for all", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
+        planned().Frostbolt)
+    check("book window: a warlock gets a macro for the pet", planned().Pet ~= nil, planned().Pet)
+    local tip = {}
+    local addLine = GameTooltip.AddLine
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    for i, r in ipairs(W.Rows()) do
+        if r.spell.name == "Frostbolt" then Fire(W.RowFrame(i), "OnEnter") end
+    end
+    GameTooltip.AddLine = addLine
+    check("book window: a spell's macro under the mouse", tip[2] == 'Macro "Frostbolt":'
+        and tip[4] == "/cast Frostbolt", table.concat(tip, " | "))
+
+    local names = {}
+    for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end
+    local count = #W.Planned()
+    -- Some clients answer nothing, though the macro is made: it counts, and goes on the bars. And the game makes
+    -- only a few at once, dropping the rest without a word: one at a time, they are all made.
+    local answers, at, inARow = CreateMacro, nil, 0
+    CreateMacro = function(...)
+        inARow = at == now and inARow + 1 or 1
+        at = now
+        if inARow <= 3 then answers(...) end
+    end
+    Fire(W.Control("create"), "OnClick")
+    Wait(5)
+    CreateMacro = answers
+    local made = {}
+    for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do
+        local name = GetMacroInfo(index)
+        if not names[name] then made[#made + 1] = name end
+    end
+    check("book window: the macros made in the character's tab, the window closed", #made == count
+        and not W.IsShown(), #made .. " of " .. count)
+    check("book window: Frostbolt's macro on the bar in place of the spell", actions[7][1] == "macro"
+        and actions[7].text == "Frostbolt", tostring(actions[7][1]))
+    -- A macro the game refused is told in chat by name, and not remembered as made.
+    local createMacro, printedBefore = CreateMacro, #printed
+    DeleteMacro(GetMacroIndexByName("Fire Blast"))
+    W.Open()
+    check("book window: with the pet's macro made, no other one at first", planned().Pet == nil)
+    check("book window: a spell whose macro you deleted is told so, not checked", rows()["Fire Blast"].state == "deleted"
+        and planned()["Fire Blast"] == nil)
+    for i, r in ipairs(W.Rows()) do
+        if r.spell.name == "Fire Blast" then Fire(W.RowFrame(i).check, "OnClick") end
+    end
+    CreateMacro = function(name, ...)
+        if name == "Fire Blast" then error("refused") end
+        return createMacro(name, ...)
+    end
+    Fire(W.Control("create"), "OnClick")
+    Wait(5)
+    CreateMacro = createMacro
+    local said = printed[printedBefore + 2] or ""
+    check("book window: a refused macro is told by name", said:find('could not make the macro "Fire Blast"', 1, true)
+        ~= nil, said)
+    W.Open()
+    check("book window: the next time, Frostbolt has a macro and is not checked", rows().Frostbolt.state == "has"
+        and rows().Frostbolt.macro == "Frostbolt" and planned().Frostbolt == nil)
+    check("book window: nothing left to make", count > 1 and #W.Planned() == 0,
+        tostring(#W.Planned()))
+    W.Close()
+    for _, name in ipairs(made) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    actions[7], gameSpells[116], ns.char.spellbook = nil, nil, nil
+    C_SpellBook.GetNumSpellBookSkillLines, C_SpellBook.GetSpellBookSkillLineInfo = lines, line
+    ns.InvalidateSources("spells")
+end
+
+-- A menu as wide as its longest item, up to 340: a longer one goes on to a second line, its row as high.
+do
+    wrapLines = true
+    local long = string.rep("word ", 60)
+    local d = ns.Dropdown(UIParent, 120, function()
+        return { { key = "a", name = "Short" }, { key = "b", name = long } }
+    end, function() return "a" end, function() end)
+    Fire(d, "OnClick")
+    local rows = MacroSenseMenu.rows
+    check("menu: at most 340 wide, the long item wrapped and its row higher", MacroSenseMenu.width == 340
+        and rows[1].height == 20 and rows[2].height > 20 and rows[2].point[3] == -22,
+        tostring(MacroSenseMenu.width) .. " " .. tostring(rows[2].height))
+    MacroSenseMenu:Hide()
+    wrapLines = false
+end
+
+-- A book with only the highest rank of a spell: the lower ones known are asked of the game by name; a game that
+-- doesn't take ranks in names is taken to know them all.
+do
+    book[#book + 1] = { "Shadow Bolt", "Rank 3" }
+    local function ranks()
+        ns.InvalidateSources("spells")
+        for _, s in ipairs(ns.sources.spells()) do
+            if s.name == "Shadow Bolt" then return table.concat(s.ranks, ",") end
+        end
+    end
+    GetSpellInfo = function(text)
+        if text == "Shadow Bolt(Rank 3)" or text == "Shadow Bolt(Rank 1)" then return "Shadow Bolt" end
+    end
+    check("ranks: the lower ones the game knows", ranks() == "Rank 1,Rank 3", ranks())
+    GetSpellInfo = function() return nil end
+    check("ranks: a game that takes no ranks in names: all of them", ranks() == "Rank 1,Rank 2,Rank 3", ranks())
+    GetSpellInfo = nil
+    check("ranks: Fireball's three from the book stay", (function()
+        for _, s in ipairs(ns.sources.spells()) do
+            if s.name == "Fireball" then return #s.ranks == 3 end
+        end
+    end)())
+    table.remove(book)
+    ns.InvalidateSources("spells")
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

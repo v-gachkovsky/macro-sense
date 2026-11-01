@@ -1688,6 +1688,20 @@ local function Build()
     end)
     wizardBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Over them: macros for the spells of the book, many at once, in a window of their own.
+    local bookBtn = ns.Button(side, L["From Spellbook"], 99, function() ns.SpellbookWindow.Toggle() end)
+    bookBtn:SetPoint("BOTTOMLEFT", 8, 64)
+    bookBtn:SetPoint("BOTTOMRIGHT", -8, 64)
+    bookBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Macros from the Spellbook"], 1, 1, 1)
+        GameTooltip:AddLine(L["Make macros for the spells in your spellbook, many at once. Pick the spells, where "
+            .. "they go and what Shift, Ctrl or Alt do. Spells that have a macro already are left out, and next time "
+            .. "only the spells you learned since are offered."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    bookBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Search under the tabs: Enter opens the first match, Esc clears it.
     search = ns.Input(side, 204, 40, "MacroSenseSearch")
     search:SetPoint("TOPLEFT", 8, -32)
@@ -1733,7 +1747,7 @@ local function Build()
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -84)
-    list:SetPoint("BOTTOMRIGHT", -13, 66)
+    list:SetPoint("BOTTOMRIGHT", -13, 94)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)

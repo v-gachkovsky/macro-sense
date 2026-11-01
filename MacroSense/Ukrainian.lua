@@ -24,9 +24,9 @@ ns.locales.uk = {
     ["  Please describe what you did, what you expected and what happened; a screenshot helps."] =
         "  Опишіть, що ви робили, чого очікували і що сталося; знімок екрана теж допоможе.",
     ["debug %s"] = "налагодження: %s",
-    ["/ms - open the editor; /ms help - the macro guide; /ms minimap - hide or show the minimap button; "
+    ["/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms minimap - hide or show the minimap button; "
         .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
-        "/ms — відкрити редактор; /ms help — довідка з макросів; /ms minimap — сховати чи показати кнопку біля "
+        "/ms — відкрити редактор; /ms help — довідка з макросів; /ms book — макроси з книги заклинань; /ms minimap — сховати чи показати кнопку біля "
         .. "мінікарти; /ms bug — подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
     ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
         .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
@@ -1543,4 +1543,70 @@ ns.locales.uk = {
         .. "маунта або вдягають спорядження.",
     ["%d lines will come out different or be left out."] = { "%d рядок вийде інакшим або зникне.",
         "%d рядки вийдуть інакшими або зникнуть.", "%d рядків вийдуть інакшими або зникнуть." },
+    -- Macros from the spellbook
+    ["The macro would be longer than %d characters."] = "Макрос вийде довшим за %d символів.",
+    ["%s already has a spell on this key."] = "У макросі %s на цій клавіші вже є заклинання.",
+    ["Join it to a spell that gets a macro of its own."] =
+        "Приєднайте його до заклинання, яке отримує власний макрос.",
+    ["From Spellbook"] = "З книги заклинань",
+    ["Macros from the Spellbook"] = "Макроси з книги заклинань",
+    ["Make macros for the spells in your spellbook, many at once. Pick the spells, where they go and what Shift, Ctrl "
+        .. "or Alt do. Spells that have a macro already are left out, and next time only the spells you learned since "
+        .. "are offered."] = "Макроси для заклинань із вашої книги, багато за раз. Оберіть заклинання, у кого вони "
+        .. "летять і що роблять Shift, Ctrl чи Alt. Заклинання, які вже мають макрос, пропускаються, а наступного разу "
+        .. "запропоновано буде лише те, що ви вивчили відтоді.",
+    ["Check the spells to make macros for. A macro names the spell with no rank, so it always casts the highest rank "
+        .. "you know. Point at a spell to see its macro."] = "Позначте заклинання, для яких зробити макроси. Макрос "
+        .. "називає заклинання без рангу, тож завжди кастує найвищий ранг, який ви знаєте. Наведіть мишу на "
+        .. "заклинання, щоб побачити його макрос.",
+    ["Already in the macro \"%s\""] = "Уже є в макросі «%s»",
+    ["You deleted its macro"] = "Ви видалили його макрос",
+    ["Left out last time"] = "Пропущене минулого разу",
+    ["new"] = "нове",
+    ["Own macro"] = "Власний макрос",
+    ["With %s"] = "Разом із %s",
+    ["+ %s"] = "+ %s",
+    ["Macro \"%s\":"] = "Макрос «%s»:",
+    ["Attacks go to"] = "Атаки летять у",
+    ["Helpful spells go to"] = "Корисні заклинання — у",
+    ["The enemy under the mouse, else your target"] = "Ворога під мишею, інакше в ціль",
+    ["The friend under the mouse, else your target"] = "Друга під мишею, інакше в ціль",
+    ["Your focus, else your target"] = "Фокус, інакше в ціль",
+    ["Start auto attack with each attack"] = "Вмикати автоатаку з кожною атакою",
+    ["Stop your cast before an interrupt"] = "Зупиняти свій каст перед перериванням",
+    ["Put them on the bars in place of the spells"] = "Поставити на панелі замість заклинань",
+    ["A macro for your pet"] = "Макрос для улюбленця",
+    ["No key"] = "Без клавіші",
+    ["Nothing"] = "Нічого",
+    ["Attack the enemy under the mouse first"] = "Спершу атакувати ворога під мишею",
+    ["Macros: %d. Free slots: %d."] = "Макросів: %d. Вільних місць: %d.",
+    ["Not enough room: leave some spells out, or join them to others on a key."] =
+        "Не вистачає місця: зніміть галочки з кількох заклинань або приєднайте їх до інших на клавішу.",
+    ["Create macros (%d)"] = "Створити макроси (%d)",
+    ["macros made: %d; put on the action bars: %d"] = "створено макросів: %d; поставлено на панелі: %d",
+    ["could not make the macro \"%s\" (the game said: %s)"] = "не вдалося створити макрос «%s» (гра відповіла: %s)",
+    ["its text: %s"] = "його текст: %s",
+    ["making %d macros..."] = "створюю макроси: %d...",
+    ["Where this spell goes"] = "Куди летить це заклинання",
+    ["\"—\" goes where the choice for all attacks or helpful spells says. Pick another to send only this spell "
+        .. "elsewhere."] = "«—» — туди, куди вказано для всіх атак чи корисних заклинань. Оберіть інше, щоб лише це "
+        .. "заклинання летіло деінде.",
+    ["Spell"] = "Заклинання",
+    ["Key"] = "Клавіша",
+    ["Lower rank"] = "Нижчий ранг",
+    ["Check a spell to make a macro for it. A spell with no check box ticked has a macro already, or you left it out "
+        .. "before: you can still tick it."] = "Позначте заклинання, щоб зробити для нього макрос. Заклинання без "
+        .. "галочки вже має макрос або ви пропустили його раніше. Його все одно можна позначити.",
+    ["The key to hold for a spell joined to another macro, or for a lower rank."] =
+        "Клавіша, яку треба тримати для заклинання, приєднаного до іншого макросу, або для нижчого рангу.",
+    ["A lower rank of the spell, cast while you hold the key. It costs less mana: to heal a little, to put a cheap "
+        .. "spell on an enemy for them to dispel, or to waste a warrior's Spell Reflection on it."] =
+        "Нижчий ранг заклинання, який кастується, поки ви тримаєте клавішу. Він коштує менше мани: щоб підлікувати "
+        .. "потроху, повісити на ворога дешеве заклинання, яке він розвіє, або витратити на нього Spell Reflection "
+        .. "воїна.",
+    ["\"Own macro\": the spell gets a macro of its own. \"With\" another spell: it goes into that spell's macro and "
+        .. "is cast while you hold the key. This saves macro slots."] = "«Власний макрос»: заклинання отримує свій "
+        .. "макрос. «Разом із» іншим заклинанням: воно йде в макрос того заклинання і кастується, поки ви тримаєте "
+        .. "клавішу. Так економляться місця для макросів.",
+    ["You know only one rank of this spell."] = "Ви знаєте лише один ранг цього заклинання.",
 }

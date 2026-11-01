@@ -30,6 +30,7 @@ Backups.lua
 Wizard.lua
 WizardRead.lua
 Practice.lua
+Spellbook.lua
 Questions.lua
 Roles.lua
 Ranks.lua
@@ -42,6 +43,7 @@ IconPicker.lua
 WizardWindow.lua
 ShareWindow.lua
 HelpWindow.lua
+SpellbookWindow.lua
 Links.lua
 Window.lua
 MinimapButton.lua

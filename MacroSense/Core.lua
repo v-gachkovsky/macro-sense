@@ -186,6 +186,8 @@ SlashCmdList.MACROSENSE = function(msg)
         if not ns.db.enabled then ns.Popup:Hide() end
     elseif msg == "help" then
         ns.HelpWindow.Open()
+    elseif msg == "book" then
+        ns.SpellbookWindow.Open()
     elseif msg == "minimap" then
         ns.Print("minimap button %s", OnOff(ns.MinimapButton.Toggle()))
     elseif msg == "bug" then
@@ -201,7 +203,7 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.db.debug = not ns.db.debug
         ns.Print("debug %s", OnOff(ns.db.debug))
     else
-        ns.Print("/ms - open the editor; /ms help - the macro guide; /ms minimap - hide or show the minimap button; "
+        ns.Print("/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms minimap - hide or show the minimap button; "
             .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle")
     end
 end
