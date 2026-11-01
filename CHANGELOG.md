@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **In-game** color scheme: the windows take the game's own dialog background and border, the main buttons are red
+  with gold letters and the checks gold, as in the game's windows; each client draws them in its own art.
+
 ## [0.11.1] - 2026-11-01
 
 ### Changed

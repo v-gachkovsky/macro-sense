@@ -38,10 +38,35 @@ function ns.Ask(which, arg1, arg2, data, language)
 end
 
 -- `frame` must be created with "BackdropTemplate".
-function ns.Backdrop(frame, bgKey, borderKey)
-    frame:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+-- The game's own look (a scheme with `native`): a window gets the game's dialog background and border, the border
+-- in a layer of its own over the window's parts, which are laid out for a 1 px line; the panels inside a window let
+-- the background show through (not the menus, which stand over the world).
+local FLAT = { bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 }
+local NATIVE_BG = { bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark", tile = true, tileSize = 32 }
+local NATIVE_EDGE = { edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border", edgeSize = 16 }
+local PANEL_ALPHA = 0.6
+
+-- `window`: a window of its own, which gets the game's background and border in the game's look.
+function ns.Backdrop(frame, bgKey, borderKey, window)
+    frame:SetBackdrop(FLAT)
     ns.OnStyle(function(s)
-        frame:SetBackdropColor(ns.RGB(s[bgKey or "panel"]))
+        local native = s.native and window
+        frame:SetBackdrop(native and NATIVE_BG or FLAT)
+        if native then
+            if not frame.nativeEdge then
+                frame.nativeEdge = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+                frame.nativeEdge:SetAllPoints()
+                frame.nativeEdge:SetFrameLevel(frame:GetFrameLevel() + 30)
+                frame.nativeEdge:SetBackdrop(NATIVE_EDGE)
+            end
+            frame.nativeEdge:Show()
+            frame:SetBackdropColor(1, 1, 1, 1)
+            return
+        end
+        if frame.nativeEdge then frame.nativeEdge:Hide() end
+        local r, g, b = ns.RGB(s[bgKey or "panel"])
+        local inside = frame:GetParent() ~= UIParent
+        frame:SetBackdropColor(r, g, b, s.native and bgKey == "panel" and inside and PANEL_ALPHA or 1)
         frame:SetBackdropBorderColor(ns.RGB(s[borderKey or "border"]))
     end)
 end
@@ -69,7 +94,7 @@ function ns.Button(parent, label, width, onClick, accent)
         local bg = accent and s.accent or (hover and s.selection or s.panel)
         b:SetBackdropColor(ns.RGB(bg))
         b:SetBackdropBorderColor(ns.RGB(accent and s.accent or s.border))
-        b.label:SetTextColor(ns.RGB(accent and "ffffff" or s.text))
+        b.label:SetTextColor(ns.RGB(accent and (s.accentText or "ffffff") or s.text))
         b:SetAlpha(b:IsEnabled() and (hover and accent and 0.85 or 1) or 0.45)
     end
     b:SetScript("OnEnter", function() paint(true) end)
@@ -148,7 +173,7 @@ function ns.Check(parent, label, getValue, onChange)
         if not s then return end
         box:SetBackdropColor(ns.RGB(s.bg))
         box:SetBackdropBorderColor(ns.RGB(hover and s.accent or s.border))
-        fill:SetColorTexture(ns.RGB(s.accent))
+        fill:SetColorTexture(ns.RGB(s.check or s.accent))
         fill:SetShown(getValue() and true or false)
     end
     b:SetScript("OnEnter", function() paint(true) end)

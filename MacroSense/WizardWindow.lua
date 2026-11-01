@@ -834,7 +834,7 @@ local function Build()
     local pos = ns.db.wizard
     frame:SetPoint(pos and pos.point or "TOP", UIParent, pos and pos.relPoint or "TOP", pos and pos.x or 0,
         pos and pos.y or -120)
-    ns.Backdrop(frame, "bg", "border")
+    ns.Backdrop(frame, "bg", "border", true)
     frame:Hide()
 
     -- Title bar: drag to move.

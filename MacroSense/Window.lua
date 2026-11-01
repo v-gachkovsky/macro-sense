@@ -1536,7 +1536,7 @@ local function Build()
     frame:SetSize(math.max(pos and pos.w or 0, MIN_W), math.max(pos and pos.h or 0, MIN_H))
     frame:SetPoint(pos and pos.point or "CENTER", UIParent, pos and pos.relPoint or "CENTER", pos and pos.x or 0, pos and pos.y or 40)
     frame:EnableMouse(true)
-    ns.Backdrop(frame, "bg", "border")
+    ns.Backdrop(frame, "bg", "border", true)
     frame:Hide()
 
     -- Title bar: drag to move.

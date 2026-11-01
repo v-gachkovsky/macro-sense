@@ -94,6 +94,16 @@ ns.schemes = {
         string = "2aa198", attribute = "6c71c4", punctuation = "93a1a1", bracket = "93a1a1", number = "d33682",
         invalid = "dc322f",
     },
+    -- The game's own look: its dialog background and border on the windows (Widgets.lua, `native`), red buttons
+    -- with gold letters, gold checks; each client draws them in its own art.
+    {
+        key = "game", name = "In-game", native = true,
+        bg = "16120d", panel = "211b13", border = "5e4b2c", selection = "4a3a1c", accent = "8c1a12",
+        accentText = "ffd100", check = "ffd100", warning = "ffd100", text = "f0e4c4", dim = "a08c66",
+        keyword = "c586c0", directive = "569cd6", property = "9cdcfe", enumMember = "4fc1ff", type = "4ec9b0",
+        string = "ce9178", attribute = "dcdcaa", punctuation = "f0e4c4", bracket = "ffd100", number = "b5cea8",
+        invalid = "ff4a3d",
+    },
 }
 ns.DEFAULT_SCHEME = "darkmodern"
 
