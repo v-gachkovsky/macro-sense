@@ -1599,9 +1599,11 @@ ns.locales.uk = {
         .. "галочки вже має макрос або ви пропустили його раніше. Його все одно можна позначити.",
     ["The key to hold for a spell joined to another macro, or for a lower rank."] =
         "Клавіша, яку треба тримати для заклинання, приєднаного до іншого макросу, або для нижчого рангу.",
-    ["A lower rank of the spell, cast while you hold the key. It costs less mana: healers use it to heal a little "
-        .. "without spending much."] = "Нижчий ранг заклинання, який кастується, поки ви тримаєте клавішу. Він "
-        .. "коштує менше мани: хілери так лікують потроху, не витрачаючи багато.",
+    ["A lower rank of the spell, cast while you hold the key. It costs less mana: to heal a little, to put a cheap "
+        .. "spell on an enemy for them to dispel, or to waste a warrior's Spell Reflection on it."] =
+        "Нижчий ранг заклинання, який кастується, поки ви тримаєте клавішу. Він коштує менше мани: щоб підлікувати "
+        .. "потроху, повісити на ворога дешеве заклинання, яке він розвіє, або витратити на нього Spell Reflection "
+        .. "воїна.",
     ["\"Own macro\": the spell gets a macro of its own. \"With\" another spell: it goes into that spell's macro and "
         .. "is cast while you hold the key. This saves macro slots."] = "«Власний макрос»: заклинання отримує свій "
         .. "макрос. «Разом із» іншим заклинанням: воно йде в макрос того заклинання і кастується, поки ви тримаєте "

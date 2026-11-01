@@ -6296,6 +6296,32 @@ do
     wrapLines = false
 end
 
+-- A book with only the highest rank of a spell: the lower ones known are asked of the game by name; a game that
+-- doesn't take ranks in names is taken to know them all.
+do
+    book[#book + 1] = { "Shadow Bolt", "Rank 3" }
+    local function ranks()
+        ns.InvalidateSources("spells")
+        for _, s in ipairs(ns.sources.spells()) do
+            if s.name == "Shadow Bolt" then return table.concat(s.ranks, ",") end
+        end
+    end
+    GetSpellInfo = function(text)
+        if text == "Shadow Bolt(Rank 3)" or text == "Shadow Bolt(Rank 1)" then return "Shadow Bolt" end
+    end
+    check("ranks: the lower ones the game knows", ranks() == "Rank 1,Rank 3", ranks())
+    GetSpellInfo = function() return nil end
+    check("ranks: a game that takes no ranks in names: all of them", ranks() == "Rank 1,Rank 2,Rank 3", ranks())
+    GetSpellInfo = nil
+    check("ranks: Fireball's three from the book stay", (function()
+        for _, s in ipairs(ns.sources.spells()) do
+            if s.name == "Fireball" then return #s.ranks == 3 end
+        end
+    end)())
+    table.remove(book)
+    ns.InvalidateSources("spells")
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)

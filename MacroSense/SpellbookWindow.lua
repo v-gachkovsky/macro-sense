@@ -105,7 +105,8 @@ local function Row(i)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Lower rank"], 1, 1, 1)
         GameTooltip:AddLine(#r.row.spell.ranks > 1 and L["A lower rank of the spell, cast while you hold the key. It "
-            .. "costs less mana: healers use it to heal a little without spending much."]
+            .. "costs less mana: to heal a little, to put a cheap spell on an enemy for them to dispel, or to waste "
+            .. "a warrior's Spell Reflection on it."]
             or L["You know only one rank of this spell."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
@@ -365,7 +366,8 @@ local function Build()
         .. "lower rank."])
     key:SetPoint("RIGHT", -4, 0)
     local rank = Column(L["Lower rank"], 96, L["Lower rank"], L["A lower rank of the spell, cast while you hold the "
-        .. "key. It costs less mana: healers use it to heal a little without spending much."])
+        .. "key. It costs less mana: to heal a little, to put a cheap spell on an enemy for them to dispel, or to "
+        .. "waste a warrior's Spell Reflection on it."])
     rank:SetPoint("RIGHT", key, "LEFT", -4, 0)
     local macro = Column(L["Macro"], 120, L["Macro"], L["\"Own macro\": the spell gets a macro of its own. \"With\" "
         .. "another spell: it goes into that spell's macro and is cast while you hold the key. This saves macro "

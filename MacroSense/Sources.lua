@@ -240,6 +240,34 @@ end
 
 local laterCache -- the spells of the book you learn later, made with spellCache
 
+-- Whether the game knows "Lesser Heal(Rank 1)" for you; nil when it doesn't take a rank in the name at all.
+local function KnowsRank(text)
+    local ok, info
+    if GetSpellInfo then
+        ok, info = pcall(GetSpellInfo, text)
+    elseif C_Spell and C_Spell.GetSpellInfo then
+        ok, info = pcall(C_Spell.GetSpellInfo, text)
+    end
+    return ok and info ~= nil
+end
+
+-- Some older clients list only the highest rank of each spell in the book: the lower ones you know are asked for by
+-- name. A client that doesn't know the highest one that way either doesn't take ranks in names: it is taken to
+-- know them all, as ranks are learned one after another.
+local function LowerRanks(spell)
+    if #spell.ranks ~= 1 then return end
+    local top = tonumber(spell.ranks[1]:match("%d+"))
+    if not top or top < 2 then return end
+    local function rank(n) return (spell.ranks[1]:gsub("%d+", tostring(n), 1)) end
+    local asks = KnowsRank(spell.name .. "(" .. spell.ranks[1] .. ")")
+    local ranks = {}
+    for n = 1, top - 1 do
+        if not asks or KnowsRank(spell.name .. "(" .. rank(n) .. ")") then ranks[#ranks + 1] = rank(n) end
+    end
+    ranks[#ranks + 1] = spell.ranks[1]
+    spell.ranks = ranks
+end
+
 -- Each spell: { name, icon, ranks, offSpec = the specialization it is for when it is not yours now, and its hint,
 -- base = the name of the spell it replaces, id = its spell ID (the highest rank's), general = in the book's first
 -- tab only (Attack, racials, professions) }.
@@ -274,6 +302,7 @@ function ns.sources.spells()
     else
         classicSpells(add, learnLater)
     end
+    for _, spell in ipairs(out) do LowerRanks(spell) end
     table.sort(out, function(a, b) return a.name < b.name end)
     spellCache, laterCache = out, later
     return out

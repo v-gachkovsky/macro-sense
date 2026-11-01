@@ -20,6 +20,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A long choice in a drop-down list goes on to a second line instead of being cut off.
 
 ### Fixed
+- Classic clients whose spellbook shows only the highest rank of a spell: the lower ranks you know are offered
+  too, when you type a rank and in Macros from the Spellbook.
 - Classic: after you learn a new rank of a spell, a macro that casts it with no rank (`/cast Shadow Bolt`) kept
   showing and casting the old one until you edited it. MacroSense now saves such macros again by itself, after
   combat if you are in one. Their text stays the same, and the history keeps no version of it.
