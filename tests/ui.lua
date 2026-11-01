@@ -6215,6 +6215,14 @@ do
     check("book window: \"—\" goes back to the choice for all", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
         planned().Frostbolt)
     check("book window: a warlock gets a macro for the pet", planned().Pet ~= nil, planned().Pet)
+    check("book window: the pet's choices in use", W.Control("petNone"):IsEnabled()
+        and W.Control("petShift").label.text == "Follow")
+    Fire(W.Control("pet"), "OnClick")
+    check("book window: no macro for the pet: its choices dim, saying nothing", planned().Pet == nil
+        and not W.Control("petNone"):IsEnabled() and W.Control("petNone").label.text == "—"
+        and W.Control("petShift").label.text == "—" and not W.Control("petMouseover"):IsEnabled())
+    Fire(W.Control("pet"), "OnClick")
+    check("book window: the pet's macro again", planned().Pet ~= nil and W.Control("petShift").label.text == "Follow")
     local tip = {}
     local addLine = GameTooltip.AddLine
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end

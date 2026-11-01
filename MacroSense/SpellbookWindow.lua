@@ -202,6 +202,15 @@ function Refresh()
     for _, control in pairs(controls) do
         if control.Refresh and control ~= createBtn then control:Refresh() end
     end
+    -- Without a macro for the pet, its choices are dim and say nothing.
+    local pet = choices.pet ~= nil
+    for name, control in pairs(controls) do
+        if name:find("^pet.") and name ~= "petBlock" then
+            control:SetEnabled(pet)
+            control:SetAlpha(pet and 1 or 0.45)
+            if not pet and control.arrow then control.label:SetText("—") end
+        end
+    end
 end
 
 -- The action slots with `spell` on them.
