@@ -164,6 +164,7 @@ function CreateFrame(kind, name, parent)
     return o
 end
 UIParent = New("Frame")
+function UIParent:GetEffectiveScale() return 1 end
 
 ------------------------------------------------------------------------
 -- Fake game API
@@ -348,7 +349,7 @@ function GetMacroItemIcons(t) t[#t + 1] = "INV_Sword_01" end
 function GetLooseMacroIcons(t) t[#t + 1] = "My_Skull" end
 function GetLooseMacroItemIcons(t) t[#t + 1] = "My_Potion" end
 GameTooltip = New("GameTooltip")
-function GameTooltip:SetOwner(owner) self.owner = owner end
+function GameTooltip:SetOwner(owner, anchor) self.owner, self.anchor = owner, anchor end
 function GameTooltip:GetOwner() return self.owner end
 function GameTooltip:SetAction(slot) return actions[slot] ~= nil end
 function hooksecurefunc(t, name, hook)
@@ -6214,6 +6215,14 @@ do
     check("book window: \"—\" goes back to the choice for all", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
         planned().Frostbolt)
     check("book window: a warlock gets a macro for the pet", planned().Pet ~= nil, planned().Pet)
+    check("book window: the pet's choices in use", W.Control("petNone"):IsEnabled()
+        and W.Control("petShift").label.text == "Follow")
+    Fire(W.Control("pet"), "OnClick")
+    check("book window: no macro for the pet: its choices dim, saying nothing", planned().Pet == nil
+        and not W.Control("petNone"):IsEnabled() and W.Control("petNone").label.text == "—"
+        and W.Control("petShift").label.text == "—" and not W.Control("petMouseover"):IsEnabled())
+    Fire(W.Control("pet"), "OnClick")
+    check("book window: the pet's macro again", planned().Pet ~= nil and W.Control("petShift").label.text == "Follow")
     local tip = {}
     local addLine = GameTooltip.AddLine
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
@@ -6223,6 +6232,16 @@ do
     GameTooltip.AddLine = addLine
     check("book window: a spell's macro under the mouse", tip[2] == 'Macro "Frostbolt":'
         and tip[4] == "/cast Frostbolt", table.concat(tip, " | "))
+    tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    cursorX, cursorY = 500, 300
+    for i, r in ipairs(W.Rows()) do
+        if r.spell.name == "Frostbolt" then Fire(W.RowFrame(i).check, "OnEnter") end
+    end
+    GameTooltip.AddLine = addLine
+    check("book window: the same over the spell's name, by the cursor", tip[1] == "Frostbolt"
+        and tip[4] == "/cast Frostbolt" and GameTooltip.anchor == "ANCHOR_NONE" and GameTooltip.point[1] == "BOTTOM"
+        and GameTooltip.point[5] == 312, table.concat(tip, " | ") .. " " .. tostring(GameTooltip.anchor))
 
     local names = {}
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[GetMacroInfo(index)] = true end

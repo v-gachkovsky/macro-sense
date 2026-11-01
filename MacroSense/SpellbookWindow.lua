@@ -129,10 +129,15 @@ local function Row(i)
         GameTooltip:Show()
     end)
     r.unit:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    -- The macro the spell gets, under the mouse.
-    r:SetScript("OnEnter", function(self)
-        local spell = self.row.spell.name
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    -- The macro the spell gets, just over the mouse, where the cursor doesn't cover it: over the row and over the
+    -- spell's name, which is a button of its own; a click on the check shows the macro as it is now.
+    local function Tip(owner)
+        local spell = r.row.spell.name
+        GameTooltip:SetOwner(owner, "ANCHOR_NONE")
+        local x, y = GetCursorPosition()
+        local scale = UIParent:GetEffectiveScale()
+        GameTooltip:ClearAllPoints()
+        GameTooltip:SetPoint("BOTTOM", UIParent, "BOTTOMLEFT", x / scale, y / scale + 12)
         GameTooltip:AddLine(spell, 1, 1, 1)
         local m = choices.picked[spell] and MacroOf(spell)
         if m then
@@ -141,8 +146,12 @@ local function Row(i)
         end
         if problems[spell] then GameTooltip:AddLine(problems[spell], 1, 0.3, 0.3, true) end
         GameTooltip:Show()
-    end)
+    end
+    r:SetScript("OnEnter", Tip)
     r:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    r.check:HookScript("OnEnter", Tip)
+    r.check:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    r.check:HookScript("OnClick", Tip)
     return r
 end
 
@@ -192,6 +201,15 @@ function Refresh()
     createBtn:SetEnabled(#macros > 0 and not over and problem == nil)
     for _, control in pairs(controls) do
         if control.Refresh and control ~= createBtn then control:Refresh() end
+    end
+    -- Without a macro for the pet, its choices are dim and say nothing.
+    local pet = choices.pet ~= nil
+    for name, control in pairs(controls) do
+        if name:find("^pet.") and name ~= "petBlock" then
+            control:SetEnabled(pet)
+            control:SetAlpha(pet and 1 or 0.45)
+            if not pet and control.arrow then control.label:SetText("—") end
+        end
     end
 end
 

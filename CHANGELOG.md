@@ -10,6 +10,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The guide, the guide in game (a section of its own), the README and the CurseForge page tell about Macros from
   the Spellbook and `/ms book`.
 
+### Fixed
+- Macros from the Spellbook: a spell's macro shows just over the mouse, also over the spell's name, where it didn't show
+  at all; a click on the check shows it as it is now.
+- Macros from the Spellbook: without a macro for the pet, its choices are dim and show "—" instead of looking
+  usable.
+
 ## [0.11.0] - 2026-11-01
 
 ### Added
