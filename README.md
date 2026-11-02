@@ -243,9 +243,9 @@ an empty `[]` removes both.
 
 - Fonts: DejaVu Sans Mono (default), JetBrains Mono, Fira Mono, Source Code Pro, Inconsolata, game fonts
   and any LibSharedMedia font. Size 8 to 28.
-- Schemes: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the built-in
-  themes of VS Code and JetBrains IDEs), and In-game: the game's own window background and border, red buttons
-  and gold letters, in each client's art. Each macro token has a semantic role (keyword, property, string,
+- Schemes: In-game (default): the game's own window background and border, red buttons and gold letters, in
+  each client's art; and Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the
+  built-in themes of VS Code and JetBrains IDEs). Each macro token has a semantic role (keyword, property, string,
   ...), and a scheme colors roles, so new schemes are easy to add in `Themes.lua`.
 - Syntax errors are underlined, the status bar names the first one with its line (all of them on hover, a
   click goes there) and Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty

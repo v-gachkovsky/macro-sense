@@ -105,7 +105,7 @@ ns.schemes = {
         invalid = "ff4a3d",
     },
 }
-ns.DEFAULT_SCHEME = "darkmodern"
+ns.DEFAULT_SCHEME = "game"
 
 function ns.FindByKey(list, key)
     for _, v in ipairs(list) do

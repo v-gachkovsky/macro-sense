@@ -9,7 +9,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 - **In-game** color scheme: the windows take the game's own dialog background and border, and the buttons, check
   boxes, input fields and dropdowns are the game's own: red buttons with gold letters, its check boxes, its input
-  frames and arrows. Each client draws them in its own art.
+  frames and arrows. Each client draws them in its own art. It is the scheme a new install starts with; a scheme
+  you chose before stays.
 
 ### Changed
 - Step by step, a click on an answer or on a spell from the list only chooses it: the macro at the bottom shows
