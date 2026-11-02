@@ -6517,16 +6517,34 @@ do
     ns.Window.Select(GetMacroIndexByName("Baa"))
     ns.HelpWindow.Open()
     ns.Window.Save()
-    local sheep
+    local flock, sizes, real = {}, {}, nil
     for _, o in ipairs(created) do
-        if o.icon and o.icon.texture == "Interface\\Icons\\Spell_Nature_Polymorph" then sheep = o end
+        if o.icon and o.icon.texture == "Interface\\Icons\\Spell_Nature_Polymorph" and o:IsShown() then
+            flock[#flock + 1] = o
+            sizes[o.speed or 0] = true -- each its own pace
+            if o.real then real = o end
+        end
     end
-    check("surprise: Polymorph on yourself: the window is a sheep", sheep ~= nil and sheep:IsShown()
-        and not frame:IsShown() and not ns.HelpWindow.IsShown() and GetMacroIndexByName("Baa") > 0)
+    local kinds = 0
+    for _ in pairs(sizes) do kinds = kinds + 1 end
+    check("surprise: Polymorph on yourself: the windows are a flock", #flock >= 7 and #flock <= 18 and kinds > 1
+        and real ~= nil and not frame:IsShown() and not ns.HelpWindow.IsShown() and GetMacroIndexByName("Baa") > 0,
+        #flock)
+    local played = {}
+    local playFile = PlaySoundFile
+    PlaySoundFile = function(file) played[#played + 1] = file end
     for _ = 1, 30 do NextFrame() end
-    Fire(sheep, "OnClick")
-    check("surprise: a click on the sheep turns it back, the help too", frame:IsShown() and not sheep:IsShown()
-        and ns.HelpWindow.IsShown())
+    check("surprise: they bleat", played[1] and played[1]:find("sheep%.ogg$") ~= nil, played[1])
+    local wrong = flock[1] == real and flock[2] or flock[1]
+    Fire(wrong, "OnClick")
+    check("surprise: the wrong sheep pops", wrong.popping and played[#played]:find("pop%.mp3$") ~= nil
+        and not frame:IsShown(), played[#played])
+    PlaySoundFile = playFile
+    Fire(real, "OnClick")
+    local left = 0
+    for _, o in ipairs(flock) do if o:IsShown() then left = left + 1 end end
+    check("surprise: the right one turns them back, the help too", frame:IsShown() and left == 0
+        and ns.HelpWindow.IsShown(), left)
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

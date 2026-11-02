@@ -1,7 +1,7 @@
--- Two things the window does that no button says. Shorten clicked ten times in a row with Shift and Ctrl held
--- shortens the windows themselves: every one open blows apart and closes. A macro saved that casts Polymorph on yourself
--- turns the window into a sheep that wanders the screen; a click on the sheep turns it back. Neither touches a
--- macro, and the window opens whole again.
+-- Two things the windows do that no button says. Shorten clicked ten times in a row with Shift and Ctrl held
+-- shortens the windows themselves: every one open blows apart and closes. A macro saved that casts Polymorph on
+-- yourself turns the windows into a flock of sheep that wander the screen and bleat: a click on the right one turns them
+-- back, any other pops. Neither touches a macro, and the windows open whole again.
 local _, ns = ...
 ns = ns or {}
 
@@ -10,7 +10,6 @@ ns.Easter = Easter
 
 local CLICKS, GAP = 10, 2 -- clicks in a row, each within GAP seconds of the one before
 local FALL = 3.2 -- how long the parts fly; the windows close then
-local SHEEP_SIZE, SHEEP_SPEED = 44, 70
 local POLYMORPH = 118
 local FATALITY = "BugSack: Fatality" -- BugSack's sound, in LibSharedMedia when BugSack is there
 
@@ -272,72 +271,129 @@ end
 ------------------------------------------------------------------------
 -- The sheep
 ------------------------------------------------------------------------
-local sheep
+local flock = {} -- the sheep, made once: as many shown as the turn wants
+local windowsBack -- the windows the sheep give back
+local BLEAT = "Interface\\AddOns\\MacroSense\\Media\\Sounds\\sheep.ogg"
+local POP = "Interface\\AddOns\\MacroSense\\Media\\Sounds\\pop.mp3"
+local bleater -- bleats now and then while sheep are out
 
 local function Wander(self, elapsed)
-    local x, y = self.x, self.y
-    local dx, dy = self.toX - x, self.toY - y
-    local far = math.sqrt(dx * dx + dy * dy)
-    self.wait = (self.wait or 0) - elapsed
+    if self.popping then return end
+    self.wait = self.wait - elapsed
     if self.wait > 0 then return end
+    local dx, dy = self.toX - self.x, self.toY - self.y
+    local far = math.sqrt(dx * dx + dy * dy)
     if far < 4 then
         -- A pause to graze, then somewhere else.
-        self.wait = math.random() * 1.5
-        self.toX = math.random(40, math.floor(UIParent:GetWidth()) - 40)
-        self.toY = math.random(60, math.floor(UIParent:GetHeight()) - 60)
+        self.wait = math.random() * 2
+        self.toX = math.random(40, math.max(41, math.floor(UIParent:GetWidth()) - 40))
+        self.toY = math.random(60, math.max(61, math.floor(UIParent:GetHeight()) - 60))
         return
     end
-    local step = math.min(far, SHEEP_SPEED * elapsed)
-    self.x, self.y = x + dx / far * step, y + dy / far * step
+    local step = math.min(far, self.speed * elapsed)
+    self.x, self.y = self.x + dx / far * step, self.y + dy / far * step
     -- It faces the way it walks.
     if dx < 0 then self.icon:SetTexCoord(0.92, 0.08, 0.08, 0.92) else self.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
-    self:ClearAllPoints()
     self:SetPoint("CENTER", UIParent, "BOTTOMLEFT", self.x, self.y)
 end
 
-local function Sheep()
-    if sheep then return sheep end
-    sheep = CreateFrame("Button", nil, UIParent)
-    sheep:SetSize(SHEEP_SIZE, SHEEP_SIZE)
-    sheep:SetFrameStrata("DIALOG")
-    sheep:SetClampedToScreen(true)
-    sheep.icon = sheep:CreateTexture(nil, "ARTWORK")
-    sheep.icon:SetAllPoints()
-    sheep.icon:SetTexture("Interface\\Icons\\Spell_Nature_Polymorph")
-    sheep.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    sheep:SetScript("OnUpdate", Wander)
-    sheep:SetScript("OnClick", function(self)
-        self:Hide()
+-- All the sheep gone, the windows back.
+local function Unpolymorph()
+    for _, s in ipairs(flock) do s:Hide() end
+    bleater:Hide()
+    local back = windowsBack
+    windowsBack = nil
+    if back then
         frame:Show()
-        for _, window in ipairs(self.windows or {}) do window:Show() end
-        self.windows = nil
-    end)
-    sheep:Hide()
-    return sheep
+        for _, window in ipairs(back) do window:Show() end
+    end
 end
 
--- The windows become a sheep where the editor was. Those the editor closes with it (the wizard, sharing, the
--- icons) stay closed, as when it is closed; the others come back with it.
+-- The wrong sheep: it pops.
+local function Pop(self)
+    if self.popping then return end
+    self.popping = true
+    local group = self.pop
+    if not group then
+        group = self:CreateAnimationGroup()
+        local grow = group:CreateAnimation("Scale")
+        if grow.SetScaleTo then grow:SetScaleTo(1.8, 1.8) else grow:SetScale(1.8, 1.8) end
+        grow:SetDuration(0.14)
+        local fade = group:CreateAnimation("Alpha")
+        fade:SetFromAlpha(1)
+        fade:SetToAlpha(0)
+        fade:SetDuration(0.14)
+        group:SetScript("OnFinished", function() self:Hide() end)
+        self.pop = group
+    end
+    group:Play()
+    if PlaySoundFile then pcall(PlaySoundFile, POP, "SFX") end
+end
+
+-- A click: the right sheep gives the windows back, any other pops.
+local function Clicked(self)
+    if self.real then Unpolymorph() else Pop(self) end
+end
+
+local function Sheep(i)
+    if flock[i] then return flock[i] end
+    local s = CreateFrame("Button", nil, UIParent)
+    s:SetFrameStrata("DIALOG")
+    s:SetClampedToScreen(true)
+    s.icon = s:CreateTexture(nil, "ARTWORK")
+    s.icon:SetAllPoints()
+    s.icon:SetTexture("Interface\\Icons\\Spell_Nature_Polymorph")
+    s.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    s:SetScript("OnUpdate", Wander)
+    s:SetScript("OnClick", Clicked)
+    s:Hide()
+    flock[i] = s
+    return s
+end
+
+-- Baa, now and then: the next one some seconds on.
+local function Bleat(self, elapsed)
+    self.wait = self.wait - elapsed
+    if self.wait > 0 then return end
+    self.wait = Between(1.5, 7)
+    if PlaySoundFile then pcall(PlaySoundFile, BLEAT, "SFX") end
+end
+
+-- The windows become a flock where the editor was, the sheep of all sizes. Those the editor closes with it (the
+-- wizard, sharing, the icons) stay closed, as when it is closed; the others come back with it.
 function Easter.Polymorph()
     if not frame or not frame:IsShown() or falling then return end
-    local s = Sheep()
     local x, y = frame:GetCenter()
     local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
-    s.x, s.y = (x or 400) * scale, (y or 300) * scale
-    s.toX, s.toY, s.wait = s.x, s.y, 0.8
-    s:ClearAllPoints()
-    s:SetPoint("CENTER", UIParent, "BOTTOMLEFT", s.x, s.y)
+    x, y = (x or 400) * scale, (y or 300) * scale
     Quiet()
     frame:Hide()
-    s.windows = {}
+    windowsBack = {}
     for _, window in ipairs(ns.windows) do
         if window:IsShown() then
-            s.windows[#s.windows + 1] = window
+            windowsBack[#windowsBack + 1] = window
             window:Hide()
         end
     end
-    s:Show()
-    Sound("IG_SPELLBOOK_CLOSE", "IG_MAINMENU_CLOSE")
+    local count = math.random(7, 18)
+    local real = math.random(count) -- only this one turns back; it looks like any other
+    for i = 1, count do
+        local s = Sheep(i)
+        s.real, s.popping = i == real, nil
+        if s.pop then s.pop:Stop() end
+        local size = math.random(22, 72)
+        s:SetSize(size, size)
+        s:SetFrameLevel(size) -- the bigger in front
+        s.speed = Between(40, 110)
+        s.x, s.y = x + Between(-120, 120), y + Between(-80, 80)
+        s.toX, s.toY, s.wait = s.x, s.y, Between(0.3, 1.5)
+        s:ClearAllPoints()
+        s:SetPoint("CENTER", UIParent, "BOTTOMLEFT", s.x, s.y)
+        s:Show()
+    end
+    for i = count + 1, #flock do flock[i]:Hide() end
+    bleater.wait = 0
+    bleater:Show()
 end
 
 -- A macro was saved: its text.
@@ -355,7 +411,13 @@ function Easter.Attach(window, shorten)
     ticker:SetScript("OnUpdate", Fly)
     frame:HookScript("OnHide", Mend)
     -- The window shown another way: no sheep then.
-    frame:HookScript("OnShow", function() if sheep then sheep:Hide() end end)
+    frame:HookScript("OnShow", function()
+        for _, s in ipairs(flock) do s:Hide() end
+        bleater:Hide()
+    end)
+    bleater = CreateFrame("Frame", nil, UIParent)
+    bleater:Hide()
+    bleater:SetScript("OnUpdate", Bleat)
     -- Clicks on Shorten count while it is dimmed too: a dimmed button gets no clicks, so the game's word that
     -- a mouse button went down is listened to.
     local times = {}
