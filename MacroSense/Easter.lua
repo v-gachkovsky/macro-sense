@@ -9,7 +9,7 @@ local Easter = {}
 ns.Easter = Easter
 
 local CLICKS, GAP = 10, 2 -- clicks in a row, each within GAP seconds of the one before
-local FALL, FADE = 2.6, 1.0 -- how long the parts fly, and the last part of it the window fades
+local FALL, FADE = 4, 1.5 -- how long the parts fly, and the last part of it the window fades
 local SHEEP_SIZE, SHEEP_SPEED = 44, 70
 local POLYMORPH = 118
 local FATALITY = "BugSack: Fatality" -- BugSack's sound, in LibSharedMedia when BugSack is there
@@ -133,8 +133,8 @@ local function Blow(part, wx, wy, groups)
     local px, py = part:GetCenter()
     local dx, dy = (px or wx) - wx + Between(-40, 40), (py or wy) - wy + Between(-40, 40)
     local far = math.max(1, math.sqrt(dx * dx + dy * dy))
-    local speed = Between(400, 1000)
-    local time = Between(0.3, 0.45) -- fast at once, slowing: the OUT smoothing
+    local speed = Between(250, 650)
+    local time = Between(0.5, 0.7) -- fast at once, slowing: the OUT smoothing
     local outX, outY = dx / far * speed * time, dy / far * speed * time + Between(30, 160)
     blast:SetStartDelay(Between(0, 0.08))
     blast:SetOffset(outX, outY)
