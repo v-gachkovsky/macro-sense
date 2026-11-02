@@ -2031,7 +2031,7 @@ local function Build()
         UpdateExplain()
     end)
     -- After OnShow and OnHide are set: it hooks them.
-    ns.Easter.Attach(frame, shortenBtn, { title, side, main })
+    ns.Easter.Attach(frame, shortenBtn, { title, side, main }, { list.child })
 
     Window.ApplyLook()
 end

@@ -87,6 +87,7 @@ function Frame:SetToplevel(on) self.toplevel = on end
 function Frame:Raise() self.raised = (self.raised or 0) + 1 end
 function Frame:IsMouseOver() return false end
 function Frame:GetParent() return self.parentFrame end
+function Frame:SetParent(parent) self.parentFrame = parent end
 -- Fonts: a character is 0.6 of the size wide, a row is size + 1 high (size 13: 8 x 14 px).
 function Frame:SetFont(path, size) self.fontPath, self.fontSize = path, size; return true end
 function Frame:GetFont() return "font", self.fontSize or 13, "" end
@@ -153,7 +154,11 @@ function Frame:GetEffectiveScale() return 1 end
 function Frame:SetAlpha(a) self.alpha = a end
 -- Animations: a group plays its parts, stopped they are gone.
 local Animation = {}
-Animation.__index = function(_, k) return rawget(Animation, k) or function() end end
+Animation.__index = function(_, k)
+    local m = rawget(Animation, k)
+    if m then return m end
+    if type(k) == "string" and k:find("^%u") then return function() end end -- every other method is a no-op
+end
 function Animation:SetOffset(x, y) self.offset = { x, y } end
 function Animation:CreateAnimation(kind)
     local a = setmetatable({ kind = kind }, Animation)
@@ -6459,6 +6464,10 @@ do
     local function click(n)
         for _ = 1, n do Fire(watch, "OnEvent", "GLOBAL_MOUSE_DOWN", "LeftButton") end
     end
+    -- A row of the list, there for the test.
+    local listChild = MacroSenseListScroll and MacroSenseListScroll.child
+    local row = CreateFrame("Button", nil, listChild)
+    row.bottom = 300
     shorten.IsMouseOver = function() return true end
     click(10)
     check("surprise: ten clicks on Shorten without Shift and Ctrl do nothing", frame:IsShown() and not ns.Easter.Falling())
@@ -6476,10 +6485,13 @@ do
     click(1)
     LibStub, PlaySoundFile = libStub, playFile
     check("surprise: BugSack's Fatality, when it is there", played == "fatality.ogg", played)
+    check("surprise: the list's rows fly each on its own, out of the list", row:GetParent() == frame
+        and row.fall and row.fall:IsPlaying())
     NextFrame()
     check("surprise: the tenth in a row: the window falls apart", ns.Easter.Falling()
         and part.fall and part.fall:IsPlaying() and part.fall.down.offset[2] < -400 and part.point[1] == "RIGHT" and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
     for _ = 1, 120 do NextFrame() end
+    check("surprise: the rows back in the list", row:GetParent() == listChild)
     check("surprise: then it closes, its parts back in place", not frame:IsShown() and not part.fall:IsPlaying()
         and part.point[1] == "RIGHT"
         and part.point[4] == -12 and frame.alpha == 1 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
