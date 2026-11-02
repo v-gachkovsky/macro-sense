@@ -9,15 +9,17 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 - **In-game** color scheme: the windows take the game's own dialog background and border, and the buttons, check
   boxes, input fields and dropdowns are the game's own: red buttons with gold letters, its check boxes, its input
-  frames and arrows. Each client draws them in its own art.
+  frames and arrows. Each client draws them in its own art. It is the scheme a new install starts with; a scheme
+  you chose before stays.
 
 ### Changed
-- Step by step, a click on an answer only chooses it: the macro at the bottom shows what it writes, another answer
-  can be chosen instead, and "Next" goes on.
+- Step by step, a click on an answer or on a spell from the list only chooses it: the macro at the bottom shows
+  what it writes, another one can be chosen instead, and "Next" goes on.
 
 ### Fixed
-- In Retail, where spells have no ranks, the Macros from the Spellbook window leaves no empty space where the
-  Lower rank column would be.
+- In Retail, the words the spellbook shows under a spell's name ("Racial", a specialization) were taken for its
+  rank, so the Macros from the Spellbook window showed the Lower rank column. It is gone there now, with no empty
+  space left in its place.
 
 ## [0.11.1] - 2026-11-01
 

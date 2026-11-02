@@ -665,15 +665,15 @@ end
 -- Dotted corner to resize `frame` (made resizable by the caller); onDone() runs when the mouse is released.
 function ns.ResizeGrip(frame, onDone)
     local grip = CreateFrame("Button", nil, frame)
-    grip:SetSize(16, 16)
-    grip:SetPoint("BOTTOMRIGHT", -2, 2)
+    grip:SetSize(12, 12) -- small enough to leave the buttons in the corner clear
+    grip:SetPoint("BOTTOMRIGHT", -1, 1)
     grip:SetFrameLevel(frame:GetFrameLevel() + 20)
     local dots = {}
     for row = 0, 2 do
         for col = 0, 2 - row do
             local d = grip:CreateTexture(nil, "OVERLAY")
             d:SetSize(2, 2)
-            d:SetPoint("BOTTOMRIGHT", -2 - col * 4, 2 + row * 4)
+            d:SetPoint("BOTTOMRIGHT", -1 - col * 4, 1 + row * 4)
             dots[#dots + 1] = d
         end
     end

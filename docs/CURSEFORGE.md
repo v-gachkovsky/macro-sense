@@ -214,8 +214,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 
 ## Make it yours
 
-- **Eight color schemes**: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark, and In-game: the
-  game's own window background and border, red buttons and gold letters, in your client's art.
+- **Eight color schemes**: In-game, the default: the game's own window background and border, red buttons and
+  gold letters, in your client's art. And Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark.
 - **Monospace fonts** included: DejaVu Sans Mono, JetBrains Mono, Fira Mono, Source Code Pro, Inconsolata.
   Game fonts and LibSharedMedia fonts work too. Size from 8 to 28.
 - **Resizable window**; size and position are remembered.

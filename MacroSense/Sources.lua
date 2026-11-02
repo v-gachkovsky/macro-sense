@@ -288,7 +288,9 @@ function ns.sources.spells()
         if base and base ~= name then spell.base = base end
         if not general then spell.general = nil end
         spell.id = id or spell.id
-        if sub and sub ~= "" then table.insert(spell.ranks, sub) end
+        -- A rank has its number ("Rank 2"); the other words under a name are not ranks: Retail's "Racial" or
+        -- specialization, a profession's "Apprentice".
+        if sub and sub:match("%d") then table.insert(spell.ranks, sub) end
     end
     local function learnLater(name, id, spec)
         if not name then return end

@@ -61,7 +61,7 @@ questions; the wizard opens as you left it.
 
 - **What should the macro do?** Cast a spell, use an item, several spells in turn, one of several at random,
   target someone, set your focus, take someone's target, command your pet, ride a mount.
-- Then what that needs: the spell or item (type a few letters, or pick it from the list: picked, it goes on) and
+- Then what that needs: the spell or item (type a few letters, or pick it from the list) and
   its rank when it has several (Classic),
   the spells of a list in their order and what starts a sequence over, what the pet does.
 - **Where should Flash Heal go?** On your target as usual, on whoever is under the mouse, on the ground under
@@ -86,8 +86,9 @@ questions; the wizard opens as you left it.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
   the name, saves it and opens it in the editor.
 
-The macro shows at the bottom from the first answer. A click on an answer goes on; **< Back** goes back with
-the answers kept, and **Next >** keeps the one chosen.
+The macro shows at the bottom from the first answer. A click on an answer or a spell from the list only
+chooses it, so you can see what it writes and choose another; **Next >** goes on, and **< Back** goes back with
+the answers kept.
 
 ### A macro you already have
 
@@ -242,9 +243,9 @@ an empty `[]` removes both.
 
 - Fonts: DejaVu Sans Mono (default), JetBrains Mono, Fira Mono, Source Code Pro, Inconsolata, game fonts
   and any LibSharedMedia font. Size 8 to 28.
-- Schemes: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the built-in
-  themes of VS Code and JetBrains IDEs), and In-game: the game's own window background and border, red buttons
-  and gold letters, in each client's art. Each macro token has a semantic role (keyword, property, string,
+- Schemes: In-game (default): the game's own window background and border, red buttons and gold letters, in
+  each client's art; and Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark (palettes after the
+  built-in themes of VS Code and JetBrains IDEs). Each macro token has a semantic role (keyword, property, string,
   ...), and a scheme colors roles, so new schemes are easy to add in `Themes.lua`.
 - Syntax errors are underlined, the status bar names the first one with its line (all of them on hover, a
   click goes there) and Save shows a warning sign: unknown command or condition, `[` without `]`, `]` without `[`, an empty
