@@ -1895,7 +1895,8 @@ local function Build()
         GameTooltip:Show()
     end)
     saveBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    saveBtn:SetPoint("RIGHT", -12, 0) -- under Shorten, the resize grip below it in the corner
+    -- Under Shorten, and as high as Share, Trash and Backups on the left: 8 over the bottom, as they are.
+    saveBtn:SetPoint("BOTTOMRIGHT", -12, 8)
     revertBtn = ns.Button(bar, L["Revert"], 90, Window.Revert)
     revertBtn:SetPoint("RIGHT", saveBtn, "LEFT", -6, 0)
     counter = ns.Text(bar, 11, "dim")
