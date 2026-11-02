@@ -12,6 +12,7 @@ local CLICKS, GAP = 10, 2 -- clicks in a row, each within GAP seconds of the one
 local FALL, FADE = 1.6, 0.7 -- how long the parts fall, and the last part of it the window fades
 local SHEEP_SIZE, SHEEP_SPEED = 44, 70
 local POLYMORPH = 118
+local FATALITY = "BugSack: Fatality" -- BugSack's sound, in LibSharedMedia when BugSack is there
 
 -- Whether `body` casts Polymorph on yourself: a /cast or /use line with @player (or target=player) and the
 -- spell, in English or in the game's language.
@@ -49,6 +50,13 @@ local falling -- while they fall: { groups = their animations, time = so far }
 
 -- Whether the window is falling apart now.
 function Easter.Falling() return falling ~= nil end
+
+-- A sound another addon put in LibSharedMedia: whether it played.
+local function Shared(name)
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
+    local file = LSM and LSM:Fetch("sound", name, true)
+    return file and PlaySoundFile and pcall(PlaySoundFile, file, "Master") or false
+end
 
 local function Sound(...)
     if not (PlaySound and SOUNDKIT) then return end
@@ -111,7 +119,7 @@ function Easter.Shatter()
         end
     end
     falling = { groups = groups, time = 0 }
-    Sound("IG_QUEST_FAILED", "IG_MAINMENU_CLOSE")
+    if not Shared(FATALITY) then Sound("IG_QUEST_FAILED", "IG_MAINMENU_CLOSE") end
     ns.Print("shortened by 100%%")
     ticker:Show()
 end
