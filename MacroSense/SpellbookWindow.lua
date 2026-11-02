@@ -111,7 +111,7 @@ local function Row(i)
         GameTooltip:Show()
     end)
     r.rank:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    r.join:SetPoint("RIGHT", r.rank, "LEFT", -4, 0)
+    r.join:SetPoint("RIGHT", kit.ranks and r.rank or r.key, "LEFT", -4, 0) -- Retail: no lower rank, no gap for it
     -- Where this spell goes, over the choice for all: "—" keeps that one.
     r.unit = ns.Dropdown(r, 96, function()
         return { { key = "", name = "—" }, { key = "mouseover", name = L["Mouseover"] },
@@ -390,7 +390,7 @@ local function Build()
     local macro = Column(L["Macro"], 132, L["Macro"], L["\"Own macro\": the spell gets a macro of its own. \"With\" "
         .. "another spell: it goes into that spell's macro and is cast while you hold the key. This saves macro "
         .. "slots."])
-    macro:SetPoint("RIGHT", rank, "LEFT", -4, 0)
+    macro:SetPoint("RIGHT", kit.ranks and rank or key, "LEFT", -4, 0)
     local target = Column(L["Target"], 96, L["Where this spell goes"], L["\"—\" goes where the choice for all "
         .. "attacks or helpful spells says. Pick another to send only this spell elsewhere."])
     target:SetPoint("RIGHT", macro, "LEFT", -4, 0)
