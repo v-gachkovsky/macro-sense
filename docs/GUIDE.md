@@ -148,7 +148,8 @@ The same Shadow Bolt macro as in section 3, question by question:
 
 1. **"What should the macro do?"** Choose "Cast a spell". The other answers: use an item, several spells in
    turn, one of several at random, target someone, set your focus, take someone's target, command your pet,
-   ride a mount, put on gear.
+   ride a mount, put on gear. A click only chooses: the macro at the bottom of the window shows what it
+   writes, and you can still choose another answer. "Next" goes on when you're sure.
 2. **"Which spell?"** Type a few letters, `Shad`, and pick **Shadow Bolt**. Picking it goes on to the next
    question by itself.
 3. **"Where should Shadow Bolt go?"** Choose "Whoever is under the mouse". Each answer shows the words it puts

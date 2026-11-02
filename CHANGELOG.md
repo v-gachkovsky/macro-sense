@@ -11,6 +11,14 @@ and the project uses [Semantic Versioning](https://semver.org/).
   boxes, input fields and dropdowns are the game's own: red buttons with gold letters, its check boxes, its input
   frames and arrows. Each client draws them in its own art.
 
+### Changed
+- Step by step, a click on an answer only chooses it: the macro at the bottom shows what it writes, another answer
+  can be chosen instead, and "Next" goes on.
+
+### Fixed
+- In Retail, where spells have no ranks, the Macros from the Spellbook window leaves no empty space where the
+  Lower rank column would be.
+
 ## [0.11.1] - 2026-11-01
 
 ### Changed
