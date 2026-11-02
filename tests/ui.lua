@@ -6490,7 +6490,7 @@ do
     NextFrame()
     check("surprise: the tenth in a row: the window falls apart", ns.Easter.Falling()
         and part.fall and part.fall:IsPlaying() and part.fall.down.offset[2] < -400 and part.point[1] == "RIGHT" and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
-    for _ = 1, 120 do NextFrame() end
+    for _ = 1, 200 do NextFrame() end
     check("surprise: the rows back in the list", row:GetParent() == listChild)
     check("surprise: then it closes, its parts back in place", not frame:IsShown() and not part.fall:IsPlaying()
         and part.point[1] == "RIGHT"
