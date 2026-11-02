@@ -2994,6 +2994,10 @@ do
     check("steps: a name typed lets Next go on", C("next"):IsEnabled())
     Fire(C("stepSpell"), "OnArrowPressed", "DOWN")
     Fire(C("stepSpell"), "OnEnterPressed")
+    check("steps: a spell picked from the list stays on the question", question()
+        == "Which spell should the macro cast?" and C("stepSpell").text == "Fireball" and C("next"):IsEnabled()
+        and ns.Highlight.Strip(C("preview").text):find("Fireball", 1, true) ~= nil, question())
+    Fire(C("next"), "OnClick")
     check("steps: a spell with ranks: which one", question() == "Which rank of Fireball?"
         and answers() == "The highest you know, Rank 3, Rank 2, Rank 1" and chosen() == "The highest you know"
         and C("answer2").hint.text == "Fireball(Rank 3)", answers())
@@ -3027,6 +3031,7 @@ do
         and C("next"):IsEnabled(), question())
     TypeIn(C("stepSpell"), "poly")
     Fire(C("stepSpell"), "OnEnterPressed")
+    Fire(C("next"), "OnClick")
     check("steps: where it goes with Shift", question() == "Where should Polymorph go?"
         and C("context").text == "With Shift held" and chosen() == "On your target, as usual", question())
     Pick("On your focus")
@@ -4666,7 +4671,7 @@ do
         [#book + 2] = { name = "Chaos Bolt", subName = "", itemType = 1, isPassive = false, iconID = 2, isOffSpec = true },
         [#book + 3] = { name = "Fireball", subName = "", itemType = 1, isPassive = false, iconID = 3, isOffSpec = true },
         [#book + 4] = { name = "Soul Fire", subName = "", itemType = 2, isPassive = false, iconID = 4, isOffSpec = true },
-        [#book + 5] = { name = "Incinerate", subName = "", itemType = 1, isPassive = false, iconID = 5 },
+        [#book + 5] = { name = "Incinerate", subName = "Destruction", itemType = 1, isPassive = false, iconID = 5 },
         [#book + 6] = { name = "Haunt", subName = "", itemType = 1, isPassive = false, iconID = 6, isOffSpec = true },
         [#book + 7] = { name = "Drain Soul", subName = "", itemType = 1, isPassive = false, iconID = 7, actionID = 686,
             spellID = 198590 },
@@ -4720,6 +4725,9 @@ do
     check("missing: another specialization's spell", issue("/cast Chaos Bolt") == "Destruction only (missing)",
         issue("/cast Chaos Bolt"))
     check("missing: by its skill line", issue("/cast Incinerate") == "Destruction only (missing)", issue("/cast Incinerate"))
+    local incinerate
+    for _, spell in ipairs(ns.sources.spells()) do if spell.name == "Incinerate" then incinerate = spell end end
+    check("retail: the words under a spell's name are not a rank", incinerate and #incinerate.ranks == 0)
     check("missing: by the spell", issue("/cast Haunt") == "Affliction only (missing)", issue("/cast Haunt"))
     check("missing: in full, with the specialization", ns.Highlight.Errors("/cast Chaos Bolt")[1].message
         == "\"Chaos Bolt\" belongs to Destruction: you are in another specialization now")

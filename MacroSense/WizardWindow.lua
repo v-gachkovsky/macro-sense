@@ -680,7 +680,7 @@ local function BuildSteps()
         controls["answer" .. i] = b
     end
 
-    -- A spell or item: the macro's, or a key's. Picked from the list, it goes on.
+    -- A spell or item: the macro's, or a key's. Picked from the list, the macro at the bottom shows it; Next goes on.
     local function keyOf() return asked and asked.key end
     local function placeOf() return asked and asked.mount end
     local function otherwise() return asked and asked.slot == "otherwise" end
@@ -714,7 +714,10 @@ local function BuildSteps()
     box.noRanks = true -- the next question asks for the rank
     local pick = box.Pick
     function box:Pick(item)
-        if pick(self, item) then Go() end
+        if pick(self, item) then
+            Update()
+            controls.next:SetEnabled(Answered())
+        end
     end
     controls.stepSpell = box
 
