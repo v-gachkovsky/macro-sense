@@ -6516,6 +6516,7 @@ do
     Send("UPDATE_MACROS")
     ns.Window.Select(GetMacroIndexByName("Baa"))
     ns.HelpWindow.Open()
+    ns.WizardWindow.Open()
     ns.Window.Save()
     local flock, sizes, real = {}, {}, nil
     for _, o in ipairs(created) do
@@ -6543,8 +6544,8 @@ do
     Fire(real, "OnClick")
     local left = 0
     for _, o in ipairs(flock) do if o:IsShown() then left = left + 1 end end
-    check("surprise: the right one turns them back, the help too", frame:IsShown() and left == 0
-        and ns.HelpWindow.IsShown(), left)
+    check("surprise: the right one turns them back, the help and the wizard too", frame:IsShown() and left == 0
+        and ns.HelpWindow.IsShown() and ns.WizardWindow.IsShown(), left)
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

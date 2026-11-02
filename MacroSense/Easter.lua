@@ -359,22 +359,20 @@ local function Bleat(self, elapsed)
     if PlaySoundFile then pcall(PlaySoundFile, BLEAT, "SFX") end
 end
 
--- The windows become a flock over the screen, the sheep of all sizes. Those the editor closes with it (the
--- wizard, sharing, the icons) stay closed, as when it is closed; the others come back with it.
+-- The windows become a flock over the screen, the sheep of all sizes; all of them come back as they were.
 function Easter.Polymorph()
     if not frame or not frame:IsShown() or falling then return end
     local x, y = frame:GetCenter()
     local scale = frame:GetEffectiveScale() / UIParent:GetEffectiveScale()
     x, y = (x or 400) * scale, (y or 300) * scale
-    Quiet()
-    frame:Hide()
+    -- Every window open, taken before the editor closes the wizard, sharing and the icons with it.
     windowsBack = {}
     for _, window in ipairs(ns.windows) do
-        if window:IsShown() then
-            windowsBack[#windowsBack + 1] = window
-            window:Hide()
-        end
+        if window:IsShown() and window ~= frame then windowsBack[#windowsBack + 1] = window end
     end
+    Quiet()
+    frame:Hide()
+    for _, window in ipairs(windowsBack) do window:Hide() end
     local width, height = math.max(200, UIParent:GetWidth()), math.max(200, UIParent:GetHeight())
     local count = math.random(7, 18)
     local real = math.random(count) -- only this one turns back; it looks like any other
