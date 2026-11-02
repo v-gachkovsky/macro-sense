@@ -68,8 +68,8 @@ local function Sound(...)
     end
 end
 
--- Every window that blew apart closed, every part back where it was. The parts only moved in
--- animations: their places in the windows (their anchors) were never changed; rows go back into their lists.
+-- Every window that blew apart closed, every part back where it was: its anchors as they were, rows back in their
+-- lists.
 local function Mend()
     if not falling then return end
     local was = falling
@@ -77,14 +77,26 @@ local function Mend()
     ticker:Hide()
     for _, window in ipairs(was.windows) do window:Hide() end
     for _, group in ipairs(was.groups) do group:Stop() end
+    for _, p in ipairs(was.pieces) do
+        p.part:ClearAllPoints()
+        for _, point in ipairs(p.points) do p.part:SetPoint(unpack(point)) end
+    end
     for _, row in ipairs(was.rows) do
         row.part:SetParent(row.parent)
         row.part:SetFrameLevel(row.level)
     end
 end
 
-local function Wait(_, elapsed)
+-- Each part on its own (a part anchored to another would follow it too): flung out, slowed by the air, pulled down.
+local DRAG, GRAVITY = 2.2, 900
+local function Fly(_, elapsed)
     falling.time = falling.time + elapsed
+    local slow = math.max(0, 1 - DRAG * elapsed)
+    for _, p in ipairs(falling.pieces) do
+        p.vx, p.vy = p.vx * slow, p.vy * slow - GRAVITY * elapsed
+        p.x, p.y = p.x + p.vx * elapsed, p.y + p.vy * elapsed
+        p.part:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
+    end
     if falling.time >= FALL then Mend() end
 end
 
@@ -126,36 +138,26 @@ local function Spin(part, groups)
     end
 end
 
--- A part blown away from the window's middle (wx, wy): out, sharp at first and slowing, then down past the
--- bottom of the screen.
-local function Blow(part, wx, wy, groups)
-    local group = Group(part, "fall", "Translation", "Translation")
-    local blast, fall = group[1], group[2]
-    group.down = fall
+-- A part blown away from the window's middle (wx, wy): where it is now, and how fast it goes.
+local function Blow(part, wx, wy, pieces)
+    local left, bottom = part:GetLeft(), part:GetBottom()
+    if not (left and bottom) then return end
     local px, py = part:GetCenter()
     local dx, dy = (px or wx) - wx + Between(-40, 40), (py or wy) - wy + Between(-40, 40)
     local far = math.max(1, math.sqrt(dx * dx + dy * dy))
-    local reach = Between(120, 380)
-    local time = Between(0.9, 1.3)
-    local outX, outY = dx / far * reach, dy / far * reach + Between(40, 140)
-    blast:SetStartDelay(Between(0, 0.06))
-    blast:SetOffset(outX, outY)
-    blast:SetDuration(time)
-    blast:SetSmoothing("OUT")
-    fall:SetOffset(dx / far * reach * Between(0.2, 0.6), -((part:GetBottom() or 0) + part:GetHeight() + outY + 80))
-    fall:SetDuration(FALL - time)
-    fall:SetSmoothing("IN")
-    group:Play()
-    groups[#groups + 1] = group
-    Spin(part, groups)
+    local speed = Between(250, 700)
+    local points = {}
+    for i = 1, part:GetNumPoints() do points[i] = { part:GetPoint(i) } end
+    pieces[#pieces + 1] = { part = part, points = points, x = left, y = bottom, w = part:GetWidth(),
+        h = part:GetHeight(), vx = dx / far * speed, vy = dy / far * speed + Between(100, 350) }
 end
 
 -- What holds the parts (the window, its panels, its border) is gone right after the blast; its texts fly too.
-local function Vanish(shell, wx, wy, groups)
+local function Vanish(shell, wx, wy, groups, pieces)
     for _, region in ipairs({ shell:GetRegions() }) do
         if region.CreateAnimationGroup and region:IsShown() then
             if IsText(region) then
-                if region:GetBottom() then Blow(region, wx, wy, groups) end
+                Blow(region, wx, wy, pieces)
             else
                 -- Gone, then kept gone while the parts fly: the group stopped, it shows again.
                 local group = Group(region, "vanish", "Alpha", "Alpha")
@@ -214,7 +216,7 @@ end
 -- Every window shown blows apart and closes.
 function Easter.Shatter()
     if falling or not frame or not frame:IsShown() or InCombatLockdown() then return end
-    local groups, rows, windows = {}, {}, {}
+    local groups, rows, windows, pieces = {}, {}, {}, {}
     for _, window in ipairs(ns.windows) do
         if window:IsShown() then
             windows[#windows + 1] = window
@@ -229,13 +231,26 @@ function Easter.Shatter()
                     p.part:SetParent(window)
                     p.part:SetFrameLevel(level)
                 end
-                Blow(p.part, wx, wy, groups)
+                Blow(p.part, wx, wy, pieces)
             end
-            for _, shell in ipairs(shells) do Vanish(shell, wx, wy, groups) end
+            for _, shell in ipairs(shells) do Vanish(shell, wx, wy, groups, pieces) end
             Jolt(window, groups)
         end
     end
-    falling = { groups = groups, rows = rows, windows = windows, time = 0 }
+    -- All measured, then each let go of what it was anchored to: anchored to the screen where it is, its size
+    -- kept (a frame between two anchors had it from them; a text keeps its own). One the game won't move stays.
+    local free = {}
+    for _, p in ipairs(pieces) do
+        p.part:ClearAllPoints()
+        if not IsText(p.part) then p.part:SetSize(p.w, p.h) end
+        if pcall(p.part.SetPoint, p.part, "BOTTOMLEFT", UIParent, "BOTTOMLEFT", p.x, p.y) then
+            free[#free + 1] = p
+            Spin(p.part, groups)
+        else
+            for _, point in ipairs(p.points) do p.part:SetPoint(unpack(point)) end
+        end
+    end
+    falling = { groups = groups, rows = rows, windows = windows, pieces = free, time = 0 }
     if not Shared(FATALITY) then Sound("IG_QUEST_FAILED", "IG_MAINMENU_CLOSE") end
     ns.Print("shortened by 100%%")
     ticker:Show()
@@ -313,7 +328,7 @@ function Easter.Attach(window, shorten)
     frame = window
     ticker = CreateFrame("Frame", nil, UIParent)
     ticker:Hide()
-    ticker:SetScript("OnUpdate", Wait)
+    ticker:SetScript("OnUpdate", Fly)
     frame:HookScript("OnHide", Mend)
     -- The window shown another way: no sheep then.
     frame:HookScript("OnShow", function() if sheep then sheep:Hide() end end)

@@ -6469,7 +6469,7 @@ do
     -- A row of the list, there for the test.
     local listChild = MacroSenseListScroll and MacroSenseListScroll.child
     local row = CreateFrame("Button", nil, listChild)
-    row.bottom = 300
+    row.left, row.bottom = 10, 300
     shorten.IsMouseOver = function() return true end
     click(10)
     check("surprise: ten clicks on Shorten without Shift and Ctrl do nothing", frame:IsShown() and not ns.Easter.Falling())
@@ -6490,15 +6490,15 @@ do
     check("surprise: BugSack's Fatality, when it is there", played == "fatality.ogg", played)
     check("surprise: the help window jolts with it", MacroSenseHelp.jolt and MacroSenseHelp.jolt:IsPlaying())
     check("surprise: the list's rows fly each on its own, out of the list", row:GetParent() == frame
-        and row.fall and row.fall:IsPlaying())
+        and row.point[1] == "BOTTOMLEFT" and row.point[2] == UIParent)
     NextFrame()
     check("surprise: the tenth in a row: the window falls apart", ns.Easter.Falling()
-        and part.fall and part.fall:IsPlaying() and part.fall.down.offset[2] < -400 and part.point[1] == "RIGHT" and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
+        and part.point[1] == "BOTTOMLEFT" and part.point[2] == UIParent and part.point[4] ~= 500 and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
     for _ = 1, 300 do NextFrame() end
     check("surprise: the rows back in the list", row:GetParent() == listChild)
     check("surprise: another window open blows apart and closes too", not ns.HelpWindow.IsShown()
 )
-    check("surprise: then it closes, its parts back in place", not frame:IsShown() and not part.fall:IsPlaying()
+    check("surprise: then it closes, its parts back in place", not frame:IsShown()
         and part.point[1] == "RIGHT"
         and part.point[4] == -12 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
     IsShiftKeyDown, IsControlKeyDown = function() return false end, function() return false end
