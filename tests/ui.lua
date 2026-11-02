@@ -6479,6 +6479,9 @@ do
     click(9)
     check("surprise: nine, or with a pause, do nothing", frame:IsShown() and not ns.Easter.Falling())
     ns.HelpWindow.Open()
+    local hidden = {}
+    local popupHide = StaticPopup_Hide
+    StaticPopup_Hide = function(which) hidden[which] = true end
     local played
     local libStub, playFile = LibStub, PlaySoundFile
     LibStub = function(name) return name == "LibSharedMedia-3.0" and {
@@ -6488,6 +6491,8 @@ do
     click(1)
     LibStub, PlaySoundFile = libStub, playFile
     check("surprise: BugSack's Fatality, when it is there", played == "fatality.ogg", played)
+    StaticPopup_Hide = popupHide
+    check("surprise: the addon's questions close", hidden.MACROSENSE_DISCARD and hidden.MACROSENSE_DELETE)
     check("surprise: the help window jolts with it", MacroSenseHelp.jolt and MacroSenseHelp.jolt:IsPlaying())
     check("surprise: the list's rows fly each on its own, out of the list", row:GetParent() == frame
         and row.point[1] == "BOTTOMLEFT" and row.point[2] == UIParent)

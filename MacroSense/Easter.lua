@@ -217,6 +217,14 @@ end
 function Easter.Shatter()
     if falling or not frame or not frame:IsShown() or InCombatLockdown() then return end
     local groups, rows, windows, pieces = {}, {}, {}, {}
+    -- The addon's questions (the game's dialogs: they are not blown up, only gone), its menu and tooltip.
+    if StaticPopup_Hide and StaticPopupDialogs then
+        for which in pairs(StaticPopupDialogs) do
+            if type(which) == "string" and which:find("^MACROSENSE_") then StaticPopup_Hide(which) end
+        end
+    end
+    if ns.CloseMenu then ns.CloseMenu() end
+    if GameTooltip then GameTooltip:Hide() end
     for _, window in ipairs(ns.windows) do
         if window:IsShown() then
             windows[#windows + 1] = window
