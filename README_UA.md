@@ -242,7 +242,8 @@ Curse of Agony (слова можна пропускати), і `CoA` теж (м
 
 - Шрифти: DejaVu Sans Mono (за замовчуванням), JetBrains Mono, Fira Mono, Source Code Pro, Inconsolata,
   шрифти гри та LibSharedMedia. Розмір від 8 до 28.
-- Теми: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark.
+- Теми: Dark, Light, Graphite, Charcoal, Paper, Monokai, Solarized Dark і «Як у грі»: тло й рамка вікон самої гри,
+  червоні кнопки й золоті літери, у тому вигляді, який має ваш клієнт.
 - Помилки підкреслюються, статус-бар називає першу з номером рядка (усі — при наведенні, клік переносить до
   неї), а на кнопці Save з'являється знак оклику: невідома команда чи умова, `[` без `]`, `]` без `[`, порожня умова
   (`[harm,,dead]`), `@` чи `target=` без юніта, `mod:` без значення, неправильне значення (`btn:7`,

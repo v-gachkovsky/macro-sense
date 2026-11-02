@@ -146,7 +146,7 @@ local function Create()
     local minW, minH = SizeFor(MIN_COLS, MIN_ROWS)
     local saved = ns.db.picker
     frame:SetSize(math.max(saved and saved.w or 0, minW), math.max(saved and saved.h or 0, minH))
-    ns.Backdrop(frame, "panel", "border")
+    ns.Backdrop(frame, "panel", "border", true)
     frame:Hide()
 
     search = ns.Input(frame, 200, 40)

@@ -386,7 +386,7 @@ local function Build()
     frame:EnableMouse(true)
     frame:SetSize(WIDTH, HEIGHT)
     frame:SetPoint("CENTER", 0, 40)
-    ns.Backdrop(frame, "bg", "border")
+    ns.Backdrop(frame, "bg", "border", true)
     frame:Hide()
 
     -- Title bar: drag to move.

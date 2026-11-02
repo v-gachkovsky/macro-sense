@@ -108,6 +108,7 @@ function Frame:GetText() return self.text end
 function Frame:SetTexture(t) self.texture = t end
 function Frame:SetDesaturated(on) self.desaturated = on end
 function Frame:SetBackdropColor(r, g, b, a) self.backdropColor = { r, g, b, a } end
+function Frame:SetBackdrop(backdrop) self.backdrop = backdrop end
 function Frame:GetValue() return self.value or 0 end
 function Frame:GetVerticalScrollRange() return self.range or 0 end
 function Frame:GetVerticalScroll() return self.vscroll or 0 end
@@ -6339,6 +6340,50 @@ do
     end)())
     table.remove(book)
     ns.InvalidateSources("spells")
+end
+
+-- The In-game scheme: the windows get the game's dialog background and border, the border over their parts; the
+-- panels inside let the background show; the menus stay solid; the main buttons are red with gold letters.
+do
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    local before = ns.db.scheme
+    local function look(key)
+        ns.db.scheme = key
+        ns.Window.ApplyLook()
+    end
+    look("game")
+    local frame, edge = MacroSenseFrame, MacroSenseFrame.nativeEdge
+    check("game look: the window's background and border are the game's", frame.backdrop.bgFile
+        == "Interface\\DialogFrame\\UI-DialogBox-Background-Dark" and edge and edge:IsShown()
+        and edge.backdrop.edgeFile == "Interface\\DialogFrame\\UI-DialogBox-Border")
+    local title
+    for _, o in ipairs(created) do
+        if o.parentFrame == frame and o.backdrop and o.backdrop.bgFile ~= nil and o ~= edge and o.backdropColor then
+            title = title or o
+        end
+    end
+    check("game look: a panel inside lets the background show", title and title.backdropColor[4] == 0.6,
+        title and tostring(title.backdropColor[4]))
+    check("game look: the menu stays solid", MacroSenseMenu.backdropColor[4] == 1, tostring(MacroSenseMenu.backdropColor[4]))
+    local function shown(file)
+        local n = 0
+        for _, o in ipairs(created) do
+            if o.texture == file and o:IsShown() then n = n + 1 end
+        end
+        return n
+    end
+    check("game look: the game's buttons, check boxes, input and dropdown frames, arrows",
+        shown("Interface\\Buttons\\UI-Panel-Button-Up") > 0 and shown("Interface\\Buttons\\UI-CheckBox-Up") > 0
+        and shown("Interface\\Common\\Common-Input-Border") > 0
+        and shown("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up") > 0 and MacroSenseSearch.backdrop == nil)
+    local d = ns.Dropdown(UIParent, 120, function() return {} end, function() end, function() end)
+    check("game look: a dropdown's text stops before the game's arrow", d.label.point[2] == -22, tostring(d.label.point[2]))
+    look("darkmodern")
+    check("game look: another scheme takes it all back", not edge:IsShown() and frame.backdrop.edgeSize == 1
+        and title.backdropColor[4] == 1 and shown("Interface\\Buttons\\UI-Panel-Button-Up") == 0
+        and shown("Interface\\Buttons\\UI-CheckBox-Up") == 0 and shown("Interface\\Common\\Common-Input-Border") == 0
+        and MacroSenseSearch.backdrop.edgeSize == 1)
+    look(before)
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

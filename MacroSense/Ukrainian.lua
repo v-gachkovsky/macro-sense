@@ -267,6 +267,7 @@ ns.locales.uk = {
     ["Charcoal"] = "Вугілля",
     ["Paper"] = "Папір",
     ["Solarized Dark"] = "Solarized темна",
+    ["In-game"] = "Як у грі",
     ["Live preview"] = "Живий перегляд",
     ["See exactly how the macro will act. Next to each line is what it would do if you pressed the macro now."] =
         "Тут видно, як саме діятиме макрос. Біля кожного рядка написано, що він зробить, якщо натиснути макрос зараз.",

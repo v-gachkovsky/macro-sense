@@ -38,10 +38,74 @@ function ns.Ask(which, arg1, arg2, data, language)
 end
 
 -- `frame` must be created with "BackdropTemplate".
-function ns.Backdrop(frame, bgKey, borderKey)
-    frame:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+-- The game's own look (a scheme with `native`): a window gets the game's dialog background and border, the border
+-- in a layer of its own over the window's parts, which are laid out for a 1 px line; the panels inside a window let
+-- the background show through (not the menus, which stand over the world).
+local FLAT = { bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 }
+local NATIVE_BG = { bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark", tile = true, tileSize = 32 }
+local NATIVE_EDGE = { edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border", edgeSize = 16 }
+local PANEL_ALPHA = 0.6
+
+-- The game's art for widgets in its look, in three pieces of one texture as its own templates draw them: a left and
+-- a right end `edge` px wide that keep their shape, and a middle that stretches. x0..x3: where the pieces meet in
+-- the texture, y0..y1: its rows.
+local ART = {
+    button = { file = "Interface\\Buttons\\UI-Panel-Button-Up", edge = 12,
+        x = { 0, 0.09375, 0.53125, 0.625 }, y = { 0, 0.6875 } },
+    field = { file = "Interface\\Common\\Common-Input-Border", edge = 8, x = { 0, 0.0625, 0.9375, 1 }, y = { 0, 0.625 } },
+}
+local BUTTON_DISABLED = "Interface\\Buttons\\UI-Panel-Button-Disabled"
+local BUTTON_LIT = "Interface\\Buttons\\UI-Panel-Button-Highlight"
+local GOLD = "ffd100" -- the game's labels (GameFontNormal)
+
+-- The three pieces of `art` on `frame`, in `layer` (HIGHLIGHT: shown under the mouse only); hidden at first.
+local function Slices(frame, art, layer, blend)
+    local pieces = {}
+    for i = 1, 3 do
+        local t = frame:CreateTexture(nil, layer or "BACKGROUND")
+        t:SetTexture(art.file)
+        t:SetTexCoord(art.x[i], art.x[i + 1], art.y[1], art.y[2])
+        if blend then t:SetBlendMode(blend) end
+        t:Hide()
+        pieces[i] = t
+    end
+    local l, m, r = pieces[1], pieces[2], pieces[3]
+    l:SetPoint("TOPLEFT")
+    l:SetPoint("BOTTOMLEFT")
+    l:SetWidth(art.edge)
+    r:SetPoint("TOPRIGHT")
+    r:SetPoint("BOTTOMRIGHT")
+    r:SetWidth(art.edge)
+    m:SetPoint("TOPLEFT", l, "TOPRIGHT")
+    m:SetPoint("BOTTOMRIGHT", r, "BOTTOMLEFT")
+    local s = {}
+    function s:SetShown(on) for _, t in ipairs(pieces) do t:SetShown(on) end end
+    function s:SetFile(file) for _, t in ipairs(pieces) do t:SetTexture(file) end end
+    function s:IsShown() return l:IsShown() end
+    return s
+end
+
+-- `window`: a window of its own, which gets the game's background and border in the game's look.
+function ns.Backdrop(frame, bgKey, borderKey, window)
+    frame:SetBackdrop(FLAT)
     ns.OnStyle(function(s)
-        frame:SetBackdropColor(ns.RGB(s[bgKey or "panel"]))
+        local native = s.native and window
+        frame:SetBackdrop(native and NATIVE_BG or FLAT)
+        if native then
+            if not frame.nativeEdge then
+                frame.nativeEdge = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+                frame.nativeEdge:SetAllPoints()
+                frame.nativeEdge:SetFrameLevel(frame:GetFrameLevel() + 30)
+                frame.nativeEdge:SetBackdrop(NATIVE_EDGE)
+            end
+            frame.nativeEdge:Show()
+            frame:SetBackdropColor(1, 1, 1, 1)
+            return
+        end
+        if frame.nativeEdge then frame.nativeEdge:Hide() end
+        local r, g, b = ns.RGB(s[bgKey or "panel"])
+        local inside = frame:GetParent() ~= UIParent
+        frame:SetBackdropColor(r, g, b, s.native and bgKey == "panel" and inside and PANEL_ALPHA or 1)
         frame:SetBackdropBorderColor(ns.RGB(s[borderKey or "border"]))
     end)
 end
@@ -56,20 +120,44 @@ end
 
 -- Flat button. `accent` = filled with the accent color (primary action); b:SetAccent(on) changes it (the one
 -- chosen of a few).
+-- In the game's look it is the game's red button with gold letters (white for the primary or chosen one); with
+-- b.field (a dropdown) the game's input frame instead.
 function ns.Button(parent, label, width, onClick, accent)
     local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
     b:SetSize(width or 80, 22)
-    b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+    b:SetBackdrop(FLAT)
     b.label = ns.Text(b, 12)
     b.label:SetPoint("CENTER")
     b.label:SetText(label)
+    local art, lit, field
     local function paint(hover)
         local s = ns.scheme
         if not s then return end
+        if s.native then
+            if not art then
+                art, lit, field = Slices(b, ART.button), Slices(b, ART.button, "HIGHLIGHT", "ADD"), Slices(b, ART.field)
+                lit:SetFile(BUTTON_LIT)
+            end
+            b:SetBackdrop(nil)
+            art:SetShown(not b.field)
+            lit:SetShown(not b.field)
+            field:SetShown(b.field and true or false)
+            art:SetFile(b:IsEnabled() and ART.button.file or BUTTON_DISABLED)
+            local color = not b:IsEnabled() and "808080" or b.field and s.text or accent and "ffffff" or GOLD
+            b.label:SetTextColor(ns.RGB(color))
+            b:SetAlpha(b.field and not b:IsEnabled() and 0.45 or 1)
+            return
+        end
+        if art then
+            art:SetShown(false)
+            lit:SetShown(false)
+            field:SetShown(false)
+        end
+        b:SetBackdrop(FLAT)
         local bg = accent and s.accent or (hover and s.selection or s.panel)
         b:SetBackdropColor(ns.RGB(bg))
         b:SetBackdropBorderColor(ns.RGB(accent and s.accent or s.border))
-        b.label:SetTextColor(ns.RGB(accent and "ffffff" or s.text))
+        b.label:SetTextColor(ns.RGB(accent and (s.accentText or "ffffff") or s.text))
         b:SetAlpha(b:IsEnabled() and (hover and accent and 0.85 or 1) or 0.45)
     end
     b:SetScript("OnEnter", function() paint(true) end)
@@ -81,6 +169,7 @@ function ns.Button(parent, label, width, onClick, accent)
         accent = on
         paint(false)
     end
+    function b:Restyle() paint(false) end
     -- A disabled button still shows its tooltip (it says why it is disabled).
     if b.SetMotionScriptsWhileDisabled then b:SetMotionScriptsWhileDisabled(true) end
     ns.OnStyle(function() paint(false) end)
@@ -136,6 +225,16 @@ function ns.Check(parent, label, getValue, onChange)
     local fill = box:CreateTexture(nil, "ARTWORK")
     fill:SetPoint("TOPLEFT", 3, -3)
     fill:SetPoint("BOTTOMRIGHT", -3, 3)
+    -- The game's check box and its check, a little bigger than the box: the art has a margin.
+    local gameBox, gameCheck
+    local function GameArt(file, layer)
+        local t = b:CreateTexture(nil, layer)
+        t:SetTexture(file)
+        t:SetSize(24, 24)
+        t:SetPoint("CENTER", box, "CENTER")
+        t:Hide()
+        return t
+    end
     b.label = ns.Text(b, 12)
     b.label:SetPoint("LEFT", box, "RIGHT", 6, 0)
     function b:SetLabel(text)
@@ -146,10 +245,23 @@ function ns.Check(parent, label, getValue, onChange)
     local function paint(hover)
         local s = ns.scheme
         if not s then return end
+        local on = getValue() and true or false
+        if s.native and not gameBox then
+            gameBox = GameArt("Interface\\Buttons\\UI-CheckBox-Up", "BACKGROUND")
+            gameCheck = GameArt("Interface\\Buttons\\UI-CheckBox-Check", "ARTWORK")
+            b.gameLit = GameArt("Interface\\Buttons\\UI-CheckBox-Highlight", "HIGHLIGHT")
+            b.gameLit:SetBlendMode("ADD")
+        end
+        if gameBox then
+            gameBox:SetShown(s.native and true or false)
+            gameCheck:SetShown(s.native and on)
+            b.gameLit:SetShown(s.native and true or false)
+        end
+        box:SetShown(not s.native)
         box:SetBackdropColor(ns.RGB(s.bg))
         box:SetBackdropBorderColor(ns.RGB(hover and s.accent or s.border))
-        fill:SetColorTexture(ns.RGB(s.accent))
-        fill:SetShown(getValue() and true or false)
+        fill:SetColorTexture(ns.RGB(s.check or s.accent))
+        fill:SetShown(on)
     end
     b:SetScript("OnEnter", function() paint(true) end)
     b:SetScript("OnLeave", function() paint(false) end)
@@ -174,12 +286,18 @@ function ns.Input(parent, width, maxLetters, name)
     e:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
     e:SetScript("OnEscapePressed", e.ClearFocus)
     e:SetScript("OnEnterPressed", e.ClearFocus)
+    local field
     local function paint()
         local s = ns.scheme
         if not s then return end
+        e:SetTextColor(ns.RGB(s.text))
+        -- The game's input frame in its look.
+        if s.native and not field then field = Slices(e, ART.field) end
+        if field then field:SetShown(s.native and true or false) end
+        e:SetBackdrop(not s.native and FLAT or nil)
+        if s.native then return end
         e:SetBackdropColor(ns.RGB(s.bg))
         e:SetBackdropBorderColor(ns.RGB(e:HasFocus() and s.accent or s.border))
-        e:SetTextColor(ns.RGB(s.text))
     end
     e:SetScript("OnEditFocusGained", paint)
     e:SetScript("OnEditFocusLost", paint)
@@ -359,6 +477,19 @@ function ns.Dropdown(parent, width, getItems, getValue, onSelect)
     d.arrow = ns.Text(d, 10, "dim")
     d.arrow:SetPoint("RIGHT", -6, 0)
     d.arrow:SetText("v")
+    -- In the game's look: the game's input frame and its down arrow.
+    d.field = true
+    local gameArrow = d:CreateTexture(nil, "ARTWORK")
+    gameArrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+    gameArrow:SetSize(20, 20)
+    gameArrow:SetPoint("RIGHT", -1, 0)
+    gameArrow:Hide()
+    ns.OnStyle(function(s)
+        gameArrow:SetShown(s.native and true or false)
+        d.arrow:SetShown(not s.native)
+        d.label:SetPoint("RIGHT", s.native and -22 or -18, 0) -- the game's arrow is wider
+        d:Restyle()
+    end)
 
     function d:Refresh()
         for _, item in ipairs(getItems()) do
