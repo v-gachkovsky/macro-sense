@@ -9,7 +9,7 @@ local Easter = {}
 ns.Easter = Easter
 
 local CLICKS, GAP = 10, 2 -- clicks in a row, each within GAP seconds of the one before
-local FALL, FADE = 4, 1.5 -- how long the parts fly, and the last part of it the window fades
+local FALL = 3.2 -- how long the parts fly; the windows close then
 local SHEEP_SIZE, SHEEP_SPEED = 44, 70
 local POLYMORPH = 118
 local FATALITY = "BugSack: Fatality" -- BugSack's sound, in LibSharedMedia when BugSack is there
@@ -81,13 +81,10 @@ local function Mend()
         row.part:SetParent(row.parent)
         row.part:SetFrameLevel(row.level)
     end
-    for _, window in ipairs(was.windows) do window:SetAlpha(1) end
 end
 
-local function Fade(_, elapsed)
+local function Wait(_, elapsed)
     falling.time = falling.time + elapsed
-    local alpha = math.max(0, math.min(1, (FALL - falling.time) / FADE))
-    for _, window in ipairs(falling.windows) do window:SetAlpha(alpha) end
     if falling.time >= FALL then Mend() end
 end
 
@@ -107,17 +104,21 @@ local function Group(object, key, ...)
     return group
 end
 
--- A part spins as it flies: a frame can't turn, its textures and texts can, each around the part's middle.
-local function Spin(part, groups, time)
+local function IsText(region) return region.GetObjectType and region:GetObjectType() == "FontString" end
+
+-- A part spins as it flies. A frame can't turn: its textures and texts do, each around the part's middle. A text
+-- turns around its own.
+local function Spin(part, groups)
     local px, py = part:GetCenter()
     if not px then return end
-    local degrees = Between(180, 1080) * (math.random(2) == 1 and -1 or 1)
-    for _, region in ipairs({ part:GetRegions() }) do
+    local degrees = Between(180, 900) * (math.random(2) == 1 and -1 or 1)
+    local regions = part.GetRegions and { part:GetRegions() } or { part }
+    for _, region in ipairs(regions) do
         local rx, ry = region:GetCenter()
         if rx and region.CreateAnimationGroup and region:IsShown() then
             local group = Group(region, "spin", "Rotation")
             group[1]:SetDegrees(degrees)
-            group[1]:SetDuration(time)
+            group[1]:SetDuration(FALL)
             group[1]:SetOrigin("CENTER", px - rx, py - ry)
             group:Play()
             groups[#groups + 1] = group
@@ -125,7 +126,8 @@ local function Spin(part, groups, time)
     end
 end
 
--- A part blown away from the window's middle (wx, wy): out fast, then down past the bottom of the screen.
+-- A part blown away from the window's middle (wx, wy): out, sharp at first and slowing, then down past the
+-- bottom of the screen.
 local function Blow(part, wx, wy, groups)
     local group = Group(part, "fall", "Translation", "Translation")
     local blast, fall = group[1], group[2]
@@ -133,19 +135,42 @@ local function Blow(part, wx, wy, groups)
     local px, py = part:GetCenter()
     local dx, dy = (px or wx) - wx + Between(-40, 40), (py or wy) - wy + Between(-40, 40)
     local far = math.max(1, math.sqrt(dx * dx + dy * dy))
-    local speed = Between(250, 650)
-    local time = Between(0.5, 0.7) -- fast at once, slowing: the OUT smoothing
-    local outX, outY = dx / far * speed * time, dy / far * speed * time + Between(30, 160)
-    blast:SetStartDelay(Between(0, 0.08))
+    local reach = Between(120, 380)
+    local time = Between(0.9, 1.3)
+    local outX, outY = dx / far * reach, dy / far * reach + Between(40, 140)
+    blast:SetStartDelay(Between(0, 0.06))
     blast:SetOffset(outX, outY)
     blast:SetDuration(time)
     blast:SetSmoothing("OUT")
-    fall:SetOffset(dx / far * speed * Between(0.3, 0.8), -((part:GetBottom() or 0) + part:GetHeight() + outY + 80))
+    fall:SetOffset(dx / far * reach * Between(0.2, 0.6), -((part:GetBottom() or 0) + part:GetHeight() + outY + 80))
     fall:SetDuration(FALL - time)
     fall:SetSmoothing("IN")
     group:Play()
     groups[#groups + 1] = group
-    Spin(part, groups, FALL)
+    Spin(part, groups)
+end
+
+-- What holds the parts (the window, its panels, its border) is gone right after the blast; its texts fly too.
+local function Vanish(shell, wx, wy, groups)
+    for _, region in ipairs({ shell:GetRegions() }) do
+        if region.CreateAnimationGroup and region:IsShown() then
+            if IsText(region) then
+                if region:GetBottom() then Blow(region, wx, wy, groups) end
+            else
+                -- Gone, then kept gone while the parts fly: the group stopped, it shows again.
+                local group = Group(region, "vanish", "Alpha", "Alpha")
+                group[1]:SetFromAlpha(1)
+                group[1]:SetToAlpha(0)
+                group[1]:SetStartDelay(0.12)
+                group[1]:SetDuration(0.3)
+                group[2]:SetFromAlpha(0)
+                group[2]:SetToAlpha(0)
+                group[2]:SetDuration(FALL)
+                group:Play()
+                groups[#groups + 1] = group
+            end
+        end
+    end
 end
 
 -- A window jolts, as if hit.
@@ -160,27 +185,30 @@ local function Jolt(window, groups)
 end
 
 -- The parts of a window that fly: the frames in it, each on its own. A frame as wide or as high as half the
--- window holds others (the header, the list, the editor): its own parts fly instead, and it stays; a list's rows
--- fly each on its own. Its border stays too: it fades with the window.
-local function Parts(window, holder, depth, out)
+-- window holds others (the header, the list, the editor): its own parts fly instead, and it is a shell that
+-- vanishes; a list's rows fly each on its own. The border is a shell too.
+local function Parts(window, holder, depth, out, shells)
     local w, h = window:GetWidth(), window:GetHeight()
+    shells[#shells + 1] = holder
     for _, child in ipairs({ holder:GetChildren() }) do
-        if child ~= window.nativeEdge and child:IsShown() and child.CreateAnimationGroup then
+        if child == window.nativeEdge then
+            shells[#shells + 1] = child
+        elseif child:IsShown() and child.CreateAnimationGroup then
             local inner = child.GetScrollChild and child:GetScrollChild()
             local big = child:GetWidth() >= w / 2 or child:GetHeight() >= h / 2
             if inner then
                 for _, row in ipairs({ inner:GetChildren() }) do
                     if row:IsShown() and row:GetBottom() then out[#out + 1] = { part = row, row = true } end
                 end
-                Parts(window, child, 0, out) -- its scroll bar
+                Parts(window, child, 0, out, shells) -- its scroll bar
             elseif big and depth > 0 and child:GetChildren() then
-                Parts(window, child, depth - 1, out)
+                Parts(window, child, depth - 1, out, shells)
             elseif child:GetBottom() then -- laid out
                 out[#out + 1] = { part = child }
             end
         end
     end
-    return out
+    return out, shells
 end
 
 -- Every window shown blows apart and closes.
@@ -193,7 +221,8 @@ function Easter.Shatter()
             local wx, wy = window:GetCenter()
             wx, wy = wx or 0, wy or 0
             local level = window:GetFrameLevel() + 25
-            for _, p in ipairs(Parts(window, window, 3, {})) do
+            local parts, shells = Parts(window, window, 3, {}, {})
+            for _, p in ipairs(parts) do
                 if p.row then
                     -- Out of its list, which would hide it past its edges.
                     rows[#rows + 1] = { part = p.part, parent = p.part:GetParent(), level = p.part:GetFrameLevel() }
@@ -202,6 +231,7 @@ function Easter.Shatter()
                 end
                 Blow(p.part, wx, wy, groups)
             end
+            for _, shell in ipairs(shells) do Vanish(shell, wx, wy, groups) end
             Jolt(window, groups)
         end
     end
@@ -283,7 +313,7 @@ function Easter.Attach(window, shorten)
     frame = window
     ticker = CreateFrame("Frame", nil, UIParent)
     ticker:Hide()
-    ticker:SetScript("OnUpdate", Fade)
+    ticker:SetScript("OnUpdate", Wait)
     frame:HookScript("OnHide", Mend)
     -- The window shown another way: no sheep then.
     frame:HookScript("OnShow", function() if sheep then sheep:Hide() end end)

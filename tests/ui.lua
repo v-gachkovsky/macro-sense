@@ -6497,10 +6497,10 @@ do
     for _ = 1, 300 do NextFrame() end
     check("surprise: the rows back in the list", row:GetParent() == listChild)
     check("surprise: another window open blows apart and closes too", not ns.HelpWindow.IsShown()
-        and MacroSenseHelp.alpha == 1)
+)
     check("surprise: then it closes, its parts back in place", not frame:IsShown() and not part.fall:IsPlaying()
         and part.point[1] == "RIGHT"
-        and part.point[4] == -12 and frame.alpha == 1 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
+        and part.point[4] == -12 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
     IsShiftKeyDown, IsControlKeyDown = function() return false end, function() return false end
     shorten.IsMouseOver = nil
     ns.Window.Toggle()
