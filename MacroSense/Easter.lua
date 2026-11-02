@@ -10,7 +10,6 @@ ns.Easter = Easter
 
 local CLICKS, GAP = 10, 2 -- clicks in a row, each within GAP seconds of the one before
 local FALL, FADE = 1.6, 0.7 -- how long the parts fall, and the last part of it the window fades
-local GRAVITY = 1400
 local SHEEP_SIZE, SHEEP_SPEED = 44, 70
 local POLYMORPH = 118
 
@@ -46,7 +45,7 @@ end
 
 local frame, parts -- the window, and the frames that fall: the children of its header, list and editor
 local ticker -- runs the fall each frame: the window's own OnUpdate is the editor's
-local falling -- while they fall: { { part, points, x, y, vx, vy } }, and the time so far
+local falling -- while they fall: { groups = their animations, time = so far }
 
 -- Whether the window is falling apart now.
 function Easter.Falling() return falling ~= nil end
@@ -61,50 +60,57 @@ local function Sound(...)
     end
 end
 
--- Every part back where it was, the window as it was.
+-- Every part back where it was, the window as it was. The parts only moved in an animation: their places in the
+-- window (their anchors) were never changed.
 local function Mend()
     if not falling then return end
-    for _, p in ipairs(falling.pieces) do
-        p.part:ClearAllPoints()
-        for _, point in ipairs(p.points) do p.part:SetPoint(unpack(point)) end
-    end
+    for _, group in ipairs(falling.groups) do group:Stop() end
     falling = nil
     ticker:Hide()
     frame:SetAlpha(1)
 end
 
-local function Fall(_, elapsed)
+local function Fade(_, elapsed)
     falling.time = falling.time + elapsed
-    for _, p in ipairs(falling.pieces) do
-        p.vy = p.vy - GRAVITY * elapsed
-        p.x, p.y = p.x + p.vx * elapsed, p.y + p.vy * elapsed
-        p.part:ClearAllPoints()
-        p.part:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
-    end
     frame:SetAlpha(math.max(0, math.min(1, (FALL - falling.time) / FADE)))
     if falling.time >= FALL then
         frame:Hide() -- OnHide mends it
     end
 end
 
+-- A part's fall: up a little, then down past the bottom of the screen, to one side.
+local RISE = 0.25
+local function Drop(part)
+    local group = part.fall
+    if not group then
+        group = part:CreateAnimationGroup()
+        group.up = group:CreateAnimation("Translation")
+        group.up:SetOrder(1)
+        group.up:SetSmoothing("OUT")
+        group.down = group:CreateAnimation("Translation")
+        group.down:SetOrder(2)
+        group.down:SetSmoothing("IN")
+        part.fall = group
+    end
+    local rise, side = math.random(10, 50), math.random(-160, 160)
+    group.up:SetOffset(side * RISE, rise)
+    group.up:SetDuration(RISE)
+    group.down:SetOffset(side * (FALL - RISE), -(part:GetBottom() + part:GetHeight() + rise + 40))
+    group.down:SetDuration(FALL - RISE)
+    group:Play()
+    return group
+end
+
 -- The window falls apart and closes.
 function Easter.Shatter()
     if falling or not frame or not frame:IsShown() or InCombatLockdown() then return end
-    local scale = UIParent:GetEffectiveScale()
-    local pieces = {}
+    local groups = {}
     for _, holder in ipairs(parts) do
         for _, part in ipairs({ holder:GetChildren() }) do
-            local left, bottom = part:GetLeft(), part:GetBottom()
-            if part:IsShown() and left and bottom then
-                local points = {}
-                for i = 1, part:GetNumPoints() do points[i] = { part:GetPoint(i) } end
-                local s = part:GetEffectiveScale() / scale
-                pieces[#pieces + 1] = { part = part, points = points, x = left * s, y = bottom * s,
-                    vx = math.random(-160, 160), vy = math.random(60, 360) }
-            end
+            if part:IsShown() and part:GetBottom() and part.CreateAnimationGroup then groups[#groups + 1] = Drop(part) end
         end
     end
-    falling = { pieces = pieces, time = 0 }
+    falling = { groups = groups, time = 0 }
     Sound("IG_QUEST_FAILED", "IG_MAINMENU_CLOSE")
     ns.Print("shortened by 100%%")
     ticker:Show()
@@ -182,7 +188,7 @@ function Easter.Attach(window, shorten, holders)
     frame, parts = window, holders
     ticker = CreateFrame("Frame", nil, UIParent)
     ticker:Hide()
-    ticker:SetScript("OnUpdate", Fall)
+    ticker:SetScript("OnUpdate", Fade)
     frame:HookScript("OnHide", Mend)
     -- The window shown another way: no sheep then.
     frame:HookScript("OnShow", function() if sheep then sheep:Hide() end end)

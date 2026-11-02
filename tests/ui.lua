@@ -81,7 +81,6 @@ function Frame:CreateFontString()
     return fs
 end
 function Frame:GetWidth() return 300 end
-function Frame:GetHeight() return 200 end
 function Frame:GetFrameLevel() return 1 end
 function Frame:SetFrameStrata(strata) self.strata = strata end
 function Frame:SetToplevel(on) self.toplevel = on end
@@ -152,6 +151,22 @@ function Frame:GetLeft() return self.left end
 function Frame:GetBottom() return self.bottom end
 function Frame:GetEffectiveScale() return 1 end
 function Frame:SetAlpha(a) self.alpha = a end
+-- Animations: a group plays its parts, stopped they are gone.
+local Animation = {}
+Animation.__index = function(_, k) return rawget(Animation, k) or function() end end
+function Animation:SetOffset(x, y) self.offset = { x, y } end
+function Animation:CreateAnimation(kind)
+    local a = setmetatable({ kind = kind }, Animation)
+    local parts = rawget(self, "parts") or {}
+    rawset(self, "parts", parts)
+    parts[#parts + 1] = a
+    return a
+end
+function Animation:Play() self.playing = true end
+function Animation:Stop() self.playing = false end
+function Animation:IsPlaying() return self.playing end
+function Frame:CreateAnimationGroup() return setmetatable({}, Animation) end
+function Frame:GetHeight() return 200 end
 -- Its frames, not its textures and texts.
 function Frame:GetChildren()
     local out = {}
@@ -6455,9 +6470,10 @@ do
     click(1)
     NextFrame()
     check("surprise: the tenth in a row: the window falls apart", ns.Easter.Falling()
-        and part.point[1] == "BOTTOMLEFT" and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
+        and part.fall and part.fall:IsPlaying() and part.fall.down.offset[2] < -400 and part.point[1] == "RIGHT" and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
     for _ = 1, 120 do NextFrame() end
-    check("surprise: then it closes, its parts back in place", not frame:IsShown() and part.point[1] == "RIGHT"
+    check("surprise: then it closes, its parts back in place", not frame:IsShown() and not part.fall:IsPlaying()
+        and part.point[1] == "RIGHT"
         and part.point[4] == -12 and frame.alpha == 1 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
     IsShiftKeyDown, IsControlKeyDown = function() return false end, function() return false end
     shorten.IsMouseOver = nil
