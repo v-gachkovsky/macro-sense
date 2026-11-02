@@ -1638,4 +1638,6 @@ ns.locales.uk = {
     ["Class macros"] = "Класові",
     ["This character's"] = "Цього персонажа",
     ["This specialization's"] = "Цієї спеціалізації",
+    ["the class macro \"%s\" waits off the slots: a macro of yours has this name"] =
+        "класовий макрос «%s» за лаштунками: у вас уже є свій макрос із такою назвою",
 }

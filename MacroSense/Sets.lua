@@ -64,15 +64,16 @@ function Sets.Swap(now, layer, entering, limit)
 end
 
 -- The class macros as this character should have them: those to make, those to change (their text or icon
--- changed on another character), those to remove (gone from the class), and those that wait (no room, or the
--- name taken by another layer's macro). `now` the macros in the slots, with their layers.
+-- changed on another character), those to remove (gone from the class), those it has already as its own (the same
+-- name and text: they become the class's), and those that wait: no room, or the name taken by another macro
+-- (`clash`). `now` the macros in the slots, with their layers.
 function Sets.ClassPlan(now, layer, class, classParked, limit)
     local here, used = {}, 0
     for _, m in ipairs(now) do
         here[m.name] = m
         used = used + 1
     end
-    local make, change, remove, wait = {}, {}, {}, {}
+    local make, change, remove, wait, adopt, clash = {}, {}, {}, {}, {}, {}
     for _, m in ipairs(now) do
         if layer[m.name] == "class" and not Find(class, m.name) then
             remove[#remove + 1] = m.name
@@ -84,7 +85,12 @@ function Sets.ClassPlan(now, layer, class, classParked, limit)
         if not classParked[m.name] then
             if there and layer[m.name] == "class" then
                 if there.body ~= m.body or there.icon ~= m.icon then change[#change + 1] = m end
-            elseif there or used >= limit then
+            elseif there and there.body == m.body then
+                adopt[#adopt + 1] = m.name
+            elseif there then
+                wait[#wait + 1] = m
+                clash[#clash + 1] = m.name
+            elseif used >= limit then
                 wait[#wait + 1] = m
             else
                 make[#make + 1] = m
@@ -92,7 +98,7 @@ function Sets.ClassPlan(now, layer, class, classParked, limit)
             end
         end
     end
-    return { make = make, change = change, remove = remove, wait = wait }
+    return { make = make, change = change, remove = remove, wait = wait, adopt = adopt, clash = clash }
 end
 
 -- The macros in the slots changed (by you, or on this character): each layer follows. A text or icon changed here
@@ -262,8 +268,16 @@ local function SyncClass(sets)
         sets.layer[m.name] = "class"
     end
     for _, name in ipairs(plan.remove) do sets.layer[name] = nil end
+    for _, name in ipairs(plan.adopt) do
+        local _, i = Find(sets.character, name)
+        if i then table.remove(sets.character, i) end
+        sets.layer[name] = "class"
+    end
     for _, m in ipairs(plan.wait) do sets.classParked[m.name] = true end
-    return #plan.wait
+    for _, name in ipairs(plan.clash) do
+        ns.Print("the class macro \"%s\" waits off the slots: a macro of yours has this name", name)
+    end
+    return #plan.wait - #plan.clash
 end
 
 -- The specialization now: the slots get its macros, those of the one before go back into its layer; the macro
@@ -330,6 +344,47 @@ function Sets.Update()
 end
 
 function Sets.Pending() return pending end
+
+-- The game tells of a new specialization in several events, some before it gives the new one: a look at once and
+-- again a little later. A look when nothing changed changes nothing.
+function Sets.Soon()
+    for _, delay in ipairs({ 0.5, 2, 5 }) do C_Timer.After(delay, Sets.Update) end
+end
+if CreateFrame then -- the game (not the tests of the planning)
+    local watch = CreateFrame("Frame")
+    for _, event in ipairs({ "PLAYER_SPECIALIZATION_CHANGED", "ACTIVE_PLAYER_SPECIALIZATION_CHANGED",
+        "ACTIVE_TALENT_GROUP_CHANGED", "PLAYER_ENTERING_WORLD" }) do
+        pcall(watch.RegisterEvent, watch, event)
+    end
+    watch:SetScript("OnEvent", function() if ns.db and Sets.Mine().enabled then Sets.Soon() end end)
+end
+
+-- What the sets know, for a bug report: the specialization they are of and the one now, each layer.
+function Sets.Debug()
+    local sets = Sets.Mine()
+    local out = { string.format("enabled %s, active %s, now %s", tostring(sets.enabled), tostring(sets.active),
+        tostring(ns.ActionBars.Spec())) }
+    local layers = {}
+    for name, layer in pairs(sets.layer or {}) do layers[#layers + 1] = name .. "=" .. layer end
+    table.sort(layers)
+    out[#out + 1] = "slots: " .. table.concat(layers, ", ")
+    local function names(list)
+        local t = {}
+        for _, m in ipairs(list) do t[#t + 1] = m.parked and ("(" .. m.name .. ")") or m.name end
+        return table.concat(t, ", ")
+    end
+    out[#out + 1] = "class " .. tostring(ns.Character().class) .. ": " .. names(ClassList())
+    local parked = {}
+    for name in pairs(sets.classParked) do parked[#parked + 1] = name end
+    out[#out + 1] = "class parked here: " .. table.concat(parked, ", ")
+    out[#out + 1] = "character: " .. names(sets.character)
+    for key, list in pairs(sets.specs) do
+        local bars = 0
+        for _ in pairs(sets.bars[key] or {}) do bars = bars + 1 end
+        out[#out + 1] = string.format("%s: %s; buttons %d", key, names(list), bars)
+    end
+    return out
+end
 
 -- Sets on for this character: the macros in the slots become its own layer (a backup of them first); the
 -- specialization now is the active one, with nothing of its own yet. Then the class macros come in.

@@ -186,7 +186,9 @@ end
 local function SetsCommand(args)
     local word, rest = args:match("^(%S*)%s*(.-)$")
     word = word:lower()
-    if word == "on" then
+    if word == "debug" then
+        for _, line in ipairs(ns.Sets.Debug()) do print("  " .. line) end
+    elseif word == "on" then
         ns.Sets.Enable()
         ns.Print("macro sets %s", OnOff(true))
     elseif word == "off" then

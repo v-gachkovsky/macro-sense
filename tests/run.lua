@@ -2454,12 +2454,16 @@ do
     check("sets: no room: the rest wait", #swap.add == 2 and #swap.wait == 1 and swap.wait[1].name == "E")
 
     local class = { m("Fear", "new"), m("Soulstone"), m("Healthstone"), m("Mount") }
-    local plan = S.ClassPlan({ m("Fear", "old"), m("Banish"), m("Mount") },
+    local plan = S.ClassPlan({ m("Fear", "old"), m("Banish"), m("Mount", "mine") },
         { Fear = "class", Banish = "class", Mount = "character" }, class, { Healthstone = true }, 30)
     check("sets: class macros: a changed one written again", #plan.change == 1 and plan.change[1].name == "Fear")
     check("sets: one gone from the class removed", #plan.remove == 1 and plan.remove[1] == "Banish")
     check("sets: one missing made, one parked here not", #plan.make == 1 and plan.make[1].name == "Soulstone")
-    check("sets: one whose name is taken waits", #plan.wait == 1 and plan.wait[1].name == "Mount")
+    check("sets: one whose name is taken waits, told of", #plan.wait == 1 and plan.wait[1].name == "Mount"
+        and plan.clash[1] == "Mount")
+    plan = S.ClassPlan({ m("Stones", "same") }, { Stones = "character" }, { m("Stones", "same") }, {}, 30)
+    check("sets: one of yours with the same name and text becomes the class's", plan.adopt[1] == "Stones"
+        and #plan.make == 0 and #plan.wait == 0)
     plan = S.ClassPlan({ m("A") }, { A = "character" }, { m("B"), m("C") }, {}, 2)
     check("sets: class macros with no room wait", #plan.make == 1 and #plan.wait == 1)
 
