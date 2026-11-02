@@ -57,7 +57,7 @@ local function Row(i)
     r.state = ns.Text(r, 11, "dim")
     r.state:SetPoint("RIGHT", -6, 0)
     -- Its own macro, or with another spell's on a key.
-    r.join = ns.Dropdown(r, 120, function()
+    r.join = ns.Dropdown(r, 132, function()
         local items = { { key = "", name = L["Own macro"] } }
         for _, other in ipairs(rows) do
             local name = other.spell.name
@@ -113,7 +113,7 @@ local function Row(i)
     r.rank:HookScript("OnLeave", function() GameTooltip:Hide() end)
     r.join:SetPoint("RIGHT", r.rank, "LEFT", -4, 0)
     -- Where this spell goes, over the choice for all: "—" keeps that one.
-    r.unit = ns.Dropdown(r, 104, function()
+    r.unit = ns.Dropdown(r, 96, function()
         return { { key = "", name = "—" }, { key = "mouseover", name = L["Mouseover"] },
             { key = "target", name = L["Your target"] }, { key = "focus", name = L["Focus"] } }
     end, function() return choices.unitOf[r.row.spell.name] or "" end, function(unit)
@@ -387,11 +387,11 @@ local function Build()
         .. "key. It costs less mana: to heal a little, to put a cheap spell on an enemy for them to dispel, or to "
         .. "waste a warrior's Spell Reflection on it."])
     rank:SetPoint("RIGHT", key, "LEFT", -4, 0)
-    local macro = Column(L["Macro"], 120, L["Macro"], L["\"Own macro\": the spell gets a macro of its own. \"With\" "
+    local macro = Column(L["Macro"], 132, L["Macro"], L["\"Own macro\": the spell gets a macro of its own. \"With\" "
         .. "another spell: it goes into that spell's macro and is cast while you hold the key. This saves macro "
         .. "slots."])
     macro:SetPoint("RIGHT", rank, "LEFT", -4, 0)
-    local target = Column(L["Target"], 104, L["Where this spell goes"], L["\"—\" goes where the choice for all "
+    local target = Column(L["Target"], 96, L["Where this spell goes"], L["\"—\" goes where the choice for all "
         .. "attacks or helpful spells says. Pick another to send only this spell elsewhere."])
     target:SetPoint("RIGHT", macro, "LEFT", -4, 0)
 
