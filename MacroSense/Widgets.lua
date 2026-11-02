@@ -86,8 +86,11 @@ local function Slices(frame, art, layer, blend)
 end
 
 -- `window`: a window of its own, which gets the game's background and border in the game's look.
+ns.windows = {} -- the addon's windows, for what is done to them all
+
 function ns.Backdrop(frame, bgKey, borderKey, window)
     frame:SetBackdrop(FLAT)
+    if window then ns.windows[#ns.windows + 1] = frame end
     ns.OnStyle(function(s)
         local native = s.native and window
         frame:SetBackdrop(native and NATIVE_BG or FLAT)

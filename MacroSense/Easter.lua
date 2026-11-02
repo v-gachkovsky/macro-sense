@@ -1,5 +1,5 @@
 -- Two things the window does that no button says. Shorten clicked ten times in a row with Shift and Ctrl held
--- shortens the window itself: its parts fall apart and it closes. A macro saved that casts Polymorph on yourself
+-- shortens the windows themselves: every one open blows apart and closes. A macro saved that casts Polymorph on yourself
 -- turns the window into a sheep that wanders the screen; a click on the sheep turns it back. Neither touches a
 -- macro, and the window opens whole again.
 local _, ns = ...
@@ -44,8 +44,7 @@ function Easter.Counted(times, now)
     return true
 end
 
-local frame, parts -- the window, and the frames that fly: the children of its header, list and editor
-local loose -- frames whose children fly each on its own: the list's rows
+local frame -- the editor's window
 local ticker -- runs the fall each frame: the window's own OnUpdate is the editor's
 local falling -- while they fall: { groups = their animations, time = so far }
 
@@ -69,26 +68,27 @@ local function Sound(...)
     end
 end
 
--- Every part back where it was, the window as it was. The parts only moved in animations: their places in the
--- window (their anchors) were never changed; the rows of the list go back into it.
+-- Every window that blew apart closed, every part back where it was. The parts only moved in
+-- animations: their places in the windows (their anchors) were never changed; rows go back into their lists.
 local function Mend()
     if not falling then return end
-    for _, group in ipairs(falling.groups) do group:Stop() end
-    for _, row in ipairs(falling.rows) do
+    local was = falling
+    falling = nil
+    ticker:Hide()
+    for _, window in ipairs(was.windows) do window:Hide() end
+    for _, group in ipairs(was.groups) do group:Stop() end
+    for _, row in ipairs(was.rows) do
         row.part:SetParent(row.parent)
         row.part:SetFrameLevel(row.level)
     end
-    falling = nil
-    ticker:Hide()
-    frame:SetAlpha(1)
+    for _, window in ipairs(was.windows) do window:SetAlpha(1) end
 end
 
 local function Fade(_, elapsed)
     falling.time = falling.time + elapsed
-    frame:SetAlpha(math.max(0, math.min(1, (FALL - falling.time) / FADE)))
-    if falling.time >= FALL then
-        frame:Hide() -- OnHide mends it
-    end
+    local alpha = math.max(0, math.min(1, (FALL - falling.time) / FADE))
+    for _, window in ipairs(falling.windows) do window:SetAlpha(alpha) end
+    if falling.time >= FALL then Mend() end
 end
 
 local function Between(low, high) return low + math.random() * (high - low) end
@@ -148,9 +148,9 @@ local function Blow(part, wx, wy, groups)
     Spin(part, groups, FALL)
 end
 
--- The window jolts, as if hit.
-local function Jolt(groups)
-    local group = Group(frame, "jolt", "Translation", "Translation", "Translation", "Translation")
+-- A window jolts, as if hit.
+local function Jolt(window, groups)
+    local group = Group(window, "jolt", "Translation", "Translation", "Translation", "Translation")
     for i, a in ipairs(group) do
         a:SetOffset(Between(6, 14) * (i % 2 == 1 and 1 or -1), Between(-8, 8))
         a:SetDuration(0.035)
@@ -159,31 +159,53 @@ local function Jolt(groups)
     groups[#groups + 1] = group
 end
 
--- The window blows apart and closes.
-function Easter.Shatter()
-    if falling or not frame or not frame:IsShown() or InCombatLockdown() then return end
-    local groups, rows = {}, {}
-    local wx, wy = frame:GetCenter()
-    wx, wy = wx or 0, wy or 0
-    -- The list's rows each on their own: out of the list, which would hide them past its edges.
-    local level = frame:GetFrameLevel() + 25
-    for _, holder in ipairs(loose) do
-        for _, row in ipairs({ holder:GetChildren() }) do
-            if row:IsShown() and row:GetBottom() then
-                rows[#rows + 1] = { part = row, parent = row:GetParent(), level = row:GetFrameLevel() }
-                row:SetParent(frame)
-                row:SetFrameLevel(level)
-                Blow(row, wx, wy, groups)
+-- The parts of a window that fly: the frames in it, each on its own. A frame as wide or as high as half the
+-- window holds others (the header, the list, the editor): its own parts fly instead, and it stays; a list's rows
+-- fly each on its own. Its border stays too: it fades with the window.
+local function Parts(window, holder, depth, out)
+    local w, h = window:GetWidth(), window:GetHeight()
+    for _, child in ipairs({ holder:GetChildren() }) do
+        if child ~= window.nativeEdge and child:IsShown() and child.CreateAnimationGroup then
+            local inner = child.GetScrollChild and child:GetScrollChild()
+            local big = child:GetWidth() >= w / 2 or child:GetHeight() >= h / 2
+            if inner then
+                for _, row in ipairs({ inner:GetChildren() }) do
+                    if row:IsShown() and row:GetBottom() then out[#out + 1] = { part = row, row = true } end
+                end
+                Parts(window, child, 0, out) -- its scroll bar
+            elseif big and depth > 0 and child:GetChildren() then
+                Parts(window, child, depth - 1, out)
+            elseif child:GetBottom() then -- laid out
+                out[#out + 1] = { part = child }
             end
         end
     end
-    for _, holder in ipairs(parts) do
-        for _, part in ipairs({ holder:GetChildren() }) do
-            if part:IsShown() and part:GetBottom() and part.CreateAnimationGroup then Blow(part, wx, wy, groups) end
+    return out
+end
+
+-- Every window shown blows apart and closes.
+function Easter.Shatter()
+    if falling or not frame or not frame:IsShown() or InCombatLockdown() then return end
+    local groups, rows, windows = {}, {}, {}
+    for _, window in ipairs(ns.windows) do
+        if window:IsShown() then
+            windows[#windows + 1] = window
+            local wx, wy = window:GetCenter()
+            wx, wy = wx or 0, wy or 0
+            local level = window:GetFrameLevel() + 25
+            for _, p in ipairs(Parts(window, window, 3, {})) do
+                if p.row then
+                    -- Out of its list, which would hide it past its edges.
+                    rows[#rows + 1] = { part = p.part, parent = p.part:GetParent(), level = p.part:GetFrameLevel() }
+                    p.part:SetParent(window)
+                    p.part:SetFrameLevel(level)
+                end
+                Blow(p.part, wx, wy, groups)
+            end
+            Jolt(window, groups)
         end
     end
-    Jolt(groups)
-    falling = { groups = groups, rows = rows, time = 0 }
+    falling = { groups = groups, rows = rows, windows = windows, time = 0 }
     if not Shared(FATALITY) then Sound("IG_QUEST_FAILED", "IG_MAINMENU_CLOSE") end
     ns.Print("shortened by 100%%")
     ticker:Show()
@@ -256,9 +278,9 @@ function Easter.Saved(body)
     if Easter.SelfSheep(body, name) then Easter.Polymorph() end
 end
 
--- The window, its Shorten button, the frames whose children fly apart, and those whose children leave them to.
-function Easter.Attach(window, shorten, holders, rows)
-    frame, parts, loose = window, holders, rows or {}
+-- The editor's window and its Shorten button.
+function Easter.Attach(window, shorten)
+    frame = window
     ticker = CreateFrame("Frame", nil, UIParent)
     ticker:Hide()
     ticker:SetScript("OnUpdate", Fade)

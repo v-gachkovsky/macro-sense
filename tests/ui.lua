@@ -88,6 +88,8 @@ function Frame:Raise() self.raised = (self.raised or 0) + 1 end
 function Frame:IsMouseOver() return false end
 function Frame:GetParent() return self.parentFrame end
 function Frame:SetParent(parent) self.parentFrame = parent end
+function Frame:SetScrollChild(child) self.scrollChild = child end
+function Frame:GetScrollChild() return self.scrollChild end
 -- Fonts: a character is 0.6 of the size wide, a row is size + 1 high (size 13: 8 x 14 px).
 function Frame:SetFont(path, size) self.fontPath, self.fontSize = path, size; return true end
 function Frame:GetFont() return "font", self.fontSize or 13, "" end
@@ -6476,6 +6478,7 @@ do
     Wait(3)
     click(9)
     check("surprise: nine, or with a pause, do nothing", frame:IsShown() and not ns.Easter.Falling())
+    ns.HelpWindow.Open()
     local played
     local libStub, playFile = LibStub, PlaySoundFile
     LibStub = function(name) return name == "LibSharedMedia-3.0" and {
@@ -6485,6 +6488,7 @@ do
     click(1)
     LibStub, PlaySoundFile = libStub, playFile
     check("surprise: BugSack's Fatality, when it is there", played == "fatality.ogg", played)
+    check("surprise: the help window jolts with it", MacroSenseHelp.jolt and MacroSenseHelp.jolt:IsPlaying())
     check("surprise: the list's rows fly each on its own, out of the list", row:GetParent() == frame
         and row.fall and row.fall:IsPlaying())
     NextFrame()
@@ -6492,6 +6496,8 @@ do
         and part.fall and part.fall:IsPlaying() and part.fall.down.offset[2] < -400 and part.point[1] == "RIGHT" and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
     for _ = 1, 200 do NextFrame() end
     check("surprise: the rows back in the list", row:GetParent() == listChild)
+    check("surprise: another window open blows apart and closes too", not ns.HelpWindow.IsShown()
+        and MacroSenseHelp.alpha == 1)
     check("surprise: then it closes, its parts back in place", not frame:IsShown() and not part.fall:IsPlaying()
         and part.point[1] == "RIGHT"
         and part.point[4] == -12 and frame.alpha == 1 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
