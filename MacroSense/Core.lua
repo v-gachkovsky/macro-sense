@@ -163,6 +163,7 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then
+        if ns.Sets.Busy() then return end -- MacroSense changes the slots now: learned when it is done
         ns.History.Scan()
         ns.Sets.Scan()
         ns.Shortcuts.Invalidate()

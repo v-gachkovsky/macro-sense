@@ -6432,6 +6432,22 @@ do
         S.Update()
         Send("UPDATE_MACROS")
     end
+    -- Like the game: it tells the macros changed while each one is made or deleted, not after.
+    local create, delete, edit = CreateMacro, DeleteMacro, EditMacro
+    CreateMacro = function(...)
+        local index = create(...)
+        Send("UPDATE_MACROS")
+        return index
+    end
+    DeleteMacro = function(...)
+        delete(...)
+        Send("UPDATE_MACROS")
+    end
+    EditMacro = function(...)
+        local index = edit(...)
+        Send("UPDATE_MACROS")
+        return index
+    end
     local backups = #(ns.char.backups or {})
     CreateMacro("Mount Up", 1, "/cast Felsteed", true)
     Send("UPDATE_MACROS")
@@ -6502,6 +6518,7 @@ do
     update()
     check("sets: off: nothing changes", has("Agony") and not has("Chaos Bolt"))
     C_SpecializationInfo.GetActiveSpecGroup = specs
+    CreateMacro, DeleteMacro, EditMacro = create, delete, edit
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

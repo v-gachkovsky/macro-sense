@@ -154,6 +154,11 @@ end
 ------------------------------------------------------------------------
 local MAX_SLOT = 180
 local pending -- a change waits for the end of combat
+-- MacroSense changes the slots now: the game tells of each macro made or deleted while it is done, not after.
+-- Those are not your changes: not followed, no versions, no trash (Core skips them); learned once it is over.
+local busy
+
+function Sets.Busy() return busy end
 
 -- This character's sets, made on first use.
 function Sets.Mine()
@@ -230,7 +235,7 @@ local seen -- name -> { body, icon } as of the last look
 -- Changes in the slots go into the layers (UPDATE_MACROS).
 function Sets.Scan()
     local sets = Sets.Mine()
-    if not sets.enabled then return end
+    if not sets.enabled or busy then return end
     local now = ByName(InSlots())
     if seen then
         sets.layer = sets.layer or Layers(sets)
@@ -334,12 +339,17 @@ function Sets.Update()
     Sets.Scan()
     local key = ns.ActionBars.Spec()
     local waiting = 0
-    if sets.active ~= key then
-        local _, wait = Change(sets, key)
-        waiting = waiting + wait
-    end
-    waiting = waiting + SyncClass(sets)
+    busy = true
+    local ok, err = pcall(function()
+        if sets.active ~= key then
+            local _, wait = Change(sets, key)
+            waiting = waiting + wait
+        end
+        waiting = waiting + SyncClass(sets)
+    end)
+    busy = false
     Settle()
+    if not ok then error(err, 0) end
     if waiting > 0 then ns.Print("%d macros wait off the slots: there is no room for them", waiting) end
 end
 
