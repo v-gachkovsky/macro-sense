@@ -1,5 +1,6 @@
 -- Loads the whole addon against a tiny fake WoW API and drives the editor like a player would.
 -- `lua tests/ui.lua` from the repo root. It catches load errors and logic bugs, not layout.
+unpack = unpack or table.unpack -- the game has it as a global
 local now, timers = 0, {} -- timers: { at = time, fn = function }
 local created = {} -- every frame, so tests can find anonymous ones (Core's event frame, the editor)
 -- Shown, and so are the frames it is in: only then the game runs its OnUpdate.
@@ -82,7 +83,6 @@ end
 function Frame:GetWidth() return 300 end
 function Frame:GetHeight() return 200 end
 function Frame:GetFrameLevel() return 1 end
-function Frame:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
 function Frame:SetFrameStrata(strata) self.strata = strata end
 function Frame:SetToplevel(on) self.toplevel = on end
 function Frame:Raise() self.raised = (self.raised or 0) + 1 end
@@ -145,7 +145,21 @@ function Frame:GetStringHeight()
     return math.max(select(2, tostring(self.text):gsub("\n", "")) + 1, self:GetNumLines()) * rowHeight(self)
 end
 function Frame:SetPoint(...) self.point = { ... } end
+function Frame:ClearAllPoints() self.point = nil end
+function Frame:GetNumPoints() return self.point and 1 or 0 end
+function Frame:GetPoint() if self.point then return unpack(self.point) end return "CENTER", nil, "CENTER", 0, 0 end
 function Frame:GetLeft() return self.left end
+function Frame:GetBottom() return self.bottom end
+function Frame:GetEffectiveScale() return 1 end
+function Frame:SetAlpha(a) self.alpha = a end
+-- Its frames, not its textures and texts.
+function Frame:GetChildren()
+    local out = {}
+    for _, o in ipairs(created) do
+        if o.parentFrame == self and o.kind ~= "Texture" and o.kind ~= "FontString" then out[#out + 1] = o end
+    end
+    return unpack(out)
+end
 function Frame:SetTextColor(r, g, b)
     self.textColor = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
 end
@@ -6408,6 +6422,62 @@ do
         and shown("Interface\\Buttons\\UI-CheckBox-Up") == 0 and shown("Interface\\Common\\Common-Input-Border") == 0
         and MacroSenseSearch.backdrop.edgeSize == 1)
     look(before)
+end
+
+-- What no button says: Shorten ten times with Shift and Ctrl, Polymorph on yourself.
+do
+    local frame = MacroSenseFrame
+    ns.Window.Toggle()
+    if not frame:IsShown() then ns.Window.Toggle() end
+    local shorten
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and tostring(o.label.text):find("^Shorten") then shorten = o end
+    end
+    local watch
+    for _, o in ipairs(created) do
+        if o.events and o.events.GLOBAL_MOUSE_DOWN then watch = o end
+    end
+    -- One part of the editor where it is, and where it falls from.
+    local part = shorten
+    part.left, part.bottom = 500, 400
+    part:SetPoint("RIGHT", UIParent, "TOPRIGHT", -12, -29)
+    local function click(n)
+        for _ = 1, n do Fire(watch, "OnEvent", "GLOBAL_MOUSE_DOWN", "LeftButton") end
+    end
+    shorten.IsMouseOver = function() return true end
+    click(10)
+    check("surprise: ten clicks on Shorten without Shift and Ctrl do nothing", frame:IsShown() and not ns.Easter.Falling())
+    IsShiftKeyDown, IsControlKeyDown = function() return true end, function() return true end
+    click(9)
+    Wait(3)
+    click(9)
+    check("surprise: nine, or with a pause, do nothing", frame:IsShown() and not ns.Easter.Falling())
+    click(1)
+    NextFrame()
+    check("surprise: the tenth in a row: the window falls apart", ns.Easter.Falling()
+        and part.point[1] == "BOTTOMLEFT" and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
+    for _ = 1, 120 do NextFrame() end
+    check("surprise: then it closes, its parts back in place", not frame:IsShown() and part.point[1] == "RIGHT"
+        and part.point[4] == -12 and frame.alpha == 1 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
+    IsShiftKeyDown, IsControlKeyDown = function() return false end, function() return false end
+    shorten.IsMouseOver = nil
+    ns.Window.Toggle()
+    check("surprise: it opens whole", frame:IsShown())
+
+    -- Polymorph on yourself, saved: a sheep.
+    CreateMacro("Baa", 1, "/cast [@player] Polymorph", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Baa"))
+    ns.Window.Save()
+    local sheep
+    for _, o in ipairs(created) do
+        if o.icon and o.icon.texture == "Interface\\Icons\\Spell_Nature_Polymorph" then sheep = o end
+    end
+    check("surprise: Polymorph on yourself: the window is a sheep", sheep ~= nil and sheep:IsShown()
+        and not frame:IsShown() and GetMacroIndexByName("Baa") > 0)
+    for _ = 1, 30 do NextFrame() end
+    Fire(sheep, "OnClick")
+    check("surprise: a click on the sheep turns it back", frame:IsShown() and not sheep:IsShown())
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))
