@@ -274,7 +274,7 @@ end
 local flock = {} -- the sheep, made once: as many shown as the turn wants
 local windowsBack -- the windows the sheep give back
 local BLEAT = "Interface\\AddOns\\MacroSense\\Media\\Sounds\\sheep.ogg"
-local POP = "Interface\\AddOns\\MacroSense\\Media\\Sounds\\pop.mp3"
+local POP = "Interface\\AddOns\\MacroSense\\Media\\Sounds\\pop%d.ogg" -- five clicks, one at random
 local bleater -- bleats now and then while sheep are out
 
 local function Wander(self, elapsed)
@@ -327,7 +327,7 @@ local function Pop(self)
         self.pop = group
     end
     group:Play()
-    if PlaySoundFile then pcall(PlaySoundFile, POP, "SFX") end
+    if PlaySoundFile then pcall(PlaySoundFile, POP:format(math.random(5)), "SFX") end
 end
 
 -- A click: the right sheep gives the windows back, any other pops.

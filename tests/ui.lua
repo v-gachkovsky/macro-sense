@@ -6537,7 +6537,7 @@ do
     check("surprise: they bleat", played[1] and played[1]:find("sheep%.ogg$") ~= nil, played[1])
     local wrong = flock[1] == real and flock[2] or flock[1]
     Fire(wrong, "OnClick")
-    check("surprise: the wrong sheep pops", wrong.popping and played[#played]:find("pop%.mp3$") ~= nil
+    check("surprise: the wrong sheep pops", wrong.popping and played[#played]:find("pop[1-5]%.ogg$") ~= nil
         and not frame:IsShown(), played[#played])
     PlaySoundFile = playFile
     Fire(real, "OnClick")
