@@ -6376,6 +6376,8 @@ do
         shown("Interface\\Buttons\\UI-Panel-Button-Up") > 0 and shown("Interface\\Buttons\\UI-CheckBox-Up") > 0
         and shown("Interface\\Common\\Common-Input-Border") > 0
         and shown("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up") > 0 and MacroSenseSearch.backdrop == nil)
+    local d = ns.Dropdown(UIParent, 120, function() return {} end, function() end, function() end)
+    check("game look: a dropdown's text stops before the game's arrow", d.label.point[2] == -22, tostring(d.label.point[2]))
     look("darkmodern")
     check("game look: another scheme takes it all back", not edge:IsShown() and frame.backdrop.edgeSize == 1
         and title.backdropColor[4] == 1 and shown("Interface\\Buttons\\UI-Panel-Button-Up") == 0

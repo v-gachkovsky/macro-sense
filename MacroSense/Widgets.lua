@@ -487,6 +487,7 @@ function ns.Dropdown(parent, width, getItems, getValue, onSelect)
     ns.OnStyle(function(s)
         gameArrow:SetShown(s.native and true or false)
         d.arrow:SetShown(not s.native)
+        d.label:SetPoint("RIGHT", s.native and -22 or -18, 0) -- the game's arrow is wider
         d:Restyle()
     end)
 
