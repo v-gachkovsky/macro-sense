@@ -189,6 +189,8 @@ local function SetsCommand(args)
     word = word:lower()
     if word == "debug" then
         for _, line in ipairs(ns.Sets.Debug()) do print("  " .. line) end
+    elseif word == "log" then
+        for _, line in ipairs(ns.Sets.Log()) do print("  " .. line) end
     elseif word == "on" then
         ns.Sets.Enable()
         ns.Print("macro sets %s", OnOff(true))

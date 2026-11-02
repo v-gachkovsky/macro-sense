@@ -160,6 +160,23 @@ local busy
 
 function Sets.Busy() return busy end
 
+-- What MacroSense did to the slots, until the game shows it (it may show it late): the names it deleted (when)
+-- and those it made (their layer, when). A deleted one is no deletion of yours (no trash, it stays in its
+-- layer); a made one comes in with its layer, not as a new macro of the character's.
+local expect = { gone = {}, made = {} }
+local EXPECT_FOR = 20 -- seconds
+
+-- What the sets did, for a bug report (/ms sets log): the last of it.
+local log = {}
+local function Log(text, ...)
+    log[#log + 1] = (date and date("%H:%M:%S ") or "") .. string.format(text, ...)
+    while #log > 80 do table.remove(log, 1) end
+end
+function Sets.Log() return log end
+
+-- Whether MacroSense deleted macro `name` and the game hasn't shown it gone yet.
+function Sets.Ours(name) return expect.gone[name] ~= nil end
+
 -- This character's sets, made on first use.
 function Sets.Mine()
     local c = ns.Character()
@@ -229,8 +246,48 @@ end
 
 local function Wrote(name, body) ns.History.Rewritten("character", name, body) end
 
+-- A macro out of the slots, or into them with its layer: expected until the game shows it.
+local function Remove(name)
+    local index = Index(name)
+    if not index then return end
+    expect.gone[name] = GetTime()
+    DeleteMacro(index)
+    Log("deleted %s", name)
+end
+local function Make(m, layer)
+    expect.made[m.name] = { layer = layer, at = GetTime() }
+    CreateMacro(m.name, m.icon or 134400, m.body, true)
+    Log("made %s (%s)", m.name, layer)
+end
+
 -- The layers as the macros in the slots are now: done before anything is changed, so what you changed is kept.
 local seen -- name -> { body, icon } as of the last look
+
+-- What MacroSense did, as the game shows it now: a macro it deleted is gone, one it made is there, each as it
+-- should be; what it hasn't shown yet is left out of both. Old expectations end.
+local function Expected(before, now, layer)
+    local t = GetTime()
+    for name, at in pairs(expect.gone) do
+        if not now[name] then
+            Log("seen gone: %s", name)
+            expect.gone[name] = nil
+        elseif t - at > EXPECT_FOR then
+            Log("still there: %s", name)
+            expect.gone[name] = nil
+        end
+        before[name], now[name] = nil, nil
+    end
+    for name, made in pairs(expect.made) do
+        if now[name] then
+            Log("seen made: %s (%s)", name, made.layer)
+            before[name], layer[name] = now[name], made.layer
+            expect.made[name] = nil
+        elseif t - made.at > EXPECT_FOR then
+            Log("never made: %s", name)
+            expect.made[name] = nil
+        end
+    end
+end
 
 -- Changes in the slots go into the layers (UPDATE_MACROS).
 function Sets.Scan()
@@ -239,7 +296,11 @@ function Sets.Scan()
     local now = ByName(InSlots())
     if seen then
         sets.layer = sets.layer or Layers(sets)
-        Sets.Follow(seen, now, sets.layer, { class = ClassList(), character = sets.character,
+        local before, after = {}, {}
+        for name, m in pairs(seen) do before[name] = m end
+        for name, m in pairs(now) do after[name] = m end
+        Expected(before, after, sets.layer)
+        Sets.Follow(before, after, sets.layer, { class = ClassList(), character = sets.character,
             spec = SpecList(sets, sets.active) })
     end
     seen = now
@@ -257,10 +318,7 @@ end
 local function SyncClass(sets)
     sets.layer = Layers(sets)
     local plan = Sets.ClassPlan(InSlots(), sets.layer, ClassList(), sets.classParked, ns.MAX_CHARACTER)
-    for _, name in ipairs(plan.remove) do
-        local index = Index(name)
-        if index then DeleteMacro(index) end
-    end
+    for _, name in ipairs(plan.remove) do Remove(name) end
     for _, m in ipairs(plan.change) do
         local index = Index(m.name)
         if index then
@@ -269,7 +327,7 @@ local function SyncClass(sets)
         end
     end
     for _, m in ipairs(plan.make) do
-        CreateMacro(m.name, m.icon or 134400, m.body, true)
+        Make(m, "class")
         sets.layer[m.name] = "class"
     end
     for _, name in ipairs(plan.remove) do sets.layer[name] = nil end
@@ -299,14 +357,14 @@ local function Change(sets, key)
     end
     for _, m in ipairs(plan.leaving) do kept[#kept + 1] = m end
     sets.specs[before] = kept
+    Log("specialization %s -> %s: out %d, in %d", tostring(before), key, #plan.drop, #plan.add)
     for _, name in ipairs(plan.drop) do
-        local index = Index(name)
-        if index then DeleteMacro(index) end
+        Remove(name)
         sets.layer[name] = nil
     end
     for _, m in ipairs(plan.add) do
         m.parked = nil
-        CreateMacro(m.name, m.icon or 134400, m.body, true)
+        Make(m, "spec")
         sets.layer[m.name] = "spec"
     end
     local newly = 0 -- off the slots now, not by your choice before
@@ -316,13 +374,26 @@ local function Change(sets, key)
     end
     sets.active = key
     Settle()
+    Sets.PlaceBars(key)
+    -- The game may show the macros made a little later: their buttons then.
+    for _, delay in ipairs({ 0.5, 1.5, 4 }) do C_Timer.After(delay, function() Sets.PlaceBars(key) end) end
+    return #plan.add, newly
+end
+
+-- The macro buttons of specialization `key` back where they were, for the macros in the slots now. Not when
+-- another specialization came since, nor in combat.
+function Sets.PlaceBars(key)
+    local sets = Sets.Mine()
+    if sets.active ~= key or InCombatLockdown() then return end
     local have = {}
     for _, m in ipairs(InSlots()) do have[m.name] = true end
     for _, b in ipairs(Sets.BarsBack(sets.bars[key] or {}, At, have)) do
         local index = Index(b.name)
-        if index then ns.ActionBars.Place(index, { b.slot }) end
+        if index then
+            ns.ActionBars.Place(index, { b.slot })
+            Log("button %d: %s", b.slot, b.name)
+        end
     end
-    return #plan.add, newly
 end
 
 -- Brings the slots in line with the specialization and the class: at login, after a change of specialization,

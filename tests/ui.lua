@@ -6431,16 +6431,37 @@ do
         Send("UPDATE_MACROS")
         S.Update()
         Send("UPDATE_MACROS")
+        Wait(5)
     end
-    -- Like the game: it tells the macros changed while each one is made or deleted, not after.
+    -- Like the game: it tells the macros changed while each one is made or deleted, and (Retail, it seems) shows a
+    -- macro made or deleted only a little later.
     local create, delete, edit = CreateMacro, DeleteMacro, EditMacro
+    local late = false
     CreateMacro = function(...)
+        local args = { ... }
+        if late then
+            C_Timer.After(0.2, function()
+                create(table.unpack(args))
+                Send("UPDATE_MACROS")
+            end)
+            Send("UPDATE_MACROS")
+            return
+        end
         local index = create(...)
         Send("UPDATE_MACROS")
         return index
     end
-    DeleteMacro = function(...)
-        delete(...)
+    DeleteMacro = function(index)
+        if late then
+            local name = GetMacroInfo(index)
+            C_Timer.After(0.2, function()
+                delete(GetMacroIndexByName(name))
+                Send("UPDATE_MACROS")
+            end)
+            Send("UPDATE_MACROS")
+            return
+        end
+        delete(index)
         Send("UPDATE_MACROS")
     end
     EditMacro = function(...)
@@ -6493,6 +6514,24 @@ do
         body("Chaos Bolt"))
     check("sets: the other one waits with its button", S.Mine().specs.group2[1].name == "Agony"
         and S.Mine().bars.group2[30] == "Agony")
+
+    -- Shown late: the same.
+    late = true
+    group = 2
+    update()
+    check("sets: shown late: out, no trash, kept in its layer", not has("Chaos Bolt") and not trashed("Chaos Bolt")
+        and S.Mine().specs.group1[1] and S.Mine().specs.group1[1].name == "Chaos Bolt" and has("Agony")
+        and S.Mine().layer.Agony == "spec" and actions[30] and actions[30].text == "Agony",
+        actions[30] and actions[30].text)
+    group = 1
+    update()
+    check("sets: shown late: back, its layer and its button", has("Chaos Bolt") and S.Mine().layer["Chaos Bolt"] == "spec"
+        and not has("Agony") and S.Mine().specs.group2[1].name == "Agony" and actions[30]
+        and actions[30].text == "Chaos Bolt" and not trashed("Agony"), actions[30] and actions[30].text)
+    local inCharacter = false
+    for _, m in ipairs(S.Mine().character) do if m.name == "Chaos Bolt" then inCharacter = true end end
+    check("sets: shown late: not taken for a new macro of yours", not inCharacter)
+    late = false
 
     -- In combat: after it.
     InCombatLockdown = function() return true end

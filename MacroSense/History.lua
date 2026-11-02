@@ -144,7 +144,12 @@ function History.Scan()
             end
             local renamed, deleted = History.Gone(before, macros)
             for old, new in pairs(renamed) do History.Rename(store, old, new) end
-            for _, name in ipairs(deleted) do History.Discard(History.Trash(scope), name, before[name], time()) end
+            for _, name in ipairs(deleted) do
+                -- One MacroSense took out of the slots itself (macro sets) is not in the trash.
+                if not (scope == "character" and ns.Sets and ns.Sets.Ours(name)) then
+                    History.Discard(History.Trash(scope), name, before[name], time())
+                end
+            end
         end
     end
     known = now
