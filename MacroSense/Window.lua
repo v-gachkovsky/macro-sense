@@ -1310,6 +1310,9 @@ local function BackupList()
     return ns.char.backups
 end
 
+-- A backup now, unless the macros are as in the last one.
+function Window.BackupNow() ns.Backups.Add(BackupList(), Macros(), time()) end
+
 -- On login: the day's backup, if the macros changed since the last one.
 function Window.DailyBackup()
     local list = BackupList()

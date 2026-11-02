@@ -1,6 +1,6 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Sets.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -2430,6 +2430,54 @@ do
         and not row("Frostbolt").checked)
     check("book: one left out is skipped", row("Frost Nova").state == "skipped" and not row("Frost Nova").checked)
     check("book: one learned since is new and checked", row("Blink").state == "new" and row("Blink").checked)
+end
+
+-- Macro sets (Sets.lua): the layers of the character's slots.
+do
+    local S = ns.Sets
+    local function m(name, body, parked) return { name = name, body = body or name, icon = 1, parked = parked } end
+    local layer = S.LayerOf({ m("Fear"), m("Nuke"), m("Mount") }, { Fear = "class" }, { m("Nuke"), m("Gone") })
+    check("sets: a layer as known, else the specialization's, else the character's", layer.Fear == "class"
+        and layer.Nuke == "spec" and layer.Mount == "character" and layer.Gone == nil)
+    check("sets: a macro of a class macro's name is yours until made the class's",
+        S.LayerOf({ m("Fear") }, {}, {}).Fear == "character")
+
+    local now = { m("Fear"), m("Mount"), m("Chaos Bolt") }
+    local swap = S.Swap(now, { Fear = "class", Mount = "character", ["Chaos Bolt"] = "spec" },
+        { m("Drain"), m("Corruption", nil, true), m("Mount") }, 30)
+    check("sets: changing specialization: its macros leave, the other's come in", #swap.drop == 1
+        and swap.drop[1] == "Chaos Bolt" and #swap.leaving == 1 and swap.leaving[1].name == "Chaos Bolt"
+        and #swap.add == 1 and swap.add[1].name == "Drain")
+    check("sets: one parked or of a name taken waits", #swap.wait == 2 and swap.wait[1].name == "Corruption"
+        and swap.wait[2].name == "Mount")
+    swap = S.Swap({ m("A"), m("B") }, { A = "character", B = "character" }, { m("C"), m("D"), m("E") }, 4)
+    check("sets: no room: the rest wait", #swap.add == 2 and #swap.wait == 1 and swap.wait[1].name == "E")
+
+    local class = { m("Fear", "new"), m("Soulstone"), m("Healthstone"), m("Mount") }
+    local plan = S.ClassPlan({ m("Fear", "old"), m("Banish"), m("Mount") },
+        { Fear = "class", Banish = "class", Mount = "character" }, class, { Healthstone = true }, 30)
+    check("sets: class macros: a changed one written again", #plan.change == 1 and plan.change[1].name == "Fear")
+    check("sets: one gone from the class removed", #plan.remove == 1 and plan.remove[1] == "Banish")
+    check("sets: one missing made, one parked here not", #plan.make == 1 and plan.make[1].name == "Soulstone")
+    check("sets: one whose name is taken waits", #plan.wait == 1 and plan.wait[1].name == "Mount")
+    plan = S.ClassPlan({ m("A") }, { A = "character" }, { m("B"), m("C") }, {}, 2)
+    check("sets: class macros with no room wait", #plan.make == 1 and #plan.wait == 1)
+
+    local lists = { class = { m("Fear") }, character = { m("Mount") }, spec = { m("Bolt") } }
+    local known = { Fear = "class", Mount = "character", Bolt = "spec" }
+    S.Follow({ Fear = { body = "Fear" }, Mount = { body = "Mount" }, Bolt = { body = "Bolt" } },
+        { Terror = { body = "Fear" }, Bolt = { body = "Bolt 2" }, Hearth = { body = "h" } }, known, lists)
+    check("sets: a renamed macro keeps its layer", lists.class[1].name == "Terror" and known.Terror == "class"
+        and known.Fear == nil)
+    check("sets: a changed one is kept in its layer", lists.spec[1].body == "Bolt 2")
+    check("sets: a deleted one leaves its layer, a new one is the character's", #lists.character == 1
+        and lists.character[1].name == "Hearth" and known.Mount == nil and known.Hearth == "character")
+
+    local at = { [1] = { nil }, [2] = { "character", "Other" }, [3] = { "other" }, [4] = { "character", "Bolt" } }
+    local back = S.BarsBack({ [1] = "Bolt", [2] = "Bolt", [3] = "Bolt", [4] = "Bolt", [5] = "Gone" },
+        function(slot) return (at[slot] or {})[1], (at[slot] or {})[2] end, { Bolt = true })
+    check("sets: buttons back where empty or another of yours, not on a spell or where it is",
+        #back == 2 and back[1].slot == 1 and back[2].slot == 2)
 end
 
 check("default scheme exists", ns.FindByKey(ns.schemes, ns.DEFAULT_SCHEME) ~= nil)

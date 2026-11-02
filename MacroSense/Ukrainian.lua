@@ -1629,4 +1629,13 @@ ns.locales.uk = {
     ["Spells that some macro casts already are not ticked. Next time, only the spells you learned since are."] =
         "Заклинання, які вже кастує якийсь макрос, стоять без галочки. Наступного разу галочки стоятимуть лише на "
         .. "тих, що ви вивчили відтоді.",
+    ["macro sets %s"] = "набори макросів: %s",
+    ["\"%s\" is in this layer now: %s"] = "«%s» тепер у шарі: %s",
+    ["no macro \"%s\" in this character's slots (macro sets on?)"] =
+        "у слотах цього персонажа немає макросу «%s» (набори макросів увімкнено?)",
+    ["%d macros wait off the slots: there is no room for them"] =
+        "макросів за лаштунками: %d, для них немає місця в слотах",
+    ["Class macros"] = "Класові",
+    ["This character's"] = "Цього персонажа",
+    ["This specialization's"] = "Цієї спеціалізації",
 }

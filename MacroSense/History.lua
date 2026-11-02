@@ -158,6 +158,9 @@ function History.Moved(from, to, old, new)
     if known and known[from][old] then known[to][new], known[from][old] = known[from][old], nil end
 end
 
+-- MacroSense changed the macros by itself (macro sets): they are learned as they are, with no versions or trash.
+function History.Settle() known = Macros() end
+
 -- MacroSense wrote macro `name` again by itself (your group's new tank, Roles.lua): the text it replaced is no
 -- version to keep.
 function History.Rewritten(scope, name, body)

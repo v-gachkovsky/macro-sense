@@ -34,6 +34,7 @@ Spellbook.lua
 Questions.lua
 Roles.lua
 Ranks.lua
+Sets.lua
 Widgets.lua
 Popup.lua
 CodeBox.lua

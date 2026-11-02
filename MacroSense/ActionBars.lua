@@ -60,6 +60,7 @@ local function Spec()
     local key = C_ClassTalents and id and id ~= 0 and ("spec" .. id) or ("group" .. group)
     return key, name or string.format(ns.L["Specialization %d"], group)
 end
+ActionBars.Spec = Spec
 
 -- What is on the bars now, kept for this character's specialization. Bars with nothing at all on them are not
 -- kept: the game may not have shown them yet.

@@ -468,9 +468,14 @@ function EditMacro(index, name, icon, body)
     m.name, m.icon, m.body = name or m.name, icon or m.icon, body or m.body
     return indexOf(m)
 end
+-- Like the game, a deleted macro leaves the action bars too.
 function DeleteMacro(index)
     local m = byIndex(index)
+    if not m then return end
     for i, x in ipairs(macros) do if x == m then table.remove(macros, i) end end
+    for slot, a in pairs(actions) do
+        if a[1] == "macro" and a.text == m.name then actions[slot] = nil end
+    end
 end
 function GetMacroIndexByName(name)
     for _, m in ipairs(macros) do if m.name == name then return indexOf(m) end end
@@ -6408,6 +6413,95 @@ do
         and shown("Interface\\Buttons\\UI-CheckBox-Up") == 0 and shown("Interface\\Common\\Common-Input-Border") == 0
         and MacroSenseSearch.backdrop.edgeSize == 1)
     look(before)
+end
+
+-- Macro sets: the specialization's macros come and go with it, the buttons too; the class's stay.
+do
+    local S = ns.Sets
+    local group = 1
+    local specs = C_SpecializationInfo.GetActiveSpecGroup
+    C_SpecializationInfo.GetActiveSpecGroup = function() return group end
+    local function has(name) return GetMacroIndexByName(name) > 0 end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local function trashed(name)
+        for _, e in ipairs(ns.History.Trash("character")) do if e.name == name then return true end end
+    end
+    local function versions(name) return #(ns.History.Store("character")[name] or {}) end
+    local function update()
+        Send("UPDATE_MACROS")
+        S.Update()
+        Send("UPDATE_MACROS")
+    end
+    local backups = #(ns.char.backups or {})
+    CreateMacro("Mount Up", 1, "/cast Felsteed", true)
+    Send("UPDATE_MACROS")
+    S.Enable()
+    check("sets: on: a backup first, the macros are the character's", #(ns.char.backups or {}) >= backups
+        and S.Mine().enabled and S.Mine().layer["Mount Up"] == "character" and S.Mine().active == "group1")
+
+    CreateMacro("Chaos Bolt", 2, "/cast Chaos Bolt", true)
+    CreateMacro("Stones", 3, "/use Healthstone", true)
+    Send("UPDATE_MACROS")
+    check("sets: into a layer", S.Move("Chaos Bolt", "spec") and S.Move("Stones", "class")
+        and S.Mine().layer["Chaos Bolt"] == "spec" and ns.db.classMacros.WARLOCK[1].name == "Stones")
+    PickupMacro(GetMacroIndexByName("Chaos Bolt"))
+    PlaceAction(30)
+    ClearCursor()
+
+    group = 2
+    update()
+    check("sets: another specialization: its macros out of the slots, off the bars", not has("Chaos Bolt")
+        and actions[30] == nil and has("Mount Up") and has("Stones") and S.Mine().active == "group2")
+    check("sets: no version or trash for what MacroSense did", not trashed("Chaos Bolt")
+        and versions("Chaos Bolt") == 0)
+
+    CreateMacro("Agony", 4, "/cast Agony", true)
+    Send("UPDATE_MACROS")
+    S.Move("Agony", "spec")
+    PickupMacro(GetMacroIndexByName("Agony"))
+    PlaceAction(30)
+    ClearCursor()
+
+    group = 1
+    update()
+    check("sets: back: its macros again, on their buttons", has("Chaos Bolt") and not has("Agony")
+        and actions[30] and actions[30].text == "Chaos Bolt", actions[30] and actions[30].text)
+
+    EditMacro(GetMacroIndexByName("Chaos Bolt"), nil, nil, "/cast [@focus] Chaos Bolt")
+    Send("UPDATE_MACROS")
+    group = 2
+    update()
+    group = 1
+    update()
+    check("sets: a change made while in the slots is kept", body("Chaos Bolt") == "/cast [@focus] Chaos Bolt",
+        body("Chaos Bolt"))
+    check("sets: the other one waits with its button", S.Mine().specs.group2[1].name == "Agony"
+        and S.Mine().bars.group2[30] == "Agony")
+
+    -- In combat: after it.
+    InCombatLockdown = function() return true end
+    group = 2
+    S.Update()
+    check("sets: not in combat", has("Chaos Bolt") and S.Pending())
+    InCombatLockdown = function() return false end
+    Send("PLAYER_REGEN_ENABLED")
+    check("sets: after combat", has("Agony") and not has("Chaos Bolt") and not S.Pending())
+
+    -- A class macro changed on another character comes in at the next look; one gone from the class goes.
+    ns.db.classMacros.WARLOCK[1].body = "/use Healthstone\n/use Soulstone"
+    ns.db.classMacros.WARLOCK[2] = { name = "Ritual", icon = 5, body = "/cast Ritual of Summoning" }
+    update()
+    check("sets: class macros follow the class", body("Stones") == "/use Healthstone\n/use Soulstone"
+        and has("Ritual") and S.Mine().layer.Ritual == "class")
+    table.remove(ns.db.classMacros.WARLOCK, 2)
+    update()
+    check("sets: one gone from the class goes", not has("Ritual"))
+
+    S.Disable()
+    group = 1
+    update()
+    check("sets: off: nothing changes", has("Agony") and not has("Chaos Bolt"))
+    C_SpecializationInfo.GetActiveSpecGroup = specs
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))
