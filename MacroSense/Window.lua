@@ -1895,7 +1895,7 @@ local function Build()
         GameTooltip:Show()
     end)
     saveBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    saveBtn:SetPoint("RIGHT", -24, 0) -- room for the resize grip in the corner
+    saveBtn:SetPoint("RIGHT", -12, 0) -- under Shorten, the resize grip below it in the corner
     revertBtn = ns.Button(bar, L["Revert"], 90, Window.Revert)
     revertBtn:SetPoint("RIGHT", saveBtn, "LEFT", -6, 0)
     counter = ns.Text(bar, 11, "dim")
