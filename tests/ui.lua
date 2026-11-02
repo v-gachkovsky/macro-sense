@@ -6515,16 +6515,18 @@ do
     CreateMacro("Baa", 1, "/cast [@player] Polymorph", false)
     Send("UPDATE_MACROS")
     ns.Window.Select(GetMacroIndexByName("Baa"))
+    ns.HelpWindow.Open()
     ns.Window.Save()
     local sheep
     for _, o in ipairs(created) do
         if o.icon and o.icon.texture == "Interface\\Icons\\Spell_Nature_Polymorph" then sheep = o end
     end
     check("surprise: Polymorph on yourself: the window is a sheep", sheep ~= nil and sheep:IsShown()
-        and not frame:IsShown() and GetMacroIndexByName("Baa") > 0)
+        and not frame:IsShown() and not ns.HelpWindow.IsShown() and GetMacroIndexByName("Baa") > 0)
     for _ = 1, 30 do NextFrame() end
     Fire(sheep, "OnClick")
-    check("surprise: a click on the sheep turns it back", frame:IsShown() and not sheep:IsShown())
+    check("surprise: a click on the sheep turns it back, the help too", frame:IsShown() and not sheep:IsShown()
+        and ns.HelpWindow.IsShown())
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

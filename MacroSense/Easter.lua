@@ -68,6 +68,18 @@ local function Sound(...)
     end
 end
 
+-- The addon's questions closed (the game's dialogs: they are not blown up or turned, only gone), its menu and
+-- the tooltip.
+local function Quiet()
+    if StaticPopup_Hide and StaticPopupDialogs then
+        for which in pairs(StaticPopupDialogs) do
+            if type(which) == "string" and which:find("^MACROSENSE_") then StaticPopup_Hide(which) end
+        end
+    end
+    if ns.CloseMenu then ns.CloseMenu() end
+    if GameTooltip then GameTooltip:Hide() end
+end
+
 -- Every window that blew apart closed, every part back where it was: its anchors as they were, rows back in their
 -- lists.
 local function Mend()
@@ -217,14 +229,7 @@ end
 function Easter.Shatter()
     if falling or not frame or not frame:IsShown() or InCombatLockdown() then return end
     local groups, rows, windows, pieces = {}, {}, {}, {}
-    -- The addon's questions (the game's dialogs: they are not blown up, only gone), its menu and tooltip.
-    if StaticPopup_Hide and StaticPopupDialogs then
-        for which in pairs(StaticPopupDialogs) do
-            if type(which) == "string" and which:find("^MACROSENSE_") then StaticPopup_Hide(which) end
-        end
-    end
-    if ns.CloseMenu then ns.CloseMenu() end
-    if GameTooltip then GameTooltip:Hide() end
+    Quiet()
     for _, window in ipairs(ns.windows) do
         if window:IsShown() then
             windows[#windows + 1] = window
@@ -304,12 +309,15 @@ local function Sheep()
     sheep:SetScript("OnClick", function(self)
         self:Hide()
         frame:Show()
+        for _, window in ipairs(self.windows or {}) do window:Show() end
+        self.windows = nil
     end)
     sheep:Hide()
     return sheep
 end
 
--- The window becomes a sheep where it was.
+-- The windows become a sheep where the editor was. Those the editor closes with it (the wizard, sharing, the
+-- icons) stay closed, as when it is closed; the others come back with it.
 function Easter.Polymorph()
     if not frame or not frame:IsShown() or falling then return end
     local s = Sheep()
@@ -319,7 +327,15 @@ function Easter.Polymorph()
     s.toX, s.toY, s.wait = s.x, s.y, 0.8
     s:ClearAllPoints()
     s:SetPoint("CENTER", UIParent, "BOTTOMLEFT", s.x, s.y)
+    Quiet()
     frame:Hide()
+    s.windows = {}
+    for _, window in ipairs(ns.windows) do
+        if window:IsShown() then
+            s.windows[#s.windows + 1] = window
+            window:Hide()
+        end
+    end
     s:Show()
     Sound("IG_SPELLBOOK_CLOSE", "IG_MAINMENU_CLOSE")
 end
