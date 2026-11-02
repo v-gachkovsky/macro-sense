@@ -6526,6 +6526,21 @@ do
     check("sets: back: the bars of the other one not taken for its own", S.Mine().bars.group1[30] == "Chaos Bolt"
         and S.Mine().bars.group1[31] == "Mount Up" and actions[31] and actions[31].text == "Mount Up")
 
+    -- The bars of the new one shown before the game says the specialization changed: what is kept stays.
+    local shown = {}
+    for slot, a in pairs(actions) do shown[slot] = a end
+    for slot in pairs(shown) do actions[slot] = nil end
+    actions[1] = { "spell", 172 }
+    Send("ACTIVE_TALENT_GROUP_CHANGED")
+    Send("ACTIONBAR_SLOT_CHANGED", 0)
+    Wait(1.1)
+    check("sets: the bars before the specialization: its buttons stay kept", S.Mine().bars.group1[30] == "Chaos Bolt"
+        and S.Mine().bars.group1[31] == "Mount Up")
+    actions[1] = nil
+    for slot, a in pairs(shown) do actions[slot] = a end
+    Send("ACTIONBAR_SLOT_CHANGED", 0)
+    Wait(8)
+
     EditMacro(GetMacroIndexByName("Chaos Bolt"), nil, nil, "/cast [@focus] Chaos Bolt")
     Send("UPDATE_MACROS")
     switch(2)

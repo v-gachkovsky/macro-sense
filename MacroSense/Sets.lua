@@ -374,16 +374,18 @@ local function Change(sets, key)
     end
     sets.active = key
     Settle()
-    placing = GetTime() + 5
+    placing = math.max(placing, GetTime() + 5)
     Sets.PlaceBars(key)
     -- The game may show the macros made a little later: their buttons then.
-    for _, delay in ipairs({ 0.5, 1.5, 4 }) do C_Timer.After(delay, function() Sets.PlaceBars(key) end) end
+    for _, delay in ipairs({ 0.5, 1.5, 4 }) do
+        C_Timer.After(delay, function() Sets.PlaceBars(key, delay == 4) end)
+    end
     return #plan.add, newly
 end
 
 -- The macro buttons of specialization `key` back where they were, for the macros in the slots now. Not when
--- another specialization came since, nor in combat.
-function Sets.PlaceBars(key)
+-- another specialization came since, nor in combat. `last`: those not placed go into the log, with why.
+function Sets.PlaceBars(key, last)
     local sets = Sets.Mine()
     if sets.active ~= key or InCombatLockdown() then return end
     local have = {}
@@ -395,24 +397,47 @@ function Sets.PlaceBars(key)
             Log("button %d: %s", b.slot, b.name)
         end
     end
+    if not last then return end
+    for slot, name in pairs(sets.bars[key] or {}) do
+        local kind, there = At(slot)
+        if not have[name] then
+            Log("no button %d: %s is not in the slots", slot, name)
+        elseif there ~= name then
+            Log("no button %d: %s, the slot has %s", slot, name, tostring(there or kind))
+        end
+    end
 end
 
+local rememberDue
 -- The buttons of the specialization now, kept as you change them: the game swaps the bars with the
 -- specialization, so once it changed they are those of the new one. Not while MacroSense puts them back; a
 -- button whose macro is off the slots stays kept (deleting the macro took it off).
 function Sets.RememberBars()
     local sets = Sets.Mine()
-    if not sets.enabled or busy or sets.active ~= ns.ActionBars.Spec() or GetTime() < placing then return end
+    if not sets.enabled then return end
+    if GetTime() < placing then -- a look once that is over
+        if not rememberDue then
+            rememberDue = true
+            C_Timer.After(placing - GetTime() + 0.1, function()
+                rememberDue = false
+                Sets.RememberBars()
+            end)
+        end
+        return
+    end
+    if busy or sets.active ~= ns.ActionBars.Spec() then return end
     local have = {}
     for _, m in ipairs(InSlots()) do have[m.name] = true end
     local record = sets.bars[sets.active] or {}
     for slot = 1, MAX_SLOT do
         local kind, name = At(slot)
+        local was = record[slot]
         if kind == "character" then
             record[slot] = name
-        elseif kind or (record[slot] and have[record[slot]]) then
+        elseif kind or (was and have[was]) then
             record[slot] = nil
         end
+        if record[slot] ~= was then Log("%s button %d: %s", sets.active, slot, tostring(record[slot] or "-")) end
     end
     sets.bars[sets.active] = record
 end
@@ -450,15 +475,18 @@ function Sets.Pending() return pending end
 -- The game tells of a new specialization in several events, some before it gives the new one: a look at once and
 -- again a little later. A look when nothing changed changes nothing.
 function Sets.Soon()
+    placing = math.max(placing, GetTime() + 7) -- the bars may be the new one's before the game says it is
     for _, delay in ipairs({ 0.5, 2, 5 }) do C_Timer.After(delay, Sets.Update) end
 end
 if CreateFrame then -- the game (not the tests of the planning)
-    local watch = CreateFrame("Frame")
+    local watch, events = CreateFrame("Frame"), {}
     for _, event in ipairs({ "PLAYER_SPECIALIZATION_CHANGED", "ACTIVE_PLAYER_SPECIALIZATION_CHANGED",
         "ACTIVE_TALENT_GROUP_CHANGED", "PLAYER_ENTERING_WORLD" }) do
-        pcall(watch.RegisterEvent, watch, event)
+        events[event] = pcall(watch.RegisterEvent, watch, event)
     end
-    watch:SetScript("OnEvent", function() if ns.db and Sets.Mine().enabled then Sets.Soon() end end)
+    watch:SetScript("OnEvent", function(_, event)
+        if events[event] and ns.db and Sets.Mine().enabled then Sets.Soon() end
+    end)
 end
 
 -- What the sets know, for a bug report: the specialization they are of and the one now, each layer.
