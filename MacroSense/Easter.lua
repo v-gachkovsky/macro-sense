@@ -145,11 +145,11 @@ local function Blow(part, wx, wy, pieces)
     local px, py = part:GetCenter()
     local dx, dy = (px or wx) - wx + Between(-40, 40), (py or wy) - wy + Between(-40, 40)
     local far = math.max(1, math.sqrt(dx * dx + dy * dy))
-    local speed = Between(250, 700)
+    local speed = Between(320, 880)
     local points = {}
     for i = 1, part:GetNumPoints() do points[i] = { part:GetPoint(i) } end
     pieces[#pieces + 1] = { part = part, points = points, x = left, y = bottom, w = part:GetWidth(),
-        h = part:GetHeight(), vx = dx / far * speed, vy = dy / far * speed + Between(100, 350) }
+        h = part:GetHeight(), vx = dx / far * speed, vy = dy / far * speed + Between(130, 440) }
 end
 
 -- What holds the parts (the window, its panels, its border) is gone right after the blast; its texts fly too.
