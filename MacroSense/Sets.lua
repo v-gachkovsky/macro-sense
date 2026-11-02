@@ -157,6 +157,7 @@ local pending -- a change waits for the end of combat
 -- MacroSense changes the slots now: the game tells of each macro made or deleted while it is done, not after.
 -- Those are not your changes: not followed, no versions, no trash (Core skips them); learned once it is over.
 local busy
+local placing = 0 -- until when MacroSense puts the buttons of the specialization back
 
 function Sets.Busy() return busy end
 
@@ -347,7 +348,6 @@ end
 -- buttons of the one coming in go back where they were. Not in combat: after it.
 local function Change(sets, key)
     local before = sets.active
-    sets.bars[before] = BarsNow()
     sets.layer = Layers(sets)
     local plan = Sets.Swap(InSlots(), sets.layer, SpecList(sets, key), ns.MAX_CHARACTER)
     -- The one going keeps its macros as they are, and those it had parked.
@@ -374,6 +374,7 @@ local function Change(sets, key)
     end
     sets.active = key
     Settle()
+    placing = GetTime() + 5
     Sets.PlaceBars(key)
     -- The game may show the macros made a little later: their buttons then.
     for _, delay in ipairs({ 0.5, 1.5, 4 }) do C_Timer.After(delay, function() Sets.PlaceBars(key) end) end
@@ -394,6 +395,26 @@ function Sets.PlaceBars(key)
             Log("button %d: %s", b.slot, b.name)
         end
     end
+end
+
+-- The buttons of the specialization now, kept as you change them: the game swaps the bars with the
+-- specialization, so once it changed they are those of the new one. Not while MacroSense puts them back; a
+-- button whose macro is off the slots stays kept (deleting the macro took it off).
+function Sets.RememberBars()
+    local sets = Sets.Mine()
+    if not sets.enabled or busy or sets.active ~= ns.ActionBars.Spec() or GetTime() < placing then return end
+    local have = {}
+    for _, m in ipairs(InSlots()) do have[m.name] = true end
+    local record = sets.bars[sets.active] or {}
+    for slot = 1, MAX_SLOT do
+        local kind, name = At(slot)
+        if kind == "character" then
+            record[slot] = name
+        elseif kind or (record[slot] and have[record[slot]]) then
+            record[slot] = nil
+        end
+    end
+    sets.bars[sets.active] = record
 end
 
 -- Brings the slots in line with the specialization and the class: at login, after a change of specialization,
@@ -475,6 +496,7 @@ function Sets.Enable()
     if ns.Window.BackupNow then ns.Window.BackupNow() end
     sets.enabled = true
     sets.active = ns.ActionBars.Spec()
+    sets.bars[sets.active] = BarsNow()
     sets.character, sets.layer = {}, {}
     for _, m in ipairs(InSlots()) do
         sets.character[#sets.character + 1] = m

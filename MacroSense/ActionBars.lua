@@ -71,6 +71,7 @@ function ActionBars.Remember()
     local c = ns.Character()
     c.bars = c.bars or {}
     c.bars[key] = { label = label, names = names }
+    if ns.Sets then ns.Sets.RememberBars() end
 end
 
 -- Where macro `name` of tab `scope` is on action bars: the buttons of the bars now, and where else it was when last

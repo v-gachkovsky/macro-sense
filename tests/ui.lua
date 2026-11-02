@@ -6427,6 +6427,25 @@ do
         for _, e in ipairs(ns.History.Trash("character")) do if e.name == name then return true end end
     end
     local function versions(name) return #(ns.History.Store("character")[name] or {}) end
+    -- Like the game: each specialization has bars of its own, swapped with it.
+    local stash = {}
+    local function switch(g)
+        local mine = {}
+        for slot, a in pairs(actions) do mine[slot] = a end
+        stash[group] = mine
+        for slot in pairs(mine) do actions[slot] = nil end
+        for slot, a in pairs(stash[g] or {}) do actions[slot] = a end
+        group = g
+        Send("ACTIONBAR_SLOT_CHANGED", 0)
+    end
+    -- A button placed, as the game tells of it.
+    local function place(name, slot)
+        PickupMacro(GetMacroIndexByName(name))
+        PlaceAction(slot)
+        ClearCursor()
+        Send("ACTIONBAR_SLOT_CHANGED", slot)
+        Wait(1.1)
+    end
     local function update()
         Send("UPDATE_MACROS")
         S.Update()
@@ -6461,6 +6480,10 @@ do
             Send("UPDATE_MACROS")
             return
         end
+        local name = GetMacroInfo(index)
+        for _, bars in pairs(stash) do
+            for slot, a in pairs(bars) do if a[1] == "macro" and a.text == name then bars[slot] = nil end end
+        end
         delete(index)
         Send("UPDATE_MACROS")
     end
@@ -6481,34 +6504,33 @@ do
     Send("UPDATE_MACROS")
     check("sets: into a layer", S.Move("Chaos Bolt", "spec") and S.Move("Stones", "class")
         and S.Mine().layer["Chaos Bolt"] == "spec" and ns.db.classMacros.WARLOCK[1].name == "Stones")
-    PickupMacro(GetMacroIndexByName("Chaos Bolt"))
-    PlaceAction(30)
-    ClearCursor()
+    place("Chaos Bolt", 30)
+    place("Mount Up", 31)
 
-    group = 2
+    switch(2)
     update()
-    check("sets: another specialization: its macros out of the slots, off the bars", not has("Chaos Bolt")
-        and actions[30] == nil and has("Mount Up") and has("Stones") and S.Mine().active == "group2")
+    check("sets: another specialization: its macros out of the slots, on bars of its own", not has("Chaos Bolt")
+        and actions[30] == nil and actions[31] == nil and has("Mount Up") and has("Stones") and S.Mine().active == "group2")
     check("sets: no version or trash for what MacroSense did", not trashed("Chaos Bolt")
         and versions("Chaos Bolt") == 0)
 
     CreateMacro("Agony", 4, "/cast Agony", true)
     Send("UPDATE_MACROS")
     S.Move("Agony", "spec")
-    PickupMacro(GetMacroIndexByName("Agony"))
-    PlaceAction(30)
-    ClearCursor()
+    place("Agony", 30)
 
-    group = 1
+    switch(1)
     update()
     check("sets: back: its macros again, on their buttons", has("Chaos Bolt") and not has("Agony")
         and actions[30] and actions[30].text == "Chaos Bolt", actions[30] and actions[30].text)
+    check("sets: back: the bars of the other one not taken for its own", S.Mine().bars.group1[30] == "Chaos Bolt"
+        and S.Mine().bars.group1[31] == "Mount Up" and actions[31] and actions[31].text == "Mount Up")
 
     EditMacro(GetMacroIndexByName("Chaos Bolt"), nil, nil, "/cast [@focus] Chaos Bolt")
     Send("UPDATE_MACROS")
-    group = 2
+    switch(2)
     update()
-    group = 1
+    switch(1)
     update()
     check("sets: a change made while in the slots is kept", body("Chaos Bolt") == "/cast [@focus] Chaos Bolt",
         body("Chaos Bolt"))
@@ -6517,13 +6539,13 @@ do
 
     -- Shown late: the same.
     late = true
-    group = 2
+    switch(2)
     update()
     check("sets: shown late: out, no trash, kept in its layer", not has("Chaos Bolt") and not trashed("Chaos Bolt")
         and S.Mine().specs.group1[1] and S.Mine().specs.group1[1].name == "Chaos Bolt" and has("Agony")
         and S.Mine().layer.Agony == "spec" and actions[30] and actions[30].text == "Agony",
         actions[30] and actions[30].text)
-    group = 1
+    switch(1)
     update()
     check("sets: shown late: back, its layer and its button", has("Chaos Bolt") and S.Mine().layer["Chaos Bolt"] == "spec"
         and not has("Agony") and S.Mine().specs.group2[1].name == "Agony" and actions[30]
@@ -6535,7 +6557,7 @@ do
 
     -- In combat: after it.
     InCombatLockdown = function() return true end
-    group = 2
+    switch(2)
     S.Update()
     check("sets: not in combat", has("Chaos Bolt") and S.Pending())
     InCombatLockdown = function() return false end
@@ -6553,7 +6575,7 @@ do
     check("sets: one gone from the class goes", not has("Ritual"))
 
     S.Disable()
-    group = 1
+    switch(1)
     update()
     check("sets: off: nothing changes", has("Agony") and not has("Chaos Bolt"))
     C_SpecializationInfo.GetActiveSpecGroup = specs
