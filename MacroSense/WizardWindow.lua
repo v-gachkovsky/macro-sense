@@ -561,7 +561,7 @@ end
 -- Step by step: the form's questions one at a time (Questions.lua)
 ------------------------------------------------------------------------
 -- Whether the question has its answer: a spell for the macro (a key's may stay empty: it casts the macro's), one
--- in the list, a name to look for. What is being typed counts: Next takes it.
+-- in the list, a name to look for, one of the choices. What is being typed counts: Next takes it.
 function Answered()
     local kind = asked and asked.kind
     local function typed(box) return strtrim(box:GetText() or "") ~= "" end
@@ -577,6 +577,12 @@ function Answered()
         return false
     end
     if kind == "byName" then return strtrim(spec.byName or "") ~= "" end
+    if kind == "choice" then
+        for _, answer in ipairs(asked.answers or {}) do
+            if answer.key == asked.chosen then return true end
+        end
+        return false
+    end
     return true
 end
 
@@ -654,12 +660,13 @@ local function BuildSteps()
         panels[kind] = panel
     end
 
-    -- A choice: a click answers and goes on. The hint says the macro's words for it, the tooltip what it is.
+    -- A choice: a click answers, the macro at the bottom shows it, Next goes on. The hint says the macro's words
+    -- for it, the tooltip what it is.
     for i = 1, ANSWERS do
         local b = ns.Answer(panels.choice, ANSWER_W, function(self)
             Q.Choose(spec, step, self.key)
             Update()
-            Go()
+            ShowStep()
         end)
         b:SetPoint("TOPLEFT", PAD + (i - 1) % 2 * (ANSWER_W + 12), -math.floor((i - 1) / 2) * 28)
         b:HookScript("OnEnter", function(self)

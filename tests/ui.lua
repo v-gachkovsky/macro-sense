@@ -2903,6 +2903,11 @@ do
             if b.shown and b.label.text == name then return b end
         end
     end
+    -- A choice clicked, then Next.
+    local function Pick(name)
+        Fire(answer(name), "OnClick")
+        Fire(C("next"), "OnClick")
+    end
     local function chosen()
         for i = 1, 18 do
             local b = C("answer" .. i)
@@ -2942,14 +2947,14 @@ do
         and tip[2]:find("^Each press casts the next spell") ~= nil, tip[2])
 
     -- Gear: the first piece is a must, then where it goes and when; another one may stay empty.
-    Fire(answer("Put on gear"), "OnClick")
+    Pick("Put on gear")
     check("steps: gear first", question() == "Which item should the macro put on?" and not C("next"):IsEnabled()
         and C("stepSpell").placeholder.text == "type an item", question())
     TypeIn(C("stepSpell"), "Lucky Charm")
     Fire(C("next"), "OnClick")
     check("steps: where it goes", question() == "Where should Lucky Charm go?" and chosen() == "Default slot", question())
-    Fire(answer("Trinket 2"), "OnClick")
-    Fire(answer("Without a key"), "OnClick")
+    Pick("Trinket 2")
+    Pick("Without a key")
     check("steps: another piece may stay empty", question() == "And another one?" and C("next"):IsEnabled()
         and C("stepSpell").placeholder.text == "none" and shown() == "#showtooltip Lucky Charm\n"
         .. "/equipslot [nomod] 14 Lucky Charm", shown())
@@ -2959,7 +2964,7 @@ do
     check("steps: back to the first again", question() == "What should the macro do?", question())
 
     -- A mount: the one for anywhere is a must, the others may stay empty; then what a press on a mount does.
-    Fire(answer("Ride a mount"), "OnClick")
+    Pick("Ride a mount")
     check("steps: a mount first", question() == "Which mount should the macro summon?" and not C("next"):IsEnabled()
         and C("stepSpell").placeholder.text == "type a mount", question())
     TypeIn(C("stepSpell"), "Swift Brown Steed")
@@ -2978,13 +2983,13 @@ do
     for _ = 1, 6 do Fire(C("back"), "OnClick") end
     check("steps: back to the first", question() == "What should the macro do?", question())
 
-    Fire(answer("Cast a spell"), "OnClick")
+    Pick("Cast a spell")
     check("steps: a click answers and goes on", question() == "Which spell should the macro cast?"
         and C("stepSpell"):HasFocus() and not C("next"):IsEnabled() and C("back"):IsEnabled(), question())
     Fire(C("back"), "OnClick")
     check("steps: Back with nothing typed", question() == "What should the macro do?" and not C("stepSpell"):HasFocus(),
         question())
-    Fire(answer("Cast a spell"), "OnClick")
+    Pick("Cast a spell")
     TypeIn(C("stepSpell"), "fire")
     check("steps: a name typed lets Next go on", C("next"):IsEnabled())
     Fire(C("stepSpell"), "OnArrowPressed", "DOWN")
@@ -2992,7 +2997,7 @@ do
     check("steps: a spell with ranks: which one", question() == "Which rank of Fireball?"
         and answers() == "The highest you know, Rank 3, Rank 2, Rank 1" and chosen() == "The highest you know"
         and C("answer2").hint.text == "Fireball(Rank 3)", answers())
-    Fire(answer("The highest you know"), "OnClick")
+    Pick("The highest you know")
     check("steps: a spell picked goes on", question() == "Where should Fireball go?"
         and chosen() == "On whoever is under the mouse" and answer("On whoever is under the mouse").hint.text
         == "@mouseover" and answer("Do nothing") == nil, question())
@@ -3006,12 +3011,12 @@ do
         and C("stepSpell").text == "Fireball" and not C("stepSpell"):HasFocus() and C("next"):IsEnabled(), question())
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
-    Fire(answer("On whoever is under the mouse"), "OnClick")
+    Pick("On whoever is under the mouse")
     check("steps: and if nobody is under the mouse: no friends or enemies, the game says",
         question() == "And if nobody is under the mouse?"
         and C("hint").text == "Or the one there is not an enemy, or is dead." and chosen() == "On your target, as usual"
         and answer("On whoever is under the mouse") == nil and answers():find("Do nothing$") ~= nil, answers())
-    Fire(answer("On your target, as usual"), "OnClick")
+    Pick("On your target, as usual")
     check("steps: keys", question() == "Should the macro do something else while you hold Shift, Ctrl, Alt or Cmd?"
         and C("stepCmd") ~= nil and C("next"):IsEnabled(), question())
     Fire(C("stepShift"), "OnClick")
@@ -3024,9 +3029,9 @@ do
     Fire(C("stepSpell"), "OnEnterPressed")
     check("steps: where it goes with Shift", question() == "Where should Polymorph go?"
         and C("context").text == "With Shift held" and chosen() == "On your target, as usual", question())
-    Fire(answer("On your focus"), "OnClick")
+    Pick("On your focus")
     check("steps: and if there is no focus", question() == "And if you have no focus?", question())
-    Fire(answer("Do nothing"), "OnClick")
+    Pick("Do nothing")
     -- When it works: in combat only, and what it casts the rest of the time.
     check("steps: when", question() == "Should the macro work only at certain times?" and C("next"):IsEnabled()
         and C("stepWhenCombat").label.text == "In or out of combat" and not C("stepWhenForm"):IsShown(), question())
@@ -3085,7 +3090,7 @@ do
     Fire(wizardBtn, "OnClick")
     check("steps: opened again, from the first question", question() == "What should the macro do?"
         and chosen() == "Cast a spell" and shown():find("Pick a spell", 1, true) ~= nil, question())
-    Fire(answer("Cast a spell"), "OnClick")
+    Pick("Cast a spell")
     TypeIn(C("stepSpell"), "Healthstone")
     Fire(C("next"), "OnClick")
     check("steps: Next takes the name typed; an item is used", question() == "Where should Healthstone go?"
@@ -3096,10 +3101,10 @@ do
     Fire(C("back"), "OnClick")
     check("steps: Back takes the box emptied", question() == "What should the macro do?"
         and shown():find("Pick a spell", 1, true) ~= nil, shown())
-    Fire(answer("Target someone"), "OnClick")
+    Pick("Target someone")
     check("steps: whom to target", question() == "Who should become your target?"
         and answer("Whoever is under the mouse") ~= nil and answer("Party member 2") ~= nil, answers())
-    Fire(answer("Someone by name"), "OnClick")
+    Pick("Someone by name")
     check("steps: by name", question() == "What name should it look for?" and not C("next"):IsEnabled(), question())
     TypeIn(C("stepByName"), "Hogger")
     check("steps: a name lets Next go on", C("next"):IsEnabled() and shown() == "/target Hogger", shown())
@@ -3108,7 +3113,7 @@ do
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
-    Fire(answer("Several spells in turn"), "OnClick")
+    Pick("Several spells in turn")
     check("steps: a list", question() == "Pick the spells in the order the macro should cast them"
         and not C("next"):IsEnabled(), question())
     TypeIn(C("stepList1"), "fire")
@@ -3130,9 +3135,9 @@ do
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
-    Fire(answer("Command your pet"), "OnClick")
+    Pick("Command your pet")
     check("steps: the pet", question() == "What should your pet do?" and chosen() == "Attack", question())
-    Fire(answer("Follow"), "OnClick")
+    Pick("Follow")
     check("steps: no units to follow", question():find("^Should the macro do something else") ~= nil
         and shown() == "/petfollow", shown())
     Fire(C("mode"), "OnClick")
@@ -3148,11 +3153,11 @@ do
         and ns.sources.reaction("Polymorph") == nil and ns.sources.reaction("Healthstone", true) == "friends")
     ns.WizardWindow.Close()
     Fire(wizardBtn, "OnClick")
-    Fire(answer("Use an item"), "OnClick")
+    Pick("Use an item")
     TypeIn(C("stepSpell"), "Healthstone")
     Fire(C("next"), "OnClick")
-    Fire(answer("On whoever is under the mouse"), "OnClick")
-    Fire(answer("On your target, as usual"), "OnClick")
+    Pick("On whoever is under the mouse")
+    Pick("On your target, as usual")
     Fire(C("stepShift"), "OnClick")
     Fire(C("next"), "OnClick")
     TypeIn(C("stepSpell"), "Fireball")
@@ -3160,10 +3165,10 @@ do
     Fire(C("next"), "OnClick")
     check("steps: a key's own spell, for enemies", question() == "Where should Fireball go?"
         and answer("On party member 1") == nil and answer("On arena enemy 1") ~= nil, answers())
-    Fire(answer("On your focus"), "OnClick")
+    Pick("On your focus")
     check("steps: and if not there, for that spell", C("hint").text == "Or the one there is not an enemy, or is dead.",
         C("hint").text)
-    Fire(answer("Do nothing"), "OnClick")
+    Pick("Do nothing")
     check("steps: each spell checked for what it is for", shown() == "#showtooltip\n"
         .. "/use [mod:shift,@focus,harm,nodead] Fireball; [@mouseover,help,nodead][] Healthstone", shown())
     Fire(C("mode"), "OnClick")
@@ -3185,7 +3190,7 @@ do
     check("steps: an item, on a client that doesn't say", ns.sources.selfOnly("Healthstone", true) == nil)
     ns.WizardWindow.Close()
     Fire(wizardBtn, "OnClick")
-    Fire(answer("Cast a spell"), "OnClick")
+    Pick("Cast a spell")
     TypeIn(C("stepSpell"), "Demon Armor")
     Fire(C("next"), "OnClick")
     check("steps: for yourself only: no units", question():find("^Should the macro do something else") ~= nil
@@ -3200,9 +3205,9 @@ do
     Fire(C("back"), "OnClick")
     TypeIn(C("stepSpell"), "Fireball")
     Fire(C("next"), "OnClick")
-    Fire(answer("The highest you know"), "OnClick")
-    Fire(answer("On whoever is under the mouse"), "OnClick")
-    Fire(answer("On your target, as usual"), "OnClick")
+    Pick("The highest you know")
+    Pick("On whoever is under the mouse")
+    Pick("On your target, as usual")
     Fire(C("next"), "OnClick")
     TypeIn(C("stepSpell"), "Demon Armor")
     Fire(C("next"), "OnClick")
@@ -3235,7 +3240,13 @@ do
     Fire(wizardBtn, "OnClick")
     check("steps: in Ukrainian", question() == "Що має робити макрос?"
         and C("answer1").label.text == "Застосувати заклинання", question())
+    Fire(C("answer2"), "OnClick")
+    check("steps: a click answers and stays on the question", question() == "Що має робити макрос?"
+        and C("answer2").chosen and not C("answer1").chosen and C("next"):IsEnabled(), question())
     Fire(C("answer1"), "OnClick")
+    check("steps: another answer may be clicked", question() == "Що має робити макрос?" and C("answer1").chosen
+        and not C("answer2").chosen, question())
+    Fire(C("next"), "OnClick")
     check("steps: the next question in Ukrainian", question() == "Яке заклинання має застосовувати макрос?", question())
     ns.WizardWindow.Close()
     ns.SetLanguage("en")
@@ -5716,6 +5727,11 @@ do
             if b.shown and b.label.text == label then return b end
         end
     end
+    -- A choice clicked, then Next.
+    local function Pick(name)
+        Fire(answer(name), "OnClick")
+        Fire(C("next"), "OnClick")
+    end
     local function TypeIn(box, text)
         box:SetFocus()
         Fire(box, "OnEditFocusGained")
@@ -5973,13 +5989,13 @@ do
     -- Step by step: the answers in plain words, the macro's words as their hint.
     ns.db.wizardForm = nil
     ns.WizardWindow.Open("general")
-    Fire(answer("Cast a spell"), "OnClick")
+    Pick("Cast a spell")
     TypeIn(C("stepSpell"), "Flash Heal")
     Fire(C("stepSpell"), "OnEnterPressed")
     Fire(C("next"), "OnClick")
     check("roles: step by step", answer("On your group's tank").hint.text == "@tank"
         and answer("On your group's healer").hint.text == "@heal", C("question").text)
-    Fire(answer("On your group's tank"), "OnClick")
+    Pick("On your group's tank")
     check("roles: and if there is no tank", C("question").text == "And if your group has no tank?"
         and preview() == "#showtooltip\n/cast [@tank,help,nodead][] Flash Heal", preview())
     ns.WizardWindow.Close()
