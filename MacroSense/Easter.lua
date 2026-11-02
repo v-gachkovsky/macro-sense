@@ -359,7 +359,7 @@ local function Bleat(self, elapsed)
     if PlaySoundFile then pcall(PlaySoundFile, BLEAT, "SFX") end
 end
 
--- The windows become a flock where the editor was, the sheep of all sizes. Those the editor closes with it (the
+-- The windows become a flock over the screen, the sheep of all sizes. Those the editor closes with it (the
 -- wizard, sharing, the icons) stay closed, as when it is closed; the others come back with it.
 function Easter.Polymorph()
     if not frame or not frame:IsShown() or falling then return end
@@ -375,6 +375,7 @@ function Easter.Polymorph()
             window:Hide()
         end
     end
+    local width, height = math.max(200, UIParent:GetWidth()), math.max(200, UIParent:GetHeight())
     local count = math.random(7, 18)
     local real = math.random(count) -- only this one turns back; it looks like any other
     for i = 1, count do
@@ -385,7 +386,12 @@ function Easter.Polymorph()
         s:SetSize(size, size)
         s:SetFrameLevel(size) -- the bigger in front
         s.speed = Between(40, 110)
-        s.x, s.y = x + Between(-120, 120), y + Between(-80, 80)
+        -- Anywhere on the screen, more of them near where the editor was.
+        if math.random(3) == 1 then
+            s.x, s.y = x + Between(-250, 250), y + Between(-180, 180)
+        else
+            s.x, s.y = Between(60, width - 60), Between(80, height - 80)
+        end
         s.toX, s.toY, s.wait = s.x, s.y, Between(0.3, 1.5)
         s:ClearAllPoints()
         s:SetPoint("CENTER", UIParent, "BOTTOMLEFT", s.x, s.y)
