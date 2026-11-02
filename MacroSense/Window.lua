@@ -20,6 +20,8 @@ ns.Window = Window
 -- icon = the icon picked now.
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
+local barInside -- the status bar's part not under the window's border: what it shows is centered in it
+local NATIVE_EDGE_COVERS = 6 -- how much of the status bar the game's window border covers (the In-game scheme)
 local shortenBtn, historyBtn, wizardEditBtn, search, noMatch, barsCheck, altHint
 local notOnBars = false -- the list shows only the macros on no action bar
 local expanded = {} -- the other characters whose macros the Character tab shows, by key
@@ -1484,6 +1486,7 @@ function Window.ApplyLook()
         code:SetFont(font.path, ns.db.fontSize)
     end
     ns.ApplyScheme(scheme)
+    barInside:SetPoint("BOTTOMRIGHT", 0, scheme.native and NATIVE_EDGE_COVERS or 0)
     code:SetScheme(scheme)
     ns.Popup:Style(scheme, font.path, ns.db.fontSize)
     local tokens = ns.TokenColors(scheme)
@@ -1881,6 +1884,9 @@ local function Build()
     bar:SetPoint("BOTTOMRIGHT")
     bar:SetHeight(36)
     ns.Backdrop(bar, "panel", "panel")
+    barInside = CreateFrame("Frame", nil, bar)
+    barInside:SetPoint("TOPLEFT")
+    barInside:SetPoint("BOTTOMRIGHT")
     saveBtn = ns.Button(bar, L["Save"], 90, Window.Save, true)
     saveBtn.alert = saveBtn:CreateTexture(nil, "OVERLAY")
     saveBtn.alert:SetSize(16, 16)
@@ -1895,12 +1901,11 @@ local function Build()
         GameTooltip:Show()
     end)
     saveBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Under Shorten, and as high as Share, Trash and Backups on the left: 8 over the bottom, as they are.
-    saveBtn:SetPoint("BOTTOMRIGHT", -12, 8)
+    saveBtn:SetPoint("RIGHT", barInside, "RIGHT", -12, 0) -- under Shorten
     revertBtn = ns.Button(bar, L["Revert"], 90, Window.Revert)
     revertBtn:SetPoint("RIGHT", saveBtn, "LEFT", -6, 0)
     counter = ns.Text(bar, 11, "dim")
-    counter:SetPoint("LEFT", 12, 0)
+    counter:SetPoint("LEFT", barInside, "LEFT", 12, 0)
     dirtyDot = bar:CreateTexture(nil, "OVERLAY")
     dirtyDot:SetSize(8, 8)
     dirtyDot:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask") -- white circle
