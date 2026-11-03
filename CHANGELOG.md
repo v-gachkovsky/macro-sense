@@ -18,6 +18,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   specialization says so, "Sort by spells" offers to put each macro where its spells are, and with too few slots
   the macros that work there come in first.
 
+### Fixed
+- The Macros from the Spellbook window (/ms book) and the guide (/ms help), opened before the editor, showed
+  plain white: they had no colors until the editor's window was opened once.
+
 ## [0.12.0] - 2026-11-02
 
 ### Added

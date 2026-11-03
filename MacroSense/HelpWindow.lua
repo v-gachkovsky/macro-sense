@@ -426,6 +426,7 @@ local function Build()
 end
 
 function HelpWindow.Open(section)
+    ns.Window.Ready() -- its colors and code font
     if not frame then Build() end
     -- Made again each time: the colors and the code font follow the editor's.
     for _, f in pairs(built) do f:Hide() end

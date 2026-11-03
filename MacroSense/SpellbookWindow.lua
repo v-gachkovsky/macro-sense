@@ -501,6 +501,7 @@ function SpellbookWindow.Open()
         return order[a] < order[b]
     end)
     choices = ns.Spellbook.Fresh(kit)
+    ns.Window.Ready() -- its colors
     for _, row in ipairs(rows) do
         if row.checked then choices.picked[row.spell.name] = true end
     end
