@@ -42,6 +42,7 @@ local function Said(ok, why, label)
     if why == "name" and label then return string.format(L["\"%s\" has a macro of this name already."], label) end
     if why == "name" then return L["A macro of this name is in the game already."] end
     if why == "combat" then return L["Macros cannot be changed in combat."] end
+    if why == "held" then return L["A specialization has this macro: it comes into the game from there."] end
     return ""
 end
 
@@ -125,9 +126,14 @@ local function Row(i)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         local parked = ns.Sets.IsParked(picked, r.m)
         GameTooltip:AddLine(parked and L["Take in"] or L["Put away"], 1, 1, 1)
-        GameTooltip:AddLine(parked and L["The macro comes into the game and takes a free slot."]
+        local text = parked and L["The macro comes into the game and takes a free slot."]
             or L["The macro leaves the game and frees its slot, but stays here, in its set. Its buttons come "
-                .. "back with it."], 0.8, 0.8, 0.8, true)
+                .. "back with it."]
+        if not self:IsEnabled() then
+            text = L["A specialization has this macro: it comes into the game from there. To have it here, "
+                .. "\"Remove\" it from every specialization."]
+        end
+        GameTooltip:AddLine(text, 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     r.park:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -155,6 +161,8 @@ local function ShowRow(r, m)
     if kind == "warn" then r.note:SetTextColor(1, 0.4, 0.4) else r.note:SetTextColor(ns.RGB(ns.scheme.dim)) end
     r.state:SetText(State(picked, m))
     r.park.label:SetText(ns.Sets.IsParked(picked, m) and L["Take in"] or L["Put away"])
+    -- The character's one a specialization has stays behind the scenes.
+    r.park:SetEnabled(not (picked == "character" and ns.Sets.IsParked(picked, m) and ns.Sets.Held(m.name)))
     -- Copied only between specializations.
     local copies = IsSpec(picked) and #Items(picked, m, true) > 0
     r.copy:SetShown(copies)
@@ -214,6 +222,7 @@ function Refresh()
     slotsText:SetPoint("TOPLEFT", PAD, -34 - PAD - #all * 28 - 10)
     slotsText:SetText(string.format(L["Free slots: %d of %d"], ns.Sets.Room(), ns.MAX_CHARACTER))
     local unvisited = ns.Sets.Unvisited()
+    sortBtn:SetEnabled(#unvisited == 0)
     visitText:SetText(#unvisited > 0 and string.format(L["MacroSense learns the spells of each specialization "
         .. "while you play it. Not yet: %s."], table.concat(unvisited, ", ")) or "")
     -- The set shown.
@@ -321,6 +330,8 @@ local function Build()
         return L["MacroSense looks at the spells each macro casts, and offers to move it: one that works in one "
             .. "specialization only, into that one's set; a specialization's that works in all, to this "
             .. "character's. You see the moves before they are made."]
+            .. (sortBtn:IsEnabled() and "" or "\n\n" .. L["It can sort once it knows the spells of every "
+                .. "specialization: choose each of them at least once."])
     end)
     local off = ns.Check(onView, L["Macro sets on"], function() return ns.Sets.Mine().enabled end, function(v)
         if not v then ns.Sets.Disable() end

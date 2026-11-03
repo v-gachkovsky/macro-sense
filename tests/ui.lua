@@ -6737,6 +6737,18 @@ do
     ns.SetsWindow.Pick("character")
     check("sets window: not in the character's", not ns.SetsWindow.RowFrame(1).release:IsShown())
 
+    -- The character's one a specialization has: not into the game.
+    ok, why = S.Park("character", "Chaos Bolt", false)
+    check("sets: the character's that a specialization has: not into the game", not ok and why == "held"
+        and inSet("character", "Chaos Bolt").parked)
+    ns.SetsWindow.Pick("character")
+    local held
+    for i = 1, 40 do
+        local row = ns.SetsWindow.RowFrame(i)
+        if row and row:IsShown() and row.m.name == "Chaos Bolt" then held = row end
+    end
+    check("sets window: its \"Take in\" is off", held and not held.park:IsEnabled())
+
     -- Spells known for both: a note on the macro that can't be cast there, and the sorting offered.
     S.Mine().classSpells = { ["chaos bolt"] = "Chaos Bolt", agony = "Agony" }
     S.Mine().spells = { group1 = { agony = true }, group2 = { ["chaos bolt"] = true } }
@@ -6745,6 +6757,9 @@ do
         and kind == "warn", note)
     local moves = S.SortPlan()
     check("sets: sorted by spells", #moves >= 1, #moves)
+    S.Mine().spells.group1 = nil
+    check("sets: not sorted while a specialization's spells are not known", #S.SortPlan() == 0)
+    S.Mine().spells.group1 = { agony = true }
     ns.SetsWindow.Close()
 
     local function slots()

@@ -2508,6 +2508,10 @@ do
     check("sets: sorted by spells: one specialization's into it, all specializations' to the character's, a twin "
         .. "stays", table.concat(said, " ") == "Bolt:spec265>spec267 Dots:character>spec265 Scare:spec265>character",
         table.concat(said, " "))
+    moves = S.Sort({ m("Bolt", "/cast Chaos Bolt"), m("Scare", "/cast Fear") },
+        { spec265 = { m("Scare", "/cast Fear") }, spec267 = { m("Bolt", "/cast Chaos Bolt") } }, spells, class, keys)
+    check("sets: sorted: the character's one a specialization has stays; one of all goes back to the character's",
+        #moves == 1 and moves[1].name == "Scare" and moves[1].to == "character", #moves)
     check("sets: nothing sorted while one specialization's spells are known",
         #S.Sort({ m("Dots", "/cast Agony") }, {}, { spec265 = aff }, class, { "spec265" }) == 0)
 

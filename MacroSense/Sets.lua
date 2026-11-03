@@ -190,20 +190,25 @@ function Sets.WorksIn(body, spells, class, keys)
 end
 
 -- Where the macros would go by the spells they cast, once the spells of two specializations or more are known
--- (`keys`, in order): one of the character's that works in one specialization only goes to it; one of a
--- specialization's that works in all goes to the character's (unless another specialization has one of its name:
--- a macro for each, on purpose), one that works not there but in one other goes to that one. A move to a set with a
--- macro of that name is left out. Returns { name, from, to }.
+-- (`keys`, in order): one of the character's that works in one specialization only goes to it (not one a
+-- specialization has already: the character's keeps that behind the scenes); one of a specialization's that works
+-- in all goes back to the character's (unless another specialization has one of its name: a macro for each, on
+-- purpose), one that works not there but in one other goes to that one. A move to a specialization with a macro of
+-- that name is left out. Returns { name, from, to }.
 function Sets.Sort(character, specs, spells, class, keys)
     if #keys < 2 then return {} end
     local out = {}
     local function add(name, from, to)
-        if not Find(to == "character" and character or specs[to] or {}, name) then
+        if to == "character" or not Find(specs[to] or {}, name) then
             out[#out + 1] = { name = name, from = from, to = to }
         end
     end
+    local held = {}
+    for _, list in pairs(specs) do
+        for _, m in ipairs(list) do held[m.name] = true end
+    end
     for _, m in ipairs(character) do
-        local works = Sets.WorksIn(m.body, spells, class, keys)
+        local works = not held[m.name] and Sets.WorksIn(m.body, spells, class, keys)
         if works and #works == 1 then add(m.name, "character", works[1]) end
     end
     for _, key in ipairs(keys) do
@@ -761,6 +766,7 @@ local function Held(sets, name)
     end
     return false
 end
+function Sets.Held(name) return Held(Sets.Mine(), name) end
 
 -- Macro `name` of set `id` back into this character's, the home of every macro: it leaves the set, and is kept
 -- there (its own copy there stays as it is). While a specialization still has it, it stays behind the scenes
@@ -807,8 +813,8 @@ function Sets.Release(id, name)
 end
 
 -- Macro `name` of set `id` behind the scenes (`on`), or back. Back into the game it needs a free slot and its name
--- free there, else false and why: "room", "name" ("combat" in combat). A specialization not chosen now only
--- remembers it: its macro comes in with it, or doesn't.
+-- free there, else false and why: "room", "name" ("combat" in combat); the character's, one no specialization has
+-- ("held"). A specialization not chosen now only remembers it: its macro comes in with it, or doesn't.
 function Sets.Park(id, name, on)
     local sets = Sets.Mine()
     if not sets.enabled then return false end
@@ -818,6 +824,7 @@ function Sets.Park(id, name, on)
     if not m then return false end
     on = on and true or false
     if on == Parked(sets, id, m) then return true end
+    if not on and id == "character" and Held(sets, name) then return false, "held" end
     if not on and InGame(sets, id) then
         if Index(name) then return false, "name" end
         if Room() <= 0 then return false, "room" end
@@ -934,9 +941,11 @@ function Sets.Note(id, m)
     end
 end
 
--- The moves "Sort by spells" offers, and doing them.
+-- The moves "Sort by spells" offers, and doing them. None till the spells of every specialization are known: one
+-- that works where they are known may work in another too.
 function Sets.SortPlan()
     local sets = Sets.Mine()
+    if #Sets.Unvisited() > 0 then return {} end
     return Sets.Sort(sets.character, sets.specs, sets.spells or {}, sets.classSpells or {}, (Visited(sets)))
 end
 function Sets.ApplySort(moves)
