@@ -42,24 +42,20 @@ local function Said(ok, why, label)
     if why == "name" and label then return string.format(L["\"%s\" has a macro of this name already."], label) end
     if why == "name" then return L["A macro of this name is in the game already."] end
     if why == "combat" then return L["Macros cannot be changed in combat."] end
-    if why == "differs" then
-        return L["\"This character's\" has another macro of this name, with a different text. Rename one of them "
-            .. "first."]
-    end
     return ""
 end
 
 local Refresh
 
--- The macro's state in its set: in the game, behind the scenes, waiting for a slot; in a specialization not
--- chosen, whether it comes in with it.
+-- The macro's state in its set, only when it is not as the text over the list says: behind the scenes, waiting
+-- for a slot.
 local function State(id, m)
     local parked = ns.Sets.IsParked(id, m)
     if not ns.Sets.InGame(id) then
-        return parked and L["Stays behind the scenes"] or L["Comes in with the specialization"]
+        return parked and L["Stays behind the scenes"] or ""
     end
     if parked then return L["Behind the scenes"] end
-    return GetMacroIndexByName(m.name) > 0 and L["In the game"] or L["Waiting for a free slot"]
+    return GetMacroIndexByName(m.name) > 0 and "" or L["Waiting for a free slot"]
 end
 
 local function IsSpec(id) return id ~= "class" and id ~= "character" end
@@ -114,8 +110,8 @@ local function Row(i)
         Refresh()
     end)
     Tip(r.release, L["Remove"], function()
-        return L["The macro leaves this set and goes back to \"This character's\", the home of all macros. It is "
-            .. "not deleted."]
+        return L["The macro leaves this set and stays in \"This character's\", the home of all macros: behind the "
+            .. "scenes while a specialization still has it, in the game when none does."]
     end)
     Tip(r.copy, L["Copy"], function()
         return L["A copy goes into another specialization, and this one stays here."]

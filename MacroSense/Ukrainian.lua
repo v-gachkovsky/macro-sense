@@ -1676,11 +1676,9 @@ ns.locales.uk = {
         "З'являться в грі, коли ви оберете цю спеціалізацію, і стануть на свої кнопки.",
     ["No macros here yet. Move some here from another set: \"Move\" in its row."] =
         "Тут поки немає макросів. Перенесіть сюди макрос з іншого набору: кнопка «Перенести» в його рядку.",
-    ["In the game"] = "У грі",
     ["Behind the scenes"] = "За лаштунками",
     ["Waiting for a free slot"] = "Чекає на вільний слот",
     ["Stays behind the scenes"] = "Лишається за лаштунками",
-    ["Comes in with the specialization"] = "З'явиться разом зі спеціалізацією",
     ["Take in"] = "Взяти в гру",
     ["Put away"] = "За лаштунки",
     ["The macro comes into the game and takes a free slot."] = "Макрос з'являється в грі й займає вільний слот.",
@@ -1691,8 +1689,7 @@ ns.locales.uk = {
     ["Copy to: %s"] = "Копіювати в: %s",
     ["Copy"] = "Копіювати",
     ["Remove"] = "Прибрати",
-    ["The macro leaves this set and goes back to \"This character's\", the home of all macros. It is not deleted."] = "Макрос іде з цього набору назад у «Цього персонажа», де живуть усі макроси. Він не видаляється.",
-    ["\"This character's\" has another macro of this name, with a different text. Rename one of them first."] = "У «Цього персонажа» вже є інший макрос із такою назвою, але з іншим текстом. Спершу перейменуйте один із них.",
+    ["The macro leaves this set and stays in \"This character's\", the home of all macros: behind the scenes while a specialization still has it, in the game when none does."] = "Макрос іде з цього набору й лишається в «Цього персонажа», де живуть усі макроси: за лаштунками, поки він є ще в якійсь спеціалізації, і в грі, коли його більше немає в жодній.",
     ["The macro leaves this set for the one you pick."] = "Макрос іде з цього набору в той, який ви виберете.",
     ["A copy goes into another specialization, and this one stays here."] = "Копія з'явиться в іншій спеціалізації, а цей макрос лишиться тут.",
     ["Moved. It waits behind the scenes: there is no free slot."] =

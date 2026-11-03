@@ -6572,9 +6572,13 @@ do
     check("sets: shown late: back, its layer and its button", has("Chaos Bolt") and S.Mine().layer["Chaos Bolt"] == "spec"
         and not has("Agony") and S.Mine().specs.group2[1].name == "Agony" and actions[30]
         and actions[30].text == "Chaos Bolt" and not trashed("Agony"), actions[30] and actions[30].text)
-    local inCharacter = false
-    for _, m in ipairs(S.Mine().character) do if m.name == "Chaos Bolt" then inCharacter = true end end
-    check("sets: shown late: not taken for a new macro of yours", not inCharacter)
+    local inCharacter = 0
+    for _, m in ipairs(S.Mine().character) do
+        if m.name == "Chaos Bolt" and m.parked then inCharacter = inCharacter + 1 end
+        if m.name == "Chaos Bolt" and not m.parked then inCharacter = inCharacter + 10 end
+    end
+    check("sets: shown late: not taken for a new macro of yours, the character's behind the scenes",
+        inCharacter == 1, inCharacter)
     late = false
 
     -- In combat: after it.
@@ -6626,7 +6630,7 @@ do
 
     -- Moved out of the game into a specialization not chosen, into it from one; copied between specializations.
     check("sets: moved to a specialization not chosen: out of the game", S.MoveTo("character", "Mount Up", "group1")
-        and not has("Mount Up") and inSet("group1", "Mount Up") and not inSet("character", "Mount Up"))
+        and not has("Mount Up") and inSet("group1", "Mount Up") and inSet("character", "Mount Up").parked)
     check("sets: moved from it to the character's: into the game", S.MoveTo("group1", "Mount Up", "character")
         and has("Mount Up") and S.Mine().layer["Mount Up"] == "character")
     ok, why = S.MoveTo("character", "Mount Up", "group1", true)
@@ -6662,12 +6666,12 @@ do
     local r = ns.SetsWindow.RowFrame(1)
     local name = r.m.name
     check("sets window: a row: the macro, in the game", r:IsShown() and r.name.text == name
-        and r.state.text == "In the game" and r.park.label.text == "Put away", r.state.text)
+        and r.state.text == "" and r.park.label.text == "Put away", r.state.text)
     Fire(r.park, "OnClick")
     check("sets window: behind the scenes from its row", not has(name) and r.state.text == "Behind the scenes"
         and r.park.label.text == "Take in", r.state.text)
     Fire(r.park, "OnClick")
-    check("sets window: and back", has(name) and r.state.text == "In the game")
+    check("sets window: and back", has(name) and r.state.text == "")
     Fire(r.move, "OnClick")
     local item
     for _, row in ipairs(MacroSenseMenu.rows) do
@@ -6691,7 +6695,7 @@ do
     end
     ns.SetsWindow.Pick("group1")
     check("sets window: a specialization not chosen", ns.SetsWindow.RowFrame(1).state.text
-        == "Comes in with the specialization", ns.SetsWindow.RowFrame(1).state.text)
+        == "", ns.SetsWindow.RowFrame(1).state.text)
     r = ns.SetsWindow.RowFrame(1)
     local moves, copies = shown(r.move), shown(r.copy)
     check("sets window: \"Move\" only moves", moves:find("Move to: This character's", 1, true)
@@ -6706,29 +6710,29 @@ do
     check("sets window: the character's: no \"Copy\"", not ns.SetsWindow.RowFrame(1).copy:IsShown())
     S.MoveTo("group1", name, "character")
 
-    -- "Remove": back to the character's. One of its name there with the same text: this one just goes; with
-    -- another text, not.
+    -- "Remove": back to the character's. Behind the scenes there while a specialization has it; out of the last, it
+    -- comes into the game.
     S.MoveTo("character", name, "group2")
-    S.MoveTo("group2", name, "group1", true)
-    check("sets: removed from the specialization now: the character's, still in the game", S.Release("group2", name)
-        and inSet("character", name) and not inSet("group2", name) and has(name)
-        and S.Mine().layer[name] == "character")
-    inSet("group1", name).body = "/say another"
-    ok, why = S.Release("group1", name)
-    check("sets: removed, another text of its name in the character's: no", not ok and why == "differs"
-        and inSet("group1", name))
-    inSet("group1", name).body = inSet("character", name).body
-    check("sets: removed, the same in the character's: just goes", S.Release("group1", name)
-        and not inSet("group1", name) and inSet("character", name) and has(name))
-    S.MoveTo("character", name, "group1")
-    S.MoveTo("group1", name, "group2", true)
-    S.MoveTo("group1", name, "character")
-    check("sets: a twin of the specialization now's waits behind the scenes", has(name)
+    check("sets: into the specialization now: the character's behind the scenes", has(name)
         and inSet("character", name).parked and S.Mine().layer[name] == "spec")
-    check("sets: removed from the specialization now, its twin behind the scenes takes its place",
-        S.Release("group2", name) == true and has(name) and not inSet("character", name).parked
-        and S.Mine().layer[name] == "character" and not inSet("group2", name))
-    ns.SetsWindow.Pick("group2")
+    S.MoveTo("group2", name, "group1", true)
+    check("sets: removed from the specialization now, another has it: out of the game", S.Release("group2", name)
+        and not inSet("group2", name) and not has(name) and inSet("character", name).parked)
+    inSet("group1", name).body = "/say another"
+    local kept = inSet("character", name).body
+    check("sets: removed from the last, not in the game: the character's comes in, as it was",
+        S.Release("group1", name) and not inSet("group1", name) and has(name)
+        and not inSet("character", name).parked and body(name) == kept and S.Mine().layer[name] == "character")
+    S.MoveTo("character", name, "group2")
+    EditMacro(GetMacroIndexByName(name), nil, nil, "/say changed")
+    Send("UPDATE_MACROS")
+    check("sets: removed from the last, in the game: stays, with the text it has", S.Release("group2", name)
+        and has(name) and body(name) == "/say changed" and inSet("character", name).body == "/say changed"
+        and not inSet("character", name).parked and S.Mine().layer[name] == "character")
+    check("sets: moved to the character's: removed", S.MoveTo("group2", "Chaos Bolt", "character")
+        and not inSet("group2", "Chaos Bolt") and inSet("group1", "Chaos Bolt")
+        and inSet("character", "Chaos Bolt").parked)
+    ns.SetsWindow.Pick("group1")
     check("sets window: \"Remove\" in a specialization", ns.SetsWindow.RowFrame(1).release:IsShown())
     ns.SetsWindow.Pick("character")
     check("sets window: not in the character's", not ns.SetsWindow.RowFrame(1).release:IsShown())
