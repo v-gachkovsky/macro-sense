@@ -2033,6 +2033,12 @@ local function Build()
     Window.ApplyLook()
 end
 
+-- The look (the color scheme, the font) comes with the editor's window: a window opened before it (/ms book,
+-- /ms help) has it built first, hidden.
+function Window.Ready()
+    if not frame then Build() end
+end
+
 function Window.Toggle()
     if not frame then Build() end
     if frame:IsShown() then return frame:Hide() end

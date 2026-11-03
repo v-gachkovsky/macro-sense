@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- The Macros from the Spellbook window (/ms book) and the guide (/ms help), opened before the editor, showed
+  plain white: they had no colors until the editor's window was opened once.
+
 ## [0.12.0] - 2026-11-02
 
 ### Added
