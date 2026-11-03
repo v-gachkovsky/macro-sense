@@ -766,7 +766,30 @@ local function Held(sets, name)
     end
     return false
 end
-function Sets.Held(name) return Held(Sets.Mine(), name) end
+-- The specializations whose sets have a macro of this name: their keys, the one now last.
+function Sets.HeldIn(name)
+    local sets = Sets.Mine()
+    local keys, now = {}, false
+    for key, list in pairs(sets.specs) do
+        if Find(list, name) then
+            if key == sets.active then now = true else keys[#keys + 1] = key end
+        end
+    end
+    table.sort(keys)
+    if now then keys[#keys + 1] = sets.active end
+    return keys
+end
+
+-- The character's macro `name` into the game, taken out of every specialization that has it ("Remove" from each,
+-- the one now last: its macro in the game stays there, on its buttons). Returns as Sets.Release does.
+function Sets.TakeHome(name)
+    local sets = Sets.Mine()
+    if not sets.enabled then return false end
+    if InCombatLockdown() then return false, "combat" end
+    local ok, why = true, nil
+    for _, key in ipairs(Sets.HeldIn(name)) do ok, why = Sets.Release(key, name) end
+    return ok, why
+end
 
 -- Macro `name` of set `id` back into this character's, the home of every macro: it leaves the set, and is kept
 -- there (its own copy there stays as it is). While a specialization still has it, it stays behind the scenes

@@ -119,6 +119,13 @@ local function Row(i)
     end)
     r.park = ns.Button(r, "", 110, function()
         local on = not ns.Sets.IsParked(picked, r.m)
+        -- The character's one a specialization has: asked, then taken out of them.
+        local held = picked == "character" and not on and ns.Sets.HeldIn(r.m.name)
+        if held and #held > 0 then
+            local labels = {}
+            for _, key in ipairs(held) do labels[#labels + 1] = Label(key) end
+            return ns.Ask("MACROSENSE_SETS_TAKE_HOME", r.m.name, table.concat(labels, ", "), r.m.name)
+        end
         Tell(Said(ns.Sets.Park(picked, r.m.name, on)))
         Refresh()
     end)
@@ -129,9 +136,9 @@ local function Row(i)
         local text = parked and L["The macro comes into the game and takes a free slot."]
             or L["The macro leaves the game and frees its slot, but stays here, in its set. Its buttons come "
                 .. "back with it."]
-        if not self:IsEnabled() then
-            text = L["A specialization has this macro: it comes into the game from there. To have it here, "
-                .. "\"Remove\" it from every specialization."]
+        if picked == "character" and parked and #ns.Sets.HeldIn(r.m.name) > 0 then
+            text = L["A specialization has this macro: it comes into the game from there. Taken in here, it leaves "
+                .. "every specialization."]
         end
         GameTooltip:AddLine(text, 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
@@ -161,8 +168,6 @@ local function ShowRow(r, m)
     if kind == "warn" then r.note:SetTextColor(1, 0.4, 0.4) else r.note:SetTextColor(ns.RGB(ns.scheme.dim)) end
     r.state:SetText(State(picked, m))
     r.park.label:SetText(ns.Sets.IsParked(picked, m) and L["Take in"] or L["Put away"])
-    -- The character's one a specialization has stays behind the scenes.
-    r.park:SetEnabled(not (picked == "character" and ns.Sets.IsParked(picked, m) and ns.Sets.Held(m.name)))
     -- Copied only between specializations.
     local copies = IsSpec(picked) and #Items(picked, m, true) > 0
     r.copy:SetShown(copies)
@@ -249,6 +254,17 @@ StaticPopupDialogs.MACROSENSE_SETS_SORT = {
     OnAccept = function(_, moves)
         local done = ns.Sets.ApplySort(moves)
         Tell(string.format(L["Moved: %d."], done))
+        Refresh()
+    end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+StaticPopupDialogs.MACROSENSE_SETS_TAKE_HOME = {
+    text = "\"%s\" is in these specializations: %s.\n\nTake it into the game here? It leaves them, and is in the "
+        .. "game in every specialization.",
+    button1 = "Take in", button2 = "Cancel",
+    OnAccept = function(_, name)
+        Tell(Said(ns.Sets.TakeHome(name)))
         Refresh()
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,

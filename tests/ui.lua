@@ -6747,7 +6747,14 @@ do
         local row = ns.SetsWindow.RowFrame(i)
         if row and row:IsShown() and row.m.name == "Chaos Bolt" then held = row end
     end
-    check("sets window: its \"Take in\" is off", held and not held.park:IsEnabled())
+    local asked, show = nil, StaticPopup_Show
+    StaticPopup_Show = function(which, ...) asked = which; return show(which, ...) end
+    Fire(held.park, "OnClick")
+    StaticPopup_Show = show
+    check("sets window: its \"Take in\" asked, then out of the specializations and into the game",
+        asked == "MACROSENSE_SETS_TAKE_HOME" and not inSet("group1", "Chaos Bolt") and has("Chaos Bolt")
+        and not inSet("character", "Chaos Bolt").parked and S.Mine().layer["Chaos Bolt"] == "character")
+    S.MoveTo("character", "Chaos Bolt", "group1")
 
     -- Spells known for both: a note on the macro that can't be cast there, and the sorting offered.
     S.Mine().classSpells = { ["chaos bolt"] = "Chaos Bolt", agony = "Agony" }
