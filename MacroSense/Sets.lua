@@ -117,14 +117,21 @@ end
 
 -- The macros in the slots changed (by you, or on this character): each layer follows. A text or icon changed here
 -- is kept in its layer (one not changed here leaves the layer's as it is); a renamed macro keeps its layer under
--- the new name; a deleted one leaves its layer; a new one
--- joins the character's. `before` and `after`: name -> { body, icon }; `layer` as of before.
+-- the new name, and is renamed in the other sets of `lists.linked` too (one macro, wherever it is: the character's
+-- and each specialization's), not the class's; a deleted one leaves its layer; a new one joins the character's.
+-- `before` and `after`: name -> { body, icon }; `layer` as of before. Returns the renamed: old -> new.
 function Sets.Follow(before, after, layer, lists)
     local renamed, deleted = ns.History.Gone(before, after)
     local function listOf(name) return lists[layer[name] or "character"] end
     for old, new in pairs(renamed) do
-        local m = Find(listOf(old), old)
-        if m then m.name = new end
+        local those = { listOf(old) }
+        if layer[old] ~= "class" then
+            for _, list in ipairs(lists.linked or {}) do those[#those + 1] = list end
+        end
+        for _, list in ipairs(those) do
+            local m = Find(list, old)
+            if m and not Find(list, new) then m.name = new end
+        end
         layer[new], layer[old] = layer[old], nil
     end
     for _, name in ipairs(deleted) do
@@ -146,6 +153,7 @@ function Sets.Follow(before, after, layer, lists)
             layer[name] = layer[name] or "character"
         end
     end
+    return renamed
 end
 
 -- Conditions that check what you can cast ([spec:2], [talent:...], [known:...]): a macro with them is meant for
@@ -401,8 +409,18 @@ function Sets.Scan()
         for name, m in pairs(seen) do before[name] = m end
         for name, m in pairs(now) do after[name] = m end
         Expected(before, after, sets.layer)
-        Sets.Follow(before, after, sets.layer, { class = ClassList(), character = sets.character,
-            spec = SpecList(sets, sets.active) })
+        local linked = { sets.character }
+        for _, list in pairs(sets.specs) do linked[#linked + 1] = list end
+        local renamed = Sets.Follow(before, after, sets.layer, { class = ClassList(), character = sets.character,
+            spec = SpecList(sets, sets.active), linked = linked })
+        -- Its buttons kept for each specialization, under the new name.
+        for old, new in pairs(renamed) do
+            for _, record in pairs(sets.bars) do
+                for slot, name in pairs(record) do
+                    if name == old then record[slot] = new end
+                end
+            end
+        end
     end
     seen = now
 end

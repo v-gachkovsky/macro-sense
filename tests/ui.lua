@@ -6756,6 +6756,24 @@ do
         and not inSet("character", "Chaos Bolt").parked and S.Mine().layer["Chaos Bolt"] == "character")
     S.MoveTo("character", "Chaos Bolt", "group1")
 
+    -- One macro wherever it is: renamed in the game, renamed in every set, its buttons kept under the new name.
+    CreateMacro("Linked", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    S.MoveTo("character", "Linked", "group2")
+    S.MoveTo("group2", "Linked", "group1", true)
+    S.Mine().bars.group1 = S.Mine().bars.group1 or {}
+    S.Mine().bars.group1[50] = "Linked"
+    EditMacro(GetMacroIndexByName("Linked"), "Linked Fear", nil, "/cast Fear")
+    Send("UPDATE_MACROS")
+    check("sets: renamed in the game: in every set", inSet("character", "Linked Fear")
+        and inSet("character", "Linked Fear").parked and inSet("group1", "Linked Fear") and inSet("group2", "Linked Fear")
+        and not inSet("character", "Linked") and not inSet("group1", "Linked")
+        and S.Mine().bars.group1[50] == "Linked Fear")
+    S.Mine().bars.group1[50] = nil
+    S.TakeHome("Linked Fear")
+    DeleteMacro(GetMacroIndexByName("Linked Fear"))
+    Send("UPDATE_MACROS")
+
     -- Spells known for both: a note on the macro that can't be cast there, and the sorting offered.
     S.Mine().classSpells = { ["chaos bolt"] = "Chaos Bolt", agony = "Agony" }
     S.Mine().spells = { group1 = { agony = true }, group2 = { ["chaos bolt"] = true } }
