@@ -336,6 +336,7 @@ local function Build()
 end
 
 function SetsWindow.Open()
+    ns.Window.Ready() -- its colors
     if not frame then Build() end
     frame:Show()
     frame:Raise()
