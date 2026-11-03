@@ -15,6 +15,7 @@ ActionBars.TIP = "Shift + right-click: edit in MacroSense"
 local LIBRARIES = { "LibActionButton-1.0", "LibActionButton-1.0-ElvUI" }
 
 local GetActionText = C_ActionBar and C_ActionBar.GetActionText or GetActionText
+ActionBars.Text = GetActionText
 
 -- The index of the macro on action slot `slot`, or nil. For a macro that shows a spell the game gives the
 -- spell's ID, not the macro's, so the macro is found by its name, which the button shows (of two macros with

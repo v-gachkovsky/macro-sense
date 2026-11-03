@@ -6481,8 +6481,9 @@ do
             return
         end
         local name = GetMacroInfo(index)
+        -- Like Retail: on the other specializations' bars it stays, a macro with no name.
         for _, bars in pairs(stash) do
-            for slot, a in pairs(bars) do if a[1] == "macro" and a.text == name then bars[slot] = nil end end
+            for slot, a in pairs(bars) do if a[1] == "macro" and a.text == name then bars[slot] = { "macro", 0 } end end
         end
         delete(index)
         Send("UPDATE_MACROS")

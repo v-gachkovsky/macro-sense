@@ -134,14 +134,14 @@ function Sets.Follow(before, after, layer, lists)
 end
 
 -- The macro buttons to put back for a specialization: { slot, name } of `record` (slot -> name) where the slot is
--- empty or has another of the character's macros (its place may have moved), and the macro is in the slots.
--- `at(slot)` says what is there: nil, "character" with the name, or anything else (a spell, an item, a general
--- macro), which stays.
+-- empty, has a macro the game has no more, or another of the character's macros (its place may have moved), and
+-- the macro is in the slots. `at(slot)` says what is there: nil, "gone", "character" with the name, or anything
+-- else (a spell, an item, a general macro), which stays.
 function Sets.BarsBack(record, at, have)
     local out = {}
     for slot, name in pairs(record) do
         local kind, there = at(slot)
-        if have[name] and (kind == nil or (kind == "character" and there ~= name)) then
+        if have[name] and (kind == nil or kind == "gone" or (kind == "character" and there ~= name)) then
             out[#out + 1] = { slot = slot, name = name }
         end
     end
@@ -225,12 +225,14 @@ local function Index(name)
     end
 end
 
--- What is on action slot `slot`: nil, "character" and the macro's name, or "other".
+-- What is on action slot `slot`: nil, "character" and the macro's name, "gone" (a macro the game has no more:
+-- Retail keeps one deleted on the bars of the other specializations) or "other".
 local function At(slot)
     local kind = GetActionInfo(slot)
     if not kind then return nil end
     if kind ~= "macro" then return "other" end
     local index = ns.ActionBars.MacroAt(slot)
+    if not index then return "gone" end
     if index and index > ns.MAX_GENERAL then return "character", (GetMacroInfo(index)) end
     return "other"
 end
@@ -403,7 +405,9 @@ function Sets.PlaceBars(key, last)
         if not have[name] then
             Log("no button %d: %s is not in the slots", slot, name)
         elseif there ~= name then
-            Log("no button %d: %s, the slot has %s", slot, name, tostring(there or kind))
+            local a, id = GetActionInfo(slot)
+            Log("no button %d: %s, the slot has %s (%s %s \"%s\")", slot, name, tostring(there or kind), tostring(a),
+                tostring(id), tostring(ns.ActionBars.Text(slot)))
         end
     end
 end
@@ -434,6 +438,7 @@ function Sets.RememberBars()
         local was = record[slot]
         if kind == "character" then
             record[slot] = name
+        elseif kind == "gone" then -- its macro off the slots: kept
         elseif kind or (was and have[was]) then
             record[slot] = nil
         end

@@ -2477,11 +2477,12 @@ do
     check("sets: a deleted one leaves its layer, a new one is the character's", #lists.character == 1
         and lists.character[1].name == "Hearth" and known.Mount == nil and known.Hearth == "character")
 
-    local at = { [1] = { nil }, [2] = { "character", "Other" }, [3] = { "other" }, [4] = { "character", "Bolt" } }
-    local back = S.BarsBack({ [1] = "Bolt", [2] = "Bolt", [3] = "Bolt", [4] = "Bolt", [5] = "Gone" },
+    local at = { [1] = { nil }, [2] = { "character", "Other" }, [3] = { "other" }, [4] = { "character", "Bolt" },
+        [6] = { "gone" } }
+    local back = S.BarsBack({ [1] = "Bolt", [2] = "Bolt", [3] = "Bolt", [4] = "Bolt", [5] = "Gone", [6] = "Bolt" },
         function(slot) return (at[slot] or {})[1], (at[slot] or {})[2] end, { Bolt = true })
-    check("sets: buttons back where empty or another of yours, not on a spell or where it is",
-        #back == 2 and back[1].slot == 1 and back[2].slot == 2)
+    check("sets: buttons back where empty, a macro gone or another of yours, not on a spell or where it is",
+        #back == 3 and back[1].slot == 1 and back[2].slot == 2 and back[3].slot == 6)
 end
 
 check("default scheme exists", ns.FindByKey(ns.schemes, ns.DEFAULT_SCHEME) ~= nil)
