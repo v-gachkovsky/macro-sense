@@ -47,15 +47,15 @@ end
 
 local Refresh
 
--- The macro's state in its set, only when it is not as the text over the list says: behind the scenes, waiting
--- for a slot.
+-- The macro's state in its set: in the game, behind the scenes, waiting for a slot. In a specialization not
+-- chosen, only one that stays behind the scenes: the text over the list says the rest come in with it.
 local function State(id, m)
     local parked = ns.Sets.IsParked(id, m)
     if not ns.Sets.InGame(id) then
         return parked and L["Stays behind the scenes"] or ""
     end
     if parked then return L["Behind the scenes"] end
-    return GetMacroIndexByName(m.name) > 0 and "" or L["Waiting for a free slot"]
+    return GetMacroIndexByName(m.name) > 0 and L["In the game"] or L["Waiting for a free slot"]
 end
 
 local function IsSpec(id) return id ~= "class" and id ~= "character" end

@@ -1677,6 +1677,7 @@ ns.locales.uk = {
     ["No macros here yet. Move some here from another set: \"Move\" in its row."] =
         "Тут поки немає макросів. Перенесіть сюди макрос з іншого набору: кнопка «Перенести» в його рядку.",
     ["Behind the scenes"] = "За лаштунками",
+    ["In the game"] = "У грі",
     ["Waiting for a free slot"] = "Чекає на вільний слот",
     ["Stays behind the scenes"] = "Лишається за лаштунками",
     ["Take in"] = "Взяти в гру",

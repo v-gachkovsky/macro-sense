@@ -6666,12 +6666,12 @@ do
     local r = ns.SetsWindow.RowFrame(1)
     local name = r.m.name
     check("sets window: a row: the macro, in the game", r:IsShown() and r.name.text == name
-        and r.state.text == "" and r.park.label.text == "Put away", r.state.text)
+        and r.state.text == "In the game" and r.park.label.text == "Put away", r.state.text)
     Fire(r.park, "OnClick")
     check("sets window: behind the scenes from its row", not has(name) and r.state.text == "Behind the scenes"
         and r.park.label.text == "Take in", r.state.text)
     Fire(r.park, "OnClick")
-    check("sets window: and back", has(name) and r.state.text == "")
+    check("sets window: and back", has(name) and r.state.text == "In the game")
     Fire(r.move, "OnClick")
     local item
     for _, row in ipairs(MacroSenseMenu.rows) do
