@@ -1708,6 +1708,20 @@ local function Build()
     end)
     bookBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Over it: the macro sets, in a window of their own.
+    local setsBtn = ns.Button(side, L["Macro sets"], 99, function() ns.SetsWindow.Toggle() end)
+    setsBtn:SetPoint("BOTTOMLEFT", 8, 92)
+    setsBtn:SetPoint("BOTTOMRIGHT", -8, 92)
+    setsBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Macro sets"], 1, 1, 1)
+        GameTooltip:AddLine(L["More macros than 30 slots: each specialization gets macros of its own, and they come "
+            .. "into the game with it, onto their buttons. Class macros are shared by all your characters of one "
+            .. "class."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    setsBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Search under the tabs: Enter opens the first match, Esc clears it.
     search = ns.Input(side, 204, 40, "MacroSenseSearch")
     search:SetPoint("TOPLEFT", 8, -32)
@@ -1753,7 +1767,7 @@ local function Build()
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -84)
-    list:SetPoint("BOTTOMRIGHT", -13, 94)
+    list:SetPoint("BOTTOMRIGHT", -13, 122)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)

@@ -2483,6 +2483,43 @@ do
         function(slot) return (at[slot] or {})[1], (at[slot] or {})[2] end, { Bolt = true })
     check("sets: buttons back where empty, a macro gone or another of yours, not on a spell or where it is",
         #back == 3 and back[1].slot == 1 and back[2].slot == 2 and back[3].slot == 6)
+
+    -- Which macros work where, by the spells they cast.
+    local class = { agony = "Agony", ["chaos bolt"] = "Chaos Bolt", fear = "Fear", havoc = "Havoc" }
+    local aff = { agony = true, fear = true }
+    local destro = { ["chaos bolt"] = true, fear = true, havoc = true }
+    local works, missing = S.Works("/cast [@mouseover] Agony; Chaos Bolt", aff, class)
+    check("sets: a macro with a spell the specialization lacks doesn't work, the spell named", works == false
+        and #missing == 1 and missing[1] == "Chaos Bolt")
+    check("sets: one with all its spells works", S.Works("/cast Fear", aff, class) == true)
+    check("sets: one with no spell of the class can't be told", S.Works("/use Healthstone", aff, class) == nil)
+    check("sets: nor one that checks what you can cast", S.Works("/cast [spec:1] Agony; Chaos Bolt", aff, class) == nil
+        and S.Works("/cast [noknown:Havoc] Fear; Havoc", aff, class) == nil)
+    local spells, keys = { spec265 = aff, spec267 = destro }, { "spec265", "spec267" }
+    local where = S.WorksIn("/cast Havoc", spells, class, keys)
+    check("sets: where a macro works", #where == 1 and where[1] == "spec267")
+
+    local moves = S.Sort({ m("Dots", "/cast Agony"), m("Run", "/cast Fear"), m("Stone", "/use Healthstone") },
+        { spec265 = { m("Bolt", "/cast Chaos Bolt"), m("Scare", "/cast Fear"), m("Twin", "/cast Fear") },
+            spec267 = { m("Twin", "/cast Havoc") } }, spells, class, keys)
+    local said = {}
+    for _, move in ipairs(moves) do said[#said + 1] = move.name .. ":" .. move.from .. ">" .. move.to end
+    table.sort(said)
+    check("sets: sorted by spells: one specialization's into it, all specializations' to the character's, a twin "
+        .. "stays", table.concat(said, " ") == "Bolt:spec265>spec267 Dots:character>spec265 Scare:spec265>character",
+        table.concat(said, " "))
+    check("sets: nothing sorted while one specialization's spells are known",
+        #S.Sort({ m("Dots", "/cast Agony") }, {}, { spec265 = aff }, class, { "spec265" }) == 0)
+
+    -- Too little room: the macros that work in the specialization come in first.
+    local plan = S.Swap({ m("Keep") }, { Keep = "character" }, { m("Bolt", "/cast Chaos Bolt"), m("Dots", "/cast Agony") },
+        2, function(x) return S.Works(x.body, aff, class) end)
+    check("sets: with too little room, what works there comes in first", #plan.add == 1 and plan.add[1].name == "Dots"
+        and plan.wait[1].name == "Bolt")
+    plan = S.Swap({ m("Burst", "/cast Agony"), m("Keep") }, { Burst = "spec", Keep = "character" },
+        { m("Burst", "/cast Chaos Bolt"), m("Bolt") }, 30)
+    check("sets: one of the same name in both is changed in place", #plan.edit == 1 and plan.edit[1] == "Burst"
+        and #plan.add == 2 and #plan.drop == 1)
 end
 
 check("default scheme exists", ns.FindByKey(ns.schemes, ns.DEFAULT_SCHEME) ~= nil)

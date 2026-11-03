@@ -103,6 +103,7 @@ local function SpellsChangedSoon(talents)
         ns.ActionBars.Tint()
         ns.ActionBars.TellBroken(talentsChanged)
         ns.Ranks.Update()
+        ns.Sets.LearnSpells() -- which macros work in this specialization
         ns.Sets.Update() -- another specialization: its macros
         talentsChanged = false
     end)
@@ -119,6 +120,7 @@ function ns.MacrosChanged()
     ns.Shortcuts.Invalidate()
     ns.Window.OnMacrosChanged()
     ns.ActionBars.Tint()
+    ns.SetsWindow.Refresh()
 end
 
 local f = CreateFrame("Frame")
@@ -208,6 +210,8 @@ local function SetsCommand(args)
         else
             ns.Print("no macro \"%s\" in this character's slots (macro sets on?)", rest)
         end
+    elseif word == "" then
+        ns.SetsWindow.Toggle()
     else
         ns.Print("macro sets %s", OnOff(ns.Sets.Mine().enabled))
         for _, l in ipairs(ns.Sets.Describe()) do

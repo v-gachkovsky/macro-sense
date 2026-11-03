@@ -37,10 +37,12 @@ function Sets.LayerOf(now, known, spec)
 end
 
 -- Changing specialization: `now` the macros in the slots, each with its layer; `entering` the macros of the
--- specialization coming in; `limit` the slots. Returns what the one going keeps (its macros in the slots, as
--- they are now), the names that leave the slots, the macros that come in, and those of `entering` that wait:
--- parked before, or no room, or the name taken by a macro that stays.
-function Sets.Swap(now, layer, entering, limit)
+-- specialization coming in; `limit` the slots; `works(m)`, if given, false for a macro whose spells the one coming in
+-- doesn't have: with too little room, those wait first. Returns what the one going keeps (its macros in the slots,
+-- as they are now), the names that leave the slots, the macros that come in, those of `entering` that wait (parked
+-- before, or no room, or the name taken by a macro that stays), and the names that both leave and come in: those
+-- are changed in place, so their buttons stay.
+function Sets.Swap(now, layer, entering, limit, works)
     local leaving, drop, taken = {}, {}, {}
     for _, m in ipairs(now) do
         if layer[m.name] == "spec" then
@@ -51,8 +53,15 @@ function Sets.Swap(now, layer, entering, limit)
         end
     end
     local room = limit - (#now - #drop)
-    local add, wait = {}, {}
+    local order = {}
     for _, m in ipairs(entering) do
+        if not (works and works(m) == false) then order[#order + 1] = m end
+    end
+    for _, m in ipairs(entering) do
+        if works and works(m) == false then order[#order + 1] = m end
+    end
+    local add, wait = {}, {}
+    for _, m in ipairs(order) do
         if not m.parked and room > 0 and not taken[m.name] then
             add[#add + 1] = m
             taken[m.name], room = true, room - 1
@@ -60,7 +69,12 @@ function Sets.Swap(now, layer, entering, limit)
             wait[#wait + 1] = m
         end
     end
-    return { leaving = leaving, drop = drop, add = add, wait = wait }
+    local dropped, edit = {}, {}
+    for _, name in ipairs(drop) do dropped[name] = true end
+    for _, m in ipairs(add) do
+        if dropped[m.name] then edit[#edit + 1] = m.name end
+    end
+    return { leaving = leaving, drop = drop, add = add, wait = wait, edit = edit }
 end
 
 -- The class macros as this character should have them: those to make, those to change (their text or icon
@@ -102,7 +116,8 @@ function Sets.ClassPlan(now, layer, class, classParked, limit)
 end
 
 -- The macros in the slots changed (by you, or on this character): each layer follows. A text or icon changed here
--- is kept in its layer (one not changed here leaves the layer's as it is); a renamed macro keeps its layer under the new name; a deleted one leaves its layer; a new one
+-- is kept in its layer (one not changed here leaves the layer's as it is); a renamed macro keeps its layer under
+-- the new name; a deleted one leaves its layer; a new one
 -- joins the character's. `before` and `after`: name -> { body, icon }; `layer` as of before.
 function Sets.Follow(before, after, layer, lists)
     local renamed, deleted = ns.History.Gone(before, after)
@@ -131,6 +146,81 @@ function Sets.Follow(before, after, layer, lists)
             layer[name] = layer[name] or "character"
         end
     end
+end
+
+-- Conditions that check what you can cast ([spec:2], [talent:...], [known:...]): a macro with them is meant for
+-- more than one specialization.
+local GUARDS = { spec = true, talent = true, pvptalent = true, known = true }
+local function Guarded(body)
+    for inner in (body or ""):gmatch("%[([^%]]*)%]") do
+        for part in (inner .. ","):gmatch("([^,]*),") do
+            local word = (part:match("^%s*(%a+)") or ""):lower()
+            if GUARDS[word] or GUARDS[word:match("^no(.+)$") or ""] then return true end
+        end
+    end
+    return false
+end
+
+-- Whether a macro works with the spells `known` (lowercase name -> true): true; or false and the class's spells it
+-- casts that are not known; nil when it casts none of the class's spells (`class`: lowercase name -> the name), or
+-- checks what you can cast itself.
+function Sets.Works(body, known, class)
+    if Guarded(body) then return nil end
+    local missing, told = {}, false
+    for name in pairs(ns.Spellbook.Casts(body)) do
+        if class[name] then
+            told = true
+            if not known[name] then missing[#missing + 1] = class[name] end
+        end
+    end
+    if not told then return nil end
+    table.sort(missing)
+    return #missing == 0, missing
+end
+
+-- The specializations of `keys` (each with its spells in `spells`) a macro works in; nil when that can't be told.
+function Sets.WorksIn(body, spells, class, keys)
+    local out = {}
+    for _, key in ipairs(keys) do
+        local works = Sets.Works(body, spells[key], class)
+        if works == nil then return nil end
+        if works then out[#out + 1] = key end
+    end
+    return out
+end
+
+-- Where the macros would go by the spells they cast, once the spells of two specializations or more are known
+-- (`keys`, in order): one of the character's that works in one specialization only goes to it; one of a
+-- specialization's that works in all goes to the character's (unless another specialization has one of its name:
+-- a macro for each, on purpose), one that works not there but in one other goes to that one. A move to a set with a
+-- macro of that name is left out. Returns { name, from, to }.
+function Sets.Sort(character, specs, spells, class, keys)
+    if #keys < 2 then return {} end
+    local out = {}
+    local function add(name, from, to)
+        if not Find(to == "character" and character or specs[to] or {}, name) then
+            out[#out + 1] = { name = name, from = from, to = to }
+        end
+    end
+    for _, m in ipairs(character) do
+        local works = Sets.WorksIn(m.body, spells, class, keys)
+        if works and #works == 1 then add(m.name, "character", works[1]) end
+    end
+    for _, key in ipairs(keys) do
+        for _, m in ipairs(specs[key] or {}) do
+            local works = Sets.WorksIn(m.body, spells, class, keys)
+            if works and #works == #keys then
+                local twin = false
+                for _, other in ipairs(keys) do
+                    if other ~= key and Find(specs[other] or {}, m.name) then twin = true end
+                end
+                if not twin then add(m.name, key, "character") end
+            elseif works and #works == 1 and works[1] ~= key then
+                add(m.name, key, works[1])
+            end
+        end
+    end
+    return out
 end
 
 -- The macro buttons to put back for a specialization: { slot, name } of `record` (slot -> name) where the slot is
@@ -355,7 +445,11 @@ end
 local function Change(sets, key)
     local before = sets.active
     sets.layer = Layers(sets)
-    local plan = Sets.Swap(InSlots(), sets.layer, SpecList(sets, key), ns.MAX_CHARACTER)
+    local known, class = (sets.spells or {})[key], sets.classSpells or {}
+    local plan = Sets.Swap(InSlots(), sets.layer, SpecList(sets, key), ns.MAX_CHARACTER,
+        known and function(m) return Sets.Works(m.body, known, class) end)
+    local edit = {}
+    for _, name in ipairs(plan.edit) do edit[name] = true end
     -- The one going keeps its macros as they are, and those it had parked.
     local kept = {}
     for _, m in ipairs(SpecList(sets, before)) do
@@ -365,12 +459,23 @@ local function Change(sets, key)
     sets.specs[before] = kept
     Log("specialization %s -> %s: out %d, in %d", tostring(before), key, #plan.drop, #plan.add)
     for _, name in ipairs(plan.drop) do
-        Remove(name)
-        sets.layer[name] = nil
+        if not edit[name] then
+            Remove(name)
+            sets.layer[name] = nil
+        end
     end
+    -- One of the same name in both: changed in place, its buttons stay.
     for _, m in ipairs(plan.add) do
         m.parked = nil
-        Make(m, "spec")
+        local index = edit[m.name] and Index(m.name)
+        if index then
+            Wrote(m.name, m.body)
+            touched = true
+            EditMacro(index, nil, m.icon, m.body)
+            Log("changed in place: %s", m.name)
+        else
+            Make(m, "spec")
+        end
         sets.layer[m.name] = "spec"
     end
     local newly = 0 -- off the slots now, not by your choice before
@@ -478,7 +583,10 @@ function Sets.Update()
     -- What the game told of while busy was let go: the list and the rest now.
     if touched and ns.MacrosChanged then ns.MacrosChanged() end
     if not ok then error(err, 0) end
-    if waiting > 0 then ns.Print("%d macros wait off the slots: there is no room for them", waiting) end
+    if waiting > 0 then
+        ns.Print("%d macros wait behind the scenes: there is no free slot for them. Pick which to take in under "
+            .. "\"Macro sets\"", waiting)
+    end
 end
 
 function Sets.Pending() return pending end
@@ -551,6 +659,82 @@ function Sets.Disable()
     seen = nil
 end
 
+-- MacroSense changes the slots itself: what the game tells of meanwhile is not yours; then it is learned, and the
+-- list and the rest are told.
+local function Run(fn)
+    busy, touched = true, false
+    local ok, err = pcall(fn)
+    busy = false
+    Settle()
+    if touched and ns.MacrosChanged then ns.MacrosChanged() end
+    if not ok then error(err, 0) end
+end
+
+-- A set: "class", "character" or a specialization's key. Its macros, whether it is in the game now, its layer.
+local function ListOf(sets, id)
+    if id == "class" then return ClassList() end
+    if id == "character" then return sets.character end
+    return SpecList(sets, id)
+end
+local function InGame(sets, id) return id == "class" or id == "character" or id == sets.active end
+local function LayerOfSet(id) return (id == "class" or id == "character") and id or "spec" end
+local function Parked(sets, id, m)
+    if id == "class" then return sets.classParked[m.name] == true end
+    return m.parked == true
+end
+local function SetParked(sets, id, m, on)
+    if id == "class" then sets.classParked[m.name] = on or nil else m.parked = on or nil end
+end
+local function Room() return ns.MAX_CHARACTER - #InSlots() end
+
+-- Macro `name` of set `from` into set `to`, or a copy of it (`copy`: between specializations only, which are never
+-- in the slots together). It stays in the slots, leaves them or comes in, as its new set is; with no free slot it
+-- waits behind the scenes. Returns true (and "waits" then), or false and why: "name" (the set has a macro of that
+-- name), "together", "combat".
+function Sets.MoveTo(from, name, to, copy)
+    local sets = Sets.Mine()
+    if not sets.enabled or from == to then return false end
+    if InCombatLockdown() then return false, "combat" end
+    if copy and (LayerOfSet(from) ~= "spec" or LayerOfSet(to) ~= "spec") then return false, "together" end
+    Sets.Scan()
+    local source, target = ListOf(sets, from), ListOf(sets, to)
+    local m, i = Find(source, name)
+    if not m then return false end
+    if Find(target, name) then return false, "name" end
+    local parked = Parked(sets, from, m)
+    local wasIn = InGame(sets, from) and not parked and Index(name) ~= nil
+    local waits
+    Run(function()
+        if not copy then
+            table.remove(source, i)
+            if from == "class" then sets.classParked[name] = nil end
+        end
+        local entry = { name = m.name, icon = m.icon, body = m.body }
+        target[#target + 1] = entry
+        SetParked(sets, to, entry, parked)
+        local willBe = InGame(sets, to) and not parked
+        sets.layer = sets.layer or {}
+        if wasIn and not copy then
+            if willBe then
+                sets.layer[name] = LayerOfSet(to)
+            else
+                Remove(name)
+                sets.layer[name] = nil
+            end
+        elseif willBe then
+            if Room() > 0 and not Index(name) then
+                Make(entry, LayerOfSet(to))
+                sets.layer[name] = LayerOfSet(to)
+            else
+                SetParked(sets, to, entry, true)
+                waits = true
+            end
+        end
+    end)
+    Log("%s %s: %s -> %s", copy and "copied" or "moved", name, from, to)
+    return true, waits and "waits" or nil
+end
+
 -- A macro in the slots into another layer (`to`: "class", "character", "spec"). Its place in the slots stays.
 function Sets.Move(name, to)
     local sets = Sets.Mine()
@@ -560,14 +744,149 @@ function Sets.Move(name, to)
     local from = sets.layer[name]
     if not from then return false end
     if from == to then return true end
-    local lists = { class = ClassList(), character = sets.character, spec = SpecList(sets, sets.active) }
-    local m, i = Find(lists[from], name)
+    local function id(layer) return layer == "spec" and sets.active or layer end
+    return (Sets.MoveTo(id(from), name, id(to)))
+end
+
+-- Macro `name` of set `id` behind the scenes (`on`), or back. Back into the game it needs a free slot and its name
+-- free there, else false and why: "room", "name" ("combat" in combat). A specialization not chosen now only
+-- remembers it: its macro comes in with it, or doesn't.
+function Sets.Park(id, name, on)
+    local sets = Sets.Mine()
+    if not sets.enabled then return false end
+    if InCombatLockdown() then return false, "combat" end
+    Sets.Scan()
+    local m = Find(ListOf(sets, id), name)
     if not m then return false end
-    table.remove(lists[from], i)
-    if to == "class" then sets.classParked[name] = nil end
-    lists[to][#lists[to] + 1] = { name = m.name, icon = m.icon, body = m.body }
-    sets.layer[name] = to
+    on = on and true or false
+    if on == Parked(sets, id, m) then return true end
+    if not on and InGame(sets, id) then
+        if Index(name) then return false, "name" end
+        if Room() <= 0 then return false, "room" end
+    end
+    Run(function()
+        SetParked(sets, id, m, on)
+        if not InGame(sets, id) then return end
+        sets.layer = sets.layer or {}
+        if on then
+            if Index(name) and sets.layer[name] == LayerOfSet(id) then
+                Remove(name)
+                sets.layer[name] = nil
+            end
+        else
+            Make(m, LayerOfSet(id))
+            sets.layer[name] = LayerOfSet(id)
+        end
+    end)
+    Log("%s %s (%s)", on and "parked" or "taken in", name, id)
     return true
+end
+
+-- For the window: the macros of set `id` (the list itself), whether one is behind the scenes, whether the set is in
+-- the game now, and the free slots.
+function Sets.List(id) return ListOf(Sets.Mine(), id) end
+function Sets.IsParked(id, m) return Parked(Sets.Mine(), id, m) end
+function Sets.InGame(id) return InGame(Sets.Mine(), id) end
+function Sets.Room() return Room() end
+
+-- The specializations: { key, label, now } in the game's order (Classic: its talent groups), then any other one
+-- with macros kept.
+function Sets.Specs()
+    local sets, out, seen = Sets.Mine(), {}, {}
+    local now, nowLabel = ns.ActionBars.Spec()
+    local function add(key, label)
+        if seen[key] then return end
+        seen[key] = true
+        out[#out + 1] = { key = key, label = label, now = key == now }
+    end
+    local S = C_SpecializationInfo or {}
+    if C_ClassTalents and S.GetSpecializationInfo and GetNumSpecializations then
+        for i = 1, GetNumSpecializations() do
+            local id, name = S.GetSpecializationInfo(i)
+            if id and id ~= 0 then add("spec" .. id, name) end
+        end
+    else
+        local groups = S.GetNumSpecGroups and S.GetNumSpecGroups() or GetNumTalentGroups and GetNumTalentGroups() or 1
+        for group = 1, math.max(groups or 1, 1) do
+            add("group" .. group, string.format(ns.L["Specialization %d"], group))
+        end
+    end
+    add(now, nowLabel)
+    local bars = ns.Character().bars or {}
+    local keys = {}
+    for key in pairs(sets.specs) do keys[#keys + 1] = key end
+    table.sort(keys)
+    for _, key in ipairs(keys) do add(key, bars[key] and bars[key].label or key) end
+    return out
+end
+
+-- The spells of the specialization now, as the spellbook has them once it changed (SPELLS_CHANGED), kept for each
+-- specialization; and every spell of the class seen, in any of them: to tell which macros work where.
+function Sets.LearnSpells()
+    local ok, spells = pcall(ns.sources.spells)
+    if not ok or #spells == 0 then return end
+    local sets = Sets.Mine()
+    sets.classSpells = sets.classSpells or {}
+    local class, known = sets.classSpells, {}
+    local function seen(name) if name and name ~= "" then class[name:lower()] = name end end
+    for _, spell in ipairs(spells) do
+        seen(spell.name)
+        seen(spell.base)
+        if not spell.offSpec then
+            known[spell.name:lower()] = true
+            if spell.base then known[spell.base:lower()] = true end
+        end
+    end
+    local okLater, later = pcall(ns.sources.laterSpells)
+    for _, spell in ipairs(okLater and later or {}) do seen(spell.name) end
+    local okTalents, talents = pcall(ns.sources.talents)
+    for _, name in ipairs(okTalents and talents or {}) do seen(name) end
+    sets.spells = sets.spells or {}
+    sets.spells[ns.ActionBars.Spec()] = known
+end
+
+-- The specializations whose spells are known (in order), and those not yet: visited once, they are.
+local function Visited(sets)
+    local keys, missing = {}, {}
+    for _, spec in ipairs(Sets.Specs()) do
+        if (sets.spells or {})[spec.key] then keys[#keys + 1] = spec.key else missing[#missing + 1] = spec.label end
+    end
+    return keys, missing
+end
+function Sets.Unvisited() return select(2, Visited(Sets.Mine())) end
+
+-- What a macro of set `id` is told with in the window: a specialization's that it can't cast there, what it
+-- lacks ("warn"); the character's that works in one specialization only, that one ("hint").
+function Sets.Note(id, m)
+    local sets = Sets.Mine()
+    local spells, class = sets.spells or {}, sets.classSpells or {}
+    if LayerOfSet(id) == "spec" and spells[id] then
+        local works, missing = Sets.Works(m.body, spells[id], class)
+        if works == false then
+            return string.format(ns.L["Not in this specialization: %s"], table.concat(missing, ", ")), "warn"
+        end
+    elseif id == "character" then
+        local keys = Visited(sets)
+        local works = #keys >= 2 and Sets.WorksIn(m.body, spells, class, keys)
+        if works and #works == 1 then
+            for _, spec in ipairs(Sets.Specs()) do
+                if spec.key == works[1] then return string.format(ns.L["Works only in %s"], spec.label), "hint" end
+            end
+        end
+    end
+end
+
+-- The moves "Sort by spells" offers, and doing them.
+function Sets.SortPlan()
+    local sets = Sets.Mine()
+    return Sets.Sort(sets.character, sets.specs, sets.spells or {}, sets.classSpells or {}, (Visited(sets)))
+end
+function Sets.ApplySort(moves)
+    local done = 0
+    for _, move in ipairs(moves) do
+        if Sets.MoveTo(move.from, move.name, move.to) then done = done + 1 end
+    end
+    return done
 end
 
 -- The layers for the chat: each with its macros, those off the slots marked.

@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Macro sets**: more macros than a character's 30 slots. Each specialization gets macros of its own: choose it,
+  and its macros come into the game, onto the buttons they had, while the others' wait behind the scenes. Class
+  macros are the same on all your characters of one class; this character's stay in every specialization. A
+  macro with the same name in two specializations just changes its text, so its buttons never move.
+- The "Macro sets" window: the sets on the left, their macros on the right. Put a macro behind the scenes or take
+  it back into the game, move it to another set, or copy a specialization's macro to another specialization.
+  With no free slot, you pick what stays behind the scenes.
+- MacroSense learns the spells of each specialization while you play it: a macro that can't be cast in its
+  specialization says so, "Sort by spells" offers to put each macro where its spells are, and with too few slots
+  the macros that work there come in first.
+
 ## [0.12.0] - 2026-11-02
 
 ### Added
