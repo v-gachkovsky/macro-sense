@@ -921,7 +921,8 @@ end
 function Sets.Unvisited() return select(2, Visited(Sets.Mine())) end
 
 -- What a macro of set `id` is told with in the window: a specialization's that it can't cast there, what it
--- lacks ("warn"); the character's that works in one specialization only, that one ("hint").
+-- lacks ("warn"); the character's that works in one specialization only, that one; the character's that works in
+-- all of them (all known), that it could be the class's ("hint").
 function Sets.Note(id, m)
     local sets = Sets.Mine()
     local spells, class = sets.spells or {}, sets.classSpells or {}
@@ -933,6 +934,10 @@ function Sets.Note(id, m)
     elseif id == "character" then
         local keys = Visited(sets)
         local works = #keys >= 2 and Sets.WorksIn(m.body, spells, class, keys)
+        local all = works and #works == #keys and #select(2, Visited(sets)) == 0
+        if all and not Held(sets, m.name) then
+            return ns.L["Works in every specialization: it could go to \"Class macros\""], "hint"
+        end
         if works and #works == 1 then
             for _, spec in ipairs(Sets.Specs()) do
                 if spec.key == works[1] then return string.format(ns.L["Works only in %s"], spec.label), "hint" end

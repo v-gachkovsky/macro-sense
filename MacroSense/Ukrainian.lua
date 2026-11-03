@@ -1689,6 +1689,7 @@ ns.locales.uk = {
     ["Move to: %s"] = "Перенести в: %s",
     ["Copy to: %s"] = "Копіювати в: %s",
     ["Copy"] = "Копіювати",
+    ["Works in every specialization: it could go to \"Class macros\""] = "Працює в усіх спеціалізаціях: його можна перенести в «Класові»",
     ["A specialization has this macro: it comes into the game from there."] = "Цей макрос є в спеціалізації: у гру він виходить звідти.",
     ["A specialization has this macro: it comes into the game from there. To have it here, \"Remove\" it from every specialization."] = "Цей макрос є в спеціалізації: у гру він виходить звідти. Щоб він був у грі тут, «Приберіть» його з усіх спеціалізацій.",
     ["It can sort once it knows the spells of every specialization: choose each of them at least once."] = "Розкласти вийде, коли MacroSense знатиме заклинання всіх спеціалізацій: увімкніть кожну хоча б раз.",

@@ -6760,6 +6760,13 @@ do
     S.Mine().spells.group1 = nil
     check("sets: not sorted while a specialization's spells are not known", #S.SortPlan() == 0)
     S.Mine().spells.group1 = { agony = true }
+    S.Mine().classSpells.fear = "Fear"
+    S.Mine().spells = { group1 = { agony = true, fear = true }, group2 = { ["chaos bolt"] = true, fear = true } }
+    note, kind = S.Note("character", { name = "Run", body = "/cast Fear" })
+    check("sets: the note: the character's that works in every specialization could be the class's",
+        note == "Works in every specialization: it could go to \"Class macros\"" and kind == "hint", note)
+    check("sets: not one a specialization has", S.Note("character", { name = "Chaos Bolt", body = "/cast Fear" }) == nil)
+    S.Mine().spells = { group1 = { agony = true }, group2 = { ["chaos bolt"] = true } }
     ns.SetsWindow.Close()
 
     local function slots()
@@ -6776,6 +6783,13 @@ do
     switch(1)
     update()
     check("sets: off: nothing changes", slots() == before, slots())
+    ns.SetsWindow.Open()
+    ns.SetsWindow.OnCheck():Refresh()
+    S.Enable()
+    ns.SetsWindow.Refresh()
+    check("sets window: turned on, its check box shows it", ns.SetsWindow.OnCheck().fill:IsShown())
+    ns.SetsWindow.Close()
+    S.Disable()
     C_SpecializationInfo.GetActiveSpecGroup = specs
     CreateMacro, DeleteMacro, EditMacro = create, delete, edit
 end

@@ -11,7 +11,7 @@ local WIDTH, HEIGHT, PAD, ROW_H = 960, 520, 14, 40
 local SIDE_W = 210
 local MAX_LISTED = 12 -- moves listed in the question of "Sort by spells"; the rest are counted
 
-local frame, offView, onView, setButtons, title, about, list, empty, message, slotsText, visitText, sortBtn
+local frame, offView, onView, setButtons, title, about, list, empty, message, slotsText, visitText, sortBtn, onCheck
 local rowFrames = {}
 local picked -- the set shown: "class", "character" or a specialization's key
 
@@ -195,6 +195,7 @@ function Refresh()
     offView:SetShown(not sets.enabled)
     onView:SetShown(sets.enabled)
     if not sets.enabled then return end
+    onCheck:Refresh() -- turned on from the other view
     local all = AllSets()
     local found = false
     for _, set in ipairs(all) do found = found or set.id == picked end
@@ -338,6 +339,7 @@ local function Build()
         Refresh()
     end)
     off:SetPoint("BOTTOMLEFT", PAD, PAD)
+    onCheck = off
     Tip(off, L["Macro sets on"], function()
         return L["Turned off, the macros in the game stay as they are, and the sets are kept for later."]
     end)
@@ -390,6 +392,7 @@ function SetsWindow.Pick(id)
 end
 function SetsWindow.RowFrame(i) return rowFrames[i] end
 function SetsWindow.Message() return message and message:GetText() end
+function SetsWindow.OnCheck() return onCheck end
 function SetsWindow.Showing() return offView:IsShown() and "off" or onView:IsShown() and "on" or nil end
 
 return SetsWindow
