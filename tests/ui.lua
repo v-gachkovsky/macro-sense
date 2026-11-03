@@ -6509,6 +6509,12 @@ do
     place("Mount Up", 31)
 
     switch(2)
+    local told = 0
+    local onMacros = ns.Window.OnMacrosChanged
+    ns.Window.OnMacrosChanged = function(...) told = told + 1; return onMacros(...) end
+    S.Update()
+    ns.Window.OnMacrosChanged = onMacros
+    check("sets: the list is told when it is done", told == 1, told)
     update()
     check("sets: another specialization: its macros out of the slots, on bars of its own", not has("Chaos Bolt")
         and actions[30] == nil and actions[31] == nil and has("Mount Up") and has("Stones") and S.Mine().active == "group2")

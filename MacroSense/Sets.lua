@@ -157,6 +157,7 @@ local pending -- a change waits for the end of combat
 -- MacroSense changes the slots now: the game tells of each macro made or deleted while it is done, not after.
 -- Those are not your changes: not followed, no versions, no trash (Core skips them); learned once it is over.
 local busy
+local touched -- MacroSense made, changed or deleted a macro while busy
 local placing = 0 -- until when MacroSense puts the buttons of the specialization back
 
 function Sets.Busy() return busy end
@@ -254,11 +255,13 @@ local function Remove(name)
     local index = Index(name)
     if not index then return end
     expect.gone[name] = GetTime()
+    touched = true
     DeleteMacro(index)
     Log("deleted %s", name)
 end
 local function Make(m, layer)
     expect.made[m.name] = { layer = layer, at = GetTime() }
+    touched = true
     CreateMacro(m.name, m.icon or 134400, m.body, true)
     Log("made %s (%s)", m.name, layer)
 end
@@ -326,6 +329,7 @@ local function SyncClass(sets)
         local index = Index(m.name)
         if index then
             Wrote(m.name, m.body)
+            touched = true
             EditMacro(index, nil, m.icon, m.body)
         end
     end
@@ -461,7 +465,7 @@ function Sets.Update()
     Sets.Scan()
     local key = ns.ActionBars.Spec()
     local waiting = 0
-    busy = true
+    busy, touched = true, false
     local ok, err = pcall(function()
         if sets.active ~= key then
             local _, wait = Change(sets, key)
@@ -471,6 +475,8 @@ function Sets.Update()
     end)
     busy = false
     Settle()
+    -- What the game told of while busy was let go: the list and the rest now.
+    if touched and ns.MacrosChanged then ns.MacrosChanged() end
     if not ok then error(err, 0) end
     if waiting > 0 then ns.Print("%d macros wait off the slots: there is no room for them", waiting) end
 end

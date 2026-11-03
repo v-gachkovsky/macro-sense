@@ -112,6 +112,15 @@ end
 local TALENT_EVENTS = { PLAYER_TALENT_UPDATE = true, TRAIT_CONFIG_UPDATED = true, TRAIT_CONFIG_LIST_UPDATED = true,
     CHARACTER_POINTS_CHANGED = true, ACTIVE_TALENT_GROUP_CHANGED = true, ACTIVE_PLAYER_SPECIALIZATION_CHANGED = true }
 
+-- The macros changed: what depends on them, again.
+function ns.MacrosChanged()
+    ns.History.Scan()
+    ns.Sets.Scan()
+    ns.Shortcuts.Invalidate()
+    ns.Window.OnMacrosChanged()
+    ns.ActionBars.Tint()
+end
+
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
     "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED", "UNIT_PET",
@@ -164,11 +173,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then
         if ns.Sets.Busy() then return end -- MacroSense changes the slots now: learned when it is done
-        ns.History.Scan()
-        ns.Sets.Scan()
-        ns.Shortcuts.Invalidate()
-        ns.Window.OnMacrosChanged()
-        ns.ActionBars.Tint()
+        ns.MacrosChanged()
     elseif event == "UPDATE_BINDINGS" or event == "ACTIONBAR_SLOT_CHANGED" then
         ns.Shortcuts.Invalidate()
         ns.Window.RefreshStatus()
