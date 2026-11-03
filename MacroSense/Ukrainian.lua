@@ -1689,6 +1689,9 @@ ns.locales.uk = {
         .. "ним.",
     ["Move to: %s"] = "Перенести в: %s",
     ["Copy to: %s"] = "Копіювати в: %s",
+    ["Copy"] = "Копіювати",
+    ["The macro leaves this set for the one you pick."] = "Макрос іде з цього набору в той, який ви виберете.",
+    ["A copy goes into another specialization, and this one stays here."] = "Копія з'явиться в іншій спеціалізації, а цей макрос лишиться тут.",
     ["Moved. It waits behind the scenes: there is no free slot."] =
         "Перенесено. Макрос чекає за лаштунками: вільного слота немає.",
     ["No free slot: put another macro behind the scenes first."] =

@@ -6676,9 +6676,35 @@ do
     Fire(item, "OnClick")
     check("sets window: moved from its menu, still in the game", inSet("character", name) and not inSet("group2", name)
         and has(name))
+    -- Moved out of the specialization now into another: out of the game, out of this one.
+    check("sets: moved into the specialization now", S.MoveTo("character", name, "group2") and has(name))
+    check("sets: moved from it into another: not left behind", S.MoveTo("group2", name, "group1")
+        and not inSet("group2", name) and inSet("group1", name) and not has(name))
+    local function shown(button)
+        Fire(button, "OnClick")
+        local out = {}
+        for _, row in ipairs(MacroSenseMenu.rows) do
+            if row:IsShown() then out[#out + 1] = row.text.text end
+        end
+        ns.CloseMenu()
+        return table.concat(out, "|")
+    end
     ns.SetsWindow.Pick("group1")
     check("sets window: a specialization not chosen", ns.SetsWindow.RowFrame(1).state.text
         == "Comes in with the specialization", ns.SetsWindow.RowFrame(1).state.text)
+    r = ns.SetsWindow.RowFrame(1)
+    local moves, copies = shown(r.move), shown(r.copy)
+    check("sets window: \"Move\" only moves", moves:find("Move to: This character's", 1, true)
+        and not moves:find("Copy", 1, true), moves)
+    check("sets window: \"Copy\": to the other specialization only", r.copy:IsShown()
+        and copies:find("Copy to: ", 1, true) and not copies:find("This character's", 1, true)
+        and not copies:find("Move", 1, true), copies)
+    local list = r:GetParent():GetParent()
+    list:SetVerticalScroll(120)
+    ns.SetsWindow.Pick("character")
+    check("sets window: another set: from its top", list:GetVerticalScroll() == 0, list:GetVerticalScroll())
+    check("sets window: the character's: no \"Copy\"", not ns.SetsWindow.RowFrame(1).copy:IsShown())
+    S.MoveTo("group1", name, "character")
 
     -- Spells known for both: a note on the macro that can't be cast there, and the sorting offered.
     S.Mine().classSpells = { ["chaos bolt"] = "Chaos Bolt", agony = "Agony" }

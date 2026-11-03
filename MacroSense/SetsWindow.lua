@@ -7,7 +7,7 @@ local L = ns.L
 local SetsWindow = {}
 ns.SetsWindow = SetsWindow
 
-local WIDTH, HEIGHT, PAD, ROW_H = 760, 520, 14, 40
+local WIDTH, HEIGHT, PAD, ROW_H = 860, 520, 14, 40
 local SIDE_W = 210
 local MAX_LISTED = 12 -- moves listed in the question of "Sort by spells"; the rest are counted
 
@@ -58,28 +58,31 @@ local function State(id, m)
     return GetMacroIndexByName(m.name) > 0 and L["In the game"] or L["Waiting for a free slot"]
 end
 
--- Where a macro can go: move to any other set, copy (a specialization's) to another specialization.
-local function MoveItems(id, m)
+local function IsSpec(id) return id ~= "class" and id ~= "character" end
+
+-- Where a macro can go: moved to any other set; copied, a specialization's, to another specialization.
+local function Items(id, m, copy)
     local items = {}
     for _, set in ipairs(AllSets()) do
-        if set.id ~= id then
-            items[#items + 1] = { name = string.format(L["Move to: %s"], set.label), onClick = function()
-                Tell(Said(ns.Sets.MoveTo(id, m.name, set.id), set.label))
+        if set.id ~= id and (not copy or IsSpec(set.id)) then
+            local text = copy and L["Copy to: %s"] or L["Move to: %s"]
+            items[#items + 1] = { name = string.format(text, set.label), onClick = function()
+                Tell(Said(ns.Sets.MoveTo(id, m.name, set.id, copy), set.label))
                 Refresh()
             end }
         end
     end
-    if id ~= "class" and id ~= "character" then
-        for _, set in ipairs(AllSets()) do
-            if set.id ~= id and set.id ~= "class" and set.id ~= "character" then
-                items[#items + 1] = { name = string.format(L["Copy to: %s"], set.label), onClick = function()
-                    Tell(Said(ns.Sets.MoveTo(id, m.name, set.id, true), set.label))
-                    Refresh()
-                end }
-            end
-        end
-    end
     return items
+end
+
+local function Tip(owner, head, text)
+    owner:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(head, 1, 1, 1)
+        GameTooltip:AddLine(text(), 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    owner:HookScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
 local function Row(i)
@@ -94,16 +97,22 @@ local function Row(i)
     r.name:SetPoint("TOPLEFT", r.icon, "TOPRIGHT", 8, 0)
     r.note = ns.Text(r, 11, "dim")
     r.note:SetPoint("BOTTOMLEFT", r.icon, "BOTTOMRIGHT", 8, 0)
-    r.note:SetPoint("RIGHT", -330, 0)
     r.note:SetWordWrap(false)
-    r.move = ns.MenuButton(r, L["Move"], 90, function() return MoveItems(picked, r.m) end, false, true)
+    r.move = ns.MenuButton(r, L["Move"], 90, function() return Items(picked, r.m) end, false, true)
     r.move:SetPoint("RIGHT", -4, 0)
+    Tip(r.move, L["Move"], function()
+        return L["The macro leaves this set for the one you pick."]
+    end)
+    r.copy = ns.MenuButton(r, L["Copy"], 90, function() return Items(picked, r.m, true) end, false, true)
+    r.copy:SetPoint("RIGHT", r.move, "LEFT", -6, 0)
+    Tip(r.copy, L["Copy"], function()
+        return L["A copy goes into another specialization, and this one stays here."]
+    end)
     r.park = ns.Button(r, "", 110, function()
         local on = not ns.Sets.IsParked(picked, r.m)
         Tell(Said(ns.Sets.Park(picked, r.m.name, on)))
         Refresh()
     end)
-    r.park:SetPoint("RIGHT", r.move, "LEFT", -6, 0)
     r.park:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         local parked = ns.Sets.IsParked(picked, r.m)
@@ -116,6 +125,7 @@ local function Row(i)
     r.park:HookScript("OnLeave", function() GameTooltip:Hide() end)
     r.state = ns.Text(r, 11, "dim")
     r.state:SetPoint("RIGHT", r.park, "LEFT", -10, 0)
+    r.note:SetPoint("RIGHT", r.state, "LEFT", -10, 0)
     -- The macro's text under the mouse.
     r:EnableMouse(true)
     r:SetScript("OnEnter", function(self)
@@ -137,6 +147,11 @@ local function ShowRow(r, m)
     if kind == "warn" then r.note:SetTextColor(1, 0.4, 0.4) else r.note:SetTextColor(ns.RGB(ns.scheme.dim)) end
     r.state:SetText(State(picked, m))
     r.park.label:SetText(ns.Sets.IsParked(picked, m) and L["Take in"] or L["Put away"])
+    -- Copied only between specializations.
+    local copies = IsSpec(picked) and #Items(picked, m, true) > 0
+    r.copy:SetShown(copies)
+    r.park:ClearAllPoints()
+    r.park:SetPoint("RIGHT", copies and r.copy or r.move, "LEFT", -6, 0)
     r:Show()
 end
 
@@ -173,6 +188,7 @@ function Refresh()
             setButtons[i] = b
         end
         b:SetScript("OnClick", function()
+            if picked ~= set.id then list:SetVerticalScroll(0) end
             picked = set.id
             Tell("")
             Refresh()
@@ -198,6 +214,9 @@ function Refresh()
     end
     for i = #macros + 1, #rowFrames do rowFrames[i]:Hide() end
     list.child:SetHeight(math.max(1, #macros * ROW_H))
+    -- Fewer rows than before: not scrolled past the last.
+    local bottom = math.max(0, #macros * ROW_H - list:GetHeight())
+    if list:GetVerticalScroll() > bottom then list:SetVerticalScroll(bottom) end
     empty:SetShown(#macros == 0)
 end
 SetsWindow.Refresh = Refresh
@@ -225,16 +244,6 @@ function SetsWindow.Sort()
         lines[#lines + 1] = string.format("%s: %s > %s", move.name, Label(move.from), Label(move.to))
     end
     ns.Ask("MACROSENSE_SETS_SORT", table.concat(lines, "\n"), nil, moves)
-end
-
-local function Tip(owner, head, text)
-    owner:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine(head, 1, 1, 1)
-        GameTooltip:AddLine(text(), 0.8, 0.8, 0.8, true)
-        GameTooltip:Show()
-    end)
-    owner:HookScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
 local function Build()
@@ -352,6 +361,7 @@ end
 -- For the tests: the set shown, picking one, the row frames, the message.
 function SetsWindow.Picked() return picked end
 function SetsWindow.Pick(id)
+    if picked ~= id and list then list:SetVerticalScroll(0) end
     picked = id
     Refresh()
 end
