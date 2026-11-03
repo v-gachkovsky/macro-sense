@@ -7,7 +7,7 @@ local L = ns.L
 local SetsWindow = {}
 ns.SetsWindow = SetsWindow
 
-local WIDTH, HEIGHT, PAD, ROW_H = 860, 520, 14, 40
+local WIDTH, HEIGHT, PAD, ROW_H = 960, 520, 14, 40
 local SIDE_W = 210
 local MAX_LISTED = 12 -- moves listed in the question of "Sort by spells"; the rest are counted
 
@@ -42,6 +42,10 @@ local function Said(ok, why, label)
     if why == "name" and label then return string.format(L["\"%s\" has a macro of this name already."], label) end
     if why == "name" then return L["A macro of this name is in the game already."] end
     if why == "combat" then return L["Macros cannot be changed in combat."] end
+    if why == "differs" then
+        return L["\"This character's\" has another macro of this name, with a different text. Rename one of them "
+            .. "first."]
+    end
     return ""
 end
 
@@ -105,6 +109,14 @@ local function Row(i)
     end)
     r.copy = ns.MenuButton(r, L["Copy"], 90, function() return Items(picked, r.m, true) end, false, true)
     r.copy:SetPoint("RIGHT", r.move, "LEFT", -6, 0)
+    r.release = ns.Button(r, L["Remove"], 90, function()
+        Tell(Said(ns.Sets.Release(picked, r.m.name)))
+        Refresh()
+    end)
+    Tip(r.release, L["Remove"], function()
+        return L["The macro leaves this set and goes back to \"This character's\", the home of all macros. It is "
+            .. "not deleted."]
+    end)
     Tip(r.copy, L["Copy"], function()
         return L["A copy goes into another specialization, and this one stays here."]
     end)
@@ -150,8 +162,12 @@ local function ShowRow(r, m)
     -- Copied only between specializations.
     local copies = IsSpec(picked) and #Items(picked, m, true) > 0
     r.copy:SetShown(copies)
+    -- Back to the character's from any other set.
+    r.release:SetShown(picked ~= "character")
+    r.release:ClearAllPoints()
+    r.release:SetPoint("RIGHT", copies and r.copy or r.move, "LEFT", -6, 0)
     r.park:ClearAllPoints()
-    r.park:SetPoint("RIGHT", copies and r.copy or r.move, "LEFT", -6, 0)
+    r.park:SetPoint("RIGHT", picked ~= "character" and r.release or copies and r.copy or r.move, "LEFT", -6, 0)
     r:Show()
 end
 

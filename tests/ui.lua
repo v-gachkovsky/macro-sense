@@ -6706,6 +6706,33 @@ do
     check("sets window: the character's: no \"Copy\"", not ns.SetsWindow.RowFrame(1).copy:IsShown())
     S.MoveTo("group1", name, "character")
 
+    -- "Remove": back to the character's. One of its name there with the same text: this one just goes; with
+    -- another text, not.
+    S.MoveTo("character", name, "group2")
+    S.MoveTo("group2", name, "group1", true)
+    check("sets: removed from the specialization now: the character's, still in the game", S.Release("group2", name)
+        and inSet("character", name) and not inSet("group2", name) and has(name)
+        and S.Mine().layer[name] == "character")
+    inSet("group1", name).body = "/say another"
+    ok, why = S.Release("group1", name)
+    check("sets: removed, another text of its name in the character's: no", not ok and why == "differs"
+        and inSet("group1", name))
+    inSet("group1", name).body = inSet("character", name).body
+    check("sets: removed, the same in the character's: just goes", S.Release("group1", name)
+        and not inSet("group1", name) and inSet("character", name) and has(name))
+    S.MoveTo("character", name, "group1")
+    S.MoveTo("group1", name, "group2", true)
+    S.MoveTo("group1", name, "character")
+    check("sets: a twin of the specialization now's waits behind the scenes", has(name)
+        and inSet("character", name).parked and S.Mine().layer[name] == "spec")
+    check("sets: removed from the specialization now, its twin behind the scenes takes its place",
+        S.Release("group2", name) == true and has(name) and not inSet("character", name).parked
+        and S.Mine().layer[name] == "character" and not inSet("group2", name))
+    ns.SetsWindow.Pick("group2")
+    check("sets window: \"Remove\" in a specialization", ns.SetsWindow.RowFrame(1).release:IsShown())
+    ns.SetsWindow.Pick("character")
+    check("sets window: not in the character's", not ns.SetsWindow.RowFrame(1).release:IsShown())
+
     -- Spells known for both: a note on the macro that can't be cast there, and the sorting offered.
     S.Mine().classSpells = { ["chaos bolt"] = "Chaos Bolt", agony = "Agony" }
     S.Mine().spells = { group1 = { agony = true }, group2 = { ["chaos bolt"] = true } }

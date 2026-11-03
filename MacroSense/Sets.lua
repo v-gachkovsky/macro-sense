@@ -748,6 +748,34 @@ function Sets.Move(name, to)
     return (Sets.MoveTo(id(from), name, id(to)))
 end
 
+-- Macro `name` of set `id` back into this character's, where every macro lives that no other set holds. One of
+-- its name there already: the same text, and this one just goes (the character's takes its place in the game);
+-- another text, false and "differs" ("combat" in combat).
+function Sets.Release(id, name)
+    local sets = Sets.Mine()
+    if not sets.enabled or id == "character" then return false end
+    if InCombatLockdown() then return false, "combat" end
+    Sets.Scan()
+    local source = ListOf(sets, id)
+    local m, i = Find(source, name)
+    if not m then return false end
+    local twin = Find(sets.character, name)
+    if not twin then return Sets.MoveTo(id, name, "character") end
+    if twin.body ~= m.body then return false, "differs" end
+    local wasIn = InGame(sets, id) and not Parked(sets, id, m) and Index(name) ~= nil
+    Run(function()
+        table.remove(source, i)
+        if id == "class" then sets.classParked[name] = nil end
+        if wasIn then
+            twin.parked = nil
+            sets.layer = sets.layer or {}
+            sets.layer[name] = "character"
+        end
+    end)
+    Log("released %s: %s, the character's has it", name, id)
+    return true
+end
+
 -- Macro `name` of set `id` behind the scenes (`on`), or back. Back into the game it needs a free slot and its name
 -- free there, else false and why: "room", "name" ("combat" in combat). A specialization not chosen now only
 -- remembers it: its macro comes in with it, or doesn't.
