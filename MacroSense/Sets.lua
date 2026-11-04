@@ -821,7 +821,7 @@ end
 
 -- Macro `name` of set `id` back into this character's ("Remove"): it leaves the set, and is the character's, in the
 -- game if it was there (or comes in, with a free slot and its name free there). The character's has one of that name
--- already: the same, and this one just leaves it; another, false and "name". False and "combat" in combat.
+-- already: the same, and this one just leaves it; another, false and "differs". False and "combat" in combat.
 function Sets.Release(id, name)
     local sets = Sets.Mine()
     if not sets.enabled or id == "character" then return false end
@@ -831,7 +831,7 @@ function Sets.Release(id, name)
     local m, i = Find(source, name)
     if not m then return false end
     local same = Find(sets.character, name)
-    if same and (same.body ~= m.body or same.icon ~= m.icon) then return false, "name" end
+    if same and (same.body ~= m.body or same.icon ~= m.icon) then return false, "differs" end
     local wasIn = InGame(sets, id) and not Parked(sets, id, m) and Index(name) ~= nil
     local waits
     Run(function()
@@ -863,7 +863,7 @@ function Sets.Release(id, name)
 end
 
 -- Macro `name` of set `id` behind the scenes (`on`), or back. Back into the game it needs a free slot and its name
--- free there, else false and why: "room", "name" ("combat" in combat). A specialization not chosen now only remembers it: its macro comes in with it, or doesn't.
+-- free there, else false and why: "room", "ingame" ("combat" in combat). A specialization not chosen now only remembers it: its macro comes in with it, or doesn't.
 function Sets.Park(id, name, on)
     local sets = Sets.Mine()
     if not sets.enabled then return false end
@@ -874,7 +874,7 @@ function Sets.Park(id, name, on)
     on = on and true or false
     if on == Parked(sets, id, m) then return true end
     if not on and InGame(sets, id) then
-        if Index(name) then return false, "name" end
+        if Index(name) then return false, "ingame" end
         if Room() <= 0 then return false, "room" end
     end
     Run(function()
@@ -947,10 +947,12 @@ end
 
 -- Macro `name` of set `from` dropped on set `to`, in the game (`inGame`) or behind the scenes: moved there if that is
 -- another set, then in the game or not, as dropped. Into a specialization not chosen now: in its set, to come in
--- with it. `copy`: a copy of it there, as Sets.MoveTo makes. Returns as Sets.MoveTo and Sets.Park do.
+-- with it. `copy`: a copy of it there, as Sets.MoveTo makes (false and "same" into its own set). Returns as
+-- Sets.MoveTo and Sets.Park do.
 function Sets.Place(from, name, to, inGame, copy)
     local sets = Sets.Mine()
-    if not sets.enabled or (copy and from == to) then return false end
+    if not sets.enabled then return false end
+    if copy and from == to then return false, "same" end
     local ok, why = true, nil
     if from ~= to then
         ok, why = Sets.MoveTo(from, name, to, copy)

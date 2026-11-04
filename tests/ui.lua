@@ -6639,7 +6639,7 @@ do
     inSet("group1", "Mount Up").body = "/cast Swift Mount"
     check("sets: the copy changed: the character's is not", inSet("character", "Mount Up").body ~= "/cast Swift Mount")
     ok, why = S.Release("group1", "Mount Up")
-    check("sets: removed, another of its name in the character's: not", not ok and why == "name"
+    check("sets: removed, another of its name in the character's: not", not ok and why == "differs"
         and inSet("group1", "Mount Up"))
     inSet("group1", "Mount Up").body = inSet("character", "Mount Up").body
     check("sets: removed, the same in the character's: it just leaves", S.Release("group1", "Mount Up")
@@ -6748,7 +6748,7 @@ do
         and not inSet("group2", name) and has(name))
     inSet("group1", name).body = "/say another"
     ok, why = S.Release("group1", name)
-    check("sets: removed, another of its name in the character's: not", not ok and why == "name"
+    check("sets: removed, another of its name in the character's: not", not ok and why == "differs"
         and inSet("group1", name))
     DeleteMacro(GetMacroIndexByName(name))
     Send("UPDATE_MACROS")
@@ -6894,18 +6894,21 @@ do
     drop(listRow("group", label1))
     check("editor, sets: dropped with Ctrl in another specialization: a copy there, the character's in the game",
         has("Dragged") and inSet("group1", "Dragged") and not inSet("character", "Dragged").parked
-        and said[1] == "copied to \"%s\"")
+        and said[1] == "\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename one, "
+        .. "and the other stays as it is.")
     said = {}
     drop(listRow("group", nowLabel))
     check("editor, sets: dropped with Ctrl in the specialization now, its name in the game: the copy waits",
         has("Dragged") and inSet(S.Mine().active, "Dragged").parked and S.Mine().layer.Dragged == "character"
-        and said[1] == "it waits behind the scenes: a macro of this name is in the game")
+        and said[1] == "\"%s\" waits behind the scenes: a macro of this name is in the game already, and the game "
+        .. "tells macros apart by name. Rename one of them, or put the other one behind the scenes.")
     said = {}
     ns.Window.Drop(listRow("stored", "Dragged", "group1"), listRow("head", "Behind the scenes"))
     IsControlKeyDown = function() return false end
     ns.Print = oldPrint
     check("editor, sets: dropped with Ctrl in a set with one of its name: not, it says why",
-        said[1] == "\"%s\" has a macro of this name already" and inSet("group1", "Dragged"))
+        said[1] == "\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename one of "
+        .. "them first." and inSet("group1", "Dragged"))
     -- Dragged from behind the scenes: its icon and name follow the mouse, till it is dropped.
     local function ghost()
         for _, o in ipairs(created) do
@@ -6925,8 +6928,27 @@ do
     Send("UPDATE_MACROS")
     ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), true)
     ns.Print = oldPrint
-    check("editor, sets: Ctrl held when the drag began: a copy, said in the chat", said[1] == "copied to \"%s\""
+    check("editor, sets: Ctrl held when the drag began: a copy, said in the chat", said[1]
+        == "\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename one, and the other "
+        .. "stays as it is."
         and inSet("group1", "Pressed") and has("Pressed"))
+    -- Each change says the rule it met: moved to a specialization not chosen, copied into its own set.
+    said = {}
+    ns.Print = function(text) said[#said + 1] = text end
+    ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), false)
+    check("editor, sets: moved to a specialization not chosen: when it comes in, said", said[1]
+        == "\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename one of them first.")
+    S.Release("group1", "Pressed")
+    said = {}
+    ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), false)
+    check("editor, sets: moved to a specialization not chosen: when it comes in, said", said[1]
+        == "\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization."
+        and not has("Pressed"))
+    said = {}
+    ns.Window.Drop(listRow("stored", "Pressed", "group1"), listRow("group", label1), true)
+    ns.Print = oldPrint
+    check("editor, sets: a copy into its own set: where a copy goes, said", said[1]
+        == "a copy goes into another set: drag \"%s\" with Ctrl onto another group.")
     S.Release("group1", "Pressed")
     DeleteMacro(GetMacroIndexByName("Pressed"))
     S.Release("group1", "Dragged")
