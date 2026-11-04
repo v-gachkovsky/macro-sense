@@ -6662,33 +6662,17 @@ do
         and actions[40] and actions[40].text == "Chaos Bolt", body("Chaos Bolt"))
     DeleteMacro = del
 
-    -- The window: the specialization now; a macro behind the scenes from its row and back, moved from its menu.
-    ns.SetsWindow.Open()
-    check("sets window: on, the specialization now", ns.SetsWindow.Showing() == "on"
-        and ns.SetsWindow.Picked() == "group2", ns.SetsWindow.Picked())
-    local r = ns.SetsWindow.RowFrame(1)
-    local name = r.m.name
-    check("sets window: a row: the macro, in the game", r:IsShown() and r.name.text == name
-        and r.state.text == "In the game" and r.park.label.text == "Put away", r.state.text)
-    Fire(r.park, "OnClick")
-    check("sets window: behind the scenes from its row", not has(name) and r.state.text == "Behind the scenes"
-        and r.park.label.text == "Take in", r.state.text)
-    Fire(r.park, "OnClick")
-    check("sets window: and back", has(name) and r.state.text == "In the game")
-    Fire(r.move, "OnClick")
-    local item
-    for _, row in ipairs(MacroSenseMenu.rows) do
-        if row:IsShown() and row.text.text == "Move to: This character's" then item = row end
+    -- The editor's list, macro sets on: what can be done with a macro in the sets, in "..." by its name (or a right
+    -- click).
+    local function listRow(what, name, set)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.what == what and o.name == name and o.shown and (not set or o.set == set) then
+                return o
+            end
+        end
     end
-    Fire(item, "OnClick")
-    check("sets window: moved from its menu, still in the game", inSet("character", name) and not inSet("group2", name)
-        and has(name))
-    -- Moved out of the specialization now into another: out of the game, out of this one.
-    check("sets: moved into the specialization now", S.MoveTo("character", name, "group2") and has(name))
-    check("sets: moved from it into another: not left behind", S.MoveTo("group2", name, "group1")
-        and not inSet("group2", name) and inSet("group1", name) and not has(name))
-    local function shown(button)
-        Fire(button, "OnClick")
+    local function shown(r)
+        Fire(r.more, "OnClick")
         local out = {}
         for _, row in ipairs(MacroSenseMenu.rows) do
             if row:IsShown() then out[#out + 1] = row.text.text end
@@ -6696,24 +6680,46 @@ do
         ns.CloseMenu()
         return table.concat(out, "|")
     end
-    ns.SetsWindow.Pick("group1")
-    check("sets window: a specialization not chosen", ns.SetsWindow.RowFrame(1).state.text
-        == "", ns.SetsWindow.RowFrame(1).state.text)
-    r = ns.SetsWindow.RowFrame(1)
-    local moves, copies = shown(r.move), shown(r.copy)
-    check("sets window: \"Move\" only moves", moves:find("Move to: This character's", 1, true)
-        and not moves:find("Copy", 1, true), moves)
-    check("sets window: \"Copy\": to the other specialization only", r.copy:IsShown()
-        and copies:find("Copy to: ", 1, true) and not copies:find("This character's", 1, true)
-        and not copies:find("Move", 1, true), copies)
-    local list = r:GetParent():GetParent()
-    list:SetVerticalScroll(120)
-    ns.SetsWindow.Pick("character")
-    check("sets window: another set: from its top", list:GetVerticalScroll() == 0, list:GetVerticalScroll())
-    copies = shown(ns.SetsWindow.RowFrame(1).copy)
-    check("sets window: the character's: \"Copy\" to the specializations", ns.SetsWindow.RowFrame(1).copy:IsShown()
-        and copies:find("Copy to: ", 1, true) and not copies:find("Class macros", 1, true), copies)
+    local function pick(r, text)
+        Fire(r.more, "OnClick")
+        for _, row in ipairs(MacroSenseMenu.rows) do
+            if row:IsShown() and row.text.text == text then return Fire(row, "OnClick") end
+        end
+        ns.CloseMenu()
+    end
+    local function opened(label)
+        local g = listRow("group", label)
+        if g and not g.open then Fire(g, "OnClick") end
+    end
+    local label1
+    for _, spec in ipairs(S.Specs()) do if spec.key == "group1" then label1 = spec.label end end
+    ns.Window.SetScope("character")
+    local name
+    for _, m in ipairs(S.List("group2")) do if not name and has(m.name) then name = m.name end end
+    local r = listRow("macro", name)
+    check("editor, sets: a macro in the game, its \"...\"", r and r.more:IsShown() and r.set == "group2")
+    pick(r, "Put away")
+    check("editor, sets: behind the scenes from \"...\"", not has(name) and listRow("stored", name, "group2") ~= nil)
+    pick(listRow("stored", name, "group2"), "Take in")
+    check("editor, sets: and back", has(name) and listRow("macro", name) ~= nil)
+    pick(listRow("macro", name), "Move to: This character's")
+    check("editor, sets: moved from \"...\", still in the game", inSet("character", name)
+        and not inSet("group2", name) and has(name))
+    -- Moved out of the specialization now into another: out of the game, out of this one.
+    check("sets: moved into the specialization now", S.MoveTo("character", name, "group2") and has(name))
+    check("sets: moved from it into another: not left behind", S.MoveTo("group2", name, "group1")
+        and not inSet("group2", name) and inSet("group1", name) and not has(name))
+    opened(label1)
+    local items = shown(listRow("stored", name, "group1"))
+    check("editor, sets: a specialization's: moved, copied to the other specialization only, removed",
+        items:find("Move to: This character's", 1, true) and items:find("Copy to: ", 1, true)
+        and not items:find("Copy to: This character's", 1, true) and not items:find("Copy to: Class macros", 1, true)
+        and items:find("Remove", 1, true), items)
     S.MoveTo("group1", name, "character")
+    items = shown(listRow("macro", name))
+    check("editor, sets: the character's: copied to the specializations, not removed",
+        items:find("Copy to: ", 1, true) and not items:find("Copy to: Class macros", 1, true)
+        and not items:find("Remove", 1, true), items)
 
     -- "Remove": back to the character's. Behind the scenes there while a specialization has it; out of the last, it
     -- comes into the game.
@@ -6737,51 +6743,35 @@ do
     check("sets: moved to the character's: removed", S.MoveTo("group2", "Chaos Bolt", "character")
         and not inSet("group2", "Chaos Bolt") and inSet("group1", "Chaos Bolt")
         and inSet("character", "Chaos Bolt").parked)
-    ns.SetsWindow.Pick("group1")
-    check("sets window: \"Remove\" in a specialization", ns.SetsWindow.RowFrame(1).release:IsShown())
-    ns.SetsWindow.Pick("character")
-    check("sets window: not in the character's", not ns.SetsWindow.RowFrame(1).release:IsShown())
 
     -- The character's one a specialization has: not into the game.
     ok, why = S.Park("character", "Chaos Bolt", false)
     check("sets: the character's that a specialization has: not into the game", not ok and why == "held"
         and inSet("character", "Chaos Bolt").parked)
-    ns.SetsWindow.Pick("character")
-    local held
-    for i = 1, 40 do
-        local row = ns.SetsWindow.RowFrame(i)
-        if row and row:IsShown() and row.m.name == "Chaos Bolt" then held = row end
-    end
     local asked, show = nil, StaticPopup_Show
     StaticPopup_Show = function(which, ...) asked = which; return show(which, ...) end
-    Fire(held.park, "OnClick")
+    pick(listRow("stored", "Chaos Bolt", "character"), "Take in")
     StaticPopup_Show = show
-    check("sets window: its \"Take in\" asked, then out of the specializations and into the game",
+    check("editor, sets: its \"Take in\" asked, then out of the specializations and into the game",
         asked == "MACROSENSE_SETS_TAKE_HOME" and not inSet("group1", "Chaos Bolt") and has("Chaos Bolt")
         and not inSet("character", "Chaos Bolt").parked and S.Mine().layer["Chaos Bolt"] == "character")
     S.MoveTo("character", "Chaos Bolt", "group1", true)
 
     -- The editor, macro sets on: every macro, those in the game and those behind the scenes, each part with the
     -- class's and the character's first, then a group for each specialization; one not chosen now red and closed.
-    local function listRow(what, name)
-        for _, o in ipairs(created) do
-            if o.kind == "Button" and o.what == what and o.name == name and o.shown then return o end
-        end
-    end
     local function nameField()
         for _, o in ipairs(created) do
             if o.kind == "EditBox" and o.maxLetters == 16 then return o end
         end
     end
-    local label1
-    for _, spec in ipairs(S.Specs()) do if spec.key == "group1" then label1 = spec.label end end
-    ns.Window.SetScope("character")
     local group = listRow("group", label1)
+    if group and group.open then Fire(group, "OnClick") end
+    group = listRow("group", label1)
     check("editor, sets: in the game and behind the scenes", listRow("head", "In the game")
         and listRow("head", "Behind the scenes"))
     check("editor, sets: the character's behind the scenes at the root", listRow("stored", "Chaos Bolt") ~= nil
         and listRow("stored", "Chaos Bolt").set == "character")
-    check("editor, sets: a specialization not chosen: red, closed", group and group.band:IsShown() and not group.open)
+    check("editor, sets: a specialization not chosen: red, closed (as left)", group and group.band:IsShown() and not group.open)
     local classGroup = listRow("group", "Class macros")
     check("editor, sets: the class's in a yellow group", classGroup and classGroup.tone == "class"
         and classGroup.band:IsShown() and listRow("macro", "Stones") and listRow("macro", "Stones").tone == "class")
@@ -6867,6 +6857,24 @@ do
     local trashed = false
     for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Spare" then trashed = true end end
     check("editor, sets: deleted behind the scenes: into the trash", not inSet("character", "Spare") and trashed)
+
+    -- Dragged anywhere in the list: into that set, in the game or behind the scenes, as dropped.
+    CreateMacro("Dragged", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    local function drop(target) ns.Window.Drop(listRow(has("Dragged") and "macro" or "stored", "Dragged"), target) end
+    drop(listRow("head", "Behind the scenes"))
+    check("editor, sets: dropped behind the scenes: there", not has("Dragged") and inSet("character", "Dragged").parked)
+    drop(listRow("group", nowLabel))
+    check("editor, sets: dropped in the specialization now: in it, in the game", has("Dragged")
+        and inSet(S.Mine().active, "Dragged") and not inSet("character", "Dragged"))
+    drop(listRow("group", label1))
+    check("editor, sets: dropped in another specialization: in it, out of the game", not has("Dragged")
+        and inSet("group1", "Dragged") and not inSet("group1", "Dragged").parked)
+    drop(listRow("head", "In the game"))
+    check("editor, sets: dropped in the game: the character's, in the game", has("Dragged")
+        and inSet("character", "Dragged") and not inSet("group1", "Dragged"))
+    DeleteMacro(GetMacroIndexByName("Dragged"))
+    Send("UPDATE_MACROS")
 
     -- A specialization's renamed or changed in the game: the character's of its name behind the scenes is its own,
     -- and follows; another specialization's of that name is a macro of its own, and stays, with its buttons.
@@ -6955,7 +6963,7 @@ do
     local before = slots()
     S.Disable()
     ns.SetsWindow.Open()
-    check("sets window: off: what they are and turning them on", ns.SetsWindow.Showing() == "off")
+    check("sets window: off: what they are and turning them on", ns.SetsWindow.Offers())
     ns.SetsWindow.Close()
     switch(1)
     update()
@@ -6968,12 +6976,18 @@ do
         end
     end
     check("editor, sets off: as without them", not shownHeads)
-    ns.SetsWindow.Open()
-    ns.SetsWindow.OnCheck():Refresh()
-    S.Enable()
-    ns.SetsWindow.Refresh()
-    check("sets window: turned on, its check box shows it", ns.SetsWindow.OnCheck().fill:IsShown())
-    ns.SetsWindow.Close()
+    -- The check box "Macro sets": on, asked with what they are; turned on there, it shows it.
+    local setsCheck, turnOn
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Macro sets" and o.fill then setsCheck = o end
+        if o.kind == "Button" and o.label and o.label.text == "Turn on macro sets" then turnOn = o end
+    end
+    Fire(setsCheck, "OnClick")
+    check("editor: \"Macro sets\" asks first", ns.SetsWindow.IsShown() and not S.Mine().enabled
+        and not setsCheck.fill:IsShown())
+    Fire(turnOn, "OnClick")
+    check("editor: turned on, its check box shows it", S.Mine().enabled and setsCheck.fill:IsShown()
+        and not ns.SetsWindow.IsShown())
     S.Disable()
     C_SpecializationInfo.GetActiveSpecGroup = specs
     CreateMacro, DeleteMacro, EditMacro = create, delete, edit

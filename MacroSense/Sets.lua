@@ -1000,6 +1000,23 @@ function Sets.Write(id, old, name, icon, body)
     return true
 end
 
+-- Macro `name` of set `from` dropped on set `to`, in the game (`inGame`) or behind the scenes: moved there if that is
+-- another set, then in the game or not, as dropped. Into a specialization not chosen now: in its set, to come in
+-- with it. Returns as Sets.MoveTo and Sets.Park do.
+function Sets.Place(from, name, to, inGame)
+    local sets = Sets.Mine()
+    if not sets.enabled then return false end
+    local ok, why = true, nil
+    if from ~= to then
+        ok, why = Sets.MoveTo(from, name, to)
+        if not ok then return ok, why end
+    end
+    if not InGame(sets, to) then inGame = true end
+    local parked, waits = Sets.Park(to, name, not inGame)
+    if why == "waits" and parked then return true, "waits" end
+    return parked, waits
+end
+
 -- Macro `name` of set `id` deleted, behind the scenes: into the trash, as one deleted in the game.
 function Sets.Forget(id, name)
     local sets = Sets.Mine()
