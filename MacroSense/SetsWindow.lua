@@ -1,5 +1,6 @@
 -- Macro sets, what they are: a window that tells it, and turns them on (the check box "Macro sets" in the editor
--- asks with it). Also "Sort by spells", asked first. The sets themselves are in the editor's list (Window.lua); the logic is Sets.lua.
+-- asks with it). Also "Sort by spells", asked first. The sets themselves are in the editor's list (Window.lua);
+-- the logic is Sets.lua.
 local _, ns = ...
 local L = ns.L
 

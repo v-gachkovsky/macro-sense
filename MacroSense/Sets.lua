@@ -863,7 +863,8 @@ function Sets.Release(id, name)
 end
 
 -- Macro `name` of set `id` behind the scenes (`on`), or back. Back into the game it needs a free slot and its name
--- free there, else false and why: "room", "ingame" ("combat" in combat). A specialization not chosen now only remembers it: its macro comes in with it, or doesn't.
+-- free there, else false and why: "room", "ingame" ("combat" in combat). A specialization not chosen now only
+-- remembers it: its macro comes in with it, or doesn't.
 function Sets.Park(id, name, on)
     local sets = Sets.Mine()
     if not sets.enabled then return false end
@@ -960,6 +961,30 @@ function Sets.Place(from, name, to, inGame, copy)
     end
     if not InGame(sets, to) then inGame = true end
     return Sets.Park(to, name, not inGame)
+end
+
+-- Whether Sets.Place would do it, as it says why not; nothing changes. For the drag: what is under the mouse.
+function Sets.CanPlace(from, name, to, inGame, copy)
+    local sets = Sets.Mine()
+    if not sets.enabled then return false end
+    if InCombatLockdown() then return false, "combat" end
+    if copy and from == to then return false, "same" end
+    local m = Find(ListOf(sets, from), name)
+    if not m then return false end
+    if from ~= to then
+        if to == "character" and not copy then
+            local same = Find(sets.character, name)
+            if same and (same.body ~= m.body or same.icon ~= m.icon) then return false, "differs" end
+            return true
+        end
+        if Find(ListOf(sets, to), name) then return false, "name" end
+        return true
+    end
+    if InGame(sets, to) and inGame and Parked(sets, to, m) then
+        if Index(name) then return false, "ingame" end
+        if Room() <= 0 then return false, "room" end
+    end
+    return true
 end
 
 -- Macro `name` of set `id` deleted, behind the scenes: into the trash, as one deleted in the game.

@@ -10,6 +10,8 @@ local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
 local NEW_BODY = "#showtooltip\n" -- a new macro starts with it, the cursor on the line below
 local COPY_ICON = "Interface\\AddOns\\MacroSense\\Media\\copy"
 local SORT_ICON = "Interface\\AddOns\\MacroSense\\Media\\sort"
+local NO_ICON = "Interface\\AddOns\\MacroSense\\Media\\no" -- dragged where it can't go
+local PLUS_ICON = "Interface\\AddOns\\MacroSense\\Media\\plus" -- dragged with Ctrl: a copy
 local ROW_H = 24
 local MIN_W, MIN_H = 780, 460 -- also the first size
 local PREVIEW_EVERY = 0.1 -- seconds: modifiers, target, mouseover and pet change any time
@@ -624,6 +626,7 @@ local function Row(i)
     -- Hover: the issues, line by line, and where it is on the action bars; another character's macro: its text.
     r:SetScript("OnEnter", function()
         lit(true)
+        if Window.dragging then return end -- a macro dragged over it: its own tooltip says what letting go does
         GameTooltip:SetOwner(r, "ANCHOR_RIGHT")
         if r.what == "alt" then
             AddAltLines(r.alt)
@@ -649,7 +652,7 @@ local function Row(i)
     end)
     r:SetScript("OnLeave", function()
         lit(false)
-        GameTooltip:Hide()
+        if not Window.dragging then GameTooltip:Hide() end
     end)
     r:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     r:SetScript("OnClick", function(_, button)
@@ -687,9 +690,11 @@ local function Row(i)
         if r.set then Window.dragging, Window.copying = r, IsControlKeyDown() end
         -- Behind the scenes, the game puts nothing on the cursor: its icon and name follow the mouse instead.
         if r.what == "stored" then Window.ShowGhost(r) end
+        if r.set then Window.Watch() end
     end)
     r:SetScript("OnDragStop", function()
         Window.HideGhost()
+        Window.DragOver(nil)
         if Window.dragging ~= r then return end
         Window.dragging = nil
         for _, target in ipairs(rows) do
@@ -1043,57 +1048,65 @@ end
 
 function Window.OpenSetsMenu(owner, r) ns.OpenMenu(owner, SetsItems(r), 200, false, true) end
 
--- What a change of the sets said, in the chat: each time the rule it met, so the sets can be learned from it.
--- `t`: the macro's `name`, the set it went `to`, `copy`, `park` ("in" taken in, "out" put away).
-function Window.Told(ok, why, t)
+-- What a change of the sets says (`ok`, `why` as Sets returns them): each time the rule it met, so the sets can be
+-- learned from it; nil when there is nothing to tell. `t`: the macro's `name`, the set it goes `to`, `copy`, `park`
+-- ("in" taken in, "out" put away).
+function Window.Explain(ok, why, t)
     t = t or {}
     local name, label = t.name or "", t.to and ns.SetsWindow.Label(t.to) or ""
-    if why == "combat" then return ns.Print("macros cannot be changed in combat") end
+    if why == "combat" then return L["macros cannot be changed in combat"] end
     if why == "waits" then
-        return ns.Print("\"%s\" waits behind the scenes: there is no free slot, a character has only 30. Put "
-            .. "another macro behind the scenes, then take this one in.", name)
+        return string.format(L["\"%s\" waits behind the scenes: there is no free slot, a character has only 30. Put "
+            .. "another macro behind the scenes, then take this one in."], name)
     end
     if why == "twin" then
-        return ns.Print("\"%s\" waits behind the scenes: a macro of this name is in the game already, and the game "
-            .. "tells macros apart by name. Rename one of them, or put the other one behind the scenes.", name)
+        return string.format(L["\"%s\" waits behind the scenes: a macro of this name is in the game already, and "
+            .. "the game tells macros apart by name. Rename one of them, or put the other one behind the scenes."],
+            name)
     end
     if why == "room" then
-        return ns.Print("no free slot for \"%s\": a character has only 30. Put another macro behind the scenes "
-            .. "first.", name)
+        return string.format(L["no free slot for \"%s\": a character has only 30. Put another macro behind the "
+            .. "scenes first."], name)
     end
     if why == "ingame" then
-        return ns.Print("\"%s\" can't come into the game: a macro of this name is there already, and only one of a "
-            .. "name can be. Put that one behind the scenes, or rename one of them.", name)
+        return string.format(L["\"%s\" can't come into the game: a macro of this name is there already, and only "
+            .. "one of a name can be. Put that one behind the scenes, or rename one of them."], name)
     end
     if why == "name" then
-        return ns.Print("\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename "
-            .. "one of them first.", label, name)
+        return string.format(L["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. "
+            .. "Rename one of them first."], label, name)
     end
     if why == "differs" then
-        return ns.Print("\"%s\" can't go back to \"This character's\": it has another macro of this name. If "
-            .. "they were the same, the extra one would just go. Rename one of them, or make them the same.", name)
+        return string.format(L["\"%s\" can't go back to \"This character's\": it has another macro of this name. If "
+            .. "they were the same, the extra one would just go. Rename one of them, or make them the same."], name)
     end
     if why == "same" then
-        return ns.Print("a copy goes into another set: drag \"%s\" with Ctrl onto another group.", name)
+        return string.format(L["a copy goes into another set: drag \"%s\" with Ctrl onto another group."], name)
     end
     if not ok then return end
     local inGame = t.to and ns.Sets.InGame(t.to)
     if t.copy then
-        return ns.Print("\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename "
-            .. "one, and the other stays as it is.", name, label)
+        return string.format(L["\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename "
+            .. "one, and the other stays as it is."], name, label)
     end
     if t.park == "in" and not inGame then
-        return ns.Print("\"%s\" will come into the game with its specialization: it isn't the one chosen now.",
+        return string.format(L["\"%s\" will come into the game with its specialization: it isn't the one chosen now."],
             name)
     end
     if t.park == "out" and not inGame then
-        return ns.Print("\"%s\" stays behind the scenes, also when you choose its specialization. \"Take in\" "
-            .. "brings it back.", name)
+        return string.format(L["\"%s\" stays behind the scenes, also when you choose its specialization. \"Take in\" "
+            .. "brings it back."], name)
     end
     if t.to and not t.park and not inGame then
-        return ns.Print("\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization.",
+        return string.format(L["\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization."],
             name, label)
     end
+end
+
+-- The same, in the chat.
+function Window.Told(ok, why, t)
+    local text = Window.Explain(ok, why, t)
+    if text then ns.Say(text) end
 end
 
 -- A macro behind the scenes being dragged: its icon and name by the mouse.
@@ -1121,6 +1134,80 @@ function Window.ShowGhost(r)
     ghost:Show()
 end
 function Window.HideGhost() if ghost then ghost:Hide() end end
+
+-- While a macro is dragged in the list: over a group, by the macro on the mouse a sign of what letting go does
+-- there (a copy: a plus; nothing can be done: a crossed circle), and a tooltip that says it, with why not.
+local mark, over
+local function MarkAt()
+    mark:ClearAllPoints()
+    if ghost and ghost:IsShown() then return mark:SetPoint("CENTER", ghost.icon, "BOTTOMRIGHT", -2, 2) end
+    local x, y = GetCursorPosition()
+    local scale = UIParent:GetEffectiveScale()
+    mark:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale + 22, y / scale - 22)
+end
+function Window.Watch()
+    if not mark then
+        mark = CreateFrame("Frame", nil, UIParent)
+        mark:SetFrameStrata("TOOLTIP")
+        mark:SetFrameLevel(100)
+        mark:SetSize(18, 18)
+        mark.icon = mark:CreateTexture(nil, "OVERLAY")
+        mark.icon:SetAllPoints()
+        mark:Hide()
+        -- Follows the mouse while the drag lasts: the row under it, Ctrl held or let go.
+        mark.watch = CreateFrame("Frame", nil, UIParent)
+        mark.watch:SetScript("OnUpdate", function()
+            if not Window.dragging then return mark.watch:Hide() end
+            local at
+            for _, target in ipairs(rows) do
+                if target:IsShown() and target.dropId and target:IsMouseOver() then at = target end
+            end
+            Window.DragOver(at)
+            if mark:IsShown() then MarkAt() end
+        end)
+    end
+    mark.watch:Show()
+end
+
+-- The sign by the dragged macro, if one is shown (the tests).
+function Window.DragSign() return mark ~= nil and mark:IsShown() and mark.sign or nil end
+
+-- The dragged macro over row `target` (nil: over none, or let go): the sign and the tooltip, as Ctrl is now.
+function Window.DragOver(target)
+    local source = Window.dragging
+    if not (source and target and target.dropId) or target == source then
+        if over then GameTooltip:Hide() end
+        over = nil
+        if mark then mark:Hide() end
+        return
+    end
+    local copy = (Window.copying or IsControlKeyDown()) and true or false
+    local ok, why = ns.Sets.CanPlace(source.set, source.name, target.dropId, target.dropIn, copy)
+    local key = table.concat({ tostring(target), tostring(copy), tostring(ok), tostring(why) }, " ")
+    if key == over then return end
+    over = key
+    local label = ns.SetsWindow.Label(target.dropId)
+    if mark then
+        mark.sign = not ok and NO_ICON or PLUS_ICON
+        mark.icon:SetTexture(mark.sign)
+        mark:SetShown(not ok or copy)
+        if mark:IsShown() then MarkAt() end
+    end
+    GameTooltip:SetOwner(target, "ANCHOR_RIGHT")
+    if ok then
+        GameTooltip:SetText(string.format(copy and L["Copy to \"%s\""] or L["Move to \"%s\""], label), 0.3, 0.75,
+            0.3)
+        GameTooltip:AddLine(copy and L["A macro of its own goes there; this one stays as it is. Let go of Ctrl to "
+            .. "move it instead."] or L["It leaves its set and goes there. Hold Ctrl to copy it instead."],
+            1, 1, 1, true)
+    else
+        GameTooltip:SetText(string.format(copy and L["Can't copy to \"%s\""] or L["Can't move to \"%s\""], label),
+            1, 0.3, 0.3)
+        local text = Window.Explain(ok, why, { name = source.name, to = target.dropId, copy = copy })
+        if text then GameTooltip:AddLine(text, 1, 1, 1, true) end
+    end
+    GameTooltip:Show()
+end
 
 -- Macro row `source` dropped on row `target`: into the target's set, in the game or behind the scenes. With Ctrl
 -- held (`copy`: when the drag began or at the drop), a copy of it.
