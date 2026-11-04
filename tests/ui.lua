@@ -5419,8 +5419,8 @@ do
     end
     check("alts: its text on hover", hover(find("Poly MO")) == "Poly MO / A macro of Mage. Click to copy it. / "
         .. "/cast [@mouseover] Polymorph", hover(find("Poly MO")))
-    check("alts: the character's", hover(find("Mage")) == "Mage / Its own macros, as they were when you last played "
-        .. "it: Today, " .. date("%H:%M", clock) .. ". Click to show or hide them.", hover(find("Mage")))
+    check("alts: the character's", hover(find("Mage")) == "Mage / Its own macros, those behind the scenes too, as "
+        .. "they were when you last played it: Today, " .. date("%H:%M", clock) .. ". Click to show or hide them.", hover(find("Mage")))
     GameTooltip.AddLine = nil
     local function menuItem(label)
         for _, r in ipairs(MacroSenseMenu.rows) do
@@ -5457,6 +5457,19 @@ do
     Fire(filter, "OnClick")
     check("alts: not with the filter", shown() == "", shown())
     Fire(filter, "OnClick")
+    -- Its macros behind the scenes too, after those in its slots, each with its set.
+    ns.db.characters["Mage-Realm"].sets = { enabled = true, classParked = {},
+        character = { { name = "Ice Kept", body = "/cast Ice Block", parked = true } },
+        specs = { spec62 = { { name = "Arcane Kept", body = "/cast Arcane Blast" } } } }
+    ns.db.characters["Mage-Realm"].bars = { spec62 = { label = "Arcane" } }
+    ns.Window.RefreshList()
+    local kept = find("Ice Kept")
+    check("alts: those behind the scenes too, after those in its slots", shown():find("Poly MO |   Arcane Kept |   "
+        .. "Ice Kept", 1, true) ~= nil, shown())
+    check("alts: with their set", kept and ns.Highlight.Strip(kept.text.text) == "Ice Kept  This character's"
+        and ns.Highlight.Strip(find("Arcane Kept").text.text) == "Arcane Kept  Arcane", kept and kept.text.text)
+    ns.db.characters["Mage-Realm"].sets, ns.db.characters["Mage-Realm"].bars = nil, nil
+    ns.Window.RefreshList()
     -- Forgotten: gone, also from the bars counted.
     Fire(find("Rogue-Other").remove, "OnClick")
     check("alts: a character forgotten", ns.db.characters["Rogue-Other"] == nil and not shown():find("Rogue"), shown())
@@ -7439,6 +7452,73 @@ do
     check("sets: broken halfway: in the log", S.Log()[#S.Log()]:find("broke: ") ~= nil or table.concat(S.Log(), "\n")
         :find("broke: .*broken on purpose") ~= nil)
     PickupAction(slot)
+
+    -- Macro sets as a code: exported with the sets checked, imported back; another class's all into this
+    -- character's; from another character of yours.
+    do
+        local C = function(name) return ns.ShareWindow.Control(name) end
+        local data = ns.Window.SetsData()
+        ns.ShareWindow.ExportSets(data)
+        local code = C("box").text
+        local decoded = ns.Share.DecodeSets(code)
+        check("sets, export: every set with macros, all checked", decoded and #data.sets > 0
+            and #decoded.sets == #data.sets and C("all").label.text == "Clear all", code)
+        Fire(C("all"), "OnClick")
+        check("sets, export: all cleared, no code", C("box").text == "" and C("all").label.text == "Select all")
+        Fire(C("picks")[1], "OnClick")
+        decoded = ns.Share.DecodeSets(C("box").text)
+        check("sets, export: one checked, its code", decoded and #decoded.sets == 1
+            and decoded.sets[1].id == data.sets[1].id)
+        Fire(C("all"), "OnClick")
+        code = C("box").text
+        ns.ShareWindow.Import(code)
+        check("sets, import: all here already, nothing to import", C("info").text:find("here already") ~= nil
+            and not C("import"):IsEnabled(), C("info").text)
+        -- A new one, and one whose name its set has with another text: that one with a number.
+        local first = data.sets[1]
+        local taken = first.macros[1].name
+        ns.ShareWindow.Import(ns.Share.EncodeSets({ class = data.class, sets = { { id = first.id, label = first.label,
+            macros = { { name = "Brand New", icon = 1, body = "/cast Fear" },
+                { name = taken, icon = 1, body = "/say another text" } } } } }))
+        check("sets, import: what comes in", C("info").text:find("2 new") ~= nil and C("import"):IsEnabled(),
+            C("info").text)
+        Fire(C("import"), "OnClick")
+        check("sets, import: into its set, behind the scenes, a taken name with a number", inSet(first.id, "Brand New")
+            and S.Behind(first.id, inSet(first.id, "Brand New")) and inSet(first.id, taken .. " 2")
+            and not MacroSenseShare:IsShown(), printed[#printed])
+        -- Another class's.
+        ns.ShareWindow.Import(ns.Share.EncodeSets({ class = "MAGE", sets = { { id = "spec62", label = "Arcane",
+            macros = { { name = "Arcane X", icon = 1, body = "/cast Arcane Blast" } } } } }))
+        check("sets, import: another class's said, into this character's", C("info").text:find("another class") ~= nil
+            and C("info").text:find("Arcane > This character's", 1, true) ~= nil, C("info").text)
+        Fire(C("import"), "OnClick")
+        check("sets, import: another class's in this character's", inSet("character", "Arcane X") ~= nil)
+        -- From another character: its sets, and its macros in the game in no set as its own.
+        ns.db.characters["Alty-Realm"] = { name = "Alty", realm = ns.Character().realm, class = "WARLOCK",
+            macros = { ["Blink Alt"] = { body = "/cast Demonic Circle", icon = 5 } },
+            sets = { enabled = true, character = { { name = "Kept Alt", body = "/cast Fear", parked = true } },
+                specs = { group1 = { { name = "Spec Alt", body = "/cast Chaos Bolt" } } }, classParked = {} } }
+        ns.ShareWindow.Import()
+        Fire(C("from"), "OnClick")
+        local row
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and tostring(r.text.text):find("^Alty") then row = r end
+        end
+        if row then Fire(row, "OnClick") end
+        check("sets, import: from a character of yours", row and C("info").text:find("Macro sets of Alty", 1, true)
+            and C("import"):IsEnabled(), C("info").text)
+        Fire(C("import"), "OnClick")
+        check("sets, import: its sets here, its loose macros this character's", inSet("character", "Kept Alt")
+            and inSet("character", "Blink Alt") and inSet("group1", "Spec Alt") and inSet("group1", "Spec Alt").parked
+            == nil and S.Mine().active ~= "group1")
+        for _, x in ipairs({ { "character", "Kept Alt" }, { "character", "Blink Alt" }, { "group1", "Spec Alt" },
+            { "character", "Arcane X" }, { first.id, "Brand New" }, { first.id, taken .. " 2" } }) do
+            S.Forget(x[1], x[2], true)
+        end
+        ns.db.characters["Alty-Realm"] = nil
+        ns.ShareWindow.Close()
+    end
+
     -- Changed while off: back with the change; deleted while off: out of its set too.
     S.Disable()
     local changed, gone = bring[1], bring[2]

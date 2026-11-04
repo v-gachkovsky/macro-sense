@@ -332,9 +332,11 @@ ns.locales.uk = {
     ["Move"] = "Перенести",
     ["could not move the macro"] = "не вдалося перенести макрос",
     -- other characters' macros, in the Character tab
-    ["Its own macros, as they were when you last played it: %s. Click to show or hide them."] =
-        "Його власні макроси, якими вони були, коли ви востаннє ним грали: %s. Клацніть, щоб показати чи "
-        .. "сховати їх.",
+    ["Its own macros, those behind the scenes too, as they were when you last played it: %s. Click to show or hide "
+        .. "them."] =
+        "Усі його макроси, і ті, що за лаштунками, такими, як були, коли ви востаннє ним грали: %s. Клацніть, щоб "
+        .. "показати чи сховати їх.",
+    ["Behind the scenes there, in \"%s\"."] = "У нього за лаштунками, у «%s».",
     ["A macro of %s. Click to copy it."] = "Макрос персонажа %s. Клацніть, щоб скопіювати його.",
     ["Forget this character"] = "Забути цього персонажа",
     ["Forget %s? MacroSense no longer shows its macros or counts its action bars, until you log in with it again."] =
@@ -429,9 +431,14 @@ ns.locales.uk = {
         .. "назву вже зайнято, до неї додасться номер.",
     ["could not ask %s now: try again in a moment"] = "зараз не вдалося спитати в %s: спробуйте за мить",
     ["Paste a code, or a macro's text from a guide, to add its macros. Nothing gets replaced: if a name is taken, a "
-        .. "number is added to it, like \"Fear 2\"."] =
+        .. "number is added to it, like \"Fear 2\". Macro sets come from a code too, or from another character of "
+        .. "yours."] =
         "Вставте код або текст макроса з гайду, щоб додати його макроси. Нічого не заміниться: якщо назву вже "
-        .. "зайнято, до неї додасться номер, як «Fear 2».",
+        .. "зайнято, до неї додасться номер, як «Fear 2». Набори макросів теж можна взяти з коду або з іншого "
+        .. "вашого персонажа.",
+    ["Export macro sets..."] = "Експортувати набори макросів...",
+    ["The code of your macro sets: you choose which. Import it on another character, or share it."] =
+        "Код ваших наборів макросів, вибираєте, яких саме. Імпортуйте його на іншому персонажі або поділіться ним.",
     ["imported %d of %d macros"] = "імпортовано макросів: %d з %d",
     ["Trash"] = "Кошик",
     ["Deleted macros land here, and you can bring them back. It doesn't matter where you deleted them: here, in "
@@ -571,10 +578,35 @@ ns.locales.uk = {
     ["Press %s to copy the code, then share it: anyone with MacroSense can import it."] =
         "Натисніть %s, щоб скопіювати код, і поділіться ним: будь-хто з MacroSense зможе його імпортувати.",
     ["Import macros"] = "Імпортувати макроси",
-    ["Paste a MacroSense code, or a macro's text from a guide (%s). Nothing gets replaced: if a name is taken, a "
-        .. "number is added to it."] =
-        "Вставте код MacroSense або текст макроса з гайду (%s). Нічого не заміниться: якщо назву вже зайнято, до неї "
-        .. "додасться номер.",
+    ["Paste a MacroSense code, or a macro's text from a guide (%s), or choose a character of yours. Nothing gets "
+        .. "replaced: if a name is taken, a number is added to it."] =
+        "Вставте код MacroSense або текст макроса з гайду (%s), або виберіть свого персонажа. Нічого не заміниться: "
+        .. "якщо назву вже зайнято, до неї додасться номер.",
+    ["Or from a character..."] = "Або з персонажа...",
+    ["Export macro sets"] = "Експорт наборів макросів",
+    ["Check the sets to export. Press %s to copy the code: import it on another character, or share it."] =
+        "Позначте набори для експорту. Натисніть %s, щоб скопіювати код: імпортуйте його на іншому персонажі або "
+        .. "поділіться ним.",
+    ["Check the sets to export."] = "Позначте набори для експорту.",
+    ["%d macros in %d sets"] = "Макросів: %d, наборів: %d",
+    ["Select all"] = "Вибрати все",
+    ["Clear all"] = "Зняти все",
+    ["Macro sets of %s: %d macros"] = "Набори макросів: %s, макросів: %d",
+    ["%d new"] = { "%d новий", "%d нові", "%d нових" },
+    ["%d here already"] = { "%d вже є тут", "%d вже є тут", "%d вже є тут" },
+    ["%d too long"] = { "%d задовгий", "%d задовгі", "%d задовгих" },
+    ["%s > This character's"] = "%s > «Цього персонажа»",
+    ["These are the sets of another class (%s): its specializations aren't yours, so all the macros go into "
+        .. "\"This character's\"."] =
+        "Це набори іншого класу (%s): його спеціалізації не ваші, тож усі макроси підуть у «Цього персонажа».",
+    ["Turn on \"Macro sets\" first: these macros go into them."] =
+        "Спершу ввімкніть «Набори макросів»: ці макроси підуть саме туди.",
+    ["They come in behind the scenes: take in those you need."] =
+        "Вони прийдуть за лаштунки: візьміть у гру ті, що потрібні.",
+    ["turn on \"Macro sets\" first: the macros go into them"] =
+        "спершу ввімкніть «Набори макросів»: макроси підуть саме туди",
+    ["imported %d macros into the sets, behind the scenes: take in those you need"] =
+        "імпортовано в набори, за лаштунки, макросів: %d. Візьміть у гру ті, що потрібні",
     ["%d macros in the text:"] = { "У тексті %d макрос:", "У тексті %d макроси:", "У тексті %d макросів:" },
     ["This is neither a MacroSense code nor a macro. Each line of a macro starts with / or #."] =
         "Це ні код MacroSense, ні макрос. Кожен рядок макроса починається з / або #.",
@@ -1667,8 +1699,6 @@ ns.locales.uk = {
     ["something went wrong, so MacroSense undid this change: your macros and sets are as they were. "
         .. "Please report the error"] = "щось пішло не так, тож MacroSense скасував цю зміну: ваші макроси й "
         .. "набори такі, як були. Будь ласка, повідомте про помилку",
-    ["Select all"] = "Вибрати все",
-    ["Clear all"] = "Зняти все",
     ["Class macros"] = "Класові",
     ["This character's"] = "Цього персонажа",
     ["This specialization's"] = "Цієї спеціалізації",
