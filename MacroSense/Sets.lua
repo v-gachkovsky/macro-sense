@@ -253,6 +253,7 @@ local pending -- a change waits for the end of combat
 local busy
 local touched -- MacroSense made, changed or deleted a macro while busy
 local placing = 0 -- until when MacroSense puts the buttons of the specialization back
+local fresh = { names = {} } -- the macros made for specialization `key` when it was chosen last
 
 function Sets.Busy() return busy end
 
@@ -500,8 +501,10 @@ local function Change(sets, key)
         end
     end
     -- One of the same name in both: changed in place, its buttons stay.
+    fresh = { key = key, names = {} }
     for _, m in ipairs(plan.add) do
         m.parked = nil
+        fresh.names[m.name] = true
         local index = edit[m.name] and Index(m.name)
         if index then
             Wrote(m.name, m.body)
@@ -544,7 +547,28 @@ function Sets.PlaceBars(key, last)
         end
     end
     if not last then return end
-    for slot, name in pairs(sets.bars[key] or {}) do
+    local record = sets.bars[key] or {}
+    -- A button keeps a macro's place in the list, not its name: one of a macro deleted before shows the one made
+    -- now in that place. A macro made now on a button you never gave it: taken off.
+    if fresh.key == key then
+        for slot = 1, MAX_SLOT do
+            local kind, there = At(slot)
+            if kind == "character" and fresh.names[there] and record[slot] ~= there then
+                PickupAction(slot)
+                ClearCursor()
+                Log("took off button %d: %s was never put there", slot, there)
+            end
+        end
+    end
+    -- The buttons of macros there are no more (deleted): forgotten.
+    for slot, name in pairs(record) do
+        if not have[name] and not Find(ClassList(), name) and not Find(sets.character, name)
+            and not Find(SpecList(sets, key), name) then
+            record[slot] = nil
+            Log("forgot button %d: %s, deleted", slot, name)
+        end
+    end
+    for slot, name in pairs(record) do
         local kind, there = At(slot)
         if not have[name] then
             Log("no button %d: %s is not in the slots", slot, name)

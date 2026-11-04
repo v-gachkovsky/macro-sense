@@ -310,6 +310,7 @@ function GetCursorInfo()
     if onCursor then return table.unpack(onCursor) end
 end
 function ClearCursor() picked, onCursor = nil, nil end
+function PickupAction(slot) actions[slot] = nil end
 -- Shift-click on a link: the game passes it here (into the chat being typed).
 function ChatEdit_InsertLink() return false end
 -- This character, and the group it is in: none, unless a test fills `group` ({ raid = true in a raid, members =
@@ -6615,6 +6616,20 @@ do
     S.Release(S.Mine().active, "Nowhere")
     DeleteMacro(GetMacroIndexByName("Nowhere"))
     Send("UPDATE_MACROS")
+    -- A button keeps a macro's place in the list, not its name: one of a macro deleted before shows the one made now
+    -- in that place. Taken off, and the deleted one's button forgotten.
+    stash[1] = stash[1] or {}
+    stash[1][44] = { "macro", 0, nil, text = "Chaos Bolt" }
+    S.Mine().bars.group1 = S.Mine().bars.group1 or {}
+    S.Mine().bars.group1[44] = "Gone Away"
+    local before40 = stash[1][40]
+    switch(1)
+    update()
+    check("sets: a deleted macro's button showing the one made now: taken off, forgotten", actions[44] == nil
+        and S.Mine().bars.group1[44] == nil and has("Chaos Bolt"))
+    check("sets: its own buttons stay", before40 == nil or (actions[40] and actions[40].text == before40.text))
+    switch(2)
+    update()
 
     -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
     -- gets the one that comes in.
