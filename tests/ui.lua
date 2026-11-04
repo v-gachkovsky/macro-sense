@@ -6455,6 +6455,18 @@ do
         end
     end
     check("book window: offered all again, checked as the first time", offered and not W.Control("again"):IsEnabled())
+    -- "Select all", then, all checked, "Clear all".
+    local function label() return W.Control("all").label.text end
+    if label() == "Clear all" then Fire(W.Control("all"), "OnClick") end
+    check("book window: some left out, \"Select all\"", label() == "Select all", label())
+    Fire(W.Control("all"), "OnClick")
+    local planned1 = 0
+    for _ in pairs(planned()) do planned1 = planned1 + 1 end
+    check("book window: all checked, \"Clear all\"", label() == "Clear all" and planned1 > 0, label())
+    Fire(W.Control("all"), "OnClick")
+    local left = 0
+    for _ in pairs(planned()) do left = left + 1 end
+    check("book window: all cleared, no macro", label() == "Select all" and left == 0, left)
     W.Close()
     for _, name in ipairs(made) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")

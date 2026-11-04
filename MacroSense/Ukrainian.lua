@@ -1667,6 +1667,8 @@ ns.locales.uk = {
     ["something went wrong, so MacroSense undid this change: your macros and sets are as they were. "
         .. "Please report the error"] = "щось пішло не так, тож MacroSense скасував цю зміну: ваші макроси й "
         .. "набори такі, як були. Будь ласка, повідомте про помилку",
+    ["Select all"] = "Вибрати все",
+    ["Clear all"] = "Зняти все",
     ["Class macros"] = "Класові",
     ["This character's"] = "Цього персонажа",
     ["This specialization's"] = "Цієї спеціалізації",

@@ -208,6 +208,10 @@ function Refresh()
         if row.state == "skipped" or row.state == "deleted" then remembered = true end
     end
     controls.again:SetEnabled(remembered)
+    local every = #rows > 0
+    for _, row in ipairs(rows) do every = every and choices.picked[row.spell.name] ~= nil end
+    controls.all.label:SetText(every and L["Clear all"] or L["Select all"])
+    controls.all:SetEnabled(#rows > 0)
     createBtn:SetEnabled(#macros > 0 and not over and problem == nil)
     for _, control in pairs(controls) do
         if control.Refresh and control ~= createBtn then control:Refresh() end
@@ -395,6 +399,15 @@ local function Build()
     end)
     again:HookScript("OnLeave", function() GameTooltip:Hide() end)
     controls.again = again
+    -- Every spell checked, or, all checked, none.
+    local all = ns.Button(title, L["Select all"], 120, function()
+        local every = true
+        for _, row in ipairs(rows) do every = every and choices.picked[row.spell.name] ~= nil end
+        for _, row in ipairs(rows) do choices.picked[row.spell.name] = not every or nil end
+        Refresh()
+    end)
+    all:SetPoint("RIGHT", again, "LEFT", -8, 0)
+    controls.all = all
 
     local intro = ns.Text(frame, 12, "dim")
     intro:SetPoint("TOPLEFT", PAD, -34 - PAD)
@@ -570,7 +583,7 @@ function SpellbookWindow.Toggle()
 end
 
 -- For the tests: a control by name ("harm", "help", "startattack", "stopcasting", "bars", "pet", "petNone",
--- "petShift", "petMouseover", "create"), the rows, the row frames and the macros planned.
+-- "petShift", "petMouseover", "create", "again", "all"), the rows, the row frames and the macros planned.
 function SpellbookWindow.Control(name) return controls[name] end
 SpellbookWindow.Rows = Rows
 function SpellbookWindow.RowFrame(i) return rowFrames[i] end
