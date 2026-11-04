@@ -6716,6 +6716,27 @@ do
     check("sets: its own buttons stay", before40 == nil or (actions[40] and actions[40].text == before40.text))
     switch(2)
     update()
+    -- The same for a macro made any other way (New, the spellbook, the game's own window): a button whose macro was
+    -- off the slots at the last look, now showing one made since, is taken off. One you put on a button stays.
+    CreateMacro("Haunted", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    place("Haunted", 45)
+    Wait(1.1)
+    DeleteMacro(GetMacroIndexByName("Haunted"))
+    actions[45] = { "macro", 0, nil, text = "" } -- the game keeps the button, on the place in the list
+    Send("UPDATE_MACROS")
+    Wait(1.1)
+    CreateMacro("Newcomer", 1, "/cast Agony", true)
+    actions[45].text = "Newcomer"
+    actions[46] = { "macro", 0, nil, text = "Newcomer" }
+    Send("UPDATE_MACROS")
+    Wait(1.1)
+    check("sets: a macro made on a button whose macro was deleted: taken off", actions[45] == nil
+        and actions[46] and actions[46].text == "Newcomer" and S.Mine().bars[S.Mine().active][46] == "Newcomer")
+    actions[46] = nil
+    DeleteMacro(GetMacroIndexByName("Newcomer"))
+    Send("UPDATE_MACROS")
+    Wait(1.1)
 
     -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
     -- gets the one that comes in.
