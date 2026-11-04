@@ -6801,6 +6801,21 @@ do
         and not listRow("head", "In the game").open)
     Fire(listRow("head", "In the game"), "OnClick")
     check("editor, sets: and opens", listRow("macro", "Stones") ~= nil)
+    -- + and - in the scheme: drawn in its colors; in the game's look, the game's buttons.
+    local scheme = ns.db.scheme
+    ns.db.scheme = "monokai"
+    ns.Window.ApplyLook()
+    local head = listRow("head", "In the game")
+    check("editor, sets: - drawn in the scheme", head.sign.edge:IsShown() and head.sign.across:IsShown()
+        and not head.sign.down:IsShown() and head.icon.texture == nil)
+    local closed = listRow("group", label1)
+    check("editor, sets: + drawn in the scheme", closed.sign.down:IsShown())
+    ns.db.scheme = "game"
+    ns.Window.ApplyLook()
+    check("editor, sets: in the game's look, its buttons", not head.sign.edge:IsShown()
+        and head.icon.texture:find("MinusButton") ~= nil)
+    ns.db.scheme = scheme
+    ns.Window.ApplyLook()
     local function left(r) return r and r.icon.point[2] end
     check("editor, sets: deeper, further right", left(listRow("head", "In the game")) == 6
         and left(listRow("group", "Class macros")) == 18 and left(listRow("macro", "Stones")) == 30

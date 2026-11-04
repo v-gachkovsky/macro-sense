@@ -566,6 +566,22 @@ local function Row(i)
     r.icon:SetPoint("LEFT", 6, 0)
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     r.mark = LockMark(r, r.icon, 14)
+    -- What opens and closes (a part, a group, another character): + or -, the game's button in its look, else a
+    -- box drawn in the scheme's colors.
+    r.sign = {}
+    for _, part in ipairs({ "edge", "inside", "across", "down" }) do
+        r.sign[part] = r:CreateTexture(nil, "OVERLAY", nil, part == "edge" and 0 or part == "inside" and 1 or 2)
+        r.sign[part]:SetPoint("CENTER", r.icon, "CENTER")
+        r.sign[part]:Hide()
+    end
+    r.sign.edge:SetSize(12, 12)
+    r.sign.inside:SetSize(10, 10)
+    r.sign.across:SetSize(6, 2)
+    r.sign.down:SetSize(2, 6)
+    function r:Toggle(open)
+        self.toggle, self.open = true, open
+        self:Paint()
+    end
     r.text = ns.Text(r, 12)
     r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     r.text:SetPoint("RIGHT", -6, 0)
@@ -666,6 +682,18 @@ local function Row(i)
         local strong = self.what == "group" or self.what == "head"
         if tone then self.band:SetColorTexture(tone[1], tone[2], tone[3], strong and 0.3 or 0.14) end
         self.band:SetShown(tone and true or false)
+        -- + or -.
+        local sign = self.toggle and not s.native
+        if self.toggle and s.native then
+            self.icon:SetTexture(self.open and MINUS or PLUS)
+        elseif sign then
+            self.icon:SetTexture(nil)
+            self.sign.edge:SetColorTexture(ns.RGB(s.dim))
+            self.sign.inside:SetColorTexture(ns.RGB(s.panel))
+            self.sign.across:SetColorTexture(ns.RGB(s.text))
+            self.sign.down:SetColorTexture(ns.RGB(s.text))
+        end
+        for part, t in pairs(self.sign) do t:SetShown(sign and (part ~= "down" or not self.open) or false) end
         local class = self.what == "alt" and self.alt.color
         if class then self.text:SetTextColor(class.r, class.g, class.b) end
     end
@@ -706,7 +734,7 @@ local function UseRow(n, what, tone, depth)
     rows[n] = rows[n] or Row(n)
     local r = rows[n]
     r.what, r.index, r.selected, r.severity, r.issues = what, nil, false, nil, nil
-    r.tone = tone
+    r.tone, r.toggle = tone, false
     r.icon:SetPoint("LEFT", 6 + 12 * (depth or (what == "altMacro" and 1 or 0)), 0)
     local plain = what == "alt" or what == "group" or what == "head"
     if plain then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
@@ -745,7 +773,7 @@ local function AltRows(n, q)
             n = n + 1
             local r = UseRow(n, "alt")
             r.alt, r.name = alt, alt.label
-            r.icon:SetTexture(open and MINUS or PLUS)
+            r:Toggle(open)
             r.text:SetText(string.format("%s  |cff%s%d|r", alt.label, ns.scheme.dim, #alt.macros))
             r:Paint()
             for _, m in ipairs(open and found or {}) do
@@ -817,7 +845,7 @@ end
 local function HeadRow(n, key, label, tip, open, tone)
     local r = UseRow(n, "head", tone)
     r.group, r.open, r.name, r.tip = key, open, label, tip
-    r.icon:SetTexture(open and MINUS or PLUS)
+    r:Toggle(open)
     r.text:SetText(label)
     r:Paint()
 end
@@ -829,7 +857,7 @@ local function GroupRow(n, key, label, count, tone, open, kind)
     r.tip = kind == "class" and L["The same on all your characters of this class: what you change here reaches the "
         .. "others when they log in."] or kind == "now" and L["The macros of the specialization chosen now."]
         or L["This specialization is not chosen now: its macros come into the game when you choose it."]
-    r.icon:SetTexture(open and MINUS or PLUS)
+    r:Toggle(open)
     r.text:SetText(string.format("%s  |cff%s%d|r", label, ns.scheme.dim, count))
     r:Paint()
 end
