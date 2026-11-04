@@ -294,6 +294,18 @@ ns.locales.uk = {
     ["Copy to General"] = "Копіювати в «Загальні»",
     ["Move to Character"] = "Перенести в «Персонаж»",
     ["Move to General"] = "Перенести в «Загальні»",
+    ["For a macro behind the scenes: a copy in the same set, named like \"Fear 2\". A macro behind the scenes can "
+        .. "also be moved or copied to the General tab from here."] =
+        "Для макроса за лаштунками: копія в тому самому наборі з назвою на кшталт «Fear 2». Звідси ж макрос за "
+        .. "лаштунками можна перенести або скопіювати у вкладку «Загальні».",
+    ["Makes a copy in the same set, behind the scenes, named like \"Fear 2\"."] =
+        "Створює копію в тому самому наборі, за лаштунками, з назвою на кшталт «Fear 2».",
+    ["Makes a copy for all your characters, named like \"Fear 2\". This one stays where it is."] =
+        "Створює копію для всіх ваших персонажів, з назвою на кшталт «Fear 2». Цей макрос лишається, де був.",
+    ["Into the General tab, for all your characters: it leaves its set and comes into the game. Its history goes "
+        .. "with it."] =
+        "У вкладку «Загальні», для всіх ваших персонажів: макрос іде зі свого набору й з'являється в грі. Його "
+        .. "історія переходить разом із ним.",
     ["Into the Character tab, for this character only. Its buttons on your action bars stay, and its history goes "
         .. "with it."] =
         "У вкладку «Персонаж», лише для цього персонажа. Його кнопки на ваших панелях дій лишаються, а історія "

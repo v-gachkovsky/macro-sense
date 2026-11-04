@@ -1141,13 +1141,17 @@ function Sets.CanPlace(from, name, to, inGame, copy)
 end
 
 -- Macro `name` of set `id` deleted, behind the scenes: into the trash, as one deleted in the game.
-function Sets.Forget(id, name)
+function Sets.Forget(id, name, moved)
     local sets = Sets.Mine()
     local list = ListOf(sets, id)
     local m, i = Find(list, name)
     if not m then return false end
     table.remove(list, i)
     if id == "class" then sets.classParked[name] = nil end
+    if moved then -- into the General tab: not deleted
+        Log("moved %s from behind the scenes into General: %s", name, id)
+        return true
+    end
     ns.History.Discard(ns.History.Trash("character"), name, m, time())
     Log("deleted %s behind the scenes: %s", name, id)
     return true

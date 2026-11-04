@@ -6910,6 +6910,34 @@ do
     kept = listRow("stored", name, "group1")
     check("editor, sets: comes in with its specialization again", not inSet("group1", name).parked
         and not has(name) and not kept.kept and not kept.icon.desaturated)
+    -- Behind the scenes it can be copied too, from "...": in its set, or into the General tab; moved there. No copy
+    -- button of its own.
+    kept = listRow("stored", name, "group1")
+    items = shown(kept)
+    check("editor, sets: behind the scenes: duplicated, moved and copied to General from \"...\"",
+        not kept.copy:IsShown() and items:find("Duplicate", 1, true) and items:find("Move to: General", 1, true)
+        and items:find("Copy to: General", 1, true), items)
+    pick(kept, "Duplicate")
+    local twin = inSet("group1", name .. " 2")
+    check("editor, sets: duplicated in its set, coming in with it as the one copied", twin
+        and twin.body == inSet("group1", name).body and not twin.parked and not has(name .. " 2"))
+    ns.Window.Forget("group1", name .. " 2")
+    ns.Window.StoredToGeneral("group1", name, false)
+    local general = GetMacroIndexByName(name)
+    check("editor, sets: copied to General, the one copied stays", general > 0 and general <= ns.MAX_GENERAL
+        and inSet("group1", name) ~= nil)
+    DeleteMacro(general)
+    Send("UPDATE_MACROS")
+    local trash = #ns.History.Trash("character")
+    ns.Window.StoredToGeneral("group1", name, true)
+    general = GetMacroIndexByName(name)
+    check("editor, sets: moved to General: out of its set, not into the trash", general > 0
+        and general <= ns.MAX_GENERAL and not inSet("group1", name) and #ns.History.Trash("character") == trash)
+    S.Write("group1", nil, name, 1, select(3, GetMacroInfo(general)))
+    S.Park("group1", name, false)
+    DeleteMacro(general)
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("character")
     S.MoveTo("group1", name, "character")
     items = shown(listRow("macro", name))
     check("editor, sets: the character's: copied into any other set, not removed",
