@@ -1078,7 +1078,10 @@ function Window.Explain(ok, why, t)
     end
     if why == "differs" then
         return string.format(L["\"%s\" can't go back to \"This character's\": it has another macro of this name. If "
-            .. "they were the same, the extra one would just go. Rename one of them, or make them the same."], name)
+            .. "they had the same text, the two would be one. Rename one of them, or make them the same."], name)
+    end
+    if why == "merged" then
+        return string.format(L["\"%s\" in \"%s\" was the very same macro: the two are one now."], name, label)
     end
     if why == "same" then
         return string.format(L["a copy goes into another set: drag \"%s\" with Ctrl onto another group."], name)

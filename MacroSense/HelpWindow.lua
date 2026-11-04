@@ -239,12 +239,13 @@ local function Sections()
                     .. "into the game with that specialization."] },
                 { L["Move to"], L["The macro goes to another set and leaves this one. If it was in the game and the "
                     .. "new set is in the game too, it stays where it is, on its buttons. Moved to a specialization "
-                    .. "not chosen now, it leaves the game until you choose it."] },
+                    .. "not chosen now, it leaves the game until you choose it. If the set already has the very "
+                    .. "same macro (the same text), the two become one."] },
                 { L["Copy to"], L["A copy goes to another set, and the macro itself stays as it is. From then on "
                     .. "they are two separate macros: change or rename one, and the other stays as it was."] },
                 { L["Remove"], L["The macro leaves its set and goes back to this character's. If this character's "
-                    .. "already has the very same macro, the extra one simply goes. If it has a different macro of "
-                    .. "the same name, nothing happens: rename one of them first."] },
+                    .. "already has the very same macro, the two become one. If it has a different macro of the same "
+                    .. "name, nothing happens: rename one of them first."] },
             } },
             { "h", L["Dragging"] },
             { "list", {
