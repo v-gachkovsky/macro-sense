@@ -1552,10 +1552,10 @@ ns.locales.uk = {
     ["From Spellbook"] = "З книги заклинань",
     ["Macros from the Spellbook"] = "Макроси з книги заклинань",
     ["Make macros for the spells in your spellbook, many at once. Pick the spells, where they go and what Shift, Ctrl "
-        .. "or Alt do. Spells that have a macro already are left out, and next time only the spells you learned since "
-        .. "are offered."] = "Макроси для заклинань із вашої книги, багато за раз. Оберіть заклинання, у кого вони "
-        .. "летять і що роблять Shift, Ctrl чи Alt. Заклинання, які вже мають макрос, пропускаються, а наступного разу "
-        .. "запропоновано буде лише те, що ви вивчили відтоді.",
+        .. "or Alt do. Spells that have a macro already are left out. Next time, the spells you learned since and those "
+        .. "whose macro you deleted are offered."] = "Макроси для заклинань із вашої книги, багато за раз. Оберіть заклинання, у кого вони "
+        .. "летять і що роблять Shift, Ctrl чи Alt. Заклинання, які вже мають макрос, пропускаються. Наступного разу "
+        .. "буде запропоновано те, що ви вивчили відтоді, і заклинання, чиї макроси ви видалили.",
     ["Check the spells to make macros for. A macro names the spell with no rank, so it always casts the highest rank "
         .. "you know. Point at a spell to see its macro."] = "Позначте заклинання, для яких зробити макроси. Макрос "
         .. "називає заклинання без рангу, тож завжди кастує найвищий ранг, який ви знаєте. Наведіть мишу на "

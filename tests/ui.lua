@@ -6302,11 +6302,8 @@ do
     DeleteMacro(GetMacroIndexByName("Fire Blast"))
     W.Open()
     check("book window: with the pet's macro made, no other one at first", planned().Pet == nil)
-    check("book window: a spell whose macro you deleted is told so, not checked", rows()["Fire Blast"].state == "deleted"
-        and planned()["Fire Blast"] == nil)
-    for i, r in ipairs(W.Rows()) do
-        if r.spell.name == "Fire Blast" then Fire(W.RowFrame(i).check, "OnClick") end
-    end
+    check("book window: a spell whose macro you deleted is told so, and offered again",
+        rows()["Fire Blast"].state == "deleted" and planned()["Fire Blast"] ~= nil)
     CreateMacro = function(name, ...)
         if name == "Fire Blast" then error("refused") end
         return createMacro(name, ...)
@@ -6320,8 +6317,8 @@ do
     W.Open()
     check("book window: the next time, Frostbolt has a macro and is not checked", rows().Frostbolt.state == "has"
         and rows().Frostbolt.macro == "Frostbolt" and planned().Frostbolt == nil)
-    check("book window: nothing left to make", count > 1 and #W.Planned() == 0,
-        tostring(#W.Planned()))
+    check("book window: nothing left to make but the one the game refused", count > 1 and #W.Planned() == 1
+        and planned()["Fire Blast"] ~= nil, tostring(#W.Planned()))
     -- No free slot, macro sets on: still made, behind the scenes in this character's, asked first.
     local sets = ns.Sets.Mine()
     local wasOn, wasActive, counts = sets.enabled, sets.active, GetNumMacros
@@ -6333,7 +6330,7 @@ do
     Send("UPDATE_MACROS")
     W.Open()
     for i, r in ipairs(W.Rows()) do
-        if r.spell.name == "Frostbolt" and not r.picked then Fire(W.RowFrame(i).check, "OnClick") end
+        if r.spell.name == "Frostbolt" and not planned().Frostbolt then Fire(W.RowFrame(i).check, "OnClick") end
     end
     check("book window: no free slot, macro sets on: it can still make them", W.Control("create"):IsEnabled()
         and W.Control("count").text:find("The rest go behind the scenes", 1, true) ~= nil,
@@ -6346,6 +6343,10 @@ do
     for _, m in ipairs(sets.character) do if m.name == "Frostbolt" then kept = m end end
     check("book window: made behind the scenes", kept and kept.parked and not W.IsShown()
         and GetMacroIndexByName("Frostbolt") == 0)
+    W.Open()
+    check("book window: a macro behind the scenes casts it: not offered again", rows().Frostbolt.state == "has"
+        and planned().Frostbolt == nil)
+    W.Close()
     for i = #sets.character, 1, -1 do
         if sets.character[i].name == "Frostbolt" then table.remove(sets.character, i) end
     end
