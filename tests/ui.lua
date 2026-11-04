@@ -1287,12 +1287,59 @@ do
     ns.Window.Revert()
 end
 
+-- Onto the other tab: a macro is moved there, or with Ctrl copied; onto its own tab, nothing.
+do
+    local function tab(label)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and tostring(o.label.text):find("^" .. label) then return o end
+        end
+    end
+    local function rowOf(name)
+        local index = GetMacroIndexByName(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.index == index and o.scripts.OnDragStart and o:IsShown() then return o end
+        end
+    end
+    local function dragTo(name, target)
+        local r = rowOf(name)
+        target.IsMouseOver = function() return true end
+        Fire(r, "OnDragStart")
+        Fire(r, "OnDragStop")
+        target.IsMouseOver = nil
+    end
+    local general, character = tab("General"), tab("Character")
+    CreateMacro("Tabbed", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    NextFrame()
+    dragTo("Tabbed", character)
+    check("tabs: dropped on Character: moved there", GetMacroIndexByName("Tabbed") > ns.MAX_GENERAL)
+    local ctrl = IsControlKeyDown
+    IsControlKeyDown = function() return true end
+    ns.Window.SetScope("character")
+    NextFrame()
+    dragTo("Tabbed", general)
+    IsControlKeyDown = ctrl
+    local copy = GetMacroIndexByName("Tabbed 2")
+    check("tabs: dropped on General with Ctrl: copied there, the macro stays", copy > 0 and copy <= ns.MAX_GENERAL
+        and GetMacroIndexByName("Tabbed") > ns.MAX_GENERAL)
+    ns.Window.SetScope("general")
+    NextFrame()
+    dragTo("Tabbed 2", general)
+    check("tabs: dropped on its own tab: nothing, it says why", GetMacroIndexByName("Tabbed 2") == copy
+        and printed[#printed]:find("It is in this tab already.", 1, true) ~= nil, printed[#printed])
+    DeleteMacro(GetMacroIndexByName("Tabbed 2"))
+    DeleteMacro(GetMacroIndexByName("Tabbed"))
+    Send("UPDATE_MACROS")
+end
+
 -- Drag to an action bar: list rows and the header icon put the macro on the cursor.
 do
     local row
     for _, o in ipairs(created) do if o.kind == "Button" and o.index == 1 and o.scripts.OnDragStart then row = o end end
     Fire(row, "OnDragStart")
     check("dragging a row picks up its macro", picked == 1, picked)
+    Fire(row, "OnDragStop") -- let go over an action bar: the game takes it
     picked = nil
     ns.Window.Select(1)
     Fire(MacroSenseIconButton, "OnDragStart")
@@ -7183,6 +7230,23 @@ do
         and ns.Window.dragging == stored)
     Fire(stored, "OnDragStop")
     check("editor, sets: dropped: it is gone from the mouse", not ghost():IsShown() and ns.Window.dragging == nil)
+    -- Behind the scenes onto the tabs: General takes it (a copy with Ctrl), Character doesn't (it is its already).
+    said = {}
+    ns.Say = function(text) said[#said + 1] = text end
+    ns.Window.DropOnTab(listRow("stored", "Dragged"), "character", false)
+    check("editor, sets: behind the scenes onto Character: no, it says why", inSet("character", "Dragged")
+        and heard(said, "It is this character's already"), said[1])
+    ns.Window.DropOnTab(listRow("stored", "Dragged"), "general", true)
+    local onGeneral
+    for index = 1, ns.MAX_GENERAL do
+        if (GetMacroInfo(index) or ""):find("^Dragged") then onGeneral = index end
+    end
+    check("editor, sets: behind the scenes onto General with Ctrl: copied there, it stays", onGeneral
+        and onGeneral <= ns.MAX_GENERAL and inSet("character", "Dragged"))
+    DeleteMacro(onGeneral)
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("character")
+    ns.Say = oldSay
     -- Ctrl held when the drag began, let go before the drop: still a copy, and it says so.
     said = {}
     ns.Say = function(text) said[#said + 1] = text end

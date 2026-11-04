@@ -260,6 +260,9 @@ local function Sections()
                 { L["Ctrl"], L["Hold Ctrl when you start dragging or when you let go, and the macro is copied "
                     .. "instead of moved."] },
                 { L["Action bars"], L["A macro in the game can still be dragged onto an action bar."] },
+                { L["Tabs"], L["Drag a macro onto the General or Character tab to move it there, or with Ctrl to "
+                    .. "copy it. A macro behind the scenes goes onto General only: it is this character's already. "
+                    .. "This works with macro sets off too."] },
             } },
             { "h", L["Names"] },
             { "list", {
