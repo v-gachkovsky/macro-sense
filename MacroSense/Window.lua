@@ -2376,7 +2376,7 @@ local function Build()
     -- Over it: macro sets on or off (turning them on asks, and tells what they are), and "Sort by spells".
     setsCheck = ns.Check(side, L["Macro sets"], function() return ns.Sets.Mine().enabled end, function(on)
         if on then return ns.SetsWindow.Open() end
-        ns.Sets.Disable()
+        ns.SetsWindow.AskOff()
     end)
     setsCheck:SetPoint("BOTTOMLEFT", 8, 94)
     setsCheck:HookScript("OnEnter", function(self)

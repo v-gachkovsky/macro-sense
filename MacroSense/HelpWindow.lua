@@ -279,8 +279,9 @@ local function Sections()
                     .. "all, to this character's. You see every move first. It works once MacroSense knows the "
                     .. "spells of every specialization: choose each of them at least once."] },
                 { L["Deleted"], L["A macro deleted behind the scenes goes to the trash, like any other."] },
-                { L["Turned off"], L["Clear \"Macro sets\", and the macros in the game stay as they are. The sets "
-                    .. "are kept: turn them on again, and everything is where you left it."] },
+                { L["Turned off"], L["Clear \"Macro sets\", and the macros behind the scenes come into the game, as "
+                    .. "many as there are free slots, so you have them all. The sets are kept: turn them on again, "
+                    .. "and those macros go back where they were, with what you changed in them meanwhile."] },
                 { L["A backup"], L["Each time you turn the sets on, MacroSense first makes a backup of your "
                     .. "macros."] },
             } },

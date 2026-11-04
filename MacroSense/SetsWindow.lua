@@ -40,6 +40,39 @@ StaticPopupDialogs.MACROSENSE_SETS_SORT = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
+StaticPopupDialogs.MACROSENSE_SETS_OFF = {
+    text = "Turn off macro sets?\n\n%s",
+    button1 = "Turn off", button2 = "Cancel",
+    OnAccept = function() ns.Window.Told(ns.Sets.Disable()) end,
+    OnHide = function() ns.Window.SetsChanged() end,
+    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
+}
+
+-- "Macro sets" cleared: what comes into the game told first, then turned off (at once when nothing is behind the
+-- scenes).
+function SetsWindow.AskOff()
+    local bring, left = ns.Sets.OffPlan()
+    if #bring == 0 and #left == 0 then return ns.Window.Told(ns.Sets.Disable()) end
+    local lines = {}
+    if #bring > 0 then
+        lines[#lines + 1] = string.format(L["%d macros behind the scenes come into the game, so you have them all "
+            .. "here. When you turn the sets on again, they go back where they were."], #bring)
+    end
+    if #left > 0 then
+        local names = {}
+        for i, x in ipairs(left) do
+            if i > MAX_LISTED then
+                names[#names + 1] = string.format(L["and %d more"], #left - MAX_LISTED)
+                break
+            end
+            names[#names + 1] = x.name
+        end
+        lines[#lines + 1] = string.format(L["%d don't fit (no free slot, or a macro of the same name is in the game "
+            .. "already) and stay kept for later: %s."], #left, table.concat(names, ", "))
+    end
+    ns.Ask("MACROSENSE_SETS_OFF", table.concat(lines, "\n\n"))
+end
+
 function SetsWindow.Sort()
     local moves = ns.Sets.SortPlan()
     if #moves == 0 then return ns.Print("nothing to move: each macro is where its spells are") end
@@ -107,8 +140,8 @@ local function Build()
     cancel:SetPoint("LEFT", onBtn, "RIGHT", 10, 0)
     onNote = ns.Text(frame, 12, "dim")
     onNote:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2 + 4)
-    onNote:SetText(L["Macro sets are on. Clear \"Macro sets\" to turn them off: the macros in the game stay as "
-        .. "they are, and the sets are kept for later."])
+    onNote:SetText(L["Macro sets are on. Clear \"Macro sets\" to turn them off: the macros behind the scenes "
+        .. "come into the game, and go back when you turn the sets on again."])
     -- All of it, in detail: the guide's section (in a lower layer: this one closes first).
     local how = ns.Button(frame, L["How it works"], 140, function()
         frame:Hide()
