@@ -22,6 +22,7 @@ ns.Window = Window
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
 local side -- the sidebar: wider with macro sets on, for the Character tab's count of those behind the scenes
+local sideRows -- its buttons at the bottom, by row: they share its width
 local barInside -- the status bar's part not under the window's border: what it shows is centered in it
 local NATIVE_EDGE_COVERS = 6 -- how much of the status bar the game's window border covers (the In-game scheme)
 local shortenBtn, historyBtn, wizardEditBtn, search, noMatch, barsCheck, altHint
@@ -930,9 +931,17 @@ local function BehindCount()
     return count
 end
 
+-- The sidebar `width` wide, its buttons at the bottom sharing it (6 px apart, 8 from its edges).
+function Window.SideWidth(width)
+    side:SetWidth(width)
+    for _, row in ipairs(sideRows or {}) do
+        for _, b in ipairs(row) do b:SetWidth((width - 16 - 6 * (#row - 1)) / #row) end
+    end
+end
+
 function Window.RefreshList()
     if not frame then return end
-    side:SetWidth(ns.Sets.Mine().enabled and 280 or 220)
+    Window.SideWidth(ns.Sets.Mine().enabled and 280 or 220)
     local q = Query()
     local first, last = MacroRange(state.scope)
     local n = 0
@@ -1934,6 +1943,7 @@ local function Build()
     -- The wizard next to it: a new macro from questions or a form, in a window of its own.
     local wizardBtn = ns.Button(side, L["New (Wizard)"], 99, function() ns.WizardWindow.Toggle(state.scope) end)
     wizardBtn:SetPoint("BOTTOMRIGHT", -8, 36)
+    sideRows = { { shareBtn, trashBtn, backupsBtn }, { newBtn, wizardBtn } }
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["New (Wizard)"], 1, 1, 1)
