@@ -335,6 +335,7 @@ ns.locales.uk = {
     ["It is on the bars of %s too."] = "Він є і на панелях: %s.",
     ["It is on the bars of %s."] = "Він є на панелях: %s.",
     ["Specialization %d"] = "Спеціалізація %d",
+    ["No specialization yet"] = "Ще без спеціалізації",
     ["(full)"] = "(заповнена)",
     ["The %s tab is full."] = "Вкладка «%s» заповнена.",
     ["Makes a copy in this tab with the text from the editor, named like \"Fear 2\". The macro you copy keeps its "

@@ -5261,6 +5261,30 @@ do
     check("move: not in combat", GetMacroIndexByName("Bar A") > SLOTS.MAX_ACCOUNT_MACROS
         and printed[#printed]:find("cannot be changed in combat", 1, true) ~= nil)
 
+    -- Before level 10 the game gives a specialization of its own, with no name: it gets one.
+    local info = Spec.GetSpecializationInfo
+    Spec.GetSpecializationInfo = function(i) if i == 5 then return 1454, "" end return info(i) end
+    spec = 5
+    local key, label = ns.ActionBars.Spec()
+    local starter
+    for _, x in ipairs(ns.Sets.Specs()) do if x.key == "spec1454" then starter = x end end
+    check("specialization: none yet, named so", key == "spec1454" and label == "No specialization yet"
+        and starter and starter.now and starter.label == "No specialization yet", label)
+    -- Chosen one later: its set, empty, is not listed; with macros it is, by that name.
+    spec = 1
+    ns.Sets.Mine().specs.spec1454 = {}
+    local listed = false
+    for _, x in ipairs(ns.Sets.Specs()) do listed = listed or x.key == "spec1454" end
+    check("specialization: none yet, empty: not listed", not listed)
+    ns.Character().bars.spec1454 = { label = "", names = {} }
+    ns.Sets.Mine().specs.spec1454 = { { name = "Early", icon = 1, body = "/say hi" } }
+    starter = nil
+    for _, x in ipairs(ns.Sets.Specs()) do if x.key == "spec1454" then starter = x end end
+    check("specialization: none yet, with macros: listed by name", starter
+        and starter.label == "No specialization yet" and not starter.now)
+    ns.Sets.Mine().specs.spec1454, ns.Character().bars.spec1454 = nil, nil
+    Spec.GetSpecializationInfo = info
+
     -- The Classic clients keep bars for each talent group, whatever specialization it has.
     C_ClassTalents = nil
     spec = 1

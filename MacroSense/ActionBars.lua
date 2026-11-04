@@ -51,7 +51,8 @@ local function OnBarsNow()
 end
 
 -- The specialization the bars are of now: a key and its name. Retail and WoW Forever keep bars for each
--- specialization, the Classic clients for each talent group (dual specialization).
+-- specialization, the Classic clients for each talent group (dual specialization). Before level 10 the game gives
+-- a specialization of its own with no name.
 local function Spec()
     local S = C_SpecializationInfo or {}
     local group = S.GetActiveSpecGroup and S.GetActiveSpecGroup() or 1
@@ -59,6 +60,7 @@ local function Spec()
     local id, name
     if index and index > 0 and S.GetSpecializationInfo then id, name = S.GetSpecializationInfo(index) end
     local key = C_ClassTalents and id and id ~= 0 and ("spec" .. id) or ("group" .. group)
+    if id and id ~= 0 and (name or "") == "" then name = ns.L["No specialization yet"] end
     return key, name or string.format(ns.L["Specialization %d"], group)
 end
 ActionBars.Spec = Spec
