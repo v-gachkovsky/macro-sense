@@ -1,6 +1,5 @@
 -- Macro sets, what they are: a window that tells it, and turns them on (the check box "Macro sets" in the editor
--- asks with it). Also "Sort by spells", and taking a macro into the game out of the specializations, each asked
--- first. The sets themselves are in the editor's list (Window.lua); the logic is Sets.lua.
+-- asks with it). Also "Sort by spells", asked first. The sets themselves are in the editor's list (Window.lua); the logic is Sets.lua.
 local _, ns = ...
 local L = ns.L
 
@@ -40,14 +39,6 @@ StaticPopupDialogs.MACROSENSE_SETS_SORT = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
-StaticPopupDialogs.MACROSENSE_SETS_TAKE_HOME = {
-    text = "\"%s\" is in these specializations: %s.\n\nTake it into the game here? It leaves them, and is in the "
-        .. "game in every specialization.",
-    button1 = "Take in", button2 = "Cancel",
-    OnAccept = function(_, name) ns.Window.Told(ns.Sets.TakeHome(name)) end,
-    timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
-}
-
 function SetsWindow.Sort()
     local moves = ns.Sets.SortPlan()
     if #moves == 0 then return ns.Print("nothing to move: each macro is where its spells are") end
@@ -61,13 +52,6 @@ function SetsWindow.Sort()
             SetsWindow.Label(move.to))
     end
     ns.Ask("MACROSENSE_SETS_SORT", table.concat(lines, "\n"), nil, moves)
-end
-
--- The character's macro `name`, that specializations have: asked, then taken into the game out of them.
-function SetsWindow.TakeHome(name)
-    local labels = {}
-    for _, key in ipairs(ns.Sets.HeldIn(name)) do labels[#labels + 1] = SetsWindow.Label(key) end
-    ns.Ask("MACROSENSE_SETS_TAKE_HOME", name, table.concat(labels, ", "), name)
 end
 
 local function Build()

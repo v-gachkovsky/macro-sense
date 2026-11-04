@@ -1687,10 +1687,6 @@ ns.locales.uk = {
     ["The macros of the specialization chosen now."] = "Макроси спеціалізації, вибраної зараз.",
     ["Behind the scenes: not in the game now, and on no slot."] = "За лаштунками: зараз не в грі й не займає слота.",
     ["a macro of this name is behind the scenes already"] = "за лаштунками вже є макрос із такою назвою",
-    ["\"%s\" is in these specializations: %s.\n\nTake it into the game here? It leaves them, and is in the game in "
-        .. "every specialization."] =
-        "«%s» є в цих спеціалізаціях: %s.\n\nВзяти його в гру тут? Він зникне з них і буде в грі в усіх "
-        .. "спеціалізаціях.",
     ["Works in every specialization: it could go to \"Class macros\""] =
         "Працює в усіх спеціалізаціях: його можна перенести в «Класові»",
     ["It can sort once it knows the spells of every specialization: choose each of them at least once."] =
@@ -1718,10 +1714,6 @@ ns.locales.uk = {
     ["\"%s\" has a macro of this name already"] = "у «%s» уже є макрос із такою назвою",
     ["a macro of this name is in the game already"] = "макрос із такою назвою вже є в грі",
     ["copied to \"%s\""] = "скопійовано в «%s»",
-    ["copied to \"%s\": this character's one waits behind the scenes while a specialization has it"] =
-        "скопійовано в «%s»: макрос «Цього персонажа» чекатиме за лаштунками, поки він є в якійсь спеціалізації",
-    ["only a specialization takes a copy, and not of a class macro"] =
-        "копію можна покласти лише в спеціалізацію, і не з класових макросів",
-    ["a specialization has this macro: it comes into the game from there"] =
-        "цей макрос є в спеціалізації: у гру він виходить звідти",
+    ["it waits behind the scenes: a macro of this name is in the game"] =
+        "макрос чекає за лаштунками: у грі вже є макрос із такою назвою",
 }

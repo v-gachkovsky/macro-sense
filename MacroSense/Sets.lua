@@ -117,22 +117,15 @@ end
 
 -- The macros in the slots changed (by you, or on this character): each layer follows. A text or icon changed here
 -- is kept in its layer (one not changed here leaves the layer's as it is); a renamed macro keeps its layer under
--- the new name. A specialization's in the slots has the character's of its name behind the scenes as its own:
--- renamed or changed, that one is too (another specialization's of that name is a macro of its own, and stays). A
--- deleted one leaves its layer; a new one joins the character's. `before` and `after`: name -> { body, icon };
+-- the new name; another set's of the same name is a macro of its own, and stays as it is. A deleted one leaves its
+-- layer; a new one joins the character's. `before` and `after`: name -> { body, icon };
 -- `layer` as of before. Returns the renamed: old -> new.
 function Sets.Follow(before, after, layer, lists)
     local renamed, deleted = ns.History.Gone(before, after)
     local function listOf(name) return lists[layer[name] or "character"] end
-    -- The character's one behind the scenes of a specialization's macro.
-    local function home(name)
-        local m = layer[name] == "spec" and Find(lists.character, name)
-        return m and m.parked and m or nil
-    end
     for old, new in pairs(renamed) do
-        local m, own = Find(listOf(old), old), home(old)
+        local m = Find(listOf(old), old)
         if m then m.name = new end
-        if own and not Find(lists.character, new) then own.name = new end
         layer[new], layer[old] = layer[old], nil
     end
     for _, name in ipairs(deleted) do
@@ -148,11 +141,7 @@ function Sets.Follow(before, after, layer, lists)
         -- Not changed here, the layer's stays: it may be newer (a class macro changed on another character).
         local changed = not was or was.body ~= m.body or was.icon ~= m.icon
         if kept then
-            if changed then
-                kept.body, kept.icon = m.body, m.icon
-                local own = home(name)
-                if own then own.body, own.icon = m.body, m.icon end
-            end
+            if changed then kept.body, kept.icon = m.body, m.icon end
         elseif not was then -- new here (one gone from its layer elsewhere is not brought back)
             list[#list + 1] = { name = name, icon = m.icon, body = m.body }
             layer[name] = layer[name] or "character"
@@ -211,18 +200,15 @@ end
 function Sets.Sort(character, specs, spells, class, keys)
     if #keys < 2 then return {} end
     local out = {}
-    local function add(name, from, to)
-        if to == "character" or not Find(specs[to] or {}, name) then
-            out[#out + 1] = { name = name, from = from, to = to }
+    local function add(m, from, to)
+        local there = Find(to == "character" and character or specs[to] or {}, m.name)
+        if not there or (to == "character" and there.body == m.body) then
+            out[#out + 1] = { name = m.name, from = from, to = to }
         end
     end
-    local held = {}
-    for _, list in pairs(specs) do
-        for _, m in ipairs(list) do held[m.name] = true end
-    end
     for _, m in ipairs(character) do
-        local works = not held[m.name] and Sets.WorksIn(m.body, spells, class, keys)
-        if works and #works == 1 then add(m.name, "character", works[1]) end
+        local works = Sets.WorksIn(m.body, spells, class, keys)
+        if works and #works == 1 then add(m, "character", works[1]) end
     end
     for _, key in ipairs(keys) do
         for _, m in ipairs(specs[key] or {}) do
@@ -232,9 +218,9 @@ function Sets.Sort(character, specs, spells, class, keys)
                 for _, other in ipairs(keys) do
                     if other ~= key and Find(specs[other] or {}, m.name) then twin = true end
                 end
-                if not twin then add(m.name, key, "character") end
+                if not twin then add(m, key, "character") end
             elseif works and #works == 1 and works[1] ~= key then
-                add(m.name, key, works[1])
+                add(m, key, works[1])
             end
         end
     end
@@ -669,16 +655,12 @@ end
 -- one in the slots that the specialization's set has is that set's, the character's of its name behind the scenes;
 -- one with the text of the class's is the class's.
 local function Mend(sets)
-    local spec, class = SpecList(sets, sets.active), ClassList()
+    local class = ClassList()
     for _, m in ipairs(InSlots()) do
         if (sets.layer[m.name] or "character") == "character" then
-            local home, i = Find(sets.character, m.name)
-            local own, theirs = Find(spec, m.name), Find(class, m.name)
-            if own and not own.parked then
-                sets.layer[m.name] = "spec"
-                own.body, own.icon = m.body, m.icon
-                if home then home.parked = true end
-            elseif theirs and theirs.body == m.body and i then
+            local _, i = Find(sets.character, m.name)
+            local theirs = Find(class, m.name)
+            if theirs and theirs.body == m.body and i then
                 table.remove(sets.character, i)
                 sets.layer[m.name] = "class"
                 sets.classParked[m.name] = nil
@@ -772,19 +754,16 @@ local function SetParked(sets, id, m, on)
 end
 local function Room() return ns.MAX_CHARACTER - #InSlots() end
 
--- Macro `name` of set `from` into set `to`, or a copy of it (`copy`: into a specialization, from another or from the
--- character's; the character's keeps it then, behind the scenes while a specialization has it). It stays in the
--- slots, leaves them or comes in, as its new set is; with no free slot it waits behind the scenes. Returns true (and
--- "waits" then), or false and why: "name" (the set has a macro of that name), "together", "combat". Out of a
--- specialization into the character's is Sets.Release.
+-- Macro `name` of set `from` into set `to`, or a copy of it (`copy`): a macro of its own there, and the one in
+-- `from` stays as it is. It stays in the slots, leaves them or comes in, as its new set is; with no free slot, or
+-- with its name in the game already (a copy), it waits behind the scenes. Returns true (and "waits" or "twin"
+-- then), or false and why: "name" (the set has a macro of that name), "combat". Moved into the character's, it is
+-- Sets.Release.
 function Sets.MoveTo(from, name, to, copy)
     local sets = Sets.Mine()
     if not sets.enabled or from == to then return false end
     if InCombatLockdown() then return false, "combat" end
-    if copy and (from == "class" or LayerOfSet(to) ~= "spec") then return false, "together" end
-    if to == "character" and LayerOfSet(from) == "spec" then return Sets.Release(from, name) end
-    -- Copied into a specialization from the character's: the character's keeps it, behind the scenes.
-    local home = copy and from == "character"
+    if to == "character" and not copy then return Sets.Release(from, name) end
     Sets.Scan()
     local source, target = ListOf(sets, from), ListOf(sets, to)
     local m, i = Find(source, name)
@@ -794,9 +773,7 @@ function Sets.MoveTo(from, name, to, copy)
     local wasIn = InGame(sets, from) and not parked and Index(name) ~= nil
     local waits
     Run(function()
-        if home then
-            m.parked = true
-        elseif not copy then
+        if not copy then
             table.remove(source, i)
             if from == "class" then sets.classParked[name] = nil end
         end
@@ -805,7 +782,7 @@ function Sets.MoveTo(from, name, to, copy)
         SetParked(sets, to, entry, parked)
         local willBe = InGame(sets, to) and not parked
         sets.layer = sets.layer or {}
-        if wasIn and (not copy or home) then
+        if wasIn and not copy then
             if willBe then
                 sets.layer[name] = LayerOfSet(to)
             else
@@ -813,17 +790,20 @@ function Sets.MoveTo(from, name, to, copy)
                 sets.layer[name] = nil
             end
         elseif willBe then
-            if Room() > 0 and not Index(name) then
+            if Index(name) then
+                SetParked(sets, to, entry, true)
+                waits = "twin"
+            elseif Room() > 0 then
                 Make(entry, LayerOfSet(to))
                 sets.layer[name] = LayerOfSet(to)
             else
                 SetParked(sets, to, entry, true)
-                waits = true
+                waits = "waits"
             end
         end
     end)
     Log("%s %s: %s -> %s", copy and "copied" or "moved", name, from, to)
-    return true, waits and "waits" or nil
+    return true, waits
 end
 
 -- A macro in the slots into another layer (`to`: "class", "character", "spec"). Its place in the slots stays.
@@ -839,42 +819,9 @@ function Sets.Move(name, to)
     return (Sets.MoveTo(id(from), name, id(to)))
 end
 
--- Whether a specialization's set has a macro of this name.
-local function Held(sets, name)
-    for _, list in pairs(sets.specs) do
-        if Find(list, name) then return true end
-    end
-    return false
-end
--- The specializations whose sets have a macro of this name: their keys, the one now last.
-function Sets.HeldIn(name)
-    local sets = Sets.Mine()
-    local keys, now = {}, false
-    for key, list in pairs(sets.specs) do
-        if Find(list, name) then
-            if key == sets.active then now = true else keys[#keys + 1] = key end
-        end
-    end
-    table.sort(keys)
-    if now then keys[#keys + 1] = sets.active end
-    return keys
-end
-
--- The character's macro `name` into the game, taken out of every specialization that has it ("Remove" from each,
--- the one now last: its macro in the game stays there, on its buttons). Returns as Sets.Release does.
-function Sets.TakeHome(name)
-    local sets = Sets.Mine()
-    if not sets.enabled then return false end
-    if InCombatLockdown() then return false, "combat" end
-    local ok, why = true, nil
-    for _, key in ipairs(Sets.HeldIn(name)) do ok, why = Sets.Release(key, name) end
-    return ok, why
-end
-
--- Macro `name` of set `id` back into this character's, the home of every macro: it leaves the set, and is kept
--- there (its own copy there stays as it is). While a specialization still has it, it stays behind the scenes
--- there; out of the last, it comes into the game, with the text it had in the game if it was. False and "combat"
--- in combat.
+-- Macro `name` of set `id` back into this character's ("Remove"): it leaves the set, and is the character's, in the
+-- game if it was there (or comes in, with a free slot and its name free there). The character's has one of that name
+-- already: the same, and this one just leaves it; another, false and "name". False and "combat" in combat.
 function Sets.Release(id, name)
     local sets = Sets.Mine()
     if not sets.enabled or id == "character" then return false end
@@ -883,41 +830,40 @@ function Sets.Release(id, name)
     local source = ListOf(sets, id)
     local m, i = Find(source, name)
     if not m then return false end
+    local same = Find(sets.character, name)
+    if same and (same.body ~= m.body or same.icon ~= m.icon) then return false, "name" end
     local wasIn = InGame(sets, id) and not Parked(sets, id, m) and Index(name) ~= nil
     local waits
     Run(function()
         table.remove(source, i)
         if id == "class" then sets.classParked[name] = nil end
-        local home = Find(sets.character, name)
-        if not home then
-            home = { name = m.name, icon = m.icon, body = m.body }
-            sets.character[#sets.character + 1] = home
+        local entry = same
+        if not entry then
+            entry = { name = m.name, icon = m.icon, body = m.body }
+            sets.character[#sets.character + 1] = entry
         end
         sets.layer = sets.layer or {}
-        if Held(sets, name) then
-            home.parked = true
-            if wasIn then
-                Remove(name)
-                sets.layer[name] = nil
-            end
-        elseif wasIn then
-            home.parked, home.icon, home.body = nil, m.icon, m.body
+        if wasIn then
+            entry.parked = nil
             sets.layer[name] = "character"
-        elseif not Index(name) and Room() > 0 then
-            home.parked = nil
-            Make(home, "character")
+        elseif same and not same.parked then
+            return -- in the game already
+        elseif Index(name) then
+            entry.parked, waits = true, "twin"
+        elseif Room() > 0 then
+            entry.parked = nil
+            Make(entry, "character")
             sets.layer[name] = "character"
         else
-            home.parked, waits = true, true
+            entry.parked, waits = true, "waits"
         end
     end)
     Log("released %s from %s", name, id)
-    return true, waits and "waits" or nil
+    return true, waits
 end
 
 -- Macro `name` of set `id` behind the scenes (`on`), or back. Back into the game it needs a free slot and its name
--- free there, else false and why: "room", "name" ("combat" in combat); the character's, one no specialization has
--- ("held"). A specialization not chosen now only remembers it: its macro comes in with it, or doesn't.
+-- free there, else false and why: "room", "name" ("combat" in combat). A specialization not chosen now only remembers it: its macro comes in with it, or doesn't.
 function Sets.Park(id, name, on)
     local sets = Sets.Mine()
     if not sets.enabled then return false end
@@ -927,7 +873,6 @@ function Sets.Park(id, name, on)
     if not m then return false end
     on = on and true or false
     if on == Parked(sets, id, m) then return true end
-    if not on and id == "character" and Held(sets, name) then return false, "held" end
     if not on and InGame(sets, id) then
         if Index(name) then return false, "name" end
         if Room() <= 0 then return false, "room" end
@@ -1009,12 +954,10 @@ function Sets.Place(from, name, to, inGame, copy)
     local ok, why = true, nil
     if from ~= to then
         ok, why = Sets.MoveTo(from, name, to, copy)
-        if not ok then return ok, why end
+        if not ok or why then return ok, why end
     end
     if not InGame(sets, to) then inGame = true end
-    local parked, waits = Sets.Park(to, name, not inGame)
-    if why == "waits" and parked then return true, "waits" end
-    return parked, waits
+    return Sets.Park(to, name, not inGame)
 end
 
 -- Macro `name` of set `id` deleted, behind the scenes: into the trash, as one deleted in the game.
@@ -1111,7 +1054,7 @@ function Sets.Note(id, m)
         local keys = Visited(sets)
         local works = #keys >= 2 and Sets.WorksIn(m.body, spells, class, keys)
         local all = works and #works == #keys and #select(2, Visited(sets)) == 0
-        if all and not Held(sets, m.name) then
+        if all then
             return ns.L["Works in every specialization: it could go to \"Class macros\""], "hint"
         end
         if works and #works == 1 then
