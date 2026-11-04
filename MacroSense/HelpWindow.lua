@@ -35,6 +35,7 @@ end
 
 -- The sections: a title, then blocks in order.
 --   { "p", text }                    a paragraph
+--   { "h", text }                    a heading within the section
 --   { "code", macro, name? }         a macro, colored; with a name, a Create button makes it under that name
 --   { "rows", { { left, right } } }  two columns: a word of a macro and what it means
 --   { "list", { { head, text } } }   two columns: a short heading and its words
@@ -206,6 +207,82 @@ local function Sections()
             } },
             { "p", L["Tab or Enter takes the highlighted one, Up and Down move through the list, Esc closes it."] },
         } },
+        { L["Macro sets"], {
+            { "p", L["A character has only 30 macro slots. Macro sets let MacroSense keep more macros than that: "
+                .. "each specialization gets macros of its own, and only the ones you need now are in the game. "
+                .. "Turn them on with \"Macro sets\". They are off until you do."] },
+            { "h", L["Three kinds of sets"] },
+            { "list", {
+                { L["Class macros"], L["The same on all your characters of one class. Change one, and your other "
+                    .. "characters of that class get the change too. They are in the game in every "
+                    .. "specialization."] },
+                { L["This character's"], L["This character's own. They are in the game in every specialization. "
+                    .. "When the sets are first turned on, all your character macros are here."] },
+                { L["A specialization"], L["Its macros are in the game only while it is chosen. Choose another, and "
+                    .. "they wait behind the scenes, while that one's come into the game, onto the same buttons "
+                    .. "they had on your action bars."] },
+            } },
+            { "h", L["In the game and behind the scenes"] },
+            { "p", L["With the sets on, the list of character macros has two parts. \"In the game\" holds the "
+                .. "macros in your slots right now: they are on your action bars and work. \"Behind the scenes\" "
+                .. "holds the macros MacroSense keeps for you: they take no slot. You can open, change, make and "
+                .. "delete them there like any other macro."] },
+            { "p", L["Class macros are marked yellow, the specialization chosen now green, and all that is behind "
+                .. "the scenes red. The groups open and close with a click."] },
+            { "h", L["What you can do with a macro"] },
+            { "p", L["Press \"...\" by a macro's name, or right-click it:"] },
+            { "list", {
+                { L["Put away"], L["The macro leaves the game and waits behind the scenes, in its own set. Its slot "
+                    .. "is free for another."] },
+                { L["Take in"], L["The macro comes back into the game. It needs a free slot, and no other macro of "
+                    .. "the same name in the game. In a specialization not chosen now, it is only marked: it comes "
+                    .. "into the game with that specialization."] },
+                { L["Move to"], L["The macro goes to another set and leaves this one. If it was in the game and the "
+                    .. "new set is in the game too, it stays where it is, on its buttons. Moved to a specialization "
+                    .. "not chosen now, it leaves the game until you choose it."] },
+                { L["Copy to"], L["A copy goes to another set, and the macro itself stays as it is. From then on "
+                    .. "they are two separate macros: change or rename one, and the other stays as it was."] },
+                { L["Remove"], L["The macro leaves its set and goes back to this character's. If this character's "
+                    .. "already has the very same macro, the extra one simply goes. If it has a different macro of "
+                    .. "the same name, nothing happens: rename one of them first."] },
+            } },
+            { "h", L["Dragging"] },
+            { "list", {
+                { L["Drag"], L["Drag a macro onto any part of the list to move it there. Onto \"Behind the "
+                    .. "scenes\", and it waits there. Onto \"In the game\", and it becomes this character's and "
+                    .. "comes into the game. Onto a group, and it goes to that set, in the game or behind the "
+                    .. "scenes, as that part of the list is."] },
+                { L["Ctrl"], L["Hold Ctrl when you start dragging or when you let go, and the macro is copied "
+                    .. "instead of moved."] },
+                { L["Action bars"], L["A macro in the game can still be dragged onto an action bar."] },
+            } },
+            { "h", L["Names"] },
+            { "list", {
+                { L["One in the game"], L["The game tells macros apart by their names, so only one macro of a "
+                    .. "name can be in the game at a time. A macro whose name is taken waits behind the scenes, "
+                    .. "and MacroSense says so in the chat."] },
+                { L["In different sets"], L["Each set may have a macro of the same name. Two specializations' "
+                    .. "come in each with its own specialization, onto its own buttons. If a class macro or one of "
+                    .. "this character's of that name is in the game, the specialization's waits."] },
+                { L["Renaming"], L["Renaming or changing a macro changes only that one: its copies in other sets "
+                    .. "stay as they are."] },
+            } },
+            { "h", L["Good to know"] },
+            { "list", {
+                { L["No free slot"], L["A macro that should come into the game but finds no free slot waits "
+                    .. "behind the scenes. Put another one away to make room. \"New\" with no free slot makes the "
+                    .. "macro behind the scenes, in this character's."] },
+                { L["Sort by spells"], L["MacroSense looks at the spells each macro casts and offers to move it: "
+                    .. "one that works in one specialization only, to that one; a specialization's that works in "
+                    .. "all, to this character's. You see every move first. It works once MacroSense knows the "
+                    .. "spells of every specialization: choose each of them at least once."] },
+                { L["Deleted"], L["A macro deleted behind the scenes goes to the trash, like any other."] },
+                { L["Turned off"], L["Clear \"Macro sets\", and the macros in the game stay as they are. The sets "
+                    .. "are kept: turn them on again, and everything is where you left it."] },
+                { L["A backup"], L["Each time you turn the sets on, MacroSense first makes a backup of your "
+                    .. "macros."] },
+            } },
+        } },
         { L["Practice"], {
             { "p", L["A few tasks with your own spells. Write each macro in the editor: press \"New\" there, write "
                 .. "it, then press \"Check\" here. \"Answer\" shows one way to write it."] },
@@ -249,7 +326,14 @@ local function BuildSection(i, section)
     end
     for _, b in ipairs(section[2]) do
         local kind = b[1]
-        if kind == "p" then
+        if kind == "h" then
+            local fs = ns.Text(f, 14, "accent")
+            fs:SetWidth(TEXT_W)
+            fs:SetWordWrap(true)
+            fs:SetText(b[2])
+            y = y - 6
+            place(fs, Height(fs), 8)
+        elseif kind == "p" then
             local fs = ns.Text(f, 13)
             fs:SetWidth(TEXT_W)
             fs:SetWordWrap(true)
@@ -434,6 +518,14 @@ function HelpWindow.Open(section)
     frame:Show()
     frame:Raise()
     Show(section or current or 1)
+end
+
+-- Opened on the section of this title.
+function HelpWindow.OpenOn(title)
+    for i, s in ipairs(Sections()) do
+        if s[1] == title then return HelpWindow.Open(i) end
+    end
+    HelpWindow.Open()
 end
 
 function HelpWindow.Toggle()

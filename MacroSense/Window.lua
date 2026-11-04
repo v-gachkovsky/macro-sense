@@ -1009,7 +1009,6 @@ local function SetsItems(r)
     if not m then return items end
     local parked = Sets.IsParked(id, m)
     items[#items + 1] = { name = parked and L["Take in"] or L["Put away"], onClick = function()
-        if parked and id == "character" and #Sets.HeldIn(name) > 0 then return ns.SetsWindow.TakeHome(name) end
         Window.Told(Sets.Park(id, name, not parked))
     end }
     local sets = { { id = "class" }, { id = "character" } }
@@ -1025,7 +1024,7 @@ local function SetsItems(r)
     end
     for _, set in ipairs(sets) do
         local label = ns.SetsWindow.Label(set.id)
-        if set.spec and set.id ~= id and id ~= "class" then
+        if set.id ~= id then
             items[#items + 1] = { name = string.format(L["Copy to: %s"], label), onClick = function()
                 local ok, why = Sets.MoveTo(id, name, set.id, true)
                 Window.Told(ok, why, label)
@@ -1033,7 +1032,10 @@ local function SetsItems(r)
         end
     end
     if id ~= "character" then
-        items[#items + 1] = { name = L["Remove"], onClick = function() Window.Told(Sets.Release(id, name)) end }
+        items[#items + 1] = { name = L["Remove"], onClick = function()
+            local ok, why = Sets.Release(id, name)
+            Window.Told(ok, why, ns.SetsWindow.Label("character"))
+        end }
     end
     return items
 end
@@ -1043,13 +1045,12 @@ function Window.OpenSetsMenu(owner, r) ns.OpenMenu(owner, SetsItems(r), 200, fal
 -- What a change of the sets said when it was not done as asked, in the chat; `label`: the set it went to.
 function Window.Told(ok, why, label)
     if ok and why == "waits" then return ns.Print("it waits behind the scenes: there is no free slot") end
+    if ok and why == "twin" then return ns.Print("it waits behind the scenes: a macro of this name is in the game") end
     if ok then return end
     if why == "room" then return ns.Print("no free slot: put another macro behind the scenes first") end
     if why == "name" and label then return ns.Print("\"%s\" has a macro of this name already", label) end
     if why == "name" then return ns.Print("a macro of this name is in the game already") end
     if why == "combat" then return ns.Print("macros cannot be changed in combat") end
-    if why == "together" then return ns.Print("only a specialization takes a copy, and not of a class macro") end
-    if why == "held" then return ns.Print("a specialization has this macro: it comes into the game from there") end
 end
 
 -- A macro behind the scenes being dragged: its icon and name by the mouse.
@@ -1084,16 +1085,9 @@ function Window.Drop(source, target, copy)
     if not target.dropId or not source.set or target == source then return end
     ClearCursor() -- a macro picked up for the action bars
     copy = copy or IsControlKeyDown()
-    -- The list is made anew by it: what the rows were, first.
-    local from, label = source.set, ns.SetsWindow.Label(target.dropId)
-    local ok, why = ns.Sets.Place(from, source.name, target.dropId, target.dropIn, copy)
-    if ok and copy and why ~= "waits" then
-        if from == "character" then
-            return ns.Print("copied to \"%s\": this character's one waits behind the scenes while a specialization "
-                .. "has it", label)
-        end
-        return ns.Print("copied to \"%s\"", label)
-    end
+    local label = ns.SetsWindow.Label(target.dropId)
+    local ok, why = ns.Sets.Place(source.set, source.name, target.dropId, target.dropIn, copy)
+    if ok and copy and not why then return ns.Print("copied to \"%s\"", label) end
     Window.Told(ok, why, label)
 end
 
