@@ -7,7 +7,8 @@ local L = ns.L
 local SetsWindow = {}
 ns.SetsWindow = SetsWindow
 
-local WIDTH, HEIGHT, PAD = 560, 395, 14
+local WIDTH, HEIGHT, PAD = 560, 360, 14
+local BELOW = 90 -- under the text: the note of three lines, or the buttons
 local MAX_LISTED = 12 -- moves listed in the question of "Sort by spells"; the rest are counted
 
 local frame, onBtn, onNote
@@ -22,12 +23,14 @@ function SetsWindow.Label(id)
     return id
 end
 
--- Turned on already: no button, it says so.
+-- Turned on already: no button, it says so. As tall as its text is in the language chosen.
+local intro
 local function Refresh()
     if not frame then return end
     local on = ns.Sets.Mine().enabled
     onBtn:SetShown(not on)
     onNote:SetShown(on)
+    frame:SetHeight(math.max(HEIGHT, 34 + PAD * 2 + math.ceil(intro:GetStringHeight()) + BELOW))
 end
 SetsWindow.Refresh = Refresh
 
@@ -237,7 +240,7 @@ local function Build()
     local close = ns.Button(bar, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
 
-    local intro = ns.Text(frame, 13)
+    intro = ns.Text(frame, 13)
     intro:SetPoint("TOPLEFT", PAD * 2, -34 - PAD * 2)
     intro:SetPoint("RIGHT", -PAD * 2, 0)
     intro:SetSpacing(4)

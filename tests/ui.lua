@@ -7538,6 +7538,7 @@ do
     local during = slots()
     ns.SetsWindow.Open()
     check("sets window: off: what they are and turning them on", ns.SetsWindow.Offers())
+    check("sets window: as tall as its text", (MacroSenseSets.height or 0) >= 360, MacroSenseSets.height)
     Fire(ns.SetsWindow.how, "OnClick")
     check("sets window: \"How it works\" opens the guide on the macro sets", ns.HelpWindow.IsShown()
         and ns.HelpWindow.Control("section") == "Macro sets")
