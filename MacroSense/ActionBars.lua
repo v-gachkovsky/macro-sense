@@ -15,6 +15,7 @@ ActionBars.TIP = "Shift + right-click: edit in MacroSense"
 local LIBRARIES = { "LibActionButton-1.0", "LibActionButton-1.0-ElvUI" }
 
 local GetActionText = C_ActionBar and C_ActionBar.GetActionText or GetActionText
+ActionBars.Text = GetActionText
 
 -- The index of the macro on action slot `slot`, or nil. For a macro that shows a spell the game gives the
 -- spell's ID, not the macro's, so the macro is found by its name, which the button shows (of two macros with
@@ -60,6 +61,7 @@ local function Spec()
     local key = C_ClassTalents and id and id ~= 0 and ("spec" .. id) or ("group" .. group)
     return key, name or string.format(ns.L["Specialization %d"], group)
 end
+ActionBars.Spec = Spec
 
 -- What is on the bars now, kept for this character's specialization. Bars with nothing at all on them are not
 -- kept: the game may not have shown them yet.
@@ -70,6 +72,7 @@ function ActionBars.Remember()
     local c = ns.Character()
     c.bars = c.bars or {}
     c.bars[key] = { label = label, names = names }
+    if ns.Sets then ns.Sets.RememberBars() end
 end
 
 -- Where macro `name` of tab `scope` is on action bars: the buttons of the bars now, and where else it was when last

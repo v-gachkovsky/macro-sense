@@ -468,9 +468,14 @@ function EditMacro(index, name, icon, body)
     m.name, m.icon, m.body = name or m.name, icon or m.icon, body or m.body
     return indexOf(m)
 end
+-- Like the game, a deleted macro leaves the action bars too.
 function DeleteMacro(index)
     local m = byIndex(index)
+    if not m then return end
     for i, x in ipairs(macros) do if x == m then table.remove(macros, i) end end
+    for slot, a in pairs(actions) do
+        if a[1] == "macro" and a.text == m.name then actions[slot] = nil end
+    end
 end
 function GetMacroIndexByName(name)
     for _, m in ipairs(macros) do if m.name == name then return indexOf(m) end end
@@ -2063,8 +2068,8 @@ do
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizard = o end
     end
-    check("copy: New and New (Wizard) in one row, the list down to it", wizard.point[1] == "BOTTOMRIGHT"
-        and wizard.point[3] == 36 and MacroSenseListScroll.point[3] == 94)
+    check("copy: New and New (Wizard) in one row, the list down to Macro sets over them", wizard.point[1] == "BOTTOMRIGHT"
+        and wizard.point[3] == 36 and MacroSenseListScroll.point[3] == 122)
     local tip = {}
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(copy, "OnEnter")
@@ -6408,6 +6413,602 @@ do
         and shown("Interface\\Buttons\\UI-CheckBox-Up") == 0 and shown("Interface\\Common\\Common-Input-Border") == 0
         and MacroSenseSearch.backdrop.edgeSize == 1)
     look(before)
+end
+
+-- Macro sets: the specialization's macros come and go with it, the buttons too; the class's stay.
+do
+    local S = ns.Sets
+    local group = 1
+    local specs = C_SpecializationInfo.GetActiveSpecGroup
+    C_SpecializationInfo.GetActiveSpecGroup = function() return group end
+    local function has(name) return GetMacroIndexByName(name) > 0 end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local function trashed(name)
+        for _, e in ipairs(ns.History.Trash("character")) do if e.name == name then return true end end
+    end
+    local function versions(name) return #(ns.History.Store("character")[name] or {}) end
+    -- Like the game: each specialization has bars of its own, swapped with it.
+    local stash = {}
+    local function switch(g)
+        local mine = {}
+        for slot, a in pairs(actions) do mine[slot] = a end
+        stash[group] = mine
+        for slot in pairs(mine) do actions[slot] = nil end
+        for slot, a in pairs(stash[g] or {}) do actions[slot] = a end
+        group = g
+        Send("ACTIONBAR_SLOT_CHANGED", 0)
+    end
+    -- A button placed, as the game tells of it.
+    local function place(name, slot)
+        PickupMacro(GetMacroIndexByName(name))
+        PlaceAction(slot)
+        ClearCursor()
+        Send("ACTIONBAR_SLOT_CHANGED", slot)
+        Wait(1.1)
+    end
+    local function update()
+        Send("UPDATE_MACROS")
+        S.Update()
+        Send("UPDATE_MACROS")
+        Wait(5)
+    end
+    -- Like the game: it tells the macros changed while each one is made or deleted, and (Retail, it seems) shows a
+    -- macro made or deleted only a little later.
+    local create, delete, edit = CreateMacro, DeleteMacro, EditMacro
+    local late = false
+    CreateMacro = function(...)
+        local args = { ... }
+        if late then
+            C_Timer.After(0.2, function()
+                create(table.unpack(args))
+                Send("UPDATE_MACROS")
+            end)
+            Send("UPDATE_MACROS")
+            return
+        end
+        local index = create(...)
+        Send("UPDATE_MACROS")
+        return index
+    end
+    DeleteMacro = function(index)
+        if late then
+            local name = GetMacroInfo(index)
+            C_Timer.After(0.2, function()
+                delete(GetMacroIndexByName(name))
+                Send("UPDATE_MACROS")
+            end)
+            Send("UPDATE_MACROS")
+            return
+        end
+        local name = GetMacroInfo(index)
+        -- Like Retail: on the other specializations' bars it stays, a macro with no name.
+        for _, bars in pairs(stash) do
+            for slot, a in pairs(bars) do if a[1] == "macro" and a.text == name then bars[slot] = { "macro", 0 } end end
+        end
+        delete(index)
+        Send("UPDATE_MACROS")
+    end
+    EditMacro = function(...)
+        local index = edit(...)
+        Send("UPDATE_MACROS")
+        return index
+    end
+    local backups = #(ns.char.backups or {})
+    CreateMacro("Mount Up", 1, "/cast Felsteed", true)
+    Send("UPDATE_MACROS")
+    S.Enable()
+    check("sets: on: a backup first, the macros are the character's", #(ns.char.backups or {}) >= backups
+        and S.Mine().enabled and S.Mine().layer["Mount Up"] == "character" and S.Mine().active == "group1")
+
+    CreateMacro("Chaos Bolt", 2, "/cast Chaos Bolt", true)
+    CreateMacro("Stones", 3, "/use Healthstone", true)
+    Send("UPDATE_MACROS")
+    check("sets: into a layer", S.Move("Chaos Bolt", "spec") and S.Move("Stones", "class")
+        and S.Mine().layer["Chaos Bolt"] == "spec" and ns.db.classMacros.WARLOCK[1].name == "Stones")
+    place("Chaos Bolt", 30)
+    place("Mount Up", 31)
+
+    switch(2)
+    local told = 0
+    local onMacros = ns.Window.OnMacrosChanged
+    ns.Window.OnMacrosChanged = function(...) told = told + 1; return onMacros(...) end
+    S.Update()
+    ns.Window.OnMacrosChanged = onMacros
+    check("sets: the list is told when it is done", told == 1, told)
+    update()
+    check("sets: another specialization: its macros out of the slots, on bars of its own", not has("Chaos Bolt")
+        and actions[30] == nil and actions[31] == nil and has("Mount Up") and has("Stones") and S.Mine().active == "group2")
+    check("sets: no version or trash for what MacroSense did", not trashed("Chaos Bolt")
+        and versions("Chaos Bolt") == 0)
+
+    CreateMacro("Agony", 4, "/cast Agony", true)
+    Send("UPDATE_MACROS")
+    S.Move("Agony", "spec")
+    place("Agony", 30)
+
+    switch(1)
+    update()
+    check("sets: back: its macros again, on their buttons", has("Chaos Bolt") and not has("Agony")
+        and actions[30] and actions[30].text == "Chaos Bolt", actions[30] and actions[30].text)
+    check("sets: back: the bars of the other one not taken for its own", S.Mine().bars.group1[30] == "Chaos Bolt"
+        and S.Mine().bars.group1[31] == "Mount Up" and actions[31] and actions[31].text == "Mount Up")
+
+    -- The bars of the new one shown before the game says the specialization changed: what is kept stays.
+    local shown = {}
+    for slot, a in pairs(actions) do shown[slot] = a end
+    for slot in pairs(shown) do actions[slot] = nil end
+    actions[1] = { "spell", 172 }
+    Send("ACTIVE_TALENT_GROUP_CHANGED")
+    Send("ACTIONBAR_SLOT_CHANGED", 0)
+    Wait(1.1)
+    check("sets: the bars before the specialization: its buttons stay kept", S.Mine().bars.group1[30] == "Chaos Bolt"
+        and S.Mine().bars.group1[31] == "Mount Up")
+    actions[1] = nil
+    for slot, a in pairs(shown) do actions[slot] = a end
+    Send("ACTIONBAR_SLOT_CHANGED", 0)
+    Wait(8)
+
+    EditMacro(GetMacroIndexByName("Chaos Bolt"), nil, nil, "/cast [@focus] Chaos Bolt")
+    Send("UPDATE_MACROS")
+    switch(2)
+    update()
+    switch(1)
+    update()
+    check("sets: a change made while in the slots is kept", body("Chaos Bolt") == "/cast [@focus] Chaos Bolt",
+        body("Chaos Bolt"))
+    check("sets: the other one waits with its button", S.Mine().specs.group2[1].name == "Agony"
+        and S.Mine().bars.group2[30] == "Agony")
+
+    -- Shown late: the same.
+    late = true
+    switch(2)
+    update()
+    check("sets: shown late: out, no trash, kept in its layer", not has("Chaos Bolt") and not trashed("Chaos Bolt")
+        and S.Mine().specs.group1[1] and S.Mine().specs.group1[1].name == "Chaos Bolt" and has("Agony")
+        and S.Mine().layer.Agony == "spec" and actions[30] and actions[30].text == "Agony",
+        actions[30] and actions[30].text)
+    switch(1)
+    update()
+    check("sets: shown late: back, its layer and its button", has("Chaos Bolt") and S.Mine().layer["Chaos Bolt"] == "spec"
+        and not has("Agony") and S.Mine().specs.group2[1].name == "Agony" and actions[30]
+        and actions[30].text == "Chaos Bolt" and not trashed("Agony"), actions[30] and actions[30].text)
+    local inCharacter = 0
+    for _, m in ipairs(S.Mine().character) do
+        if m.name == "Chaos Bolt" and m.parked then inCharacter = inCharacter + 1 end
+        if m.name == "Chaos Bolt" and not m.parked then inCharacter = inCharacter + 10 end
+    end
+    check("sets: shown late: not taken for a new macro of yours", inCharacter == 0, inCharacter)
+    late = false
+
+    -- In combat: after it.
+    InCombatLockdown = function() return true end
+    switch(2)
+    S.Update()
+    check("sets: not in combat", has("Chaos Bolt") and S.Pending())
+    InCombatLockdown = function() return false end
+    Send("PLAYER_REGEN_ENABLED")
+    check("sets: after combat", has("Agony") and not has("Chaos Bolt") and not S.Pending())
+
+    -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
+    -- gets the one that comes in.
+    local function turn(g)
+        group = g
+        Send("ACTIONBAR_SLOT_CHANGED", 0)
+        update()
+    end
+    turn(1)
+    check("sets: shared bars: the other one's macro on the button", has("Chaos Bolt") and not has("Agony")
+        and actions[30] and actions[30].text == "Chaos Bolt", actions[30] and actions[30].text)
+    turn(2)
+    check("sets: shared bars: and back", has("Agony") and not has("Chaos Bolt") and actions[30]
+        and actions[30].text == "Agony", actions[30] and actions[30].text)
+
+    -- A class macro changed on another character comes in at the next look; one gone from the class goes.
+    ns.db.classMacros.WARLOCK[1].body = "/use Healthstone\n/use Soulstone"
+    ns.db.classMacros.WARLOCK[2] = { name = "Ritual", icon = 5, body = "/cast Ritual of Summoning" }
+    update()
+    check("sets: class macros follow the class", body("Stones") == "/use Healthstone\n/use Soulstone"
+        and has("Ritual") and S.Mine().layer.Ritual == "class")
+    table.remove(ns.db.classMacros.WARLOCK, 2)
+    update()
+    check("sets: one gone from the class goes", not has("Ritual"))
+
+    local function inSet(id, name)
+        for _, x in ipairs(S.List(id)) do if x.name == name then return x end end
+    end
+    -- Behind the scenes and back; with no free slot, not back.
+    check("sets: behind the scenes: out of the game, kept", S.Park("character", "Mount Up", true)
+        and not has("Mount Up") and inSet("character", "Mount Up").parked)
+    local max = ns.MAX_CHARACTER
+    ns.MAX_CHARACTER = select(2, GetNumMacros())
+    local ok, why = S.Park("character", "Mount Up", false)
+    check("sets: back with no free slot: no", not ok and why == "room" and not has("Mount Up"))
+    ns.MAX_CHARACTER = max
+    check("sets: back into the game", S.Park("character", "Mount Up", false) and has("Mount Up")
+        and not inSet("character", "Mount Up").parked)
+
+    -- Moved out of the game into a specialization not chosen, into it from one; copied between specializations.
+    check("sets: moved to a specialization not chosen: out of the game", S.MoveTo("character", "Mount Up", "group1")
+        and not has("Mount Up") and inSet("group1", "Mount Up") and not inSet("character", "Mount Up"))
+    check("sets: moved from it to the character's: into the game", S.MoveTo("group1", "Mount Up", "character")
+        and has("Mount Up") and S.Mine().layer["Mount Up"] == "character")
+    check("sets: the character's copied to a specialization: kept, behind the scenes",
+        S.MoveTo("character", "Mount Up", "group1", true) and inSet("group1", "Mount Up")
+        and inSet("character", "Mount Up").parked and not has("Mount Up"))
+    S.TakeHome("Mount Up")
+    ok, why = S.MoveTo("class", "Stones", "group1", true)
+    check("sets: the class's is not copied", not ok and why == "together")
+    check("sets: copied between specializations", S.MoveTo("group1", "Chaos Bolt", "group2", true)
+        and inSet("group1", "Chaos Bolt") and inSet("group2", "Chaos Bolt") and has("Chaos Bolt"))
+    ok, why = S.MoveTo("group1", "Chaos Bolt", "group2")
+    check("sets: not into a set with one of its name", not ok and why == "name")
+
+    -- One of the same name in both specializations: changed in place, never out of the game, its button stays.
+    EditMacro(GetMacroIndexByName("Chaos Bolt"), nil, nil, "/cast Chaos Bolt")
+    Send("UPDATE_MACROS")
+    place("Chaos Bolt", 40)
+    local deleted, del = 0, DeleteMacro
+    DeleteMacro = function(index)
+        if GetMacroInfo(index) == "Chaos Bolt" then deleted = deleted + 1 end
+        return del(index)
+    end
+    switch(1)
+    update()
+    check("sets: the same name: changed in place", body("Chaos Bolt") == "/cast [@focus] Chaos Bolt" and deleted == 0,
+        body("Chaos Bolt"))
+    switch(2)
+    update()
+    check("sets: the same name: and back, on its button", body("Chaos Bolt") == "/cast Chaos Bolt" and deleted == 0
+        and actions[40] and actions[40].text == "Chaos Bolt", body("Chaos Bolt"))
+    DeleteMacro = del
+
+    -- The editor's list, macro sets on: what can be done with a macro in the sets, in "..." by its name (or a right
+    -- click).
+    local function listRow(what, name, set)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.what == what and o.name == name and o.shown and (not set or o.set == set) then
+                return o
+            end
+        end
+    end
+    local function shown(r)
+        Fire(r.more, "OnClick")
+        local out = {}
+        for _, row in ipairs(MacroSenseMenu.rows) do
+            if row:IsShown() then out[#out + 1] = row.text.text end
+        end
+        ns.CloseMenu()
+        return table.concat(out, "|")
+    end
+    local function pick(r, text)
+        Fire(r.more, "OnClick")
+        for _, row in ipairs(MacroSenseMenu.rows) do
+            if row:IsShown() and row.text.text == text then return Fire(row, "OnClick") end
+        end
+        ns.CloseMenu()
+    end
+    local function opened(label)
+        local g = listRow("group", label)
+        if g and not g.open then Fire(g, "OnClick") end
+    end
+    local label1
+    for _, spec in ipairs(S.Specs()) do if spec.key == "group1" then label1 = spec.label end end
+    ns.Window.SetScope("character")
+    local name
+    for _, m in ipairs(S.List("group2")) do if not name and has(m.name) then name = m.name end end
+    local r = listRow("macro", name)
+    check("editor, sets: a macro in the game, its \"...\"", r and r.more:IsShown() and r.set == "group2")
+    pick(r, "Put away")
+    check("editor, sets: behind the scenes from \"...\"", not has(name) and listRow("stored", name, "group2") ~= nil)
+    pick(listRow("stored", name, "group2"), "Take in")
+    check("editor, sets: and back", has(name) and listRow("macro", name) ~= nil)
+    pick(listRow("macro", name), "Move to: This character's")
+    check("editor, sets: moved from \"...\", still in the game", inSet("character", name)
+        and not inSet("group2", name) and has(name))
+    -- Moved out of the specialization now into another: out of the game, out of this one.
+    check("sets: moved into the specialization now", S.MoveTo("character", name, "group2") and has(name))
+    check("sets: moved from it into another: not left behind", S.MoveTo("group2", name, "group1")
+        and not inSet("group2", name) and inSet("group1", name) and not has(name))
+    opened(label1)
+    local items = shown(listRow("stored", name, "group1"))
+    check("editor, sets: a specialization's: moved, copied to the other specialization only, removed",
+        items:find("Move to: This character's", 1, true) and items:find("Copy to: ", 1, true)
+        and not items:find("Copy to: This character's", 1, true) and not items:find("Copy to: Class macros", 1, true)
+        and items:find("Remove", 1, true), items)
+    S.MoveTo("group1", name, "character")
+    items = shown(listRow("macro", name))
+    check("editor, sets: the character's: copied to the specializations, not removed",
+        items:find("Copy to: ", 1, true) and not items:find("Copy to: Class macros", 1, true)
+        and not items:find("Remove", 1, true), items)
+
+    -- "Remove": back to the character's. Behind the scenes there while a specialization has it; out of the last, it
+    -- comes into the game.
+    S.MoveTo("character", name, "group2", true)
+    check("sets: into the specialization now: the character's behind the scenes", has(name)
+        and inSet("character", name).parked and S.Mine().layer[name] == "spec")
+    S.MoveTo("group2", name, "group1", true)
+    check("sets: removed from the specialization now, another has it: out of the game", S.Release("group2", name)
+        and not inSet("group2", name) and not has(name) and inSet("character", name).parked)
+    inSet("group1", name).body = "/say another"
+    local kept = inSet("character", name).body
+    check("sets: removed from the last, not in the game: the character's comes in, as it was",
+        S.Release("group1", name) and not inSet("group1", name) and has(name)
+        and not inSet("character", name).parked and body(name) == kept and S.Mine().layer[name] == "character")
+    S.MoveTo("character", name, "group2", true)
+    EditMacro(GetMacroIndexByName(name), nil, nil, "/say changed")
+    Send("UPDATE_MACROS")
+    check("sets: removed from the last, in the game: stays, with the text it has", S.Release("group2", name)
+        and has(name) and body(name) == "/say changed" and inSet("character", name).body == "/say changed"
+        and not inSet("character", name).parked and S.Mine().layer[name] == "character")
+    check("sets: moved to the character's: removed", S.MoveTo("group2", "Chaos Bolt", "character")
+        and not inSet("group2", "Chaos Bolt") and inSet("group1", "Chaos Bolt")
+        and inSet("character", "Chaos Bolt").parked)
+
+    -- The character's one a specialization has: not into the game.
+    ok, why = S.Park("character", "Chaos Bolt", false)
+    check("sets: the character's that a specialization has: not into the game", not ok and why == "held"
+        and inSet("character", "Chaos Bolt").parked)
+    local asked, show = nil, StaticPopup_Show
+    StaticPopup_Show = function(which, ...) asked = which; return show(which, ...) end
+    pick(listRow("stored", "Chaos Bolt", "character"), "Take in")
+    StaticPopup_Show = show
+    check("editor, sets: its \"Take in\" asked, then out of the specializations and into the game",
+        asked == "MACROSENSE_SETS_TAKE_HOME" and not inSet("group1", "Chaos Bolt") and has("Chaos Bolt")
+        and not inSet("character", "Chaos Bolt").parked and S.Mine().layer["Chaos Bolt"] == "character")
+    S.MoveTo("character", "Chaos Bolt", "group1", true)
+
+    -- The editor, macro sets on: every macro, those in the game and those behind the scenes, each part with the
+    -- class's and the character's first, then a group for each specialization; one not chosen now red and closed.
+    local function nameField()
+        for _, o in ipairs(created) do
+            if o.kind == "EditBox" and o.maxLetters == 16 then return o end
+        end
+    end
+    local group = listRow("group", label1)
+    if group and group.open then Fire(group, "OnClick") end
+    group = listRow("group", label1)
+    check("editor, sets: in the game and behind the scenes", listRow("head", "In the game")
+        and listRow("head", "Behind the scenes"))
+    check("editor, sets: the character's behind the scenes at the root", listRow("stored", "Chaos Bolt") ~= nil
+        and listRow("stored", "Chaos Bolt").set == "character")
+    check("editor, sets: a specialization not chosen: red, closed (as left)", group and group.band:IsShown() and not group.open)
+    local classGroup = listRow("group", "Class macros")
+    check("editor, sets: the class's in a yellow group", classGroup and classGroup.tone == "class"
+        and classGroup.band:IsShown() and listRow("macro", "Stones") and listRow("macro", "Stones").tone == "class")
+    local nowLabel
+    for _, spec in ipairs(S.Specs()) do if spec.now then nowLabel = spec.label end end
+    CreateMacro("Green", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    S.MoveTo("character", "Green", S.Mine().active)
+    ns.Window.RefreshList()
+    check("editor, sets: the specialization now's in a green group", listRow("group", nowLabel)
+        and listRow("group", nowLabel).tone == "now" and listRow("macro", "Green").tone == "now")
+    S.Release(S.Mine().active, "Green")
+    DeleteMacro(GetMacroIndexByName("Green"))
+    Send("UPDATE_MACROS")
+    Fire(listRow("head", "In the game"), "OnClick")
+    check("editor, sets: \"In the game\" closes", not listRow("macro", "Stones") and listRow("head", "In the game")
+        and not listRow("head", "In the game").open)
+    Fire(listRow("head", "In the game"), "OnClick")
+    check("editor, sets: and opens", listRow("macro", "Stones") ~= nil)
+    -- + and - in the scheme: drawn in its colors; in the game's look, the game's buttons.
+    local scheme = ns.db.scheme
+    ns.db.scheme = "monokai"
+    ns.Window.ApplyLook()
+    local head = listRow("head", "In the game")
+    check("editor, sets: - drawn in the scheme", head.sign.edge:IsShown() and head.sign.across:IsShown()
+        and not head.sign.down:IsShown() and head.icon.texture == nil)
+    local closed = listRow("group", label1)
+    check("editor, sets: + drawn in the scheme", closed.sign.down:IsShown())
+    ns.db.scheme = "game"
+    ns.Window.ApplyLook()
+    check("editor, sets: in the game's look, its buttons", not head.sign.edge:IsShown()
+        and head.icon.texture:find("MinusButton") ~= nil)
+    ns.db.scheme = scheme
+    ns.Window.ApplyLook()
+    -- Search, scrolled down: what it finds shown from the top; Enter opens the first one found.
+    MacroSenseListScroll:SetVerticalScroll(900)
+    MacroSenseSearch:SetText("chaos bolt")
+    check("editor, sets: a search from the top", MacroSenseListScroll:GetVerticalScroll() == 0,
+        MacroSenseListScroll:GetVerticalScroll())
+    Fire(MacroSenseSearch, "OnEnterPressed")
+    check("editor, sets: Enter opens the first found", raw():lower():find("chaos bolt") ~= nil, raw())
+    MacroSenseSearch:SetText("")
+    local function left(r) return r and r.icon.point[2] end
+    check("editor, sets: deeper, further right", left(listRow("head", "In the game")) == 6
+        and left(listRow("group", "Class macros")) == 18 and left(listRow("macro", "Stones")) == 30
+        and left(listRow("head", "Behind the scenes")) == 6, left(listRow("head", "Behind the scenes")))
+    local uncolored = true
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.shown and o.what == "macro" and not o.tone and o.band and o.band:IsShown() then
+            uncolored = false
+        end
+    end
+    check("editor, sets: no color in the game out of the groups", uncolored)
+    local allRed = listRow("head", "Behind the scenes").tone == "other"
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.what == "stored" and o.shown and o.tone ~= "other" then allRed = false end
+    end
+    check("editor, sets: all behind the scenes red", allRed)
+    Fire(group, "OnClick")
+    local stored
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.what == "stored" and o.set == "group1" and o.shown then stored = o end
+    end
+    check("editor, sets: opened, its macros", stored ~= nil)
+    local storedName = stored.name
+    Fire(stored, "OnClick")
+    check("editor, sets: one behind the scenes in the editor", raw() == inSet("group1", storedName).body, raw())
+    ns.Window.Restore("/cast [@focus] Chaos Bolt")
+    ns.Window.Save()
+    check("editor, sets: saved where it is kept", inSet("group1", storedName).body == "/cast [@focus] Chaos Bolt"
+)
+    -- No free slot: a new one is the character's, behind the scenes.
+    local counts = GetNumMacros
+    GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
+    ns.Window.New()
+    GetNumMacros = counts
+    nameField():SetText("Spare")
+    ns.Window.Restore("/cast Fear")
+    ns.Window.Save()
+    check("editor, sets: no free slot: made behind the scenes", inSet("character", "Spare")
+        and inSet("character", "Spare").parked and not has("Spare"))
+    Fire(listRow("stored", "Spare").remove, "OnClick")
+    local trashed = false
+    for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Spare" then trashed = true end end
+    check("editor, sets: deleted behind the scenes: into the trash", not inSet("character", "Spare") and trashed)
+
+    -- Dragged anywhere in the list: into that set, in the game or behind the scenes, as dropped.
+    CreateMacro("Dragged", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    local function drop(target) ns.Window.Drop(listRow(has("Dragged") and "macro" or "stored", "Dragged"), target) end
+    drop(listRow("head", "Behind the scenes"))
+    check("editor, sets: dropped behind the scenes: there", not has("Dragged") and inSet("character", "Dragged").parked)
+    drop(listRow("group", nowLabel))
+    check("editor, sets: dropped in the specialization now: in it, in the game", has("Dragged")
+        and inSet(S.Mine().active, "Dragged") and not inSet("character", "Dragged"))
+    drop(listRow("group", label1))
+    check("editor, sets: dropped in another specialization: in it, out of the game", not has("Dragged")
+        and inSet("group1", "Dragged") and not inSet("group1", "Dragged").parked)
+    drop(listRow("head", "In the game"))
+    check("editor, sets: dropped in the game: the character's, in the game", has("Dragged")
+        and inSet("character", "Dragged") and not inSet("group1", "Dragged"))
+    -- With Ctrl held: a copy, the character's keeps it behind the scenes (as "Copy to" does).
+    IsControlKeyDown = function() return true end
+    drop(listRow("group", label1))
+    check("editor, sets: dropped with Ctrl in another specialization: a copy there, the character's behind the scenes",
+        not has("Dragged") and inSet("group1", "Dragged") and inSet("character", "Dragged").parked)
+    drop(listRow("group", nowLabel))
+    check("editor, sets: dropped with Ctrl in the specialization now: a copy, in the game from there", has("Dragged")
+        and inSet(S.Mine().active, "Dragged") and inSet("character", "Dragged").parked
+        and inSet("group1", "Dragged"))
+    local said = {}
+    local oldPrint = ns.Print
+    ns.Print = function(text) said[#said + 1] = text end
+    drop(listRow("head", "Behind the scenes"))
+    ns.Print = oldPrint
+    IsControlKeyDown = function() return false end
+    check("editor, sets: dropped with Ctrl in the character's: not copied, it says why",
+        said[1] == "only a specialization takes a copy, and not of a class macro" and has("Dragged"))
+    S.TakeHome("Dragged")
+    DeleteMacro(GetMacroIndexByName("Dragged"))
+    Send("UPDATE_MACROS")
+
+    -- A specialization's renamed or changed in the game: the character's of its name behind the scenes is its own,
+    -- and follows; another specialization's of that name is a macro of its own, and stays, with its buttons.
+    CreateMacro("Linked", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    S.MoveTo("character", "Linked", "group2", true)
+    S.MoveTo("group2", "Linked", "group1", true)
+    S.Mine().bars.group1 = S.Mine().bars.group1 or {}
+    S.Mine().bars.group1[50] = "Linked"
+    EditMacro(GetMacroIndexByName("Linked"), "Linked Fear", nil, "/cast [@focus] Fear")
+    Send("UPDATE_MACROS")
+    check("sets: renamed and changed in the game: its own in the character's too", inSet("character", "Linked Fear")
+        and inSet("character", "Linked Fear").parked and inSet("character", "Linked Fear").body == "/cast [@focus] Fear"
+        and inSet("group2", "Linked Fear") and not inSet("character", "Linked"))
+    check("sets: another specialization's of that name stays as it is", inSet("group1", "Linked")
+        and inSet("group1", "Linked").body == "/cast Fear" and S.Mine().bars.group1[50] == "Linked")
+    ns.Window.RefreshList()
+    S.MoveTo("character", "Linked Fear", "group1")
+    local still = false
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.what == "stored" and o.name == "Linked Fear" and o.set == "character" and o.shown then
+            still = true
+        end
+    end
+    check("editor, sets: a move behind the scenes shows in its list at once", not still)
+    S.MoveTo("group1", "Linked Fear", "character")
+    S.Mine().bars.group1[50] = nil
+    S.TakeHome("Linked Fear")
+    S.Release("group1", "Linked")
+    for _, gone in ipairs({ "Linked Fear", "Linked" }) do
+        DeleteMacro(GetMacroIndexByName(gone))
+        Send("UPDATE_MACROS")
+    end
+
+    -- Spells known for both: a note on the macro that can't be cast there, and the sorting offered.
+    S.Mine().classSpells = { ["chaos bolt"] = "Chaos Bolt", agony = "Agony" }
+    S.Mine().spells = { group1 = { agony = true }, group2 = { ["chaos bolt"] = true } }
+    local note, kind = S.Note("group1", inSet("group1", "Chaos Bolt"))
+    check("sets: the note: not in this specialization", note == "Not in this specialization: Chaos Bolt"
+        and kind == "warn", note)
+    local moves = S.SortPlan()
+    check("sets: sorted by spells", #moves >= 1, #moves)
+    S.Mine().spells.group1 = nil
+    check("sets: not sorted while a specialization's spells are not known", #S.SortPlan() == 0)
+    S.Mine().spells.group1 = { agony = true }
+    S.Mine().classSpells.fear = "Fear"
+    S.Mine().spells = { group1 = { agony = true, fear = true }, group2 = { ["chaos bolt"] = true, fear = true } }
+    note, kind = S.Note("character", { name = "Run", body = "/cast Fear" })
+    check("sets: the note: the character's that works in every specialization could be the class's",
+        note == "Works in every specialization: it could go to \"Class macros\"" and kind == "hint", note)
+    check("sets: not one a specialization has", S.Note("character", { name = "Chaos Bolt", body = "/cast Fear" }) == nil)
+    S.Mine().spells = { group1 = { agony = true }, group2 = { ["chaos bolt"] = true } }
+    ns.SetsWindow.Close()
+
+    local function slots()
+        local names = {}
+        for i = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros()) do names[#names + 1] = GetMacroInfo(i) end
+        table.sort(names)
+        return table.concat(names, ", ")
+    end
+    -- Off and on again: the sets as they were left.
+    CreateMacro("Again", 1, "/cast Agony", true)
+    Send("UPDATE_MACROS")
+    local active = S.Mine().active
+    S.MoveTo("character", "Again", active, true)
+    local function homes()
+        local count = 0
+        for _, m in ipairs(S.Mine().character) do if m.name == "Again" then count = count + 1 end end
+        return count
+    end
+    S.Disable()
+    S.Enable()
+    check("sets: off and on again: as they were", S.Mine().layer.Again == "spec" and inSet(active, "Again")
+        and inSet("character", "Again").parked and homes() == 1, S.Mine().layer.Again)
+    -- What turning them on again once took apart: put back.
+    S.Mine().layer.Again = "character"
+    inSet("character", "Again").parked = nil
+    S.Disable()
+    S.Enable()
+    check("sets: on again: a specialization's taken for the character's is its own again",
+        S.Mine().layer.Again == "spec" and inSet("character", "Again").parked and homes() == 1, S.Mine().layer.Again)
+    S.Release(active, "Again")
+    DeleteMacro(GetMacroIndexByName("Again"))
+    Send("UPDATE_MACROS")
+
+    local before = slots()
+    S.Disable()
+    ns.SetsWindow.Open()
+    check("sets window: off: what they are and turning them on", ns.SetsWindow.Offers())
+    ns.SetsWindow.Close()
+    switch(1)
+    update()
+    check("sets: off: nothing changes", slots() == before, slots())
+    ns.Window.SetScope("character")
+    local shownHeads = false
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and (o.what == "head" or o.what == "group" or o.what == "stored") and o.shown then
+            shownHeads = true
+        end
+    end
+    check("editor, sets off: as without them", not shownHeads)
+    -- The check box "Macro sets": on, asked with what they are; turned on there, it shows it.
+    local setsCheck, turnOn
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "Macro sets" and o.fill then setsCheck = o end
+        if o.kind == "Button" and o.label and o.label.text == "Turn on macro sets" then turnOn = o end
+    end
+    Fire(setsCheck, "OnClick")
+    check("editor: \"Macro sets\" asks first", ns.SetsWindow.IsShown() and not S.Mine().enabled
+        and not setsCheck.fill:IsShown())
+    Fire(turnOn, "OnClick")
+    check("editor: turned on, its check box shows it", S.Mine().enabled and setsCheck.fill:IsShown()
+        and not ns.SetsWindow.IsShown())
+    S.Disable()
+    C_SpecializationInfo.GetActiveSpecGroup = specs
+    CreateMacro, DeleteMacro, EditMacro = create, delete, edit
 end
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))

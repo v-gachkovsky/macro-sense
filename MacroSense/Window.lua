@@ -9,6 +9,7 @@ local MAX_NAME = 16 -- letters, as in the Blizzard macro window
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
 local NEW_BODY = "#showtooltip\n" -- a new macro starts with it, the cursor on the line below
 local COPY_ICON = "Interface\\AddOns\\MacroSense\\Media\\copy"
+local SORT_ICON = "Interface\\AddOns\\MacroSense\\Media\\sort"
 local ROW_H = 24
 local MIN_W, MIN_H = 780, 460 -- also the first size
 local PREVIEW_EVERY = 0.1 -- seconds: modifiers, target, mouseover and pet change any time
@@ -17,14 +18,19 @@ local Window = {}
 ns.Window = Window
 
 -- What is being edited: scope "general" | "character", index (nil = new macro), name/body/savedIcon as saved,
--- icon = the icon picked now.
+-- icon = the icon picked now. With macro sets on, `stored`: one behind the scenes, { id = its set, name } (no name:
+-- a new one there).
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
+local side -- the sidebar: wider with macro sets on, for the Character tab's count of those behind the scenes
+local sideRows -- its buttons at the bottom, by row: they share its width
+local setsCheck, sortBtn -- macro sets on or off; "Sort by spells", with them on
 local barInside -- the status bar's part not under the window's border: what it shows is centered in it
 local NATIVE_EDGE_COVERS = 6 -- how much of the status bar the game's window border covers (the In-game scheme)
 local shortenBtn, historyBtn, wizardEditBtn, search, noMatch, barsCheck, altHint
 local notOnBars = false -- the list shows only the macros on no action bar
 local expanded = {} -- the other characters whose macros the Character tab shows, by key
+local groupOpen = {} -- the groups opened or closed: "in", "out", and those under them by "in:" or "out:" and the set
 local PLUS, MINUS = "Interface\\Buttons\\UI-PlusButton-Up", "Interface\\Buttons\\UI-MinusButton-Up"
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
@@ -58,7 +64,7 @@ local function IsDirty()
     if not frame then return false end
     local body, name = code:GetRaw(), nameBox:GetText()
     -- A new macro without a name, an icon picked or a text (empty, or only #showtooltip) is nothing to keep.
-    if not state.index then
+    if not state.index and not (state.stored and state.stored.name) then
         local blank = body:lower():match("^%s*$") or body:lower():match("^%s*#showtooltip%s*$")
         return not (blank and strtrim(name) == "" and state.icon == NEW_ICON)
     end
@@ -190,7 +196,7 @@ local function UpdateStatus()
     historyBtn:SetEnabled(#Versions() > 0)
     wizardEditBtn:SetEnabled(ns.Wizard.Read(raw) ~= nil)
     saveBtn:SetEnabled(dirty and letters <= MAX_BODY)
-    revertBtn:SetEnabled(dirty and state.index ~= nil)
+    revertBtn:SetEnabled(dirty and (state.index ~= nil or state.stored and state.stored.name ~= nil))
     -- Mac: [mod:cmd] on a key macOS uses with Cmd (the macro's keys are the saved macro's).
     local message
     if ns.Shortcuts.Enabled() and state.index then
@@ -554,11 +560,30 @@ local function Row(i)
     r:SetPoint("TOPRIGHT", 0, -(i - 1) * ROW_H)
     r.bg = r:CreateTexture(nil, "BACKGROUND")
     r.bg:SetAllPoints()
+    r.band = r:CreateTexture(nil, "BACKGROUND", nil, -1) -- a specialization's group not chosen now: red
+    r.band:SetAllPoints()
+    r.band:Hide()
     r.icon = r:CreateTexture(nil, "ARTWORK")
     r.icon:SetSize(ROW_H - 4, ROW_H - 4)
     r.icon:SetPoint("LEFT", 6, 0)
     r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     r.mark = LockMark(r, r.icon, 14)
+    -- What opens and closes (a part, a group, another character): + or -, the game's button in its look, else a
+    -- box drawn in the scheme's colors.
+    r.sign = {}
+    for _, part in ipairs({ "edge", "inside", "across", "down" }) do
+        r.sign[part] = r:CreateTexture(nil, "OVERLAY", nil, part == "edge" and 0 or part == "inside" and 1 or 2)
+        r.sign[part]:SetPoint("CENTER", r.icon, "CENTER")
+        r.sign[part]:Hide()
+    end
+    r.sign.edge:SetSize(12, 12)
+    r.sign.inside:SetSize(10, 10)
+    r.sign.across:SetSize(6, 2)
+    r.sign.down:SetSize(2, 6)
+    function r:Toggle(open)
+        self.toggle, self.open = true, open
+        self:Paint()
+    end
     r.text = ns.Text(r, 12)
     r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     r.text:SetPoint("RIGHT", -6, 0)
@@ -574,6 +599,9 @@ local function Row(i)
         return r.what == "alt" and L["Forget this character"] or L["Delete this macro"]
     end, function()
         if r.what == "alt" then return ns.Ask("MACROSENSE_FORGET_CHARACTER", r.alt.label, nil, r.alt.key) end
+        if r.what == "stored" then
+            return ns.Ask("MACROSENSE_DELETE", r.name, "", { stored = { id = r.set, name = r.name } })
+        end
         local m = { index = r.index, name = r.name, scope = r.scope }
         ns.Ask("MACROSENSE_DELETE", r.name, BarsNote(r.scope, r.name), m)
     end)
@@ -583,6 +611,10 @@ local function Row(i)
         Window.OpenCopyMenu(r.copy, r.index)
     end)
     r.copy:SetPoint("RIGHT", r.remove, "LEFT")
+    -- With macro sets on: "...", what can be done with it in the sets (a right click too).
+    r.more = ns.RowButton(r, "...", "text", lit, function() return L["Macro sets"] end, function()
+        Window.OpenSetsMenu(r.more, r)
+    end)
     -- A macro with errors gets the alert sign, as on Save.
     r.alert = r:CreateTexture(nil, "OVERLAY")
     r.alert:SetSize(14, 14)
@@ -597,10 +629,19 @@ local function Row(i)
             AddAltLines(r.alt)
         elseif r.what == "altMacro" then
             AddAltMacroLines(r.alt, r.macro)
+        elseif r.what == "head" or r.what == "group" then
+            GameTooltip:AddLine(r.name, 1, 1, 1)
+            GameTooltip:AddLine(r.tip, 0.8, 0.8, 0.8, true)
+        elseif r.what == "stored" then
+            GameTooltip:AddLine(r.name, 1, 1, 1)
+            AddIssueLines(r.issues or {})
+            GameTooltip:AddLine(L["Behind the scenes: not in the game now, and on no slot."], 0.6, 0.6, 0.6, true)
+            Window.AddSetsNote(r)
         else
             GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
             AddIssueLines(r.issues or {})
             AddBarsLines(r.scope, r.name)
+            Window.AddSetsNote(r)
         end
         if r.mark:IsShown() then AddLockNote() end
         if r.icon.hint then AddHintNote() end
@@ -610,11 +651,21 @@ local function Row(i)
         lit(false)
         GameTooltip:Hide()
     end)
-    r:SetScript("OnClick", function()
+    r:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    r:SetScript("OnClick", function(_, button)
+        if button == "RightButton" then
+            if r.more:IsShown() then Window.OpenSetsMenu(r, r) end
+            return
+        end
         if r.what == "alt" then
             expanded[r.alt.key] = not expanded[r.alt.key]
             return Window.RefreshList()
         end
+        if r.what == "group" or r.what == "head" then
+            groupOpen[r.group] = not r.open
+            return Window.RefreshList()
+        end
+        if r.what == "stored" then return Window.SelectStored(r.set, r.name) end
         -- Shift-click links the macro in chat, as an item is linked: into the message being typed, or a new one,
         -- wherever the cursor is.
         if IsShiftKeyDown() and ChatFrameUtil then
@@ -630,14 +681,43 @@ local function Row(i)
     end)
     -- Drag a macro onto an action bar, like in the Blizzard macro window.
     r:RegisterForDrag("LeftButton")
-    r:SetScript("OnDragStart", function() if r.what == "macro" then Window.Pickup(r.index) end end)
+    -- With macro sets on, also anywhere in the list: into another set, in the game or behind the scenes.
+    r:SetScript("OnDragStart", function()
+        if r.what == "macro" then Window.Pickup(r.index) end
+        if r.set then Window.dragging = r end
+    end)
+    r:SetScript("OnDragStop", function()
+        if Window.dragging ~= r then return end
+        Window.dragging = nil
+        for _, target in ipairs(rows) do
+            if target:IsShown() and target:IsMouseOver() then return Window.Drop(r, target) end
+        end
+    end)
     -- The name is red with errors, yellow with warnings only; another character's in its class color, its macros dim.
     function r:Paint()
         local s = ns.scheme
         if not s then return end
         self.bg:SetColorTexture(ns.RGB(s.selection))
         local color = self.severity == "error" and s.invalid or self.severity == "warning" and s.warning or s.text
-        self.text:SetTextColor(ns.RGB(self.what == "altMacro" and s.dim or color))
+        self.text:SetTextColor(ns.RGB((self.what == "altMacro" or self.what == "head") and s.dim or color))
+        -- A set's group, its name and its macros: the class's yellow, the specialization now's green, another red.
+        local tone = self.tone == "class" and { ns.RGB(s.warning) } or self.tone == "now" and { 0.3, 0.75, 0.3 }
+            or self.tone == "other" and { ns.RGB(s.invalid) }
+        local strong = self.what == "group" or self.what == "head"
+        if tone then self.band:SetColorTexture(tone[1], tone[2], tone[3], strong and 0.3 or 0.14) end
+        self.band:SetShown(tone and true or false)
+        -- + or -.
+        local sign = self.toggle and not s.native
+        if self.toggle and s.native then
+            self.icon:SetTexture(self.open and MINUS or PLUS)
+        elseif sign then
+            self.icon:SetTexture(nil)
+            self.sign.edge:SetColorTexture(ns.RGB(s.dim))
+            self.sign.inside:SetColorTexture(ns.RGB(s.panel))
+            self.sign.across:SetColorTexture(ns.RGB(s.text))
+            self.sign.down:SetColorTexture(ns.RGB(s.text))
+        end
+        for part, t in pairs(self.sign) do t:SetShown(sign and (part ~= "down" or not self.open) or false) end
         local class = self.what == "alt" and self.alt.color
         if class then self.text:SetTextColor(class.r, class.g, class.b) end
     end
@@ -671,21 +751,35 @@ local function CountMatches(scope, q)
     return n
 end
 
--- Row `n` of the list as a row of `what` (see Row), not selected, without marks.
-local function UseRow(n, what)
+-- Row `n` of the list as a row of `what` (see Row), not selected, without marks; `tone`: in a set's group, its color
+-- (see Paint); `depth`: how deep under the names of what it is in, each step further right (a character's macros
+-- under its name: one).
+local function UseRow(n, what, tone, depth)
     rows[n] = rows[n] or Row(n)
     local r = rows[n]
     r.what, r.index, r.selected, r.severity, r.issues = what, nil, false, nil, nil
-    r.icon:SetPoint("LEFT", what == "altMacro" and 18 or 6, 0) -- a character's macros under its name
-    if what == "alt" then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
-    r.copy:SetShown(what ~= "alt")
-    r.remove:SetShown(what ~= "altMacro")
+    r.tone, r.toggle, r.set, r.dropId, r.dropIn = tone, false, nil, nil, nil
+    r.icon:SetPoint("LEFT", 6 + 12 * (depth or (what == "altMacro" and 1 or 0)), 0)
+    local plain = what == "alt" or what == "group" or what == "head"
+    if plain then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
+    r.band:Hide()
+    r.copy:SetShown(what == "macro" or what == "altMacro")
+    r.remove:SetShown(what == "macro" or what == "alt" or what == "stored")
+    r.more:Hide() -- shown for a set's macro (see Belongs)
+    r.alert:ClearAllPoints()
+    r.alert:SetPoint("RIGHT", r.copy, "LEFT", -2, 0)
     r.alert:Hide()
     r.mark:Hide()
     r.auto = false
     r.icon:SetDesaturated(false)
     r.icon.hint = false
-    r.text:SetPoint("RIGHT", what == "alt" and r.remove or r.copy, "LEFT", -2, 0)
+    r.text:ClearAllPoints()
+    r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
+    if what == "group" or what == "head" then
+        r.text:SetPoint("RIGHT", -6, 0)
+    else
+        r.text:SetPoint("RIGHT", (what == "alt" or what == "stored") and r.remove or r.copy, "LEFT", -2, 0)
+    end
     r.bg:Hide()
     r.bg:SetAlpha(1)
     r:Show()
@@ -706,7 +800,7 @@ local function AltRows(n, q)
             n = n + 1
             local r = UseRow(n, "alt")
             r.alt, r.name = alt, alt.label
-            r.icon:SetTexture(open and MINUS or PLUS)
+            r:Toggle(open)
             r.text:SetText(string.format("%s  |cff%s%d|r", alt.label, ns.scheme.dim, #alt.macros))
             r:Paint()
             for _, m in ipairs(open and found or {}) do
@@ -739,42 +833,297 @@ local function FollowRowIcons()
     end
 end
 
+-- Row `n` as macro `index` of the tab open; `tone`, `depth`: see UseRow.
+local function MacroRow(n, index, tone, depth)
+    local name, icon, body = GetMacroInfo(index)
+    local r = UseRow(n, "macro", tone, depth)
+    r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
+    local chosen = ns.MacroIcon(index)
+    r.auto = chosen == NEW_ICON
+    if r.auto then ShowFound(r.icon, FoundIcon(body, index, name)) else ShowFound(r.icon, icon, false) end
+    r.mark:SetShown(Locked(chosen, body))
+    r.text:SetText(name)
+    -- Marks follow the saved text: the one being edited shows its issues in the editor.
+    r.severity, r.issues = MacroIssues(body)
+    local alert = r.severity == "error"
+    r.alert:SetShown(alert)
+    r.text:SetPoint("RIGHT", alert and r.alert or r.copy, "LEFT", alert and -4 or -2, 0)
+    r:Paint()
+    r.bg:SetShown(r.selected)
+end
+
+------------------------------------------------------------------------
+-- Macro sets on: the Character tab has all the macros, those in the game and those behind the scenes, each part
+-- with the character's first, then the class's in a group, then each specialization's. In the game the class's
+-- group is yellow, the specialization now's green; behind the scenes all is red, another specialization's group
+-- closed till you open it. Each part and group opens and closes with a click.
+------------------------------------------------------------------------
+local function SetsShown()
+    return state.scope == "character" and ns.Sets.Mine().enabled
+end
+
+-- Opened or closed: as you left it; searching, open; else as `default`.
+local function IsOpen(key, default, q)
+    if q ~= "" then return true end
+    if groupOpen[key] ~= nil then return groupOpen[key] end
+    return default
+end
+
+local function HeadRow(n, key, label, tip, open, tone)
+    local r = UseRow(n, "head", tone)
+    r.group, r.open, r.name, r.tip = key, open, label, tip
+    r:Toggle(open)
+    r.text:SetText(label)
+    r:Paint()
+end
+
+-- `tone`: "class", "now" or "other" (see Paint); `kind`: the same, what the group is (its tooltip).
+local function GroupRow(n, key, label, count, tone, open, kind)
+    local r = UseRow(n, "group", tone, 1)
+    r.group, r.open, r.name = key, open, label
+    r.tip = kind == "class" and L["The same on all your characters of this class: what you change here reaches the "
+        .. "others when they log in."] or kind == "now" and L["The macros of the specialization chosen now."]
+        or L["This specialization is not chosen now: its macros come into the game when you choose it."]
+    r:Toggle(open)
+    r.text:SetText(string.format("%s  |cff%s%d|r", label, ns.scheme.dim, count))
+    r:Paint()
+end
+
+local function StoredRow(n, id, m, tone, depth)
+    local r = UseRow(n, "stored", tone, depth)
+    r.set, r.name = id, m.name
+    r.selected = state.stored ~= nil and state.stored.id == id and state.stored.name == m.name
+    local auto = (m.icon or NEW_ICON) == NEW_ICON
+    ShowFound(r.icon, auto and FoundIcon(m.body or "", nil, m.name) or m.icon, false)
+    r.mark:SetShown(Locked(m.icon, m.body))
+    r.text:SetText(m.name)
+    r.severity, r.issues = MacroIssues(m.body)
+    r:Paint()
+    r.bg:SetShown(r.selected)
+end
+
+-- The macros behind the scenes of set `id` that the search finds.
+local function Behind(id, q)
+    local out = {}
+    for _, m in ipairs(ns.Sets.List(id)) do
+        if ns.Sets.Behind(id, m) and Matches(q, m.name, m.body) then out[#out + 1] = m end
+    end
+    return out
+end
+
+-- Row `r` of set `id`, in the game or behind the scenes (`inGame`): a macro there gets "..." (what can be done with
+-- it in the sets), and a macro dropped on the row goes there.
+local function Belongs(r, id, inGame)
+    r.dropId, r.dropIn = id, inGame
+    if r.what ~= "macro" and r.what ~= "stored" then return end
+    r.set = id
+    r.more:ClearAllPoints()
+    r.more:SetPoint("RIGHT", r.what == "stored" and r.remove or r.copy, "LEFT")
+    r.more:Show()
+    local alert = r.alert:IsShown()
+    r.alert:ClearAllPoints()
+    r.alert:SetPoint("RIGHT", r.more, "LEFT", -2, 0)
+    r.text:SetPoint("RIGHT", alert and r.alert or r.more, "LEFT", alert and -4 or -2, 0)
+end
+
+-- A group of set `id`, in the game or behind the scenes (`inGame`): its name, then, open, its rows (`add(n, x,
+-- tone, depth)` for each of `items`). Shown empty too, to drop a macro in; not while searching. `kind`: see
+-- GroupRow; else `tone`.
+local function Group(n, key, label, tone, default, items, q, add, kind, id, inGame)
+    if #items == 0 and q ~= "" then return n end
+    local open = IsOpen(key, default, q)
+    n = n + 1
+    GroupRow(n, key, label, #items, tone, open, kind or tone)
+    Belongs(rows[n], id, inGame)
+    for _, x in ipairs(open and items or {}) do
+        n = n + 1
+        add(n, x, tone, 2)
+        Belongs(rows[n], id, inGame)
+    end
+    return n
+end
+
+local function SetsRows(n, q)
+    local specs = ns.Sets.Specs()
+    local now
+    for _, spec in ipairs(specs) do if spec.now then now = spec end end
+    -- In the game.
+    local root, class, mine = {}, {}, {}
+    local first, last = MacroRange("character")
+    for index = first, last do
+        local name, _, body = GetMacroInfo(index)
+        if name and Shown(q, "character", name, body) then
+            local layer = ns.Sets.LayerIn(name)
+            table.insert(layer == "spec" and mine or layer == "class" and class or root, index)
+        end
+    end
+    local open = IsOpen("in", true, q)
+    n = n + 1
+    HeadRow(n, "in", L["In the game"], string.format(L["These take the character's macro slots: %d of %d."],
+        last - first + 1, MAX_CHARACTER), open)
+    Belongs(rows[n], "character", true)
+    if open then
+        for _, index in ipairs(root) do
+            n = n + 1
+            MacroRow(n, index, nil, 1)
+            Belongs(rows[n], "character", true)
+        end
+        n = Group(n, "in:class", L["Class macros"], "class", true, class, q, MacroRow, nil, "class", true)
+        if now then n = Group(n, "in:" .. now.key, now.label, "now", true, mine, q, MacroRow, nil, now.key, true) end
+    end
+    -- Behind the scenes: not with "Not on action bars", they are on none.
+    if notOnBars then return n end
+    open = IsOpen("out", true, q)
+    n = n + 1
+    HeadRow(n, "out", L["Behind the scenes"], L["Kept by MacroSense, on no slot. Change any of them here. They come "
+        .. "into the game with their specialization, with \"Take in\" in \"...\", or dragged into \"In the "
+        .. "game\"."], open, "other")
+    Belongs(rows[n], "character", false)
+    if not open then return n end
+    for _, m in ipairs(Behind("character", q)) do
+        n = n + 1
+        StoredRow(n, "character", m, "other", 1)
+        Belongs(rows[n], "character", false)
+    end
+    n = Group(n, "out:class", L["Class macros"], "other", true, Behind("class", q), q,
+        function(i, m, _, depth) StoredRow(i, "class", m, "other", depth) end, "class", "class", false)
+    for _, spec in ipairs(specs) do
+        n = Group(n, "out:" .. spec.key, spec.label, "other", spec.now, Behind(spec.key, q), q,
+            function(i, m, _, depth) StoredRow(i, spec.key, m, "other", depth) end, spec.now and "now" or "other",
+            spec.key, false)
+    end
+    return n
+end
+
+-- What can be done with macro `r.name` of set `r.set` in the sets: in the game or behind the scenes, moved to
+-- another set, copied to a specialization, sent back to the character's.
+local function SetsItems(r)
+    local Sets, id, name = ns.Sets, r.set, r.name
+    local items, m = {}, nil
+    for _, x in ipairs(Sets.List(id)) do if x.name == name then m = x end end
+    if not m then return items end
+    local parked = Sets.IsParked(id, m)
+    items[#items + 1] = { name = parked and L["Take in"] or L["Put away"], onClick = function()
+        if parked and id == "character" and #Sets.HeldIn(name) > 0 then return ns.SetsWindow.TakeHome(name) end
+        Window.Told(Sets.Park(id, name, not parked))
+    end }
+    local sets = { { id = "class" }, { id = "character" } }
+    for _, spec in ipairs(Sets.Specs()) do sets[#sets + 1] = { id = spec.key, spec = true } end
+    for _, set in ipairs(sets) do
+        local label = ns.SetsWindow.Label(set.id)
+        if set.id ~= id then
+            items[#items + 1] = { name = string.format(L["Move to: %s"], label), onClick = function()
+                local ok, why = Sets.MoveTo(id, name, set.id)
+                Window.Told(ok, why, label)
+            end }
+        end
+    end
+    for _, set in ipairs(sets) do
+        local label = ns.SetsWindow.Label(set.id)
+        if set.spec and set.id ~= id and id ~= "class" then
+            items[#items + 1] = { name = string.format(L["Copy to: %s"], label), onClick = function()
+                local ok, why = Sets.MoveTo(id, name, set.id, true)
+                Window.Told(ok, why, label)
+            end }
+        end
+    end
+    if id ~= "character" then
+        items[#items + 1] = { name = L["Remove"], onClick = function() Window.Told(Sets.Release(id, name)) end }
+    end
+    return items
+end
+
+function Window.OpenSetsMenu(owner, r) ns.OpenMenu(owner, SetsItems(r), 200, false, true) end
+
+-- What a change of the sets said when it was not done as asked, in the chat; `label`: the set it went to.
+function Window.Told(ok, why, label)
+    if ok and why == "waits" then return ns.Print("it waits behind the scenes: there is no free slot") end
+    if ok then return end
+    if why == "room" then return ns.Print("no free slot: put another macro behind the scenes first") end
+    if why == "name" and label then return ns.Print("\"%s\" has a macro of this name already", label) end
+    if why == "name" then return ns.Print("a macro of this name is in the game already") end
+    if why == "combat" then return ns.Print("macros cannot be changed in combat") end
+    if why == "together" then return ns.Print("only a specialization takes a copy, and not of a class macro") end
+    if why == "held" then return ns.Print("a specialization has this macro: it comes into the game from there") end
+end
+
+-- Macro row `source` dropped on row `target`: into the target's set, in the game or behind the scenes. With Ctrl
+-- held, a copy of it.
+function Window.Drop(source, target)
+    if not target.dropId or not source.set or target == source then return end
+    ClearCursor() -- a macro picked up for the action bars
+    local ok, why = ns.Sets.Place(source.set, source.name, target.dropId, target.dropIn, IsControlKeyDown())
+    Window.Told(ok, why, ns.SetsWindow.Label(target.dropId))
+end
+
+-- What the spells say of macro row `r` in its set, in its tooltip: one that can't be cast there in red.
+function Window.AddSetsNote(r)
+    if not r.set then return end
+    local body = r.what == "macro" and select(3, GetMacroInfo(r.index)) or nil
+    if r.what == "stored" then
+        for _, x in ipairs(ns.Sets.List(r.set)) do if x.name == r.name then body = x.body end end
+    end
+    local note, kind = ns.Sets.Note(r.set, { name = r.name, body = body or "" })
+    if not note then return end
+    local red = kind == "warn"
+    GameTooltip:AddLine(note, red and 1 or 0.6, red and 0.4 or 0.6, red and 0.4 or 0.6, true)
+end
+
+-- How many macros are behind the scenes.
+local function BehindCount()
+    local count = 0
+    for _, id in ipairs({ "class", "character" }) do count = count + #Behind(id, "") end
+    for _, spec in ipairs(ns.Sets.Specs()) do count = count + #Behind(spec.key, "") end
+    return count
+end
+
+-- The sidebar `width` wide, its buttons at the bottom sharing it (6 px apart, 8 from its edges).
+function Window.SideWidth(width)
+    side:SetWidth(width)
+    for _, row in ipairs(sideRows or {}) do
+        for _, b in ipairs(row) do b:SetWidth((width - 16 - 6 * (#row - 1)) / #row) end
+    end
+end
+
 function Window.RefreshList()
     if not frame then return end
+    local setsOn = ns.Sets.Mine().enabled
+    Window.SideWidth(setsOn and 280 or 220)
+    sortBtn:SetShown(setsOn)
+    sortBtn:SetEnabled(#ns.Sets.Unvisited() == 0)
+    sortBtn:SetAlpha(sortBtn:IsEnabled() and 1 or 0.4)
     local q = Query()
     local first, last = MacroRange(state.scope)
     local n = 0
-    for index = first, last do
-        local name, icon, body = GetMacroInfo(index)
-        if name and Shown(q, state.scope, name, body) then
-            n = n + 1
-            local r = UseRow(n, "macro")
-            r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
-            local chosen = ns.MacroIcon(index)
-            r.auto = chosen == NEW_ICON
-            if r.auto then ShowFound(r.icon, FoundIcon(body, index, name)) else ShowFound(r.icon, icon, false) end
-            r.mark:SetShown(Locked(chosen, body))
-            r.text:SetText(name)
-            -- Marks follow the saved text: the one being edited shows its issues in the editor.
-            r.severity, r.issues = MacroIssues(body)
-            local alert = r.severity == "error"
-            r.alert:SetShown(alert)
-            r.text:SetPoint("RIGHT", alert and r.alert or r.copy, "LEFT", alert and -4 or -2, 0)
-            r:Paint()
-            r.bg:SetShown(r.selected)
+    if SetsShown() then
+        n = SetsRows(n, q)
+    else
+        for index = first, last do
+            local name, _, body = GetMacroInfo(index)
+            if name and Shown(q, state.scope, name, body) then
+                n = n + 1
+                MacroRow(n, index)
+            end
         end
     end
     altHint:Hide()
     if state.scope == "character" and not notOnBars then n = AltRows(n, q) end
     for i = n + 1, #rows do rows[i]:Hide() end
-    list.child:SetHeight(math.max(n * ROW_H + (altHint:IsShown() and 40 or 0), 1))
+    local height = math.max(n * ROW_H + (altHint:IsShown() and 40 or 0), 1)
+    list.child:SetHeight(height)
+    -- Fewer rows than before: not scrolled past the last.
+    local bottom = math.max(0, height - list:GetHeight())
+    if list:GetVerticalScroll() > bottom then list:SetVerticalScroll(bottom) end
     noMatch:SetShown(n == 0 and (q ~= "" or notOnBars))
 
     -- While searching or filtering, the tabs say how many match.
     if q == "" and not notOnBars then
         local general, character = GetNumMacros()
         tabs.general.label:SetText(string.format(L["General  %d/%d"], general, MAX_GENERAL))
-        tabs.character.label:SetText(string.format(L["Character  %d/%d"], character, MAX_CHARACTER))
+        local behind = ns.Sets.Mine().enabled and BehindCount() or 0
+        tabs.character.label:SetText(behind > 0
+            and string.format(L["Character  %d/%d  +%d"], character, MAX_CHARACTER, behind)
+            or string.format(L["Character  %d/%d"], character, MAX_CHARACTER))
     else
         tabs.general.label:SetText(string.format(L["General  (%d)"], CountMatches("general", q)))
         tabs.character.label:SetText(string.format(L["Character  (%d)"], CountMatches("character", q)))
@@ -785,10 +1134,19 @@ end
 ------------------------------------------------------------------------
 -- Editing
 ------------------------------------------------------------------------
-local function Load(index)
+-- `stored`: one behind the scenes instead, { id = its set, name } (no name: a new one there).
+local function Load(index, stored)
     -- The wizard had the macro shown before: what it makes is not for this one.
     if ns.WizardWindow.IsEditing() then ns.WizardWindow.Close() end
-    if index then
+    state.stored = stored and { id = stored.id, name = stored.name }
+    local m
+    for _, x in ipairs(stored and stored.name and ns.Sets.List(stored.id) or {}) do
+        if x.name == stored.name then m = x end
+    end
+    if stored and stored.name and not m then state.stored, stored = nil, nil end
+    if m then
+        state.index, state.name, state.icon, state.body = nil, m.name, m.icon or NEW_ICON, m.body or ""
+    elseif index then
         local name, _, body = GetMacroInfo(index)
         local text = ns.Roles.Text(index > MAX_GENERAL and "character" or "general", name, body or "")
         state.index, state.name, state.icon, state.body = index, name, ns.MacroIcon(index) or NEW_ICON, text
@@ -799,7 +1157,7 @@ local function Load(index)
     nameBox:SetText(state.name)
     ShowIcon()
     ns.IconPicker.SetCurrent(state.icon)
-    code:SetRaw(state.body, index and 0 or #state.body)
+    code:SetRaw(state.body, (index or m) and 0 or #state.body)
     Window.RefreshList()
     UpdateStatus()
 end
@@ -824,6 +1182,7 @@ StaticPopupDialogs.MACROSENSE_DELETE = {
     button1 = "Delete", button2 = "Cancel",
     -- The macros may have moved since the x was clicked: then it is found by its name in its tab.
     OnAccept = function(_, m)
+        if m.stored then return Window.Forget(m.stored.id, m.stored.name) end
         local index = GetMacroInfo(m.index) == m.name and m.index or IndexIn(m.scope, m.name)
         if index then Window.Delete(index) end
     end,
@@ -839,8 +1198,37 @@ local function Guard(fn)
 end
 
 function Window.Select(index)
-    if index == state.index then return end
+    if index == state.index and not state.stored then return end
     Guard(function() Load(index) end)
+end
+
+-- Macro sets turned on or off: the list as it is then; off, one behind the scenes being edited is left (its
+-- changes too: there is nowhere to keep them).
+function Window.SetsChanged()
+    if not frame then return end
+    setsCheck:Refresh()
+    if state.stored and not ns.Sets.Mine().enabled then
+        local first, last = MacroRange(state.scope)
+        return Load(last >= first and first or nil)
+    end
+    Window.RefreshList()
+end
+
+-- Macro `name` of set `id`, behind the scenes, in the editor.
+function Window.SelectStored(id, name)
+    if state.stored and state.stored.id == id and state.stored.name == name then return end
+    Guard(function() Load(nil, { id = id, name = name }) end)
+end
+
+-- Macro `name` of set `id`, behind the scenes, deleted: into the trash. The one being edited: the first one of the
+-- tab opens.
+function Window.Forget(id, name)
+    if not ns.Sets.Forget(id, name) then return end
+    if state.stored and state.stored.id == id and state.stored.name == name then
+        local first, last = MacroRange(state.scope)
+        return Load(last >= first and first or nil)
+    end
+    Window.RefreshList()
 end
 
 function Window.SetScope(scope)
@@ -853,10 +1241,15 @@ function Window.SetScope(scope)
     end)
 end
 
--- An empty new macro in the tab that is open, if the tab has a free slot.
+-- An empty new macro in the tab that is open, if the tab has a free slot. With macro sets on and no free slot, one
+-- for the character's, behind the scenes.
 local function Fresh()
     local first, last, max = MacroRange(state.scope)
     if last - first + 1 >= max then
+        if SetsShown() then
+            Load(nil, { id = "character" })
+            return true
+        end
         NoRoom(state.scope)
         return false
     end
@@ -883,6 +1276,17 @@ function Window.Save()
     -- The game's macro has the names of your group's tank and healer for @tank and @heal.
     local written = ns.Roles.Fill(body)
     if Letters(written) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
+    -- One behind the scenes: kept in its set.
+    if state.stored then
+        local ok, why = ns.Sets.Write(state.stored.id, state.stored.name, name, state.icon, written)
+        if not ok then
+            if why == "name" then return ns.Print("a macro of this name is behind the scenes already") end
+            return ns.Print("could not save the macro")
+        end
+        state.stored.name, state.name, state.body, state.savedIcon = name, name, body, state.icon
+        Window.RefreshList()
+        return UpdateStatus()
+    end
     local index
     -- Earlier versions follow a new name.
     local renamed = state.index and name ~= state.name
@@ -933,6 +1337,7 @@ function Window.SpellsChanged()
 end
 
 function Window.Revert()
+    if state.stored and state.stored.name then return Load(nil, state.stored) end
     if state.index then Load(state.index) end
 end
 
@@ -1310,6 +1715,9 @@ local function BackupList()
     return ns.char.backups
 end
 
+-- A backup now, unless the macros are as in the last one.
+function Window.BackupNow() ns.Backups.Add(BackupList(), Macros(), time()) end
+
 -- On login: the day's backup, if the macros changed since the last one.
 function Window.DailyBackup()
     local list = BackupList()
@@ -1447,6 +1855,15 @@ end
 -- change to it).
 function Window.OnMacrosChanged()
     if not frame or not frame:IsShown() then return end
+    -- The one behind the scenes came into the game (its specialization chosen, or taken in): edited there.
+    local stored = state.stored
+    if stored and stored.name and not IsDirty() then
+        local m
+        for _, x in ipairs(ns.Sets.List(stored.id)) do if x.name == stored.name then m = x end end
+        local index = GetMacroIndexByName(stored.name)
+        if (not m or not ns.Sets.Behind(stored.id, m)) and index and index > 0 then return Load(index) end
+        if not m then return Load(nil) end
+    end
     if state.index then
         local name = GetMacroInfo(state.index)
         if name ~= state.name then
@@ -1624,7 +2041,7 @@ local function Build()
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Sidebar: tabs, list, buttons.
-    local side = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    side = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     side:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -1)
     side:SetPoint("BOTTOMLEFT", 1, 1)
     side:SetWidth(220)
@@ -1681,6 +2098,7 @@ local function Build()
     -- The wizard next to it: a new macro from questions or a form, in a window of its own.
     local wizardBtn = ns.Button(side, L["New (Wizard)"], 99, function() ns.WizardWindow.Toggle(state.scope) end)
     wizardBtn:SetPoint("BOTTOMRIGHT", -8, 36)
+    sideRows = { { shareBtn, trashBtn, backupsBtn }, { newBtn, wizardBtn } }
     wizardBtn:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["New (Wizard)"], 1, 1, 1)
@@ -1705,6 +2123,40 @@ local function Build()
     end)
     bookBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Over it: macro sets on or off (turning them on asks, and tells what they are), and "Sort by spells".
+    setsCheck = ns.Check(side, L["Macro sets"], function() return ns.Sets.Mine().enabled end, function(on)
+        if on then return ns.SetsWindow.Open() end
+        ns.Sets.Disable()
+    end)
+    setsCheck:SetPoint("BOTTOMLEFT", 8, 94)
+    setsCheck:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Macro sets"], 1, 1, 1)
+        GameTooltip:AddLine(L["More macros than 30 slots: each specialization gets macros of its own, and they come "
+            .. "into the game with it, onto their buttons. Class macros are shared by all your characters of one "
+            .. "class."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    setsCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    sortBtn = ns.RowButton(side, SORT_ICON, "text", function() end, function() return L["Sort by spells"] end,
+        function() ns.SetsWindow.Sort() end)
+    sortBtn:SetPoint("BOTTOMRIGHT", -8, 95)
+    sortBtn:SetMotionScriptsWhileDisabled(true)
+    sortBtn:HookScript("OnEnter", function(self)
+        GameTooltip:AddLine(L["MacroSense looks at the spells each macro casts, and offers to move it: one that works "
+            .. "in one specialization only, into that one's set; a specialization's that works in all, to this "
+            .. "character's. You see the moves before they are made."], 0.8, 0.8, 0.8, true)
+        local unvisited = ns.Sets.Unvisited()
+        if #unvisited > 0 then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine(L["It can sort once it knows the spells of every specialization: choose each of them "
+                .. "at least once."], 1, 0.4, 0.4, true)
+            GameTooltip:AddLine(string.format(L["MacroSense learns the spells of each specialization while you play "
+                .. "it. Not yet: %s."], table.concat(unvisited, ", ")), 0.6, 0.6, 0.6, true)
+        end
+        GameTooltip:Show()
+    end)
+
     -- Search under the tabs: Enter opens the first match, Esc clears it.
     search = ns.Input(side, 204, 40, "MacroSenseSearch")
     search:SetPoint("TOPLEFT", 8, -32)
@@ -1721,6 +2173,7 @@ local function Build()
         local empty = self:GetText() == ""
         placeholder:SetShown(empty)
         clear:SetShown(not empty)
+        list:SetVerticalScroll(0) -- what it finds from the top: scrolled down, it could be out of sight
         Window.RefreshList()
     end)
     search:SetScript("OnEscapePressed", function(self)
@@ -1729,7 +2182,12 @@ local function Build()
     end)
     search:SetScript("OnEnterPressed", function(self)
         self:ClearFocus()
-        if rows[1] and rows[1]:IsShown() and rows[1].what == "macro" then Window.Select(rows[1].index) end
+        -- The first macro found opens (with macro sets on, under the names of the parts).
+        for _, r in ipairs(rows) do
+            if not r:IsShown() then break end
+            if r.what == "macro" then return Window.Select(r.index) end
+            if r.what == "stored" then return Window.SelectStored(r.set, r.name) end
+        end
     end)
 
     -- Under it: only the macros on no action bar, to free slots.
@@ -1750,7 +2208,7 @@ local function Build()
 
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     list:SetPoint("TOPLEFT", 0, -84)
-    list:SetPoint("BOTTOMRIGHT", -13, 94)
+    list:SetPoint("BOTTOMRIGHT", -13, 122)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
     list.child:SetSize(196, 1)
@@ -2045,6 +2503,7 @@ function Window.Toggle()
     state.scope = ns.db.scope or "general"
     frame:Show()
     if IsDirty() then return end
+    if state.stored and state.stored.name then return Load(nil, state.stored) end
     -- Reload: the macro may have changed in the Blizzard UI while we were closed.
     local index = state.name and state.name ~= "" and GetMacroIndexByName(state.name)
     if index and index > 0 then return Load(index) end

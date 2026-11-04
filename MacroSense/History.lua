@@ -61,7 +61,8 @@ function History.TakeOut(trash, entry)
 end
 
 -- The macros of `before` missing from `after` (both: name -> { body, icon }): renamed when a name new in
--- `after` has the same text (each new name once), else deleted. Returns { [old] = new } and the deleted names.
+-- `after` has the same text (each new name once), or when one went and one came (renamed and changed in one save),
+-- else deleted. Returns { [old] = new } and the deleted names.
 function History.Gone(before, after)
     local gone, new = {}, {}
     for name in pairs(before) do
@@ -81,6 +82,9 @@ function History.Gone(before, after)
             end
         end
         if not renamed[name] then deleted[#deleted + 1] = name end
+    end
+    if #gone == 1 and #new == 1 and #deleted == 1 then
+        renamed[gone[1]], deleted = new[1], {}
     end
     return renamed, deleted
 end
@@ -144,7 +148,12 @@ function History.Scan()
             end
             local renamed, deleted = History.Gone(before, macros)
             for old, new in pairs(renamed) do History.Rename(store, old, new) end
-            for _, name in ipairs(deleted) do History.Discard(History.Trash(scope), name, before[name], time()) end
+            for _, name in ipairs(deleted) do
+                -- One MacroSense took out of the slots itself (macro sets) is not in the trash.
+                if not (scope == "character" and ns.Sets and ns.Sets.Ours(name)) then
+                    History.Discard(History.Trash(scope), name, before[name], time())
+                end
+            end
         end
     end
     known = now
@@ -157,6 +166,9 @@ function History.Moved(from, to, old, new)
     if source[old] then target[new], source[old] = Merge(target[new] or {}, source[old]), nil end
     if known and known[from][old] then known[to][new], known[from][old] = known[from][old], nil end
 end
+
+-- MacroSense changed the macros by itself (macro sets): they are learned as they are, with no versions or trash.
+function History.Settle() known = Macros() end
 
 -- MacroSense wrote macro `name` again by itself (your group's new tank, Roles.lua): the text it replaced is no
 -- version to keep.
