@@ -262,13 +262,23 @@ function Sets.Busy() return busy end
 local expect = { gone = {}, made = {} }
 local EXPECT_FOR = 20 -- seconds
 
--- What the sets did, for a bug report (/ms sets log): the last of it.
+-- What the sets did, for a bug report (/ms sets log): the last of it, kept with the character's sets (it outlasts
+-- a reload).
+local LOG_LINES = 300
 local log = {}
 local function Log(text, ...)
-    log[#log + 1] = (date and date("%H:%M:%S ") or "") .. string.format(text, ...)
-    while #log > 80 do table.remove(log, 1) end
+    local sets = ns.db and Sets.Mine and Sets.Mine()
+    if sets then
+        sets.log = sets.log or {}
+        log = sets.log
+    end
+    log[#log + 1] = (date and date("%m-%d %H:%M:%S ") or "") .. string.format(text, ...)
+    while #log > LOG_LINES do table.remove(log, 1) end
 end
-function Sets.Log() return log end
+function Sets.Log()
+    local sets = ns.db and Sets.Mine()
+    return sets and sets.log or log
+end
 
 -- Whether MacroSense deleted macro `name` and the game hasn't shown it gone yet.
 function Sets.Ours(name) return expect.gone[name] ~= nil end
@@ -464,12 +474,23 @@ local function Change(sets, key)
         known and function(m) return Sets.Works(m.body, known, class) end)
     local edit = {}
     for _, name in ipairs(plan.edit) do edit[name] = true end
-    -- The one going keeps its macros as they are, and those it had parked.
-    local kept = {}
+    -- The one going keeps its set: each of its macros as it is in the slots now, those not there as they were
+    -- (nothing of it is lost when the slots don't show one); one of its layer new in the slots joins it.
+    local inSlots, kept = {}, {}
+    for _, m in ipairs(plan.leaving) do inSlots[m.name] = m end
     for _, m in ipairs(SpecList(sets, before)) do
-        if m.parked then kept[#kept + 1] = m end
+        local now = inSlots[m.name]
+        if now then
+            m.body, m.icon, m.parked = now.body, now.icon, nil
+            inSlots[m.name] = nil
+        elseif not m.parked then
+            Log("kept, not in the slots: %s", m.name)
+        end
+        kept[#kept + 1] = m
     end
-    for _, m in ipairs(plan.leaving) do kept[#kept + 1] = m end
+    for _, m in ipairs(plan.leaving) do
+        if inSlots[m.name] then kept[#kept + 1] = m end
+    end
     sets.specs[before] = kept
     Log("specialization %s -> %s: out %d, in %d", tostring(before), key, #plan.drop, #plan.add)
     for _, name in ipairs(plan.drop) do
@@ -756,9 +777,9 @@ local function Room() return ns.MAX_CHARACTER - #InSlots() end
 
 -- Macro `name` of set `from` into set `to`, or a copy of it (`copy`): a macro of its own there, and the one in
 -- `from` stays as it is. It stays in the slots, leaves them or comes in, as its new set is; with no free slot, or
--- with its name in the game already (a copy), it waits behind the scenes. Returns true (and "waits" or "twin"
--- then), or false and why: "name" (the set has a macro of that name), "combat". Moved into the character's, it is
--- Sets.Release.
+-- with its name in the game already (a copy), it waits behind the scenes. Moved onto the very same macro there (the
+-- same text), the two are one. Returns true (and "waits", "twin" or "merged" then), or false and why: "name" (the
+-- set has another macro of that name), "combat". Moved into the character's, it is Sets.Release.
 function Sets.MoveTo(from, name, to, copy)
     local sets = Sets.Mine()
     if not sets.enabled or from == to then return false end
@@ -768,17 +789,19 @@ function Sets.MoveTo(from, name, to, copy)
     local source, target = ListOf(sets, from), ListOf(sets, to)
     local m, i = Find(source, name)
     if not m then return false end
-    if Find(target, name) then return false, "name" end
+    local there = Find(target, name)
+    if there and (copy or there.body ~= m.body) then return false, "name" end
     local parked = Parked(sets, from, m)
     local wasIn = InGame(sets, from) and not parked and Index(name) ~= nil
-    local waits
+    local waits = there and "merged" or nil
     Run(function()
         if not copy then
             table.remove(source, i)
             if from == "class" then sets.classParked[name] = nil end
         end
-        local entry = { name = m.name, icon = m.icon, body = m.body }
-        target[#target + 1] = entry
+        local entry = there or { name = m.name, body = m.body }
+        entry.icon = m.icon
+        if not there then target[#target + 1] = entry end
         SetParked(sets, to, entry, parked)
         local willBe = InGame(sets, to) and not parked
         sets.layer = sets.layer or {}
@@ -802,7 +825,7 @@ function Sets.MoveTo(from, name, to, copy)
             end
         end
     end)
-    Log("%s %s: %s -> %s", copy and "copied" or "moved", name, from, to)
+    Log("%s %s: %s -> %s%s", copy and "copied" or "moved", name, from, to, there and ", merged" or "")
     return true, waits
 end
 
@@ -821,7 +844,7 @@ end
 
 -- Macro `name` of set `id` back into this character's ("Remove"): it leaves the set, and is the character's, in the
 -- game if it was there (or comes in, with a free slot and its name free there). The character's has one of that name
--- already: the same, and this one just leaves it; another, false and "differs". False and "combat" in combat.
+-- already: the same text, and the two are one; another, false and "differs". False and "combat" in combat.
 function Sets.Release(id, name)
     local sets = Sets.Mine()
     if not sets.enabled or id == "character" then return false end
@@ -831,7 +854,7 @@ function Sets.Release(id, name)
     local m, i = Find(source, name)
     if not m then return false end
     local same = Find(sets.character, name)
-    if same and (same.body ~= m.body or same.icon ~= m.icon) then return false, "differs" end
+    if same and same.body ~= m.body then return false, "differs" end
     local wasIn = InGame(sets, id) and not Parked(sets, id, m) and Index(name) ~= nil
     local waits
     Run(function()
@@ -839,9 +862,10 @@ function Sets.Release(id, name)
         if id == "class" then sets.classParked[name] = nil end
         local entry = same
         if not entry then
-            entry = { name = m.name, icon = m.icon, body = m.body }
+            entry = { name = m.name, body = m.body }
             sets.character[#sets.character + 1] = entry
         end
+        entry.icon = m.icon
         sets.layer = sets.layer or {}
         if wasIn then
             entry.parked = nil
@@ -873,7 +897,8 @@ function Sets.Park(id, name, on)
     local m = Find(ListOf(sets, id), name)
     if not m then return false end
     on = on and true or false
-    if on == Parked(sets, id, m) then return true end
+    -- Not put away, yet not in the slots as this set's: taken in, it comes in.
+    if on == Parked(sets, id, m) and (on or not Sets.Behind(id, m)) then return true end
     if not on and InGame(sets, id) then
         if Index(name) then return false, "ingame" end
         if Room() <= 0 then return false, "room" end
@@ -914,8 +939,14 @@ function Sets.LayerIn(name)
     return sets.layer[name]
 end
 
--- Whether macro `m` of set `id` is behind the scenes: put away, or of a specialization not chosen.
-function Sets.Behind(id, m) return not InGame(Sets.Mine(), id) or Parked(Sets.Mine(), id, m) end
+-- Whether macro `m` of set `id` is behind the scenes: put away, of a specialization not chosen, or not in the
+-- slots as this set's (none of its name there, or one of another set): shown there, never nowhere.
+function Sets.Behind(id, m)
+    local sets = Sets.Mine()
+    if not InGame(sets, id) or Parked(sets, id, m) then return true end
+    sets.layer = sets.layer or Layers(sets)
+    return sets.layer[m.name] ~= LayerOfSet(id) or Index(m.name) == nil
+end
 
 -- Macro `old` of set `id`, behind the scenes, written as `name`, `icon`, `body`; `old` nil: a new one there,
 -- behind the scenes. Its buttons kept follow a new name. False and "name" when the set has another of that name.
@@ -974,10 +1005,11 @@ function Sets.CanPlace(from, name, to, inGame, copy)
     if from ~= to then
         if to == "character" and not copy then
             local same = Find(sets.character, name)
-            if same and (same.body ~= m.body or same.icon ~= m.icon) then return false, "differs" end
+            if same and same.body ~= m.body then return false, "differs" end
             return true
         end
-        if Find(ListOf(sets, to), name) then return false, "name" end
+        local there = Find(ListOf(sets, to), name)
+        if there and (copy or there.body ~= m.body) then return false, "name" end
         return true
     end
     if InGame(sets, to) and inGame and Parked(sets, to, m) then

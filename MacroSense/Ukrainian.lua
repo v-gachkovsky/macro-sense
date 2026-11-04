@@ -1753,21 +1753,22 @@ ns.locales.uk = {
     ["Move to"] = "Перенести в",
     ["The macro goes to another set and leaves this one. If it was in the game and the new set is in the game too, "
         .. "it stays where it is, on its buttons. Moved to a specialization not chosen now, it leaves the game until "
-        .. "you choose it."] =
+        .. "you choose it. If the set already has the very same macro (the same text), the two become one."] =
         "Макрос переходить в інший набір і зникає з цього. Якщо він був у грі й новий набір теж у грі, макрос "
         .. "лишається на місці, на своїх кнопках. Перенесений у спеціалізацію, яку зараз не вибрано, він виходить "
-        .. "із гри, доки ви її не оберете.",
+        .. "із гри, доки ви її не оберете. Якщо в наборі вже є точнісінько такий самий макрос (з тим самим "
+        .. "текстом), вони стають одним.",
     ["Copy to"] = "Копіювати в",
     ["A copy goes to another set, and the macro itself stays as it is. From then on they are two separate macros: "
         .. "change or rename one, and the other stays as it was."] =
         "Копія йде в інший набір, а сам макрос лишається як був. Відтепер це два окремі макроси: зміните чи "
         .. "перейменуєте один — інший не зміниться.",
     ["The macro leaves its set and goes back to this character's. If this character's already has the very same "
-        .. "macro, the extra one simply goes. If it has a different macro of the same name, nothing happens: rename "
-        .. "one of them first."] =
+        .. "macro, the two become one. If it has a different macro of the same name, nothing happens: rename one of "
+        .. "them first."] =
         "Макрос іде зі свого набору й повертається до макросів цього персонажа. Якщо там уже є точнісінько такий "
-        .. "самий макрос, зайвий просто зникає. Якщо там є інший макрос із такою самою назвою, нічого не "
-        .. "станеться: спершу перейменуйте один із них.",
+        .. "самий макрос, вони стають одним. Якщо там є інший макрос із такою самою назвою, нічого не станеться: "
+        .. "спершу перейменуйте один із них.",
     ["Dragging"] = "Перетягування",
     ["Drag"] = "Перетягнути",
     ["Drag a macro onto any part of the list to move it there. Onto \"Behind the scenes\", and it waits there. Onto "
@@ -1842,10 +1843,10 @@ ns.locales.uk = {
     ["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename one of them first."] =
         "у «%s» уже є макрос «%s»: у наборі може бути лише один макрос із певною назвою. Спершу перейменуйте "
         .. "один із них.",
-    ["\"%s\" can't go back to \"This character's\": it has another macro of this name. If they were the same, the "
-        .. "extra one would just go. Rename one of them, or make them the same."] =
-        "«%s» не може повернутися до «Цього персонажа»: там є інший макрос із такою назвою. Якби вони були "
-        .. "однакові, зайвий просто зник би. Перейменуйте один із них або зробіть їх однаковими.",
+    ["\"%s\" can't go back to \"This character's\": it has another macro of this name. If they had the same text, "
+        .. "the two would be one. Rename one of them, or make them the same."] =
+        "«%s» не може повернутися до «Цього персонажа»: там є інший макрос із такою назвою. Якби в них був "
+        .. "однаковий текст, вони стали б одним макросом. Перейменуйте один із них або зробіть їх однаковими.",
     ["a copy goes into another set: drag \"%s\" with Ctrl onto another group."] =
         "копія йде в інший набір: перетягніть «%s» із затиснутою Ctrl на іншу групу.",
     ["\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename one, and the other stays "
@@ -1869,4 +1870,6 @@ ns.locales.uk = {
         "Туди піде окремий макрос, а цей лишиться як є. Відпустіть Ctrl, щоб перенести, а не копіювати.",
     ["It leaves its set and goes there. Hold Ctrl to copy it instead."] =
         "Макрос піде зі свого набору туди. Затисніть Ctrl, щоб скопіювати, а не переносити.",
+    ["\"%s\" in \"%s\" was the very same macro: the two are one now."] =
+        "«%s» у «%s» був точнісінько таким самим макросом: тепер це один макрос.",
 }

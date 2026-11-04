@@ -6589,6 +6589,33 @@ do
     Send("PLAYER_REGEN_ENABLED")
     check("sets: after combat", has("Agony") and not has("Chaos Bolt") and not S.Pending())
 
+    -- The one going keeps all its set: one of it not in the slots (the game didn't show it) is not lost, and comes
+    -- in with it next time.
+    local leaving = S.Mine().active
+    local list = S.Mine().specs[leaving]
+    list[#list + 1] = { name = "Unseen", icon = 1, body = "/cast Agony" }
+    switch(1)
+    update()
+    local kept = false
+    for _, m in ipairs(S.Mine().specs[leaving]) do if m.name == "Unseen" then kept = true end end
+    check("sets: the one going keeps one of its own not in the slots", kept and not has("Unseen"))
+    switch(2)
+    update()
+    check("sets: it comes in with it", has("Unseen") and S.Mine().layer.Unseen == "spec")
+    S.Release(leaving, "Unseen")
+    DeleteMacro(GetMacroIndexByName("Unseen"))
+    Send("UPDATE_MACROS")
+    check("sets: the log outlasts a reload", #S.Mine().log > 0 and S.Log() == S.Mine().log)
+    -- One of the set now in the game not in the slots as its own: shown behind the scenes, never nowhere.
+    local now = S.Mine().specs[S.Mine().active]
+    now[#now + 1] = { name = "Nowhere", icon = 1, body = "/cast Agony" }
+    check("sets: one of the set now not in the slots: behind the scenes", S.Behind(S.Mine().active, now[#now]))
+    check("sets: taken in, it comes in", S.Park(S.Mine().active, "Nowhere", false) and has("Nowhere")
+        and S.Mine().layer.Nowhere == "spec" and not S.Behind(S.Mine().active, now[#now]))
+    S.Release(S.Mine().active, "Nowhere")
+    DeleteMacro(GetMacroIndexByName("Nowhere"))
+    Send("UPDATE_MACROS")
+
     -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
     -- gets the one that comes in.
     local function turn(g)
@@ -6656,8 +6683,23 @@ do
     end
     check("sets: copied between specializations", S.MoveTo("group1", "Chaos Bolt", "group2", true)
         and inSet("group1", "Chaos Bolt") and inSet("group2", "Chaos Bolt") and has("Chaos Bolt"))
+    local own = inSet("group1", "Chaos Bolt").body
+    inSet("group1", "Chaos Bolt").body = "/say another"
     ok, why = S.MoveTo("group1", "Chaos Bolt", "group2")
-    check("sets: not into a set with one of its name", not ok and why == "name")
+    check("sets: not into a set with another of its name", not ok and why == "name")
+    inSet("group1", "Chaos Bolt").body = own
+    -- Moved onto the very same macro: the two are one.
+    CreateMacro("Twin", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    S.MoveTo("character", "Twin", "group1", true)
+    ok, why = S.MoveTo("character", "Twin", "group1")
+    local twins = 0
+    for _, x in ipairs(S.List("group1")) do if x.name == "Twin" then twins = twins + 1 end end
+    check("sets: moved onto the very same macro: one", ok and why == "merged" and twins == 1
+        and not inSet("character", "Twin") and not has("Twin"))
+    S.Release("group1", "Twin")
+    DeleteMacro(GetMacroIndexByName("Twin"))
+    Send("UPDATE_MACROS")
 
     -- One of the same name in both specializations: changed in place, never out of the game, its button stays.
     EditMacro(GetMacroIndexByName("Chaos Bolt"), nil, nil, "/cast Chaos Bolt")
@@ -6932,9 +6974,11 @@ do
     -- Each change says the rule it met: moved to a specialization not chosen, copied into its own set.
     said = {}
     ns.Say = function(text) said[#said + 1] = text end
+    inSet("group1", "Pressed").body = "/say another"
     ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), false)
-    check("editor, sets: moved into a set with one of its name: not, said",
+    check("editor, sets: moved into a set with another of its name: not, said",
         heard(said, "a set holds only one macro of a name"))
+    inSet("group1", "Pressed").body = select(3, GetMacroInfo(GetMacroIndexByName("Pressed")))
     S.Release("group1", "Pressed")
     said = {}
     ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), false)
@@ -6967,11 +7011,13 @@ do
         and markIcon() == "Interface\\AddOns\\MacroSense\\Media\\no", tip[1])
     ns.Window.copying = false
     S.MoveTo("group1", "Pressed", "group2", true)
+    inSet("group2", "Pressed").body = "/say another"
+    ns.Window.dragging = listRow("stored", "Pressed", "group1")
     ns.Window.DragOver(listRow("group", nowLabel))
-    check("editor, sets: moved into a set with one of its name: can't, why", tip[1] == "Can't move to \"" .. nowLabel .. "\""
+    check("editor, sets: moved into a set with another of its name: can't, why", tip[1] == "Can't move to \"" .. nowLabel .. "\""
         and tip[2]:find("a set holds only one macro of a name", 1, true)
         and markIcon() == "Interface\\AddOns\\MacroSense\\Media\\no", tip[1])
-    S.Release("group2", "Pressed")
+    S.Mine().specs.group2[#S.Mine().specs.group2] = nil
     ns.Window.DragOver(nil)
     check("editor, sets: let go: no sign", not markIcon())
     ns.Window.dragging = nil
