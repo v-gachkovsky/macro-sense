@@ -337,6 +337,9 @@ ns.locales.uk = {
     ["Specialization %d"] = "Спеціалізація %d",
     ["No specialization yet"] = "Ще без спеціалізації",
     ["(full)"] = "(заповнена)",
+    ["(behind the scenes)"] = "(за лаштунки)",
+    ["All 30 slots are taken: it goes behind the scenes, in \"This character's\"."] =
+        "Усі 30 слотів зайняті: макрос піде за лаштунки, у «Цього персонажа».",
     ["The %s tab is full."] = "Вкладка «%s» заповнена.",
     ["Makes a copy in this tab with the text from the editor, named like \"Fear 2\". The macro you copy keeps its "
         .. "saved text."] =
@@ -1806,11 +1809,13 @@ ns.locales.uk = {
     ["A macro that should come into the game but finds no free slot waits behind the scenes. Put another one away "
         .. "to make room. A new macro with no free slot (from \"New\", the wizard, a copy, the trash or \"From "
         .. "Spellbook\") is made behind the scenes, in this character's; MacroSense asks first, until you tell it not "
-        .. "to."] =
+        .. "to. A general macro moved into the Character tab with no free slot goes behind the scenes the same way, "
+        .. "off its buttons."] =
         "Макрос, який мав би вийти в гру, але не знайшов вільного слота, чекає за лаштунками. Заберіть за "
         .. "лаштунки інший, щоб звільнити місце. Новий макрос без вільного слота («Новий», майстер, копія, "
         .. "кошик чи «З книги заклинань») створюється за лаштунками, серед макросів цього персонажа; спершу "
-        .. "MacroSense перепитає, доки ви не попросите більше не нагадувати.",
+        .. "MacroSense перепитає, доки ви не попросите більше не нагадувати. Загальний макрос, перенесений у "
+        .. "вкладку «Персонаж», коли там немає вільного слота, так само йде за лаштунки й зникає зі своїх кнопок.",
     ["MacroSense looks at the spells each macro casts and offers to move it: one that works in one specialization "
         .. "only, to that one; a specialization's that works in all, to this character's. You see every move first. "
         .. "It works once MacroSense knows the spells of every specialization: choose each of them at least once."] =
@@ -1882,6 +1887,16 @@ ns.locales.uk = {
         .. "макрос, а тоді візьміть цей у гру.",
     ["Don't remind me again"] = "Більше не нагадувати",
     ["Make it behind the scenes"] = "Створити за лаштунками",
+    ["Move it behind the scenes"] = "Перенести за лаштунки",
+    ["All 30 slots are taken. MacroSense moves the macro behind the scenes, in \"This character's\", where it takes "
+        .. "no slot, and off the action bars. To use it, put another macro behind the scenes and take it in."] =
+        "Усі 30 слотів зайняті. MacroSense перенесе макрос за лаштунки, у «Цього персонажа», де він не займає "
+        .. "слота, і прибере його з панелей дій. Щоб ним скористатися, заберіть за лаштунки інший макрос і візьміть "
+        .. "цей у гру.",
+    ["\"%s\" is moved behind the scenes, in \"This character's\": there is no free slot. Put another macro behind the "
+        .. "scenes, then take this one in."] =
+        "«%s» перенесено за лаштунки, у «Цього персонажа»: вільного слота немає. Заберіть за лаштунки інший "
+        .. "макрос, а тоді візьміть цей у гру.",
     ["%d of the macros don't fit: all 30 slots are taken. MacroSense keeps them behind the scenes, in \"This "
         .. "character's\", where they take no slot. To use one, put another macro behind the scenes and take it in."] =
         "%d макросів не вміщаються: усі 30 слотів зайняті. MacroSense збереже їх за лаштунками, у «Цього "

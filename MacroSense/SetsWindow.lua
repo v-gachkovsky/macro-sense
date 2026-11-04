@@ -258,9 +258,9 @@ local function Build()
 end
 
 -- No free slot, macro sets on: asked before a macro is made behind the scenes, with "Don't remind me again"; after
--- that, made at once. `count` macros; `go()` makes them.
+-- that, made at once. `count` macros; `go()` makes them. `moving`: a general macro moved into the character's.
 local ask
-function SetsWindow.AskBehind(count, go)
+function SetsWindow.AskBehind(count, go, moving)
     if ns.db.noBehindAsk then return go() end
     ns.Window.Ready()
     if not ask then
@@ -291,7 +291,11 @@ function SetsWindow.AskBehind(count, go)
         cancel:SetPoint("LEFT", ask.yes, "RIGHT", 10, 0)
     end
     ask.go, ask.quiet = go, false
-    ask.text:SetText(count > 1 and string.format(L["%d of the macros don't fit: all 30 slots are taken. MacroSense "
+    ask.yes.label:SetText(moving and L["Move it behind the scenes"] or L["Make it behind the scenes"])
+    ask.text:SetText(moving and L["All 30 slots are taken. MacroSense moves the macro behind the scenes, in \"This "
+        .. "character's\", where it takes no slot, and off the action bars. To use it, put another macro behind the "
+        .. "scenes and take it in."]
+        or count > 1 and string.format(L["%d of the macros don't fit: all 30 slots are taken. MacroSense "
         .. "keeps them behind the scenes, in \"This character's\", where they take no slot. To use one, put another "
         .. "macro behind the scenes and take it in."], count)
         or L["All 30 slots are taken. MacroSense keeps the new macro behind the scenes, in \"This character's\", "

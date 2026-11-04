@@ -499,10 +499,16 @@ local function Alts()
     return out
 end
 
--- A menu item that makes a macro in tab `scope`, unless it is full.
+-- A menu item that makes a macro in tab `scope`, unless it is full. The Character tab full with macro sets on: the
+-- macro goes behind the scenes.
 local function TabItem(scope, label, tip, onClick)
     local first, last, max = MacroRange(scope)
     local full = last - first + 1 >= max
+    local behind = full and scope == "character" and ns.Sets.Mine().enabled
+    if behind then
+        full, tip = false, L["All 30 slots are taken: it goes behind the scenes, in \"This character's\"."]
+        label = string.format("%s  |cff%s%s|r", label, ns.scheme.dim, L["(behind the scenes)"])
+    end
     return {
         name = full and string.format("%s  |cff%s%s|r", label, ns.scheme.dim, L["(full)"]) or label,
         disabled = full,
@@ -1610,9 +1616,9 @@ end
 
 -- No free slot in tab `scope`: with macro sets on, a character macro can be made behind the scenes instead (asked
 -- first, unless you said not to; `count` of them), by `make()`; else there is no room.
-local function Full(scope, make, count)
+local function Full(scope, make, count, moving)
     if scope ~= "character" or not ns.Sets.Mine().enabled then return NoRoom(scope) end
-    ns.SetsWindow.AskBehind(count or 1, make)
+    ns.SetsWindow.AskBehind(count or 1, make, moving)
 end
 
 -- A copy of macro `index` (the one being edited when nil) in `scope`, opened then. The one being edited is copied
@@ -1655,12 +1661,40 @@ end
 -- icon and text, put back on its buttons of the action bars now, its versions taken along, then deleted here. The
 -- bars of your other specializations and, for a general macro, of other characters lose it. Unsaved changes are
 -- asked about first.
+-- General macro `name` into the character's, with no free slot there: behind the scenes, off its buttons (one of a
+-- macro gone would show the next general macro made in its place).
+local function MoveBehind(from, name)
+    local index = IndexIn(from, name)
+    if not index then return end
+    local _, _, body = GetMacroInfo(index)
+    local icon = ns.MacroIcon(index)
+    for _, slot in ipairs(ns.ActionBars.SlotsOf(name)) do
+        if ns.ActionBars.MacroAt(slot) == index then
+            PickupAction(slot)
+            ClearCursor()
+        end
+    end
+    DeleteMacro(index) -- first: its name is free for the one behind the scenes
+    local moved = Window.MakeBehind(name, icon, body, true)
+    ns.History.Moved(from, "character", name, moved)
+    ns.Roles.Moved(from, "character", name, moved)
+    ns.History.Scan()
+    state.scope, ns.db.scope = "character", "character"
+    Load(nil, { id = "character", name = moved })
+    Window.RefreshList()
+    ns.Print("\"%s\" is moved behind the scenes, in \"This character's\": there is no free slot. Put another macro "
+        .. "behind the scenes, then take this one in.", moved)
+end
+
 function Window.Move(index)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local from = index > MAX_GENERAL and "character" or "general"
     local to = from == "general" and "character" or "general"
     local first, last, max = MacroRange(to)
-    if last - first + 1 >= max then return NoRoom(to) end
+    if last - first + 1 >= max then
+        local name = GetMacroInfo(index)
+        return Full(to, function() Guard(function() MoveBehind(from, name) end) end, 1, true)
+    end
     Guard(function()
         local name, _, body = GetMacroInfo(index)
         local icon, slots = ns.MacroIcon(index), ns.ActionBars.SlotsOf(name)
