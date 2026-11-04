@@ -1,7 +1,8 @@
 -- Macros from the spellbook, the window: the spells on the left, each checked to get a macro, of its own or joined
 -- to another one's on a key held, a lower rank on a key too; where the spells go, what else the macros do and the
--- pet's macro on the right; the count against the free slots and Create at the bottom. The macros go into the
--- character's tab and, if asked, onto the action bars in place of their spells. The logic is Spellbook.lua.
+-- pet's macro on the right; the count against the free slots and Create at the bottom; Offer all again up in the
+-- title bar. The macros go into the character's tab and, if asked, onto the action bars in place of their spells.
+-- The logic is Spellbook.lua.
 local _, ns = ...
 local L = ns.L
 
@@ -379,6 +380,21 @@ local function Build()
     titleText:SetText(L["Macros from the Spellbook"])
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
+    -- What it remembers (left out, made before) forgotten: every spell with no macro offered as the first time.
+    local again = ns.Button(title, L["Offer all again"], 170, function()
+        journal.seen, journal.made = {}, {}
+        SpellbookWindow.Open()
+    end)
+    again:SetPoint("RIGHT", close, "LEFT", -8, 0)
+    again:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Offer all again"], 1, 1, 1)
+        GameTooltip:AddLine(L["Forgets which spells you left out before and which macros you deleted: every spell "
+            .. "with no macro is offered, checked, as the first time."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    again:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    controls.again = again
 
     local intro = ns.Text(frame, 12, "dim")
     intro:SetPoint("TOPLEFT", PAD, -34 - PAD)
@@ -515,21 +531,6 @@ local function Build()
     countText = ns.Text(side, 12)
     countText:SetPoint("BOTTOMLEFT", 0, 34)
     controls.count = countText
-    -- What it remembers (left out, made before) forgotten: every spell with no macro offered as the first time.
-    local again = ns.Button(side, L["Offer all again"], 170, function()
-        journal.seen, journal.made = {}, {}
-        SpellbookWindow.Open()
-    end)
-    again:SetPoint("BOTTOMLEFT", 0, 0)
-    again:HookScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine(L["Offer all again"], 1, 1, 1)
-        GameTooltip:AddLine(L["Forgets which spells you left out before and which macros you deleted: every spell "
-            .. "with no macro is offered, checked, as the first time."], 0.8, 0.8, 0.8, true)
-        GameTooltip:Show()
-    end)
-    again:HookScript("OnLeave", function() GameTooltip:Hide() end)
-    controls.again = again
     problemText = ns.Text(side, 11)
     problemText:SetPoint("BOTTOMLEFT", 0, 50)
     problemText:SetPoint("RIGHT")
