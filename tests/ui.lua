@@ -6873,6 +6873,31 @@ do
         table.sort(names)
         return table.concat(names, ", ")
     end
+    -- Off and on again: the sets as they were left.
+    CreateMacro("Again", 1, "/cast Agony", true)
+    Send("UPDATE_MACROS")
+    local active = S.Mine().active
+    S.MoveTo("character", "Again", active)
+    local function homes()
+        local count = 0
+        for _, m in ipairs(S.Mine().character) do if m.name == "Again" then count = count + 1 end end
+        return count
+    end
+    S.Disable()
+    S.Enable()
+    check("sets: off and on again: as they were", S.Mine().layer.Again == "spec" and inSet(active, "Again")
+        and inSet("character", "Again").parked and homes() == 1, S.Mine().layer.Again)
+    -- What turning them on again once took apart: put back.
+    S.Mine().layer.Again = "character"
+    inSet("character", "Again").parked = nil
+    S.Disable()
+    S.Enable()
+    check("sets: on again: a specialization's taken for the character's is its own again",
+        S.Mine().layer.Again == "spec" and inSet("character", "Again").parked and homes() == 1, S.Mine().layer.Again)
+    S.Release(active, "Again")
+    DeleteMacro(GetMacroIndexByName("Again"))
+    Send("UPDATE_MACROS")
+
     local before = slots()
     S.Disable()
     ns.SetsWindow.Open()

@@ -663,19 +663,70 @@ function Sets.Debug()
     return out
 end
 
--- Sets on for this character: the macros in the slots become its own layer (a backup of them first); the
--- specialization now is the active one, with nothing of its own yet. Then the class macros come in.
+-- What turning the sets on again once took apart (the character's took in all the macros in the slots) put back:
+-- one in the slots that the specialization's set has is that set's, the character's of its name behind the scenes;
+-- one with the text of the class's is the class's.
+local function Mend(sets)
+    local spec, class = SpecList(sets, sets.active), ClassList()
+    for _, m in ipairs(InSlots()) do
+        if (sets.layer[m.name] or "character") == "character" then
+            local home, i = Find(sets.character, m.name)
+            local own, theirs = Find(spec, m.name), Find(class, m.name)
+            if own and not own.parked then
+                sets.layer[m.name] = "spec"
+                own.body, own.icon = m.body, m.icon
+                if home then home.parked = true end
+            elseif theirs and theirs.body == m.body and i then
+                table.remove(sets.character, i)
+                sets.layer[m.name] = "class"
+                sets.classParked[m.name] = nil
+            end
+        end
+    end
+end
+
+-- Sets on for this character. The first time: the macros in the slots become its own layer (a backup of them
+-- first); the specialization now is the active one, with nothing of its own yet. Again: the sets as they were left,
+-- the macros in the slots as they are now (changed, deleted, a new one the character's). Then the class macros come
+-- in.
 function Sets.Enable()
     local sets = Sets.Mine()
     if sets.enabled then return end
     if ns.Window.BackupNow then ns.Window.BackupNow() end
     sets.enabled = true
-    sets.active = ns.ActionBars.Spec()
-    sets.bars[sets.active] = BarsNow()
-    sets.character, sets.layer = {}, {}
-    for _, m in ipairs(InSlots()) do
-        sets.character[#sets.character + 1] = m
-        sets.layer[m.name] = "character"
+    if sets.active then
+        sets.layer = sets.layer or {}
+        local now = ByName(InSlots())
+        local function listOf(layer)
+            return layer == "spec" and SpecList(sets, sets.active) or layer == "class" and ClassList() or sets.character
+        end
+        for name, layer in pairs(sets.layer) do
+            if not now[name] then
+                local _, i = Find(listOf(layer), name)
+                if i and layer ~= "class" then table.remove(listOf(layer), i) end
+                sets.layer[name] = nil
+            end
+        end
+        for name, m in pairs(now) do
+            local kept = sets.layer[name] and Find(listOf(sets.layer[name]), name)
+            if kept then
+                kept.body, kept.icon = m.body, m.icon
+            elseif not sets.layer[name] then
+                if not Find(sets.character, name) then
+                    sets.character[#sets.character + 1] = { name = name, icon = m.icon, body = m.body }
+                end
+                sets.layer[name] = "character"
+            end
+        end
+        Mend(sets)
+    else
+        sets.active = ns.ActionBars.Spec()
+        sets.bars[sets.active] = BarsNow()
+        sets.character, sets.layer = {}, {}
+        for _, m in ipairs(InSlots()) do
+            sets.character[#sets.character + 1] = m
+            sets.layer[m.name] = "character"
+        end
     end
     seen = nil
     Sets.Update()
