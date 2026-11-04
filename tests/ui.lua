@@ -2108,10 +2108,9 @@ do
     ns.Window.Select(GetMacroIndexByName("Zap"))
     NextFrame()
     local copy = row("Zap").copy
-    check("copy: a button on each macro, before its x", copy:IsShown() and copy.mark.texture
-        == "Interface\\AddOns\\MacroSense\\Media\\copy" and copy.point[2] == row("Zap").remove
-        and row("Zap").text.point[2] == copy)
-    check("copy: both dim", copy.mark.vertexColor == ns.scheme.dim and row("Zap").remove.mark.textColor == ns.scheme.dim)
+    check("copy: \"...\" on each macro, before its x", copy:IsShown() and copy.mark.text == "..."
+        and copy.point[2] == row("Zap").remove and row("Zap").text.point[2] == copy)
+    check("copy: both dim", copy.mark.textColor == ns.scheme.dim and row("Zap").remove.mark.textColor == ns.scheme.dim)
     local wizard
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.label and o.label.text == "New (Wizard)" then wizard = o end
@@ -2122,10 +2121,10 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(copy, "OnEnter")
     GameTooltip.AddLine = nil
-    check("copy: says what it does, lights up", tip[1] == "Copy this macro" and copy.mark.vertexColor == ns.scheme.text
+    check("copy: says what it does, lights up", tip[1] == "Copy, move and more" and copy.mark.textColor == ns.scheme.text
         and row("Zap").bg:IsShown(), tip[1])
     Fire(copy, "OnLeave")
-    check("copy: dim again", copy.mark.vertexColor == ns.scheme.dim, copy.mark.vertexColor)
+    check("copy: dim again", copy.mark.textColor == ns.scheme.dim, copy.mark.textColor)
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/cast Frostbolt")
@@ -6925,6 +6924,10 @@ do
     for _, m in ipairs(S.List("group2")) do if not name and has(m.name) then name = m.name end end
     local r = listRow("macro", name)
     check("editor, sets: a macro in the game, its \"...\"", r and r.more:IsShown() and r.set == "group2")
+    local all = shown(r)
+    check("editor, sets: one \"...\" for all: the copies and the other tab with what the sets do",
+        all:find("^Put away|Duplicate|Move to: Class macros") and all:find("|Move to: General|Copy to: Class macros", 1,
+        true) and all:find("|Copy to: General|", 1, true), all)
     pick(r, "Put away")
     check("editor, sets: behind the scenes from \"...\"", not has(name) and listRow("stored", name, "group2") ~= nil)
     pick(listRow("stored", name, "group2"), "Take in")
@@ -6962,7 +6965,7 @@ do
     kept = listRow("stored", name, "group1")
     items = shown(kept)
     check("editor, sets: behind the scenes: duplicated, moved and copied to General from \"...\"",
-        not kept.copy:IsShown() and items:find("Duplicate", 1, true) and items:find("Move to: General", 1, true)
+        kept.copy:IsShown() and kept.copy == kept.more and items:find("Duplicate", 1, true) and items:find("Move to: General", 1, true)
         and items:find("Copy to: General", 1, true), items)
     pick(kept, "Duplicate")
     local twin = inSet("group1", name .. " 2")

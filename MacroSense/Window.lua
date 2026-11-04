@@ -8,7 +8,6 @@ local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local MAX_NAME = 16 -- letters, as in the Blizzard macro window
 local NEW_ICON = 134400 -- question mark: #showtooltip picks the icon
 local NEW_BODY = "#showtooltip\n" -- a new macro starts with it, the cursor on the line below
-local COPY_ICON = "Interface\\AddOns\\MacroSense\\Media\\copy"
 local SORT_ICON = "Interface\\AddOns\\MacroSense\\Media\\sort"
 local NO_ICON = "Interface\\AddOns\\MacroSense\\Media\\no" -- dragged where it can't go
 local PLUS_ICON = "Interface\\AddOns\\MacroSense\\Media\\plus" -- dragged with Ctrl: a copy
@@ -601,8 +600,8 @@ local function Row(i)
         if on and not r.selected then r.bg:SetAlpha(0.4); r.bg:Show() end
         if not on then r.bg:SetShown(r.selected); r.bg:SetAlpha(1) end
     end
-    -- At the end: copy (a menu: this tab or the other one) and x (delete, after asking). Another character has an x
-    -- (forget it), its macros a copy button.
+    -- At the end: "..." (a menu: copied in this tab or the other one, moved there, and what the sets do) and x
+    -- (delete, after asking). Another character has an x (forget it), its macros a "...".
     r.remove = ns.RowButton(r, "x", "invalid", lit, function()
         return r.what == "alt" and L["Forget this character"] or L["Delete this macro"]
     end, function()
@@ -614,15 +613,13 @@ local function Row(i)
         ns.Ask("MACROSENSE_DELETE", r.name, BarsNote(r.scope, r.name), m)
     end)
     r.remove:SetPoint("RIGHT", -2, 0)
-    r.copy = ns.RowButton(r, COPY_ICON, "text", lit, function() return L["Copy this macro"] end, function()
-        if r.what == "altMacro" then return OpenAltCopyMenu(r.copy, r.macro) end
-        Window.OpenCopyMenu(r.copy, r.index)
+    -- "...": copied, moved to the other tab and, with macro sets on, what can be done with it in the sets (a right
+    -- click too).
+    r.copy = ns.RowButton(r, "...", "text", lit, function() return L["Copy, move and more"] end, function()
+        Window.OpenRowMenu(r.copy, r)
     end)
     r.copy:SetPoint("RIGHT", r.remove, "LEFT")
-    -- With macro sets on: "...", what can be done with it in the sets (a right click too).
-    r.more = ns.RowButton(r, "...", "text", lit, function() return L["Macro sets"] end, function()
-        Window.OpenSetsMenu(r.more, r)
-    end)
+    r.more = r.copy
     -- A macro with errors gets the alert sign, as on Save.
     r.alert = r:CreateTexture(nil, "OVERLAY")
     r.alert:SetSize(14, 14)
@@ -667,7 +664,7 @@ local function Row(i)
     r:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     r:SetScript("OnClick", function(_, button)
         if button == "RightButton" then
-            if r.more:IsShown() then Window.OpenSetsMenu(r, r) end
+            if r.copy:IsShown() then Window.OpenRowMenu(r, r) end
             return
         end
         if r.what == "alt" then
@@ -792,9 +789,8 @@ local function UseRow(n, what, tone, depth)
     local plain = what == "alt" or what == "group" or what == "head"
     if plain then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
     r.band:Hide()
-    r.copy:SetShown(what == "macro" or what == "altMacro")
+    r.copy:SetShown(what == "macro" or what == "altMacro" or what == "stored")
     r.remove:SetShown(what == "macro" or what == "alt" or what == "stored")
-    r.more:Hide() -- shown for a set's macro (see Belongs)
     r.alert:ClearAllPoints()
     r.alert:SetPoint("RIGHT", r.copy, "LEFT", -2, 0)
     r.alert:Hide()
@@ -807,7 +803,7 @@ local function UseRow(n, what, tone, depth)
     if what == "group" or what == "head" then
         r.text:SetPoint("RIGHT", -6, 0)
     else
-        r.text:SetPoint("RIGHT", (what == "alt" or what == "stored") and r.remove or r.copy, "LEFT", -2, 0)
+        r.text:SetPoint("RIGHT", what == "alt" and r.remove or r.copy, "LEFT", -2, 0)
     end
     r.bg:Hide()
     r.bg:SetAlpha(1)
@@ -943,19 +939,12 @@ local function Behind(id, q)
     return out
 end
 
--- Row `r` of set `id`, in the game or behind the scenes (`inGame`): a macro there gets "..." (what can be done with
--- it in the sets), and a macro dropped on the row goes there.
+-- Row `r` of set `id`, in the game or behind the scenes (`inGame`): its "..." has what can be done with a macro
+-- there in the sets, and a macro dropped on the row goes there.
 local function Belongs(r, id, inGame)
     r.dropId, r.dropIn = id, inGame
     if r.what ~= "macro" and r.what ~= "stored" then return end
     r.set = id
-    r.more:ClearAllPoints()
-    r.more:SetPoint("RIGHT", r.what == "stored" and r.remove or r.copy, "LEFT")
-    r.more:Show()
-    local alert = r.alert:IsShown()
-    r.alert:ClearAllPoints()
-    r.alert:SetPoint("RIGHT", r.more, "LEFT", -2, 0)
-    r.text:SetPoint("RIGHT", alert and r.alert or r.more, "LEFT", alert and -4 or -2, 0)
 end
 
 -- A group of set `id`, in the game or behind the scenes (`inGame`): its name, then, open, its rows (`add(n, x,
@@ -1029,7 +1018,7 @@ end
 
 -- What can be done with macro `r.name` of set `r.set` in the sets: in the game or behind the scenes, moved to
 -- another set, copied to a specialization, sent back to the character's.
-local function SetsItems(r)
+local function SetsItems(r, parts)
     local Sets, id, name = ns.Sets, r.set, r.name
     local items, m = {}, nil
     for _, x in ipairs(Sets.List(id)) do if x.name == name then m = x end end
@@ -1045,18 +1034,28 @@ local function SetsItems(r)
         local ok, why = Sets.Park(id, name, not parked)
         Window.Told(ok, why, { name = name, to = id, park = parked and "in" or "out" })
     end }
-    -- Behind the scenes it has no copy button: a copy in its set here, and the General tab with the other sets.
-    local stored = r.what == "stored"
-    if stored then
-        items[#items + 1] = { name = L["Duplicate"], onClick = function() Window.Duplicate(id, name) end,
-            onEnter = function(row)
-                GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
-                GameTooltip:AddLine(L["Duplicate"], 1, 1, 1)
-                GameTooltip:AddLine(L["Makes a copy in the same set, behind the scenes, named like \"Fear 2\"."], 0.8,
-                    0.8, 0.8, true)
-                GameTooltip:Show()
-            end }
+    -- Its copy in its set, and the other tab with the other sets (`parts`: { dup, move, copy }; behind the scenes,
+    -- these below).
+    if r.what == "stored" then
+        parts = {
+            dup = { name = L["Duplicate"], onClick = function() Window.Duplicate(id, name) end,
+                onEnter = function(row)
+                    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+                    GameTooltip:AddLine(L["Duplicate"], 1, 1, 1)
+                    GameTooltip:AddLine(L["Makes a copy in the same set, behind the scenes, named like \"Fear 2\"."],
+                        0.8, 0.8, 0.8, true)
+                    GameTooltip:Show()
+                end },
+            move = TabItem("general", string.format(L["Move to: %s"], TabName("general")), L["Into the General tab, "
+                .. "for all your characters: it leaves its set and comes into the game. Its history goes with it."],
+                function() Window.StoredToGeneral(id, name, true) end),
+            copy = TabItem("general", string.format(L["Copy to: %s"], TabName("general")), L["Makes a copy for all "
+                .. "your characters, named like \"Fear 2\". This one stays where it is."],
+                function() Window.StoredToGeneral(id, name, false) end),
+        }
     end
+    parts = parts or {}
+    items[#items + 1] = parts.dup
     local sets = { { id = "class" }, { id = "character" } }
     for _, spec in ipairs(Sets.Specs()) do sets[#sets + 1] = { id = spec.key, spec = true } end
     for _, set in ipairs(sets) do
@@ -1068,11 +1067,7 @@ local function SetsItems(r)
             end }
         end
     end
-    if stored then
-        items[#items + 1] = TabItem("general", string.format(L["Move to: %s"], TabName("general")),
-            L["Into the General tab, for all your characters: it leaves its set and comes into the game. Its history "
-                .. "goes with it."], function() Window.StoredToGeneral(id, name, true) end)
-    end
+    items[#items + 1] = parts.move
     for _, set in ipairs(sets) do
         local label = ns.SetsWindow.Label(set.id)
         if set.id ~= id then
@@ -1082,11 +1077,7 @@ local function SetsItems(r)
             end }
         end
     end
-    if stored then
-        items[#items + 1] = TabItem("general", string.format(L["Copy to: %s"], TabName("general")),
-            L["Makes a copy for all your characters, named like \"Fear 2\". This one stays where it is."],
-            function() Window.StoredToGeneral(id, name, false) end)
-    end
+    items[#items + 1] = parts.copy
     if id ~= "character" then
         items[#items + 1] = { name = L["Remove"], onClick = function()
             local ok, why = Sets.Release(id, name)
@@ -1096,7 +1087,6 @@ local function SetsItems(r)
     return items
 end
 
-function Window.OpenSetsMenu(owner, r) ns.OpenMenu(owner, SetsItems(r), 200, false, true) end
 
 -- What a change of the sets says (`ok`, `why` as Sets returns them): each time the rule it met, so the sets can be
 -- learned from it; nil when there is nothing to tell. `t`: the macro's `name`, the set it goes `to`, `copy`, `park`
@@ -1802,7 +1792,9 @@ local function MoveAsked(index)
         { index = index, name = name, scope = from })
 end
 
-local function CopyItems(index)
+-- What macro `index` in the game can be: duplicated, copied or moved to the other tab: { dup, copy, move }. `sets`:
+-- among the sets' items, named as they are ("Move to: General").
+local function CopyItems(index, sets)
     local other = state.scope == "general" and "character" or "general"
     local function item(scope, label, tip, move)
         return TabItem(scope, label, tip, function()
@@ -1830,8 +1822,10 @@ local function CopyItems(index)
     }
     return {
         item(state.scope, L["Duplicate"], tips.same),
-        item(other, other == "character" and L["Copy to Character"] or L["Copy to General"], tips[other]),
-        item(other, other == "character" and L["Move to Character"] or L["Move to General"], moves[other], true),
+        item(other, sets and string.format(L["Copy to: %s"], TabName(other))
+            or other == "character" and L["Copy to Character"] or L["Copy to General"], tips[other]),
+        item(other, sets and string.format(L["Move to: %s"], TabName(other))
+            or other == "character" and L["Move to Character"] or L["Move to General"], moves[other], true),
     }
 end
 
@@ -1853,8 +1847,22 @@ function Window.CopyIn(scope, m)
     end)
 end
 
--- The copy menu of macro `index`, under its copy button in the list.
+-- The copy menu of macro `index`.
 function Window.OpenCopyMenu(owner, index) ns.OpenMenu(owner, CopyItems(index), 180, false, true) end
+
+-- The "..." menu of list row `r`: another character's macro copied here; a macro copied or moved to the other tab;
+-- in a set, with what can be done with it in the sets too.
+function Window.OpenRowMenu(owner, r)
+    if r.what == "altMacro" then return OpenAltCopyMenu(owner, r.macro) end
+    local items
+    if r.set then
+        local copy = r.what == "macro" and CopyItems(r.index, true)
+        items = SetsItems(r, copy and { dup = copy[1], copy = copy[2], move = copy[3] })
+    else
+        items = CopyItems(r.index)
+    end
+    ns.OpenMenu(owner, items, 200, false, true)
+end
 
 -- Macro row `source` dropped on tab `scope`, `copy` or moved: true (and "behind": with no free slot, behind the
 -- scenes), or false and why: "combat", "same" (its own tab), "full", "stored" (behind the scenes, onto Character).
