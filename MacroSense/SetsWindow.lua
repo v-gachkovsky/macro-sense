@@ -106,9 +106,16 @@ local function Build()
     cancel:SetPoint("LEFT", onBtn, "RIGHT", 10, 0)
     onNote = ns.Text(frame, 12, "dim")
     onNote:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2 + 4)
-    onNote:SetPoint("RIGHT", -PAD * 2, 0)
     onNote:SetText(L["Macro sets are on. Clear \"Macro sets\" to turn them off: the macros in the game stay as "
         .. "they are, and the sets are kept for later."])
+    -- All of it, in detail: the guide's section (in a lower layer: this one closes first).
+    local how = ns.Button(frame, L["How it works"], 140, function()
+        frame:Hide()
+        ns.HelpWindow.OpenOn(L["Macro sets"])
+    end)
+    how:SetPoint("BOTTOMRIGHT", -PAD * 2, PAD * 2)
+    SetsWindow.how = how
+    onNote:SetPoint("RIGHT", how, "LEFT", -10, 0)
     onBtn:HookScript("OnShow", function() cancel:Show() end)
     onBtn:HookScript("OnHide", function() cancel:Hide() end)
 end

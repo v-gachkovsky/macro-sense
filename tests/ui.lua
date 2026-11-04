@@ -6049,8 +6049,8 @@ do
     local titles = H.Titles()
     check("guide: it opens on its first section", H.IsShown() and H.Control("section") == "What a macro is",
         H.Control("section"))
-    check("guide: thirteen sections", #titles == 13 and titles[4] == "From the spellbook" and titles[12] == "Practice"
-        and titles[13] == "The full guide", #titles)
+    check("guide: fourteen sections", #titles == 14 and titles[4] == "From the spellbook" and titles[12] == "Macro sets"
+        and titles[13] == "Practice" and titles[14] == "The full guide", #titles)
     check("guide: in the layer of the game's windows", MacroSenseHelp.strata == "MEDIUM" and MacroSenseHelp.toplevel)
     local function nav(title)
         for _, o in ipairs(created) do
@@ -7017,6 +7017,9 @@ do
     S.Disable()
     ns.SetsWindow.Open()
     check("sets window: off: what they are and turning them on", ns.SetsWindow.Offers())
+    Fire(ns.SetsWindow.how, "OnClick")
+    check("sets window: \"How it works\" opens the guide on the macro sets", ns.HelpWindow.IsShown()
+        and ns.HelpWindow.Control("section") == "Macro sets")
     ns.SetsWindow.Close()
     switch(1)
     update()
