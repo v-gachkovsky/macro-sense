@@ -6756,23 +6756,28 @@ do
         and not inSet("character", "Chaos Bolt").parked and S.Mine().layer["Chaos Bolt"] == "character")
     S.MoveTo("character", "Chaos Bolt", "group1")
 
-    -- One macro wherever it is: renamed in the game, renamed in every set, its buttons kept under the new name.
+    -- A specialization's renamed or changed in the game: the character's of its name behind the scenes is its own,
+    -- and follows; another specialization's of that name is a macro of its own, and stays, with its buttons.
     CreateMacro("Linked", 1, "/cast Fear", true)
     Send("UPDATE_MACROS")
     S.MoveTo("character", "Linked", "group2")
     S.MoveTo("group2", "Linked", "group1", true)
     S.Mine().bars.group1 = S.Mine().bars.group1 or {}
     S.Mine().bars.group1[50] = "Linked"
-    EditMacro(GetMacroIndexByName("Linked"), "Linked Fear", nil, "/cast Fear")
+    EditMacro(GetMacroIndexByName("Linked"), "Linked Fear", nil, "/cast [@focus] Fear")
     Send("UPDATE_MACROS")
-    check("sets: renamed in the game: in every set", inSet("character", "Linked Fear")
-        and inSet("character", "Linked Fear").parked and inSet("group1", "Linked Fear") and inSet("group2", "Linked Fear")
-        and not inSet("character", "Linked") and not inSet("group1", "Linked")
-        and S.Mine().bars.group1[50] == "Linked Fear")
+    check("sets: renamed and changed in the game: its own in the character's too", inSet("character", "Linked Fear")
+        and inSet("character", "Linked Fear").parked and inSet("character", "Linked Fear").body == "/cast [@focus] Fear"
+        and inSet("group2", "Linked Fear") and not inSet("character", "Linked"))
+    check("sets: another specialization's of that name stays as it is", inSet("group1", "Linked")
+        and inSet("group1", "Linked").body == "/cast Fear" and S.Mine().bars.group1[50] == "Linked")
     S.Mine().bars.group1[50] = nil
     S.TakeHome("Linked Fear")
-    DeleteMacro(GetMacroIndexByName("Linked Fear"))
-    Send("UPDATE_MACROS")
+    S.Release("group1", "Linked")
+    for _, gone in ipairs({ "Linked Fear", "Linked" }) do
+        DeleteMacro(GetMacroIndexByName(gone))
+        Send("UPDATE_MACROS")
+    end
 
     -- Spells known for both: a note on the macro that can't be cast there, and the sorting offered.
     S.Mine().classSpells = { ["chaos bolt"] = "Chaos Bolt", agony = "Agony" }

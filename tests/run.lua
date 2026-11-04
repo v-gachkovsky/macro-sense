@@ -1059,6 +1059,8 @@ do
     local renamed, deleted = H.Gone(before, after)
     check("trash: a rename is no delete", renamed.A == "A2" and renamed.C == "E" and renamed.D == nil
         and #deleted == 1 and deleted[1] == "D", table.concat(deleted, ","))
+    renamed, deleted = H.Gone({ A = { body = "/cast A" } }, { B = { body = "/cast [@focus] A" } })
+    check("trash: renamed and changed in one save is no delete", renamed.A == "B" and #deleted == 0)
 end
 
 -- Wizard: the form as macro text.

@@ -61,7 +61,8 @@ function History.TakeOut(trash, entry)
 end
 
 -- The macros of `before` missing from `after` (both: name -> { body, icon }): renamed when a name new in
--- `after` has the same text (each new name once), else deleted. Returns { [old] = new } and the deleted names.
+-- `after` has the same text (each new name once), or when one went and one came (renamed and changed in one save),
+-- else deleted. Returns { [old] = new } and the deleted names.
 function History.Gone(before, after)
     local gone, new = {}, {}
     for name in pairs(before) do
@@ -81,6 +82,9 @@ function History.Gone(before, after)
             end
         end
         if not renamed[name] then deleted[#deleted + 1] = name end
+    end
+    if #gone == 1 and #new == 1 and #deleted == 1 then
+        renamed[gone[1]], deleted = new[1], {}
     end
     return renamed, deleted
 end

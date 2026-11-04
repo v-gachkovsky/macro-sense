@@ -117,21 +117,22 @@ end
 
 -- The macros in the slots changed (by you, or on this character): each layer follows. A text or icon changed here
 -- is kept in its layer (one not changed here leaves the layer's as it is); a renamed macro keeps its layer under
--- the new name, and is renamed in the other sets of `lists.linked` too (one macro, wherever it is: the character's
--- and each specialization's), not the class's; a deleted one leaves its layer; a new one joins the character's.
--- `before` and `after`: name -> { body, icon }; `layer` as of before. Returns the renamed: old -> new.
+-- the new name. A specialization's in the slots has the character's of its name behind the scenes as its own:
+-- renamed or changed, that one is too (another specialization's of that name is a macro of its own, and stays). A
+-- deleted one leaves its layer; a new one joins the character's. `before` and `after`: name -> { body, icon };
+-- `layer` as of before. Returns the renamed: old -> new.
 function Sets.Follow(before, after, layer, lists)
     local renamed, deleted = ns.History.Gone(before, after)
     local function listOf(name) return lists[layer[name] or "character"] end
+    -- The character's one behind the scenes of a specialization's macro.
+    local function home(name)
+        local m = layer[name] == "spec" and Find(lists.character, name)
+        return m and m.parked and m or nil
+    end
     for old, new in pairs(renamed) do
-        local those = { listOf(old) }
-        if layer[old] ~= "class" then
-            for _, list in ipairs(lists.linked or {}) do those[#those + 1] = list end
-        end
-        for _, list in ipairs(those) do
-            local m = Find(list, old)
-            if m and not Find(list, new) then m.name = new end
-        end
+        local m, own = Find(listOf(old), old), home(old)
+        if m then m.name = new end
+        if own and not Find(lists.character, new) then own.name = new end
         layer[new], layer[old] = layer[old], nil
     end
     for _, name in ipairs(deleted) do
@@ -147,7 +148,11 @@ function Sets.Follow(before, after, layer, lists)
         -- Not changed here, the layer's stays: it may be newer (a class macro changed on another character).
         local changed = not was or was.body ~= m.body or was.icon ~= m.icon
         if kept then
-            if changed then kept.body, kept.icon = m.body, m.icon end
+            if changed then
+                kept.body, kept.icon = m.body, m.icon
+                local own = home(name)
+                if own then own.body, own.icon = m.body, m.icon end
+            end
         elseif not was then -- new here (one gone from its layer elsewhere is not brought back)
             list[#list + 1] = { name = name, icon = m.icon, body = m.body }
             layer[name] = layer[name] or "character"
@@ -409,15 +414,15 @@ function Sets.Scan()
         for name, m in pairs(seen) do before[name] = m end
         for name, m in pairs(now) do after[name] = m end
         Expected(before, after, sets.layer)
-        local linked = { sets.character }
-        for _, list in pairs(sets.specs) do linked[#linked + 1] = list end
         local renamed = Sets.Follow(before, after, sets.layer, { class = ClassList(), character = sets.character,
-            spec = SpecList(sets, sets.active), linked = linked })
-        -- Its buttons kept for each specialization, under the new name.
+            spec = SpecList(sets, sets.active) })
+        -- Its buttons kept under the new name: for each specialization; a specialization's, for this one only.
         for old, new in pairs(renamed) do
-            for _, record in pairs(sets.bars) do
-                for slot, name in pairs(record) do
-                    if name == old then record[slot] = new end
+            for key, record in pairs(sets.bars) do
+                if sets.layer[new] ~= "spec" or key == sets.active then
+                    for slot, name in pairs(record) do
+                        if name == old then record[slot] = new end
+                    end
                 end
             end
         end
