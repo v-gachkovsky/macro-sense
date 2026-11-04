@@ -273,7 +273,13 @@ local function Log(text, ...)
         sets.log = sets.log or {}
         log = sets.log
     end
-    log[#log + 1] = (date and date("%m-%d %H:%M:%S ") or "") .. string.format(text, ...)
+    -- The game's format errors on nil for %s (a macro made with no layer): each as text.
+    local args, n = { ... }, select("#", ...)
+    for i = 1, n do
+        if type(args[i]) ~= "number" then args[i] = tostring(args[i]) end
+    end
+    local line = string.format(text, (unpack or table.unpack)(args, 1, n))
+    log[#log + 1] = (date and date("%m-%d %H:%M:%S ") or "") .. line
     while #log > LOG_LINES do table.remove(log, 1) end
 end
 function Sets.Log()
