@@ -699,15 +699,15 @@ local function CountMatches(scope, q)
     return n
 end
 
--- Row `n` of the list as a row of `what` (see Row), not selected, without marks; `inner`: under a group's name,
--- with its color (see Paint).
-local function UseRow(n, what, inner)
+-- Row `n` of the list as a row of `what` (see Row), not selected, without marks; `tone`: in a set's group, its color
+-- (see Paint); `depth`: how deep under the names of what it is in, each step further right (a character's macros
+-- under its name: one).
+local function UseRow(n, what, tone, depth)
     rows[n] = rows[n] or Row(n)
     local r = rows[n]
     r.what, r.index, r.selected, r.severity, r.issues = what, nil, false, nil, nil
-    r.tone = inner
-    -- A character's macros under its name, a group's under its name.
-    r.icon:SetPoint("LEFT", (what == "altMacro" or inner and what ~= "group") and 18 or 6, 0)
+    r.tone = tone
+    r.icon:SetPoint("LEFT", 6 + 12 * (depth or (what == "altMacro" and 1 or 0)), 0)
     local plain = what == "alt" or what == "group" or what == "head"
     if plain then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
     r.band:Hide()
@@ -778,10 +778,10 @@ local function FollowRowIcons()
     end
 end
 
--- Row `n` as macro `index` of the tab open; `tone`: in a set's group (see Paint).
-local function MacroRow(n, index, tone)
+-- Row `n` as macro `index` of the tab open; `tone`, `depth`: see UseRow.
+local function MacroRow(n, index, tone, depth)
     local name, icon, body = GetMacroInfo(index)
-    local r = UseRow(n, "macro", tone)
+    local r = UseRow(n, "macro", tone, depth)
     r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
     local chosen = ns.MacroIcon(index)
     r.auto = chosen == NEW_ICON
@@ -824,7 +824,7 @@ end
 
 -- `tone`: "class", "now" or "other" (see Paint); `kind`: the same, what the group is (its tooltip).
 local function GroupRow(n, key, label, count, tone, open, kind)
-    local r = UseRow(n, "group", tone)
+    local r = UseRow(n, "group", tone, 1)
     r.group, r.open, r.name = key, open, label
     r.tip = kind == "class" and L["The same on all your characters of this class: what you change here reaches the "
         .. "others when they log in."] or kind == "now" and L["The macros of the specialization chosen now."]
@@ -834,8 +834,8 @@ local function GroupRow(n, key, label, count, tone, open, kind)
     r:Paint()
 end
 
-local function StoredRow(n, id, m, tone)
-    local r = UseRow(n, "stored", tone)
+local function StoredRow(n, id, m, tone, depth)
+    local r = UseRow(n, "stored", tone, depth)
     r.set, r.name = id, m.name
     r.selected = state.stored ~= nil and state.stored.id == id and state.stored.name == m.name
     local auto = (m.icon or NEW_ICON) == NEW_ICON
@@ -856,7 +856,7 @@ local function Behind(id, q)
     return out
 end
 
--- A group: its name, then, open, its rows (`add(n, x, tone)` for each of `items`). `kind`: see GroupRow; else
+-- A group: its name, then, open, its rows (`add(n, x, tone, depth)` for each of `items`). `kind`: see GroupRow; else
 -- `tone`.
 local function Group(n, key, label, tone, default, items, q, add, kind)
     if #items == 0 then return n end
@@ -865,7 +865,7 @@ local function Group(n, key, label, tone, default, items, q, add, kind)
     GroupRow(n, key, label, #items, tone, open, kind or tone)
     for _, x in ipairs(open and items or {}) do
         n = n + 1
-        add(n, x, tone)
+        add(n, x, tone, 2)
     end
     return n
 end
@@ -891,7 +891,7 @@ local function SetsRows(n, q)
     if open then
         for _, index in ipairs(root) do
             n = n + 1
-            MacroRow(n, index)
+            MacroRow(n, index, nil, 1)
         end
         n = Group(n, "in:class", L["Class macros"], "class", true, class, q, MacroRow)
         if now then n = Group(n, "in:" .. now.key, now.label, "now", true, mine, q, MacroRow) end
@@ -912,13 +912,13 @@ local function SetsRows(n, q)
     if not open then return n end
     for _, m in ipairs(root2) do
         n = n + 1
-        StoredRow(n, "character", m, "other")
+        StoredRow(n, "character", m, "other", 1)
     end
     n = Group(n, "out:class", L["Class macros"], "other", true, class2, q,
-        function(i, m) StoredRow(i, "class", m, "other") end, "class")
+        function(i, m, _, depth) StoredRow(i, "class", m, "other", depth) end, "class")
     for _, g in ipairs(groups) do
         n = Group(n, "out:" .. g.spec.key, g.spec.label, "other", g.spec.now, g.macros, q,
-            function(i, m) StoredRow(i, g.spec.key, m, "other") end, g.spec.now and "now" or "other")
+            function(i, m, _, depth) StoredRow(i, g.spec.key, m, "other", depth) end, g.spec.now and "now" or "other")
     end
     return n
 end

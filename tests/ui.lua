@@ -6801,6 +6801,10 @@ do
         and not listRow("head", "In the game").open)
     Fire(listRow("head", "In the game"), "OnClick")
     check("editor, sets: and opens", listRow("macro", "Stones") ~= nil)
+    local function left(r) return r and r.icon.point[2] end
+    check("editor, sets: deeper, further right", left(listRow("head", "In the game")) == 6
+        and left(listRow("group", "Class macros")) == 18 and left(listRow("macro", "Stones")) == 30
+        and left(listRow("head", "Behind the scenes")) == 6, left(listRow("head", "Behind the scenes")))
     local uncolored = true
     for _, o in ipairs(created) do
         if o.kind == "Button" and o.shown and o.what == "macro" and not o.tone and o.band and o.band:IsShown() then
