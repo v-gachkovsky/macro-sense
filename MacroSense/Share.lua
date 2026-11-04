@@ -167,6 +167,7 @@ function Share.FromText(text, scope)
             if span[3] == "action" and not name then name = body:sub(span[1], span[2]):gsub("%(.-%)$", "") end
         end
         name = name or body:match("/(%S+)") or body:match("#(%a+)")
+        if not name then return nil end -- "/" or "#" alone, as it is typed or deleted: no macro yet
         macros[i] = { scope = scope, icon = "", name = name, body = body }
     end
     return macros
