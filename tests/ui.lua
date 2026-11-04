@@ -6850,6 +6850,17 @@ do
         items:find("Move to: This character's", 1, true) and items:find("Copy to: This character's", 1, true)
         and items:find("Copy to: Class macros", 1, true) and not items:find("Copy to: " .. label1, 1, true)
         and items:find("Remove", 1, true), items)
+    -- Not chosen now: behind the scenes either way, the item says what happens when it is chosen.
+    check("editor, sets: a specialization not chosen now: kept behind the scenes, not put away",
+        items:find("Keep behind the scenes", 1, true) and not items:find("Put away", 1, true), items)
+    pick(listRow("stored", name, "group1"), "Keep behind the scenes")
+    items = shown(listRow("stored", name, "group1"))
+    check("editor, sets: kept: it can come in with its specialization again, not taken in",
+        inSet("group1", name).parked and items:find("Come in with its specialization", 1, true)
+        and not items:find("Take in", 1, true) and not has(name), items)
+    pick(listRow("stored", name, "group1"), "Come in with its specialization")
+    check("editor, sets: comes in with its specialization again", not inSet("group1", name).parked
+        and not has(name))
     S.MoveTo("group1", name, "character")
     items = shown(listRow("macro", name))
     check("editor, sets: the character's: copied into any other set, not removed",

@@ -1013,7 +1013,13 @@ local function SetsItems(r)
     for _, x in ipairs(Sets.List(id)) do if x.name == name then m = x end end
     if not m then return items end
     local parked = Sets.IsParked(id, m) or (Sets.InGame(id) and Sets.Behind(id, m))
-    items[#items + 1] = { name = parked and L["Take in"] or L["Put away"], onClick = function()
+    -- In a specialization not chosen now the macro is behind the scenes either way: the item says what happens
+    -- when you choose it.
+    local label = parked and L["Take in"] or L["Put away"]
+    if not Sets.InGame(id) then
+        label = parked and L["Come in with its specialization"] or L["Keep behind the scenes"]
+    end
+    items[#items + 1] = { name = label, onClick = function()
         local ok, why = Sets.Park(id, name, not parked)
         Window.Told(ok, why, { name = name, to = id, park = parked and "in" or "out" })
     end }
@@ -1097,8 +1103,8 @@ function Window.Explain(ok, why, t)
             name)
     end
     if t.park == "out" and not inGame then
-        return string.format(L["\"%s\" stays behind the scenes, also when you choose its specialization. \"Take in\" "
-            .. "brings it back."], name)
+        return string.format(L["\"%s\" stays behind the scenes, also when you choose its specialization. "
+            .. "\"Come in with its specialization\" undoes it."], name)
     end
     if t.to and not t.park and not inGame then
         return string.format(L["\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization."],

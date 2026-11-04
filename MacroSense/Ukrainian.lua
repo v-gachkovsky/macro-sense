@@ -1669,6 +1669,8 @@ ns.locales.uk = {
     ["In the game"] = "У грі",
     ["Take in"] = "Взяти в гру",
     ["Put away"] = "За лаштунки",
+    ["Keep behind the scenes"] = "Лишати за лаштунками",
+    ["Come in with its specialization"] = "З'являтися разом зі спеціалізацією",
     ["Move to: %s"] = "Перенести в: %s",
     ["Copy to: %s"] = "Копіювати в: %s",
     ["Remove"] = "Прибрати",
@@ -1740,12 +1742,13 @@ ns.locales.uk = {
         "Натисніть «...» біля назви макроса або клацніть по ньому правою кнопкою:",
     ["The macro leaves the game and waits behind the scenes, in its own set. Its slot is free for another."] =
         "Макрос виходить із гри й чекає за лаштунками у своєму наборі. Його слот звільняється для іншого.",
-    ["The macro comes back into the game. It needs a free slot, and no other macro of the same name in the game. "
-        .. "In a specialization not chosen now, it is only marked: it comes into the game with that "
-        .. "specialization."] =
+    ["The macro comes back into the game. It needs a free slot, and no other macro of the same name in the game."] =
         "Макрос повертається в гру. Для цього потрібен вільний слот, і в грі не має бути іншого макроса з такою "
-        .. "самою назвою. У спеціалізації, яку зараз не вибрано, макрос лише позначається: у гру він вийде разом "
-        .. "із нею.",
+        .. "самою назвою.",
+    ["For a macro of a specialization not chosen now: it stays behind the scenes even when you choose that "
+        .. "specialization. \"Come in with its specialization\" undoes it."] =
+        "Для макроса спеціалізації, яку зараз не вибрано: він лишається за лаштунками, навіть коли ви її оберете. "
+        .. "«З'являтися разом зі спеціалізацією» це скасовує.",
     ["Move to"] = "Перенести в",
     ["The macro goes to another set and leaves this one. If it was in the game and the new set is in the game too, "
         .. "it stays where it is, on its buttons. Moved to a specialization not chosen now, it leaves the game until "
@@ -1850,8 +1853,10 @@ ns.locales.uk = {
         .. "як є.",
     ["\"%s\" will come into the game with its specialization: it isn't the one chosen now."] =
         "«%s» вийде в гру разом зі своєю спеціалізацією: зараз вибрано іншу.",
-    ["\"%s\" stays behind the scenes, also when you choose its specialization. \"Take in\" brings it back."] =
-        "«%s» лишиться за лаштунками, навіть коли ви оберете його спеціалізацію. «Взяти в гру» поверне його.",
+    ["\"%s\" stays behind the scenes, also when you choose its specialization. \"Come in with its specialization\" "
+        .. "undoes it."] =
+        "«%s» лишиться за лаштунками, навіть коли ви оберете його спеціалізацію. «З'являтися разом зі "
+        .. "спеціалізацією» це скасовує.",
     ["\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization."] =
         "«%s» тепер у «%s»: у гру він вийде, коли ви оберете цю спеціалізацію.",
     ["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Choose another name."] =
