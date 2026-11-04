@@ -6589,6 +6589,24 @@ do
     Send("PLAYER_REGEN_ENABLED")
     check("sets: after combat", has("Agony") and not has("Chaos Bolt") and not S.Pending())
 
+    -- The one going keeps all its set: one of it not in the slots (the game didn't show it) is not lost, and comes
+    -- in with it next time.
+    local leaving = S.Mine().active
+    local list = S.Mine().specs[leaving]
+    list[#list + 1] = { name = "Unseen", icon = 1, body = "/cast Agony" }
+    switch(1)
+    update()
+    local kept = false
+    for _, m in ipairs(S.Mine().specs[leaving]) do if m.name == "Unseen" then kept = true end end
+    check("sets: the one going keeps one of its own not in the slots", kept and not has("Unseen"))
+    switch(2)
+    update()
+    check("sets: it comes in with it", has("Unseen") and S.Mine().layer.Unseen == "spec")
+    S.Release(leaving, "Unseen")
+    DeleteMacro(GetMacroIndexByName("Unseen"))
+    Send("UPDATE_MACROS")
+    check("sets: the log outlasts a reload", #S.Mine().log > 0 and S.Log() == S.Mine().log)
+
     -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
     -- gets the one that comes in.
     local function turn(g)

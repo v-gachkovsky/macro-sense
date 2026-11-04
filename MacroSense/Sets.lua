@@ -262,13 +262,23 @@ function Sets.Busy() return busy end
 local expect = { gone = {}, made = {} }
 local EXPECT_FOR = 20 -- seconds
 
--- What the sets did, for a bug report (/ms sets log): the last of it.
+-- What the sets did, for a bug report (/ms sets log): the last of it, kept with the character's sets (it outlasts
+-- a reload).
+local LOG_LINES = 300
 local log = {}
 local function Log(text, ...)
-    log[#log + 1] = (date and date("%H:%M:%S ") or "") .. string.format(text, ...)
-    while #log > 80 do table.remove(log, 1) end
+    local sets = ns.db and Sets.Mine and Sets.Mine()
+    if sets then
+        sets.log = sets.log or {}
+        log = sets.log
+    end
+    log[#log + 1] = (date and date("%m-%d %H:%M:%S ") or "") .. string.format(text, ...)
+    while #log > LOG_LINES do table.remove(log, 1) end
 end
-function Sets.Log() return log end
+function Sets.Log()
+    local sets = ns.db and Sets.Mine()
+    return sets and sets.log or log
+end
 
 -- Whether MacroSense deleted macro `name` and the game hasn't shown it gone yet.
 function Sets.Ours(name) return expect.gone[name] ~= nil end
@@ -464,12 +474,23 @@ local function Change(sets, key)
         known and function(m) return Sets.Works(m.body, known, class) end)
     local edit = {}
     for _, name in ipairs(plan.edit) do edit[name] = true end
-    -- The one going keeps its macros as they are, and those it had parked.
-    local kept = {}
+    -- The one going keeps its set: each of its macros as it is in the slots now, those not there as they were
+    -- (nothing of it is lost when the slots don't show one); one of its layer new in the slots joins it.
+    local inSlots, kept = {}, {}
+    for _, m in ipairs(plan.leaving) do inSlots[m.name] = m end
     for _, m in ipairs(SpecList(sets, before)) do
-        if m.parked then kept[#kept + 1] = m end
+        local now = inSlots[m.name]
+        if now then
+            m.body, m.icon, m.parked = now.body, now.icon, nil
+            inSlots[m.name] = nil
+        elseif not m.parked then
+            Log("kept, not in the slots: %s", m.name)
+        end
+        kept[#kept + 1] = m
     end
-    for _, m in ipairs(plan.leaving) do kept[#kept + 1] = m end
+    for _, m in ipairs(plan.leaving) do
+        if inSlots[m.name] then kept[#kept + 1] = m end
+    end
     sets.specs[before] = kept
     Log("specialization %s -> %s: out %d, in %d", tostring(before), key, #plan.drop, #plan.add)
     for _, name in ipairs(plan.drop) do
