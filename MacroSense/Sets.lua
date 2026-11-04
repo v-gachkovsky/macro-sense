@@ -679,12 +679,14 @@ function Sets.Enable()
     end
     seen = nil
     Sets.Update()
+    ns.Window.SetsChanged()
 end
 
 -- Sets off: the slots stay as they are; the specializations' macros not in them stay kept for later.
 function Sets.Disable()
     Sets.Mine().enabled = false
     seen = nil
+    ns.Window.SetsChanged()
 end
 
 -- MacroSense changes the slots itself: what the game tells of meanwhile is not yours; then it is learned, and the

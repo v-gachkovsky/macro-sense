@@ -21,12 +21,13 @@ ns.Window = Window
 -- a new one there).
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
+local side -- the sidebar: wider with macro sets on, for the Character tab's count of those behind the scenes
 local barInside -- the status bar's part not under the window's border: what it shows is centered in it
 local NATIVE_EDGE_COVERS = 6 -- how much of the status bar the game's window border covers (the In-game scheme)
 local shortenBtn, historyBtn, wizardEditBtn, search, noMatch, barsCheck, altHint
 local notOnBars = false -- the list shows only the macros on no action bar
 local expanded = {} -- the other characters whose macros the Character tab shows, by key
-local groupOpen = {} -- the specializations' groups opened or closed, by "in:" or "out:" and the key; nil: as chosen
+local groupOpen = {} -- the groups opened or closed: "in", "out", and those under them by "in:" or "out:" and the set
 local PLUS, MINUS = "Interface\\Buttons\\UI-PlusButton-Up", "Interface\\Buttons\\UI-MinusButton-Up"
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
@@ -630,11 +631,10 @@ local function Row(i)
             expanded[r.alt.key] = not expanded[r.alt.key]
             return Window.RefreshList()
         end
-        if r.what == "group" then
+        if r.what == "group" or r.what == "head" then
             groupOpen[r.group] = not r.open
             return Window.RefreshList()
         end
-        if r.what == "head" then return end
         if r.what == "stored" then return Window.SelectStored(r.set, r.name) end
         -- Shift-click links the macro in chat, as an item is linked: into the message being typed, or a new one,
         -- wherever the cursor is.
@@ -659,8 +659,11 @@ local function Row(i)
         self.bg:SetColorTexture(ns.RGB(s.selection))
         local color = self.severity == "error" and s.invalid or self.severity == "warning" and s.warning or s.text
         self.text:SetTextColor(ns.RGB((self.what == "altMacro" or self.what == "head") and s.dim or color))
-        local red, green, blue = ns.RGB(s.invalid)
-        self.band:SetColorTexture(red, green, blue, 0.22)
+        -- A set's group, its name and its macros: the class's yellow, the specialization now's green, another red.
+        local tone = self.tone == "class" and { ns.RGB(s.warning) } or self.tone == "now" and { 0.3, 0.75, 0.3 }
+            or self.tone == "other" and { ns.RGB(s.invalid) }
+        if tone then self.band:SetColorTexture(tone[1], tone[2], tone[3], self.what == "group" and 0.3 or 0.14) end
+        self.band:SetShown(tone ~= nil)
         local class = self.what == "alt" and self.alt.color
         if class then self.text:SetTextColor(class.r, class.g, class.b) end
     end
@@ -694,15 +697,17 @@ local function CountMatches(scope, q)
     return n
 end
 
--- Row `n` of the list as a row of `what` (see Row), not selected, without marks; `inner`: under a group's name.
+-- Row `n` of the list as a row of `what` (see Row), not selected, without marks; `inner`: under a group's name,
+-- with its color (see Paint).
 local function UseRow(n, what, inner)
     rows[n] = rows[n] or Row(n)
     local r = rows[n]
     r.what, r.index, r.selected, r.severity, r.issues = what, nil, false, nil, nil
-    r.icon:SetPoint("LEFT", (what == "altMacro" or inner) and 18 or 6, 0) -- a character's macros under its name
-    local plain = what == "alt" or what == "group"
+    r.tone = inner
+    -- A character's macros under its name, a group's under its name.
+    r.icon:SetPoint("LEFT", (what == "altMacro" or inner and what ~= "group") and 18 or 6, 0)
+    local plain = what == "alt" or what == "group" or what == "head"
     if plain then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
-    r.icon:SetShown(what ~= "head")
     r.band:Hide()
     r.copy:SetShown(what == "macro" or what == "altMacro")
     r.remove:SetShown(what == "macro" or what == "alt" or what == "stored")
@@ -712,7 +717,7 @@ local function UseRow(n, what, inner)
     r.icon:SetDesaturated(false)
     r.icon.hint = false
     r.text:ClearAllPoints()
-    r.text:SetPoint("LEFT", what == "head" and r or r.icon, what == "head" and "LEFT" or "RIGHT", 6, 0)
+    r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
     if what == "group" or what == "head" then
         r.text:SetPoint("RIGHT", -6, 0)
     else
@@ -771,10 +776,10 @@ local function FollowRowIcons()
     end
 end
 
--- Row `n` as macro `index` of the tab open.
-local function MacroRow(n, index, inner)
+-- Row `n` as macro `index` of the tab open; `tone`: in a set's group (see Paint).
+local function MacroRow(n, index, tone)
     local name, icon, body = GetMacroInfo(index)
-    local r = UseRow(n, "macro", inner)
+    local r = UseRow(n, "macro", tone)
     r.index, r.name, r.scope, r.selected = index, name, state.scope, index == state.index
     local chosen = ns.MacroIcon(index)
     r.auto = chosen == NEW_ICON
@@ -792,33 +797,43 @@ end
 
 ------------------------------------------------------------------------
 -- Macro sets on: the Character tab has all the macros, those in the game and those behind the scenes, each part
--- with the class's and the character's first, then a group for each specialization (one not chosen now is red, and
--- closed till you open it)
+-- with the character's first, then the class's in a yellow group, the specialization now's in a green one, and
+-- behind the scenes each other specialization's in a red one, closed till you open it. Each part and group opens
+-- and closes with a click.
 ------------------------------------------------------------------------
 local function SetsShown()
     return state.scope == "character" and ns.Sets.Mine().enabled
 end
 
-local function HeadRow(n, label, tip)
+-- Opened or closed: as you left it; searching, open; else as `default`.
+local function IsOpen(key, default, q)
+    if q ~= "" then return true end
+    if groupOpen[key] ~= nil then return groupOpen[key] end
+    return default
+end
+
+local function HeadRow(n, key, label, tip, open)
     local r = UseRow(n, "head")
-    r.name, r.tip = label, tip
+    r.group, r.open, r.name, r.tip = key, open, label, tip
+    r.icon:SetTexture(open and MINUS or PLUS)
     r.text:SetText(label)
     r:Paint()
 end
 
-local function GroupRow(n, key, label, count, now, open)
-    local r = UseRow(n, "group")
+-- `tone`: "class", "now" or "other" (see Paint).
+local function GroupRow(n, key, label, count, tone, open)
+    local r = UseRow(n, "group", tone)
     r.group, r.open, r.name = key, open, label
-    r.tip = now and L["The macros of the specialization chosen now."]
+    r.tip = tone == "class" and L["The same on all your characters of this class: what you change here reaches the "
+        .. "others when they log in."] or tone == "now" and L["The macros of the specialization chosen now."]
         or L["This specialization is not chosen now: its macros come into the game when you choose it."]
     r.icon:SetTexture(open and MINUS or PLUS)
     r.text:SetText(string.format("%s  |cff%s%d|r", label, ns.scheme.dim, count))
     r:Paint()
-    r.band:SetShown(not now)
 end
 
-local function StoredRow(n, id, m, inner)
-    local r = UseRow(n, "stored", inner)
+local function StoredRow(n, id, m, tone)
+    local r = UseRow(n, "stored", tone)
     r.set, r.name = id, m.name
     r.selected = state.stored ~= nil and state.stored.id == id and state.stored.name == m.name
     local auto = (m.icon or NEW_ICON) == NEW_ICON
@@ -830,13 +845,6 @@ local function StoredRow(n, id, m, inner)
     r.bg:SetShown(r.selected)
 end
 
--- Opened or closed: as you left it; searching, open; else the specialization now's open, the others closed.
-local function IsOpen(key, now, q)
-    if q ~= "" then return true end
-    if groupOpen[key] ~= nil then return groupOpen[key] end
-    return now
-end
-
 -- The macros behind the scenes of set `id` that the search finds.
 local function Behind(id, q)
     local out = {}
@@ -846,62 +854,69 @@ local function Behind(id, q)
     return out
 end
 
+-- A group: its name, then, open, its rows (`add(n, x, tone)` for each of `items`).
+local function Group(n, key, label, tone, default, items, q, add)
+    if #items == 0 then return n end
+    local open = IsOpen(key, default, q)
+    n = n + 1
+    GroupRow(n, key, label, #items, tone, open)
+    for _, x in ipairs(open and items or {}) do
+        n = n + 1
+        add(n, x, tone)
+    end
+    return n
+end
+
 local function SetsRows(n, q)
     local specs = ns.Sets.Specs()
     local now
     for _, spec in ipairs(specs) do if spec.now then now = spec end end
     -- In the game.
-    local root, mine = {}, {}
+    local root, class, mine = {}, {}, {}
     local first, last = MacroRange("character")
     for index = first, last do
         local name, _, body = GetMacroInfo(index)
         if name and Shown(q, "character", name, body) then
-            table.insert(ns.Sets.LayerIn(name) == "spec" and mine or root, index)
+            local layer = ns.Sets.LayerIn(name)
+            table.insert(layer == "spec" and mine or layer == "class" and class or root, index)
         end
     end
+    local open = IsOpen("in", true, q)
     n = n + 1
-    HeadRow(n, L["In the game"], string.format(L["These take the character's macro slots: %d of %d."],
-        last - first + 1, MAX_CHARACTER))
-    for _, index in ipairs(root) do
-        n = n + 1
-        MacroRow(n, index)
-    end
-    if #mine > 0 and now then
-        local open = IsOpen("in:" .. now.key, true, q)
-        n = n + 1
-        GroupRow(n, "in:" .. now.key, now.label, #mine, true, open)
-        for _, index in ipairs(open and mine or {}) do
+    HeadRow(n, "in", L["In the game"], string.format(L["These take the character's macro slots: %d of %d."],
+        last - first + 1, MAX_CHARACTER), open)
+    if open then
+        for _, index in ipairs(root) do
             n = n + 1
-            MacroRow(n, index, true)
+            MacroRow(n, index)
         end
+        n = Group(n, "in:class", L["Class macros"], "class", true, class, q, MacroRow)
+        if now then n = Group(n, "in:" .. now.key, now.label, "now", true, mine, q, MacroRow) end
     end
     -- Behind the scenes: not with "Not on action bars", they are on none.
     if notOnBars then return n end
-    local behindRoot, groups = {}, {}
-    for _, id in ipairs({ "class", "character" }) do
-        for _, m in ipairs(Behind(id, q)) do behindRoot[#behindRoot + 1] = { id = id, m = m } end
-    end
+    local root2, class2 = Behind("character", q), Behind("class", q)
+    local groups, any = {}, #root2 + #class2 > 0
     for _, spec in ipairs(specs) do
-        local found = Behind(spec.key, q)
-        if #found > 0 then groups[#groups + 1] = { spec = spec, macros = found } end
+        groups[#groups + 1] = { spec = spec, macros = Behind(spec.key, q) }
+        any = any or #groups[#groups].macros > 0
     end
-    if #behindRoot == 0 and #groups == 0 then return n end
+    if not any then return n end
+    open = IsOpen("out", true, q)
     n = n + 1
-    HeadRow(n, L["Behind the scenes"], L["Kept by MacroSense, on no slot. Change any of them here: they come into "
-        .. "the game with their specialization, or with \"Take in\" under \"Macro sets\"."])
-    for _, x in ipairs(behindRoot) do
+    HeadRow(n, "out", L["Behind the scenes"], L["Kept by MacroSense, on no slot. Change any of them here: they come "
+        .. "into the game with their specialization, or with \"Take in\" under \"Macro sets\"."], open)
+    if not open then return n end
+    for _, m in ipairs(root2) do
         n = n + 1
-        StoredRow(n, x.id, x.m)
+        StoredRow(n, "character", m)
     end
+    n = Group(n, "out:class", L["Class macros"], "class", true, class2, q,
+        function(i, m, tone) StoredRow(i, "class", m, tone) end)
     for _, g in ipairs(groups) do
-        local key = "out:" .. g.spec.key
-        local open = IsOpen(key, g.spec.now, q)
-        n = n + 1
-        GroupRow(n, key, g.spec.label, #g.macros, g.spec.now, open)
-        for _, m in ipairs(open and g.macros or {}) do
-            n = n + 1
-            StoredRow(n, g.spec.key, m, true)
-        end
+        local tone = g.spec.now and "now" or "other"
+        n = Group(n, "out:" .. g.spec.key, g.spec.label, tone, g.spec.now, g.macros, q,
+            function(i, m) StoredRow(i, g.spec.key, m, tone) end)
     end
     return n
 end
@@ -916,6 +931,7 @@ end
 
 function Window.RefreshList()
     if not frame then return end
+    side:SetWidth(ns.Sets.Mine().enabled and 280 or 220)
     local q = Query()
     local first, last = MacroRange(state.scope)
     local n = 0
@@ -1020,6 +1036,17 @@ end
 function Window.Select(index)
     if index == state.index and not state.stored then return end
     Guard(function() Load(index) end)
+end
+
+-- Macro sets turned on or off: the list as it is then; off, one behind the scenes being edited is left (its
+-- changes too: there is nowhere to keep them).
+function Window.SetsChanged()
+    if not frame then return end
+    if state.stored and not ns.Sets.Mine().enabled then
+        local first, last = MacroRange(state.scope)
+        return Load(last >= first and first or nil)
+    end
+    Window.RefreshList()
 end
 
 -- Macro `name` of set `id`, behind the scenes, in the editor.
@@ -1849,7 +1876,7 @@ local function Build()
     previewCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Sidebar: tabs, list, buttons.
-    local side = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    side = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     side:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -1)
     side:SetPoint("BOTTOMLEFT", 1, 1)
     side:SetWidth(220)

@@ -6777,6 +6777,25 @@ do
     check("editor, sets: the character's behind the scenes at the root", listRow("stored", "Chaos Bolt") ~= nil
         and listRow("stored", "Chaos Bolt").set == "character")
     check("editor, sets: a specialization not chosen: red, closed", group and group.band:IsShown() and not group.open)
+    local classGroup = listRow("group", "Class macros")
+    check("editor, sets: the class's in a yellow group", classGroup and classGroup.tone == "class"
+        and classGroup.band:IsShown() and listRow("macro", "Stones") and listRow("macro", "Stones").tone == "class")
+    local nowLabel
+    for _, spec in ipairs(S.Specs()) do if spec.now then nowLabel = spec.label end end
+    CreateMacro("Green", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    S.MoveTo("character", "Green", S.Mine().active)
+    ns.Window.RefreshList()
+    check("editor, sets: the specialization now's in a green group", listRow("group", nowLabel)
+        and listRow("group", nowLabel).tone == "now" and listRow("macro", "Green").tone == "now")
+    S.Release(S.Mine().active, "Green")
+    DeleteMacro(GetMacroIndexByName("Green"))
+    Send("UPDATE_MACROS")
+    Fire(listRow("head", "In the game"), "OnClick")
+    check("editor, sets: \"In the game\" closes", not listRow("macro", "Stones") and listRow("head", "In the game")
+        and not listRow("head", "In the game").open)
+    Fire(listRow("head", "In the game"), "OnClick")
+    check("editor, sets: and opens", listRow("macro", "Stones") ~= nil)
     Fire(group, "OnClick")
     local stored
     for _, o in ipairs(created) do
@@ -6862,6 +6881,14 @@ do
     switch(1)
     update()
     check("sets: off: nothing changes", slots() == before, slots())
+    ns.Window.SetScope("character")
+    local shownHeads = false
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and (o.what == "head" or o.what == "group" or o.what == "stored") and o.shown then
+            shownHeads = true
+        end
+    end
+    check("editor, sets off: as without them", not shownHeads)
     ns.SetsWindow.Open()
     ns.SetsWindow.OnCheck():Refresh()
     S.Enable()
