@@ -813,13 +813,13 @@ local function SetParked(sets, id, m, on)
 end
 local function Room() return ns.MAX_CHARACTER - #InSlots() end
 
--- What comes into the game when the sets are turned off: every macro behind the scenes, as many as there are free
--- slots, one of a name (the first of: the class's, this character's, the specialization now's, the others').
--- Returns those that come in ({ m, id }) and those that don't ({ name, why = "room" or "name" }).
-function Sets.OffPlan()
+-- The macros behind the scenes that could come into the game when the sets are turned off, in this order: the
+-- class's, this character's, the specialization now's, the others'. Each { m, id, taken = its name is in the game
+-- already }; and the free slots.
+function Sets.OffChoice()
     local sets = Sets.Mine()
-    local taken, room = {}, Room()
-    for _, m in ipairs(InSlots()) do taken[m.name] = true end
+    local inGame = {}
+    for _, m in ipairs(InSlots()) do inGame[m.name] = true end
     local ids = { "class", "character" }
     if sets.active then ids[#ids + 1] = sets.active end
     local others = {}
@@ -828,33 +828,43 @@ function Sets.OffPlan()
     end
     table.sort(others)
     for _, key in ipairs(others) do ids[#ids + 1] = key end
-    local bring, left = {}, {}
+    local out = {}
     for _, id in ipairs(ids) do
         for _, m in ipairs(ListOf(sets, id)) do
-            if Sets.Behind(id, m) then
-                if taken[m.name] then
-                    left[#left + 1] = { name = m.name, why = "name" }
-                elseif room <= 0 then
-                    left[#left + 1] = { name = m.name, why = "room" }
-                else
-                    bring[#bring + 1] = { m = m, id = id }
-                    taken[m.name], room = true, room - 1
-                end
-            end
+            if Sets.Behind(id, m) then out[#out + 1] = { m = m, id = id, taken = inGame[m.name] or nil } end
+        end
+    end
+    return out, Room()
+end
+
+-- What comes into the game when the sets are turned off, unless you choose: every macro behind the scenes, as many
+-- as there are free slots, one of a name (the first, in the order of Sets.OffChoice). Returns those that come in
+-- ({ m, id }) and those that don't ({ name, why = "room" or "name" }).
+function Sets.OffPlan()
+    local all, room = Sets.OffChoice()
+    local taken, bring, left = {}, {}, {}
+    for _, c in ipairs(all) do
+        if c.taken or taken[c.m.name] then
+            left[#left + 1] = { name = c.m.name, why = "name" }
+        elseif room <= 0 then
+            left[#left + 1] = { name = c.m.name, why = "room" }
+        else
+            bring[#bring + 1] = { m = c.m, id = c.id }
+            taken[c.m.name], room = true, room - 1
         end
     end
     return bring, left
 end
 
--- Sets off: the macros behind the scenes come into the game, as many as fit (Sets.OffPlan), so you have them all;
--- the sets are kept as they were, and those come back to them when the sets are on again. False and "combat" in
--- combat.
-function Sets.Disable()
+-- Sets off: the macros behind the scenes come into the game, `bring` ({ m, id }, as you chose) or as many as fit
+-- (Sets.OffPlan), so you have them; the sets are kept as they were, and those come back to them when the sets are
+-- on again. False and "combat" in combat.
+function Sets.Disable(bring)
     local sets = Sets.Mine()
     if not sets.enabled then return true end
     if InCombatLockdown() then return false, "combat" end
     Sets.Scan()
-    local bring = Sets.OffPlan()
+    bring = bring or Sets.OffPlan()
     sets.out = {}
     Run(function()
         for _, b in ipairs(bring) do

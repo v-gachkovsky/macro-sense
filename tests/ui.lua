@@ -7254,6 +7254,36 @@ do
     S.Enable()
     check("editor: on again: back behind the scenes", not has("Hidden"))
     S.Forget("character", "Hidden")
+    -- Not all fit: you choose which come in, MacroSense's pick checked first; past the free slots, no more.
+    S.Write("character", nil, "Hidden A", 1, "/say a")
+    S.Write("character", nil, "Hidden B", 1, "/say b")
+    local max = ns.MAX_CHARACTER
+    ns.MAX_CHARACTER = select(2, GetNumMacros()) + 1
+    Fire(setsCheck, "OnClick")
+    local choosing = ns.SetsWindow.Choosing()
+    check("editor: off, not all fit: you choose", choosing ~= nil and S.Mine().enabled
+        and choosing.count.text == "Chosen: 1 of 1 free slots", choosing and choosing.count.text)
+    local function chooseRow(name)
+        for _, r in ipairs(ns.SetsWindow.ChooseRows()) do
+            if r:IsShown() and r.c.m.name == name then return r end
+        end
+    end
+    for _, r in ipairs(ns.SetsWindow.ChooseRows()) do
+        if r:IsShown() and choosing.picked[r.c.m] then Fire(r, "OnClick") end
+    end
+    check("editor: none chosen: all can be", chooseRow("Hidden B"):IsEnabled()
+        and choosing.count.text == "Chosen: 0 of 1 free slots")
+    Fire(chooseRow("Hidden B"), "OnClick")
+    check("editor: the free slots taken: no more", not chooseRow("Hidden A"):IsEnabled()
+        and choosing.count.text == "Chosen: 1 of 1 free slots")
+    Fire(choosing.off, "OnClick")
+    ns.MAX_CHARACTER = max
+    check("editor: off: the one you chose in the game, the other kept", not S.Mine().enabled and has("Hidden B")
+        and not has("Hidden A"))
+    S.Enable()
+    check("editor: on again: back behind the scenes", not has("Hidden B"))
+    S.Forget("character", "Hidden A")
+    S.Forget("character", "Hidden B")
     S.Disable()
     C_SpecializationInfo.GetActiveSpecGroup = specs
     CreateMacro, DeleteMacro, EditMacro = create, delete, edit
