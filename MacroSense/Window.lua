@@ -1009,7 +1009,8 @@ local function SetsItems(r)
     if not m then return items end
     local parked = Sets.IsParked(id, m)
     items[#items + 1] = { name = parked and L["Take in"] or L["Put away"], onClick = function()
-        Window.Told(Sets.Park(id, name, not parked))
+        local ok, why = Sets.Park(id, name, not parked)
+        Window.Told(ok, why, { name = name, to = id, park = parked and "in" or "out" })
     end }
     local sets = { { id = "class" }, { id = "character" } }
     for _, spec in ipairs(Sets.Specs()) do sets[#sets + 1] = { id = spec.key, spec = true } end
@@ -1018,7 +1019,7 @@ local function SetsItems(r)
         if set.id ~= id then
             items[#items + 1] = { name = string.format(L["Move to: %s"], label), onClick = function()
                 local ok, why = Sets.MoveTo(id, name, set.id)
-                Window.Told(ok, why, label)
+                Window.Told(ok, why, { name = name, to = set.id })
             end }
         end
     end
@@ -1027,14 +1028,14 @@ local function SetsItems(r)
         if set.id ~= id then
             items[#items + 1] = { name = string.format(L["Copy to: %s"], label), onClick = function()
                 local ok, why = Sets.MoveTo(id, name, set.id, true)
-                Window.Told(ok, why, label)
+                Window.Told(ok, why, { name = name, to = set.id, copy = true })
             end }
         end
     end
     if id ~= "character" then
         items[#items + 1] = { name = L["Remove"], onClick = function()
             local ok, why = Sets.Release(id, name)
-            Window.Told(ok, why, ns.SetsWindow.Label("character"))
+            Window.Told(ok, why, { name = name, to = "character" })
         end }
     end
     return items
@@ -1042,15 +1043,57 @@ end
 
 function Window.OpenSetsMenu(owner, r) ns.OpenMenu(owner, SetsItems(r), 200, false, true) end
 
--- What a change of the sets said when it was not done as asked, in the chat; `label`: the set it went to.
-function Window.Told(ok, why, label)
-    if ok and why == "waits" then return ns.Print("it waits behind the scenes: there is no free slot") end
-    if ok and why == "twin" then return ns.Print("it waits behind the scenes: a macro of this name is in the game") end
-    if ok then return end
-    if why == "room" then return ns.Print("no free slot: put another macro behind the scenes first") end
-    if why == "name" and label then return ns.Print("\"%s\" has a macro of this name already", label) end
-    if why == "name" then return ns.Print("a macro of this name is in the game already") end
+-- What a change of the sets said, in the chat: each time the rule it met, so the sets can be learned from it.
+-- `t`: the macro's `name`, the set it went `to`, `copy`, `park` ("in" taken in, "out" put away).
+function Window.Told(ok, why, t)
+    t = t or {}
+    local name, label = t.name or "", t.to and ns.SetsWindow.Label(t.to) or ""
     if why == "combat" then return ns.Print("macros cannot be changed in combat") end
+    if why == "waits" then
+        return ns.Print("\"%s\" waits behind the scenes: there is no free slot, a character has only 30. Put "
+            .. "another macro behind the scenes, then take this one in.", name)
+    end
+    if why == "twin" then
+        return ns.Print("\"%s\" waits behind the scenes: a macro of this name is in the game already, and the game "
+            .. "tells macros apart by name. Rename one of them, or put the other one behind the scenes.", name)
+    end
+    if why == "room" then
+        return ns.Print("no free slot for \"%s\": a character has only 30. Put another macro behind the scenes "
+            .. "first.", name)
+    end
+    if why == "ingame" then
+        return ns.Print("\"%s\" can't come into the game: a macro of this name is there already, and only one of a "
+            .. "name can be. Put that one behind the scenes, or rename one of them.", name)
+    end
+    if why == "name" then
+        return ns.Print("\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename "
+            .. "one of them first.", label, name)
+    end
+    if why == "differs" then
+        return ns.Print("\"%s\" can't go back to \"This character's\": it has another macro of this name. If "
+            .. "they were the same, the extra one would just go. Rename one of them, or make them the same.", name)
+    end
+    if why == "same" then
+        return ns.Print("a copy goes into another set: drag \"%s\" with Ctrl onto another group.", name)
+    end
+    if not ok then return end
+    local inGame = t.to and ns.Sets.InGame(t.to)
+    if t.copy then
+        return ns.Print("\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename "
+            .. "one, and the other stays as it is.", name, label)
+    end
+    if t.park == "in" and not inGame then
+        return ns.Print("\"%s\" will come into the game with its specialization: it isn't the one chosen now.",
+            name)
+    end
+    if t.park == "out" and not inGame then
+        return ns.Print("\"%s\" stays behind the scenes, also when you choose its specialization. \"Take in\" "
+            .. "brings it back.", name)
+    end
+    if t.to and not t.park and not inGame then
+        return ns.Print("\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization.",
+            name, label)
+    end
 end
 
 -- A macro behind the scenes being dragged: its icon and name by the mouse.
@@ -1085,10 +1128,11 @@ function Window.Drop(source, target, copy)
     if not target.dropId or not source.set or target == source then return end
     ClearCursor() -- a macro picked up for the action bars
     copy = copy or IsControlKeyDown()
-    local label = ns.SetsWindow.Label(target.dropId)
-    local ok, why = ns.Sets.Place(source.set, source.name, target.dropId, target.dropIn, copy)
-    if ok and copy and not why then return ns.Print("copied to \"%s\"", label) end
-    Window.Told(ok, why, label)
+    local from, name, to = source.set, source.name, target.dropId
+    local ok, why = ns.Sets.Place(from, name, to, target.dropIn, copy)
+    -- Dropped in its own set: in the game or behind the scenes (one not chosen now: to come in with it).
+    local park = from == to and ((target.dropIn or not ns.Sets.InGame(to)) and "in" or "out") or nil
+    Window.Told(ok, why, { name = name, to = to, copy = copy, park = park })
 end
 
 -- What the spells say of macro row `r` in its set, in its tooltip: one that can't be cast there in red.
@@ -1315,7 +1359,10 @@ function Window.Save()
     if state.stored then
         local ok, why = ns.Sets.Write(state.stored.id, state.stored.name, name, state.icon, written)
         if not ok then
-            if why == "name" then return ns.Print("a macro of this name is behind the scenes already") end
+            if why == "name" then
+                return ns.Print("\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. "
+                    .. "Choose another name.", ns.SetsWindow.Label(state.stored.id), name)
+            end
             return ns.Print("could not save the macro")
         end
         state.stored.name, state.name, state.body, state.savedIcon = name, name, body, state.icon

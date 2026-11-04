@@ -1686,7 +1686,6 @@ ns.locales.uk = {
         .. "разом зі своєю спеціалізацією, через «Взяти в гру» в «...» або якщо перетягнути їх у «У грі».",
     ["The macros of the specialization chosen now."] = "Макроси спеціалізації, вибраної зараз.",
     ["Behind the scenes: not in the game now, and on no slot."] = "За лаштунками: зараз не в грі й не займає слота.",
-    ["a macro of this name is behind the scenes already"] = "за лаштунками вже є макрос із такою назвою",
     ["Works in every specialization: it could go to \"Class macros\""] =
         "Працює в усіх спеціалізаціях: його можна перенести в «Класові»",
     ["It can sort once it knows the spells of every specialization: choose each of them at least once."] =
@@ -1708,14 +1707,6 @@ ns.locales.uk = {
     ["moved: %d"] = "перенесено: %d",
     ["nothing to move: each macro is where its spells are"] =
         "переносити нічого: кожен макрос там, де є його заклинання",
-    ["it waits behind the scenes: there is no free slot"] = "макрос чекає за лаштунками: вільного слота немає",
-    ["no free slot: put another macro behind the scenes first"] =
-        "немає вільного слота: спершу заберіть за лаштунки інший макрос",
-    ["\"%s\" has a macro of this name already"] = "у «%s» уже є макрос із такою назвою",
-    ["a macro of this name is in the game already"] = "макрос із такою назвою вже є в грі",
-    ["copied to \"%s\""] = "скопійовано в «%s»",
-    ["it waits behind the scenes: a macro of this name is in the game"] =
-        "макрос чекає за лаштунками: у грі вже є макрос із такою назвою",
     -- The guide: macro sets
     ["A character has only 30 macro slots. Macro sets let MacroSense keep more macros than that: each "
         .. "specialization gets macros of its own, and only the ones you need now are in the game. Turn them on with "
@@ -1833,4 +1824,40 @@ ns.locales.uk = {
     ["Each time you turn the sets on, MacroSense first makes a backup of your macros."] =
         "Щоразу, коли ви вмикаєте набори, MacroSense спершу робить резервну копію ваших макросів.",
     ["How it works"] = "Як це працює",
+    -- Macro sets: what each change says, with the rule it met
+    ["\"%s\" waits behind the scenes: there is no free slot, a character has only 30. Put another macro behind the "
+        .. "scenes, then take this one in."] =
+        "«%s» чекає за лаштунками: вільного слота немає, у персонажа їх лише 30. Заберіть за лаштунки інший "
+        .. "макрос, а тоді візьміть цей у гру.",
+    ["\"%s\" waits behind the scenes: a macro of this name is in the game already, and the game tells macros apart "
+        .. "by name. Rename one of them, or put the other one behind the scenes."] =
+        "«%s» чекає за лаштунками: у грі вже є макрос із такою назвою, а гра розрізняє макроси за назвами. "
+        .. "Перейменуйте один із них або заберіть інший за лаштунки.",
+    ["no free slot for \"%s\": a character has only 30. Put another macro behind the scenes first."] =
+        "для «%s» немає вільного слота: у персонажа їх лише 30. Спершу заберіть за лаштунки інший макрос.",
+    ["\"%s\" can't come into the game: a macro of this name is there already, and only one of a name can be. Put "
+        .. "that one behind the scenes, or rename one of them."] =
+        "«%s» не може вийти в гру: там уже є макрос із такою назвою, а з однією назвою може бути лише один. "
+        .. "Заберіть той за лаштунки або перейменуйте один із них.",
+    ["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename one of them first."] =
+        "у «%s» уже є макрос «%s»: у наборі може бути лише один макрос із певною назвою. Спершу перейменуйте "
+        .. "один із них.",
+    ["\"%s\" can't go back to \"This character's\": it has another macro of this name. If they were the same, the "
+        .. "extra one would just go. Rename one of them, or make them the same."] =
+        "«%s» не може повернутися до «Цього персонажа»: там є інший макрос із такою назвою. Якби вони були "
+        .. "однакові, зайвий просто зник би. Перейменуйте один із них або зробіть їх однаковими.",
+    ["a copy goes into another set: drag \"%s\" with Ctrl onto another group."] =
+        "копія йде в інший набір: перетягніть «%s» із затиснутою Ctrl на іншу групу.",
+    ["\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename one, and the other stays "
+        .. "as it is."] =
+        "«%s» скопійовано в «%s»: тепер це два окремі макроси. Зміните чи перейменуєте один — інший лишиться "
+        .. "як є.",
+    ["\"%s\" will come into the game with its specialization: it isn't the one chosen now."] =
+        "«%s» вийде в гру разом зі своєю спеціалізацією: зараз вибрано іншу.",
+    ["\"%s\" stays behind the scenes, also when you choose its specialization. \"Take in\" brings it back."] =
+        "«%s» лишиться за лаштунками, навіть коли ви оберете його спеціалізацію. «Взяти в гру» поверне його.",
+    ["\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization."] =
+        "«%s» тепер у «%s»: у гру він вийде, коли ви оберете цю спеціалізацію.",
+    ["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Choose another name."] =
+        "у «%s» уже є макрос «%s»: у наборі може бути лише один макрос із певною назвою. Оберіть іншу назву.",
 }
