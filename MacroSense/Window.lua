@@ -1384,6 +1384,19 @@ function Window.SetsChanged()
 end
 
 -- Macro `name` of set `id`, behind the scenes, in the editor.
+-- The set that keeps macro `name` behind the scenes (the specialization now first, then the class's, this
+-- character's, the others), nil when none or the sets are off.
+function Window.StoredSetOf(name)
+    if not ns.Sets.Mine().enabled then return end
+    local ids = { ns.Sets.Mine().active, "class", "character" }
+    for _, spec in ipairs(ns.Sets.Specs()) do ids[#ids + 1] = spec.key end
+    for _, id in ipairs(ids) do
+        for _, m in ipairs(ns.Sets.List(id)) do
+            if m.name == name and ns.Sets.Behind(id, m) then return id end
+        end
+    end
+end
+
 function Window.SelectStored(id, name)
     if state.stored and state.stored.id == id and state.stored.name == name then return end
     Guard(function() Load(nil, { id = id, name = name }) end)
@@ -2039,8 +2052,13 @@ function Window.OnMacrosChanged()
     if state.index then
         local name = GetMacroInfo(state.index)
         if name ~= state.name then
+            local dirty = IsDirty() -- as it was: without its index it would be a new one
             local index = GetMacroIndexByName(state.name)
             state.index = index and index > 0 and index or nil
+            -- Gone from the game into a set behind the scenes (moved to a specialization not chosen, put away):
+            -- edited there, not left as a new one.
+            local id = not state.index and not dirty and Window.StoredSetOf(state.name)
+            if id then return Load(nil, { id = id, name = state.name }) end
         end
     end
     local saved = state.index and ns.Roles.Text(state.scope, state.name, select(3, GetMacroInfo(state.index)) or "")

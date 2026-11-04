@@ -6928,6 +6928,19 @@ do
     for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Spare" then trashed = true end end
     check("editor, sets: deleted behind the scenes: into the trash", not inSet("character", "Spare") and trashed)
 
+    -- The macro open in the editor moved to a specialization not chosen: it leaves the game, and is edited behind
+    -- the scenes, not left as a new one to save.
+    CreateMacro("Opened", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Opened"))
+    S.MoveTo("character", "Opened", "group1")
+    check("editor, sets: the open macro moved behind the scenes: edited there", not has("Opened")
+        and listRow("stored", "Opened", "group1") and listRow("stored", "Opened", "group1").selected
+        and nameField():GetText() == "Opened")
+    S.Release("group1", "Opened")
+    DeleteMacro(GetMacroIndexByName("Opened"))
+    Send("UPDATE_MACROS")
+
     -- Dragged anywhere in the list: into that set, in the game or behind the scenes, as dropped.
     CreateMacro("Dragged", 1, "/cast Fear", true)
     Send("UPDATE_MACROS")
