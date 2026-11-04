@@ -288,7 +288,6 @@ ns.locales.uk = {
     ["Search name or text"] = "Пошук за назвою чи текстом",
     ["No macros match"] = "Нічого не знайдено",
     ["Delete this macro"] = "Видалити цей макрос",
-    ["Copy this macro"] = "Копіювати цей макрос",
     ["Duplicate"] = "Дублювати",
     ["Copy to Character"] = "Копіювати в «Персонаж»",
     ["Copy to General"] = "Копіювати в «Загальні»",
@@ -297,6 +296,7 @@ ns.locales.uk = {
     ["It leaves this tab and goes there. Hold Ctrl to copy it instead."] =
         "Макрос іде з цієї вкладки туди. Затисніть Ctrl, щоб скопіювати його натомість.",
     ["It is in this tab already."] = "Макрос уже в цій вкладці.",
+    ["Copy, move and more"] = "Копіювати, перенести та інше",
     ["Tabs"] = "Вкладки",
     ["Drag a macro onto the General or Character tab to move it there, or with Ctrl to copy it. A macro behind the "
         .. "scenes goes onto General only: it is this character's already. This works with macro sets off too."] =

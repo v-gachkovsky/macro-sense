@@ -357,8 +357,10 @@ The list shows the General or the Character tab, with how many macros each holds
 **Search** above it keeps the macros whose name or text has what you type, in any case; the tabs then say how
 many match in each (`General  (3)`). Enter opens the first match, Esc clears the search.
 
-Each macro in the list has two buttons at its end. **Copy** (two squares) copies it: **Duplicate** into the
-same tab, **Copy to Character** / **Copy to General** into the other one. The copy gets a free name (`Fear 2`,
+Each macro in the list has two buttons at its end. **...** (a right click too) copies or moves it: **Duplicate**
+into the same tab, **Copy to Character** / **Copy to General** into the other one, **Move to Character** / **Move
+to General** there; with macro sets on, what can be done with it in the sets is there too. Dragging it onto the
+other tab moves it, with Ctrl copies it. The copy gets a free name (`Fear 2`,
 cut to fit 16 letters), because two macros with one name would share a key binding, and opens. The macro
 being edited is copied with what the editor shows (name, icon, text) and keeps its saved text; another one is
 copied as saved. **x** deletes the macro, after asking; the macro being edited stays open when another one
@@ -366,7 +368,7 @@ goes.
 
 Your other characters' own macros are in the **Character** tab too, under your macros: each character's name (your
 realm first), and a click shows its macros, as they were when you last played it with MacroSense. Hover one to
-read it; a click, or its copy button, copies it into this character's tab or General, under a free name. The search
+read it; a click, or its "...", copies it into this character's tab or General, under a free name. The search
 finds them too. The **x** next to a character forgets it: its macros and action bars are no longer shown or
 counted, until you log in with it again.
 
@@ -540,7 +542,7 @@ Found a bug or have an idea? Tell me any way you like:
 
 ## License
 
-Code: MIT, see `LICENSE`; so is the copy icon, drawn for MacroSense (`MacroSense/Media/copy.tga`). Fonts
+Code: MIT, see `LICENSE`; so are the icons, drawn for MacroSense (`MacroSense/Media/*.tga`). Fonts
 keep their own free licenses: DejaVu (Bitstream Vera license), JetBrains Mono, Fira Mono, Source Code Pro
 and Inconsolata (SIL OFL 1.1); the texts are in `MacroSense/Media/Fonts/`.
 

@@ -53,7 +53,7 @@ A macro is at most **255 characters** long. That is about five or six lines.
 
 1. "General" and "Character": which macros the list shows, and how many each tab holds.
 2. The search, and "Not on action bars": find a macro by its name or text, or keep only those on no bar.
-3. The list of macros. A click opens one. The two squares copy it, "x" deletes it. In the "Character" tab,
+3. The list of macros. A click opens one. "..." copies or moves it, "x" deletes it. In the "Character" tab,
    your other characters' macros are at the bottom.
 4. "From Spellbook" makes macros for many spells of your spellbook at once, "New" starts an empty macro,
    "New (Wizard)" makes one from a few questions.
