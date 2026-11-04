@@ -694,19 +694,26 @@ local function Row(i)
     end)
     -- Drag a macro onto an action bar, like in the Blizzard macro window.
     r:RegisterForDrag("LeftButton")
-    -- With macro sets on, also anywhere in the list: into another set, in the game or behind the scenes.
+    -- Onto the other tab, moved or (Ctrl) copied there. With macro sets on, also anywhere in the list: into another
+    -- set, in the game or behind the scenes.
     r:SetScript("OnDragStart", function()
         if r.what == "macro" then Window.Pickup(r.index) end
-        if r.set then Window.dragging, Window.copying = r, IsControlKeyDown() end
+        if r.what == "macro" or r.what == "stored" then Window.dragging, Window.copying = r, IsControlKeyDown() end
         -- Behind the scenes, the game puts nothing on the cursor: its icon and name follow the mouse instead.
         if r.what == "stored" then Window.ShowGhost(r) end
-        if r.set then Window.Watch() end
+        if Window.dragging == r then Window.Watch() end
     end)
     r:SetScript("OnDragStop", function()
         Window.HideGhost()
         Window.DragOver(nil)
         if Window.dragging ~= r then return end
         Window.dragging = nil
+        for scope, tab in pairs(tabs or {}) do
+            if tab:IsShown() and tab:IsMouseOver() then
+                return Window.DropOnTab(r, scope, Window.copying or IsControlKeyDown())
+            end
+        end
+        if not r.set then return end
         for _, target in ipairs(rows) do
             if target:IsShown() and target:IsMouseOver() then
                 return Window.Drop(r, target, Window.copying or IsControlKeyDown())
@@ -1206,11 +1213,12 @@ function Window.Watch()
         mark.watch = CreateFrame("Frame", nil, UIParent)
         mark.watch:SetScript("OnUpdate", function()
             if not Window.dragging then return mark.watch:Hide() end
-            local at
+            local at, tab
+            for scope, t in pairs(tabs or {}) do if t:IsShown() and t:IsMouseOver() then tab = scope end end
             for _, target in ipairs(rows) do
-                if target:IsShown() and target.dropId and target:IsMouseOver() then at = target end
+                if not tab and target:IsShown() and target.dropId and target:IsMouseOver() then at = target end
             end
-            Window.DragOver(at)
+            Window.DragOver(at, tab)
             if mark:IsShown() then MarkAt() end
         end)
     end
@@ -1220,10 +1228,43 @@ end
 -- The sign by the dragged macro, if one is shown (the tests).
 function Window.DragSign() return mark ~= nil and mark:IsShown() and mark.sign or nil end
 
--- The dragged macro over row `target` (nil: over none, or let go): the sign and the tooltip, as Ctrl is now.
-function Window.DragOver(target)
+-- The dragged macro over tab `scope`: the sign and the tooltip, as over a group.
+local function OverTab(source, scope)
+    local copy = (Window.copying or IsControlKeyDown()) and true or false
+    local ok, why = Window.TabPlan(source, scope, copy)
+    local key = table.concat({ scope, tostring(copy), tostring(ok), tostring(why) }, " ")
+    if key == over then return end
+    over = key
+    mark.sign = not ok and NO_ICON or PLUS_ICON
+    mark.icon:SetTexture(mark.sign)
+    mark:SetShown(not ok or copy)
+    if mark:IsShown() then MarkAt() end
+    local label = TabName(scope)
+    GameTooltip:SetOwner(tabs[scope], "ANCHOR_RIGHT")
+    if ok then
+        GameTooltip:SetText(string.format(copy and L["Copy to \"%s\""] or L["Move to \"%s\""], label), 0.3, 0.75,
+            0.3)
+        GameTooltip:AddLine(copy and L["A macro of its own goes there; this one stays as it is. Let go of Ctrl to "
+            .. "move it instead."] or L["It leaves this tab and goes there. Hold Ctrl to copy it instead."],
+            1, 1, 1, true)
+        if why == "behind" then
+            GameTooltip:AddLine(L["All 30 slots are taken: it goes behind the scenes, in \"This character's\"."],
+                0.8, 0.8, 0.8, true)
+        end
+    else
+        GameTooltip:SetText(string.format(copy and L["Can't copy to \"%s\""] or L["Can't move to \"%s\""], label),
+            1, 0.3, 0.3)
+        GameTooltip:AddLine(Window.TabWhy(why, scope), 1, 1, 1, true)
+    end
+    GameTooltip:Show()
+end
+
+-- The dragged macro over row `target` (nil: over none, or let go) or tab `tab`: the sign and the tooltip, as Ctrl is
+-- now.
+function Window.DragOver(target, tab)
     local source = Window.dragging
-    if not (source and target and target.dropId) or target == source then
+    if source and tab and mark then return OverTab(source, tab) end
+    if not (source and source.set and target and target.dropId) or target == source then
         if over then GameTooltip:Hide() end
         over = nil
         if mark then mark:Hide() end
@@ -1814,6 +1855,40 @@ end
 
 -- The copy menu of macro `index`, under its copy button in the list.
 function Window.OpenCopyMenu(owner, index) ns.OpenMenu(owner, CopyItems(index), 180, false, true) end
+
+-- Macro row `source` dropped on tab `scope`, `copy` or moved: true (and "behind": with no free slot, behind the
+-- scenes), or false and why: "combat", "same" (its own tab), "full", "stored" (behind the scenes, onto Character).
+function Window.TabPlan(source, scope, copy)
+    if InCombatLockdown() then return false, "combat" end
+    if source.what == "stored" then
+        if scope ~= "general" then return false, "stored" end
+    elseif source.scope == scope then
+        return false, "same"
+    end
+    local first, last, max = MacroRange(scope)
+    if last - first + 1 < max then return true end
+    if scope == "character" and ns.Sets.Mine().enabled then return true, "behind" end
+    return false, "full"
+end
+
+-- Why a macro can't go onto tab `scope`, in words.
+function Window.TabWhy(why, scope)
+    if why == "combat" then return L["macros cannot be changed in combat"] end
+    if why == "same" then return L["It is in this tab already."] end
+    if why == "full" then return string.format(L["The %s tab is full."], TabName(scope)) end
+    return L["It is this character's already. To bring it into the game, drag it onto \"In the game\" or use "
+        .. "\"Take in\"."]
+end
+
+-- Macro row `source` dropped on tab `scope`: moved there, or copied with `copy`.
+function Window.DropOnTab(source, scope, copy)
+    ClearCursor() -- a macro picked up for the action bars
+    local ok, why = Window.TabPlan(source, scope, copy)
+    if not ok then return ns.Say(Window.TabWhy(why, scope)) end
+    if source.what == "stored" then return Window.StoredToGeneral(source.set, source.name, not copy) end
+    if copy then return Window.Copy(scope, source.index) end
+    MoveAsked(source.index)
+end
 
 -- Macro `name` of set `id`, behind the scenes: { name, icon, body } as kept, the one being edited as saved.
 local function StoredOf(id, name)

@@ -294,6 +294,18 @@ ns.locales.uk = {
     ["Copy to General"] = "Копіювати в «Загальні»",
     ["Move to Character"] = "Перенести в «Персонаж»",
     ["Move to General"] = "Перенести в «Загальні»",
+    ["It leaves this tab and goes there. Hold Ctrl to copy it instead."] =
+        "Макрос іде з цієї вкладки туди. Затисніть Ctrl, щоб скопіювати його натомість.",
+    ["It is in this tab already."] = "Макрос уже в цій вкладці.",
+    ["Tabs"] = "Вкладки",
+    ["Drag a macro onto the General or Character tab to move it there, or with Ctrl to copy it. A macro behind the "
+        .. "scenes goes onto General only: it is this character's already. This works with macro sets off too."] =
+        "Перетягніть макрос на вкладку «Загальні» чи «Персонаж», щоб перенести його туди, або з Ctrl, щоб "
+        .. "скопіювати. Макрос за лаштунками можна перетягнути лише на «Загальні»: персонажу він уже належить. "
+        .. "Це працює й з вимкненими наборами.",
+    ["It is this character's already. To bring it into the game, drag it onto \"In the game\" or use \"Take in\"."] =
+        "Цей макрос уже належить персонажу. Щоб вивести його в гру, перетягніть його на «У грі» або оберіть "
+        .. "«Взяти в гру».",
     ["For a macro behind the scenes: a copy in the same set, named like \"Fear 2\". A macro behind the scenes can "
         .. "also be moved or copied to the General tab from here."] =
         "Для макроса за лаштунками: копія в тому самому наборі з назвою на кшталт «Fear 2». Звідси ж макрос за "
