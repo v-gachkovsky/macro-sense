@@ -1205,9 +1205,9 @@ function Window.HideGhost() if ghost then ghost:Hide() end end
 local mark, over
 local function MarkAt()
     mark:ClearAllPoints()
-    if ghost and ghost:IsShown() then return mark:SetPoint("CENTER", ghost.icon, "BOTTOMRIGHT", -2, 2) end
+    if ghost and ghost:IsShown() then return mark:SetPoint("CENTER", ghost.icon, "CENTER") end
     -- A macro in the game is on the mouse as the game's own icon, drawn over everything: the sign above and to the
-    -- left of it, where it doesn't cover the sign.
+    -- left of it, where the icon doesn't cover the sign.
     local x, y = GetCursorPosition()
     local scale = UIParent:GetEffectiveScale()
     mark:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale - 26, y / scale + 26)
@@ -1217,7 +1217,7 @@ function Window.Watch()
         mark = CreateFrame("Frame", nil, UIParent)
         mark:SetFrameStrata("TOOLTIP")
         mark:SetFrameLevel(100)
-        mark:SetSize(18, 18)
+        mark:SetSize(27, 27)
         mark.icon = mark:CreateTexture(nil, "OVERLAY")
         mark.icon:SetAllPoints()
         mark:Hide()
