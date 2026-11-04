@@ -1689,6 +1689,7 @@ ns.locales.uk = {
     ["Move to: %s"] = "Перенести в: %s",
     ["Copy to: %s"] = "Копіювати в: %s",
     ["Copy"] = "Копіювати",
+    ["A copy goes into a specialization, and this one stays here, behind the scenes while a specialization has it."] = "Копія з'явиться в спеціалізації, а цей макрос лишиться тут, за лаштунками, поки він є в якійсь спеціалізації.",
     ["These take the character's macro slots: %d of %d."] = "Вони займають слоти макросів персонажа: %d з %d.",
     ["This specialization is not chosen now: its macros come into the game when you choose it."] = "Ця спеціалізація зараз не вибрана: її макроси вийдуть у гру, коли ви її виберете.",
     ["Character  %d/%d  +%d"] = "Персонаж  %d/%d  +%d",

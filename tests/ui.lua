@@ -6577,8 +6577,7 @@ do
         if m.name == "Chaos Bolt" and m.parked then inCharacter = inCharacter + 1 end
         if m.name == "Chaos Bolt" and not m.parked then inCharacter = inCharacter + 10 end
     end
-    check("sets: shown late: not taken for a new macro of yours, the character's behind the scenes",
-        inCharacter == 1, inCharacter)
+    check("sets: shown late: not taken for a new macro of yours", inCharacter == 0, inCharacter)
     late = false
 
     -- In combat: after it.
@@ -6630,11 +6629,15 @@ do
 
     -- Moved out of the game into a specialization not chosen, into it from one; copied between specializations.
     check("sets: moved to a specialization not chosen: out of the game", S.MoveTo("character", "Mount Up", "group1")
-        and not has("Mount Up") and inSet("group1", "Mount Up") and inSet("character", "Mount Up").parked)
+        and not has("Mount Up") and inSet("group1", "Mount Up") and not inSet("character", "Mount Up"))
     check("sets: moved from it to the character's: into the game", S.MoveTo("group1", "Mount Up", "character")
         and has("Mount Up") and S.Mine().layer["Mount Up"] == "character")
-    ok, why = S.MoveTo("character", "Mount Up", "group1", true)
-    check("sets: the character's is not copied", not ok and why == "together")
+    check("sets: the character's copied to a specialization: kept, behind the scenes",
+        S.MoveTo("character", "Mount Up", "group1", true) and inSet("group1", "Mount Up")
+        and inSet("character", "Mount Up").parked and not has("Mount Up"))
+    S.TakeHome("Mount Up")
+    ok, why = S.MoveTo("class", "Stones", "group1", true)
+    check("sets: the class's is not copied", not ok and why == "together")
     check("sets: copied between specializations", S.MoveTo("group1", "Chaos Bolt", "group2", true)
         and inSet("group1", "Chaos Bolt") and inSet("group2", "Chaos Bolt") and has("Chaos Bolt"))
     ok, why = S.MoveTo("group1", "Chaos Bolt", "group2")
@@ -6707,12 +6710,14 @@ do
     list:SetVerticalScroll(120)
     ns.SetsWindow.Pick("character")
     check("sets window: another set: from its top", list:GetVerticalScroll() == 0, list:GetVerticalScroll())
-    check("sets window: the character's: no \"Copy\"", not ns.SetsWindow.RowFrame(1).copy:IsShown())
+    copies = shown(ns.SetsWindow.RowFrame(1).copy)
+    check("sets window: the character's: \"Copy\" to the specializations", ns.SetsWindow.RowFrame(1).copy:IsShown()
+        and copies:find("Copy to: ", 1, true) and not copies:find("Class macros", 1, true), copies)
     S.MoveTo("group1", name, "character")
 
     -- "Remove": back to the character's. Behind the scenes there while a specialization has it; out of the last, it
     -- comes into the game.
-    S.MoveTo("character", name, "group2")
+    S.MoveTo("character", name, "group2", true)
     check("sets: into the specialization now: the character's behind the scenes", has(name)
         and inSet("character", name).parked and S.Mine().layer[name] == "spec")
     S.MoveTo("group2", name, "group1", true)
@@ -6723,7 +6728,7 @@ do
     check("sets: removed from the last, not in the game: the character's comes in, as it was",
         S.Release("group1", name) and not inSet("group1", name) and has(name)
         and not inSet("character", name).parked and body(name) == kept and S.Mine().layer[name] == "character")
-    S.MoveTo("character", name, "group2")
+    S.MoveTo("character", name, "group2", true)
     EditMacro(GetMacroIndexByName(name), nil, nil, "/say changed")
     Send("UPDATE_MACROS")
     check("sets: removed from the last, in the game: stays, with the text it has", S.Release("group2", name)
@@ -6754,7 +6759,7 @@ do
     check("sets window: its \"Take in\" asked, then out of the specializations and into the game",
         asked == "MACROSENSE_SETS_TAKE_HOME" and not inSet("group1", "Chaos Bolt") and has("Chaos Bolt")
         and not inSet("character", "Chaos Bolt").parked and S.Mine().layer["Chaos Bolt"] == "character")
-    S.MoveTo("character", "Chaos Bolt", "group1")
+    S.MoveTo("character", "Chaos Bolt", "group1", true)
 
     -- The editor, macro sets on: every macro, those in the game and those behind the scenes, each part with the
     -- class's and the character's first, then a group for each specialization; one not chosen now red and closed.
@@ -6834,7 +6839,7 @@ do
     -- and follows; another specialization's of that name is a macro of its own, and stays, with its buttons.
     CreateMacro("Linked", 1, "/cast Fear", true)
     Send("UPDATE_MACROS")
-    S.MoveTo("character", "Linked", "group2")
+    S.MoveTo("character", "Linked", "group2", true)
     S.MoveTo("group2", "Linked", "group1", true)
     S.Mine().bars.group1 = S.Mine().bars.group1 or {}
     S.Mine().bars.group1[50] = "Linked"
@@ -6883,7 +6888,7 @@ do
     CreateMacro("Again", 1, "/cast Agony", true)
     Send("UPDATE_MACROS")
     local active = S.Mine().active
-    S.MoveTo("character", "Again", active)
+    S.MoveTo("character", "Again", active, true)
     local function homes()
         local count = 0
         for _, m in ipairs(S.Mine().character) do if m.name == "Again" then count = count + 1 end end

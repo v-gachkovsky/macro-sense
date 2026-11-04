@@ -768,19 +768,19 @@ local function SetParked(sets, id, m, on)
 end
 local function Room() return ns.MAX_CHARACTER - #InSlots() end
 
--- Macro `name` of set `from` into set `to`, or a copy of it (`copy`: between specializations only, which are never
--- in the slots together). It stays in the slots, leaves them or comes in, as its new set is; with no free slot it
--- waits behind the scenes. Returns true (and "waits" then), or false and why: "name" (the set has a macro of that
--- name), "together", "combat". Out of a specialization into the character's is Sets.Release; out of the
--- character's into a specialization, the character's keeps it behind the scenes.
+-- Macro `name` of set `from` into set `to`, or a copy of it (`copy`: into a specialization, from another or from the
+-- character's; the character's keeps it then, behind the scenes while a specialization has it). It stays in the
+-- slots, leaves them or comes in, as its new set is; with no free slot it waits behind the scenes. Returns true (and
+-- "waits" then), or false and why: "name" (the set has a macro of that name), "together", "combat". Out of a
+-- specialization into the character's is Sets.Release.
 function Sets.MoveTo(from, name, to, copy)
     local sets = Sets.Mine()
     if not sets.enabled or from == to then return false end
     if InCombatLockdown() then return false, "combat" end
-    if copy and (LayerOfSet(from) ~= "spec" or LayerOfSet(to) ~= "spec") then return false, "together" end
+    if copy and (from == "class" or LayerOfSet(to) ~= "spec") then return false, "together" end
     if to == "character" and LayerOfSet(from) == "spec" then return Sets.Release(from, name) end
-    -- Into a specialization from the character's: the character's keeps it, behind the scenes.
-    local home = from == "character" and LayerOfSet(to) == "spec"
+    -- Copied into a specialization from the character's: the character's keeps it, behind the scenes.
+    local home = copy and from == "character"
     Sets.Scan()
     local source, target = ListOf(sets, from), ListOf(sets, to)
     local m, i = Find(source, name)
@@ -801,7 +801,7 @@ function Sets.MoveTo(from, name, to, copy)
         SetParked(sets, to, entry, parked)
         local willBe = InGame(sets, to) and not parked
         sets.layer = sets.layer or {}
-        if wasIn and not copy then
+        if wasIn and (not copy or home) then
             if willBe then
                 sets.layer[name] = LayerOfSet(to)
             else

@@ -115,6 +115,10 @@ local function Row(i)
             .. "scenes while a specialization still has it, in the game when none does."]
     end)
     Tip(r.copy, L["Copy"], function()
+        if picked == "character" then
+            return L["A copy goes into a specialization, and this one stays here, behind the scenes while a "
+                .. "specialization has it."]
+        end
         return L["A copy goes into another specialization, and this one stays here."]
     end)
     r.park = ns.Button(r, "", 110, function()
@@ -169,7 +173,7 @@ local function ShowRow(r, m)
     r.state:SetText(State(picked, m))
     r.park.label:SetText(ns.Sets.IsParked(picked, m) and L["Take in"] or L["Put away"])
     -- Copied only between specializations.
-    local copies = IsSpec(picked) and #Items(picked, m, true) > 0
+    local copies = picked ~= "class" and #Items(picked, m, true) > 0
     r.copy:SetShown(copies)
     -- Back to the character's from any other set.
     r.release:SetShown(picked ~= "character")
