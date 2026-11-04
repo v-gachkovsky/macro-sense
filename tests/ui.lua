@@ -6873,6 +6873,24 @@ do
     drop(listRow("head", "In the game"))
     check("editor, sets: dropped in the game: the character's, in the game", has("Dragged")
         and inSet("character", "Dragged") and not inSet("group1", "Dragged"))
+    -- With Ctrl held: a copy, the character's keeps it behind the scenes (as "Copy to" does).
+    IsControlKeyDown = function() return true end
+    drop(listRow("group", label1))
+    check("editor, sets: dropped with Ctrl in another specialization: a copy there, the character's behind the scenes",
+        not has("Dragged") and inSet("group1", "Dragged") and inSet("character", "Dragged").parked)
+    drop(listRow("group", nowLabel))
+    check("editor, sets: dropped with Ctrl in the specialization now: a copy, in the game from there", has("Dragged")
+        and inSet(S.Mine().active, "Dragged") and inSet("character", "Dragged").parked
+        and inSet("group1", "Dragged"))
+    local said = {}
+    local oldPrint = ns.Print
+    ns.Print = function(text) said[#said + 1] = text end
+    drop(listRow("head", "Behind the scenes"))
+    ns.Print = oldPrint
+    IsControlKeyDown = function() return false end
+    check("editor, sets: dropped with Ctrl in the character's: not copied, it says why",
+        said[1] == "only a specialization takes a copy, and not of a class macro" and has("Dragged"))
+    S.TakeHome("Dragged")
     DeleteMacro(GetMacroIndexByName("Dragged"))
     Send("UPDATE_MACROS")
 

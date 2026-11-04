@@ -1013,7 +1013,8 @@ local function SetsItems(r)
         local label = ns.SetsWindow.Label(set.id)
         if set.id ~= id then
             items[#items + 1] = { name = string.format(L["Move to: %s"], label), onClick = function()
-                Window.Told(Sets.MoveTo(id, name, set.id), label)
+                local ok, why = Sets.MoveTo(id, name, set.id)
+                Window.Told(ok, why, label)
             end }
         end
     end
@@ -1021,7 +1022,8 @@ local function SetsItems(r)
         local label = ns.SetsWindow.Label(set.id)
         if set.spec and set.id ~= id and id ~= "class" then
             items[#items + 1] = { name = string.format(L["Copy to: %s"], label), onClick = function()
-                Window.Told(Sets.MoveTo(id, name, set.id, true), label)
+                local ok, why = Sets.MoveTo(id, name, set.id, true)
+                Window.Told(ok, why, label)
             end }
         end
     end
@@ -1041,15 +1043,17 @@ function Window.Told(ok, why, label)
     if why == "name" and label then return ns.Print("\"%s\" has a macro of this name already", label) end
     if why == "name" then return ns.Print("a macro of this name is in the game already") end
     if why == "combat" then return ns.Print("macros cannot be changed in combat") end
+    if why == "together" then return ns.Print("only a specialization takes a copy, and not of a class macro") end
     if why == "held" then return ns.Print("a specialization has this macro: it comes into the game from there") end
 end
 
--- Macro row `source` dropped on row `target`: into the target's set, in the game or behind the scenes.
+-- Macro row `source` dropped on row `target`: into the target's set, in the game or behind the scenes. With Ctrl
+-- held, a copy of it.
 function Window.Drop(source, target)
     if not target.dropId or not source.set or target == source then return end
     ClearCursor() -- a macro picked up for the action bars
-    Window.Told(ns.Sets.Place(source.set, source.name, target.dropId, target.dropIn),
-        ns.SetsWindow.Label(target.dropId))
+    local ok, why = ns.Sets.Place(source.set, source.name, target.dropId, target.dropIn, IsControlKeyDown())
+    Window.Told(ok, why, ns.SetsWindow.Label(target.dropId))
 end
 
 -- What the spells say of macro row `r` in its set, in its tooltip: one that can't be cast there in red.

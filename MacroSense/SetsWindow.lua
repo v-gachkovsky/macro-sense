@@ -111,8 +111,8 @@ local function Build()
         .. "others' wait behind the scenes.\n\nClass macros are the same on all your characters of one class: "
         .. "change one, and the others get it too. This character's macros stay in every specialization.\n\nOnce "
         .. "turned on, all your character macros go into \"This character's\". Move them to a specialization or to "
-        .. "the class in the list of macros: drag one there, or use \"...\" by its name. Or let \"Sort by spells\" "
-        .. "do it. A backup of your macros is made first."])
+        .. "the class in the list of macros: drag one there (hold Ctrl to copy it), or use \"...\" by its name. Or "
+        .. "let \"Sort by spells\" do it. A backup of your macros is made first."])
     onBtn = ns.Button(frame, L["Turn on macro sets"], 200, function()
         ns.Sets.Enable()
         frame:Hide()

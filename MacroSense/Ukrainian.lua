@@ -1650,15 +1650,16 @@ ns.locales.uk = {
         .. "behind the scenes.\n\nClass macros are the same on all your characters of one class: change one, and "
         .. "the others get it too. This character's macros stay in every specialization.\n\nOnce turned on, all "
         .. "your character macros go into \"This character's\". Move them to a specialization or to the class in the "
-        .. "list of macros: drag one there, or use \"...\" by its name. Or let \"Sort by spells\" do it. A backup of "
-        .. "your macros is made first."] =
+        .. "list of macros: drag one there (hold Ctrl to copy it), or use \"...\" by its name. Or let \"Sort by "
+        .. "spells\" do it. A backup of your macros is made first."] =
         "У персонажа лише 30 слотів для макросів. Набори дають більше місця: у кожної спеціалізації свої макроси. "
         .. "Оберете спеціалізацію — її макроси з'являться в грі, на своїх кнопках, а макроси інших чекатимуть за "
         .. "лаштунками.\n\nКласові макроси однакові на всіх ваших персонажах одного класу: зміните один — інші "
         .. "отримають його теж. Макроси цього персонажа лишаються в кожній спеціалізації.\n\nЩойно ви ввімкнете "
         .. "набори, усі макроси персонажа потраплять у набір «Цього персонажа». Розкладіть їх у списку макросів по "
-        .. "спеціалізаціях чи до класових: перетягніть макрос мишею або скористайтеся «...» біля його назви. Або "
-        .. "доручіть це кнопці «Розкласти за заклинаннями». Спершу аддон зробить резервну копію ваших макросів.",
+        .. "спеціалізаціях чи до класових: перетягніть макрос мишею (щоб скопіювати, тримайте Ctrl) або "
+        .. "скористайтеся «...» біля його назви. Або доручіть це кнопці «Розкласти за заклинаннями». Спершу аддон "
+        .. "зробить резервну копію ваших макросів.",
     ["Turn on macro sets"] = "Увімкнути набори макросів",
     ["Macro sets are on. Clear \"Macro sets\" to turn them off: the macros in the game stay as they are, and the "
         .. "sets are kept for later."] =
@@ -1716,6 +1717,8 @@ ns.locales.uk = {
         "немає вільного слота: спершу заберіть за лаштунки інший макрос",
     ["\"%s\" has a macro of this name already"] = "у «%s» уже є макрос із такою назвою",
     ["a macro of this name is in the game already"] = "макрос із такою назвою вже є в грі",
+    ["only a specialization takes a copy, and not of a class macro"] =
+        "копію можна покласти лише в спеціалізацію, і не з класових макросів",
     ["a specialization has this macro: it comes into the game from there"] =
         "цей макрос є в спеціалізації: у гру він виходить звідти",
 }
