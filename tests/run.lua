@@ -2428,8 +2428,8 @@ do
         and journal.seen["Frost Nova"] == true)
     kit.spells[#kit.spells + 1] = spell("Blink", "self")
     rows = B.Rows(kit, journal)
-    check("book: the next time, a macro made and gone is deleted", row("Frostbolt").state == "deleted"
-        and not row("Frostbolt").checked)
+    check("book: the next time, a macro made and gone is deleted, offered again", row("Frostbolt").state == "deleted"
+        and row("Frostbolt").checked)
     check("book: one left out is skipped", row("Frost Nova").state == "skipped" and not row("Frost Nova").checked)
     check("book: one learned since is new and checked", row("Blink").state == "new" and row("Blink").checked)
 end

@@ -1,8 +1,8 @@
 -- Macros from the spellbook: a macro for each spell you pick, /cast with no rank (in the older flavors it casts the
 -- highest one learned), at the unit you choose, with /startattack or /stopcasting where they help. A spell that
 -- doesn't fit in your macros joins another one on a key held; a lower rank can go on a key too; the pet gets one
--- macro for its commands. A spell some macro casts already, one whose macro you deleted and one you left out before
--- are not offered again; those you learn later are. The wizard writes the macros (Wizard.Text). Pure Lua (5.1): the
+-- macro for its commands. A spell some macro casts already (with macro sets on, one behind the scenes too) and one
+-- you left out before are not offered again; one whose macro you deleted is, and those you learn later. The wizard writes the macros (Wizard.Text). Pure Lua (5.1): the
 -- spellbook comes in a kit, Spellbook.Kit makes it in game.
 local _, ns = ...
 ns = ns or {}
@@ -115,6 +115,23 @@ function Spellbook.Kit()
     end
     for index = 1, general do add("general", index) end
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + character do add("character", index) end
+    -- With macro sets on, the macros behind the scenes are yours too: each set's, every specialization's.
+    local sets = ns.Sets and ns.Sets.Mine()
+    if sets and sets.enabled then
+        local seen = {}
+        for _, m in ipairs(kit.macros) do seen[m.name] = true end
+        local ids = { "class", "character" }
+        for _, spec in ipairs(ns.Sets.Specs()) do ids[#ids + 1] = spec.key end
+        for key in pairs(sets.specs) do ids[#ids + 1] = key end
+        for _, id in ipairs(ids) do
+            for _, m in ipairs(ns.Sets.List(id)) do
+                if not seen[m.name .. "\0" .. (m.body or "")] then
+                    seen[m.name .. "\0" .. (m.body or "")] = true
+                    kit.macros[#kit.macros + 1] = { name = m.name, body = m.body or "", scope = "character" }
+                end
+            end
+        end
+    end
     kit.free = ns.MAX_CHARACTER - character
     kit.pet = (HasPetSpells and HasPetSpells() ~= nil) or class == "HUNTER" or class == "WARLOCK"
     kit.petMacro = Spellbook.PetMacro(kit.macros)
@@ -146,7 +163,8 @@ end
 
 -- The spells to offer, in book order: { spell, state, macro, checked }. State: "has" (a macro casts it: `macro`),
 -- "deleted" (the one made for it is gone), "skipped" (left out before), "new" (learned since the last time) or
--- "offer" (the first time). Checked at first: the new ones, and the first time those not in the first tab.
+-- "offer" (the first time). Checked at first: the new ones, those whose macro was deleted, and the first time those
+-- not in the first tab.
 function Spellbook.Rows(kit, journal)
     local casts = {}
     for _, m in ipairs(kit.macros) do
@@ -159,7 +177,7 @@ function Spellbook.Rows(kit, journal)
         local state = has and "has" or journal.made[spell.name] and "deleted" or journal.seen[spell.name] and "skipped"
             or before and "new" or "offer"
         rows[#rows + 1] = { spell = spell, state = state, macro = has,
-            checked = state == "new" or (state == "offer" and not spell.general) }
+            checked = state == "new" or state == "deleted" or (state == "offer" and not spell.general) }
     end
     return rows
 end

@@ -2367,8 +2367,8 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Macros from the Spellbook"], 1, 1, 1)
         GameTooltip:AddLine(L["Make macros for the spells in your spellbook, many at once. Pick the spells, where "
-            .. "they go and what Shift, Ctrl or Alt do. Spells that have a macro already are left out, and next time "
-            .. "only the spells you learned since are offered."], 0.8, 0.8, 0.8, true)
+            .. "they go and what Shift, Ctrl or Alt do. Spells that have a macro already are left out. Next time, the "
+            .. "spells you learned since and those whose macro you deleted are offered."], 0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
     bookBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
