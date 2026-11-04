@@ -6890,6 +6890,30 @@ do
     IsControlKeyDown = function() return false end
     check("editor, sets: dropped with Ctrl in the character's: not copied, it says why",
         said[1] == "only a specialization takes a copy, and not of a class macro" and has("Dragged"))
+    -- Dragged from behind the scenes: its icon and name follow the mouse, till it is dropped.
+    local function ghost()
+        for _, o in ipairs(created) do
+            if o.kind == "Frame" and o.strata == "TOOLTIP" and o.text and o.text.text == "Dragged" then return o end
+        end
+    end
+    local stored = listRow("stored", "Dragged")
+    Fire(stored, "OnDragStart")
+    check("editor, sets: dragged from behind the scenes: it follows the mouse", ghost() and ghost():IsShown()
+        and ns.Window.dragging == stored)
+    Fire(stored, "OnDragStop")
+    check("editor, sets: dropped: it is gone from the mouse", not ghost():IsShown() and ns.Window.dragging == nil)
+    -- Ctrl held when the drag began, let go before the drop: still a copy, and it says so.
+    said = {}
+    ns.Print = function(text) said[#said + 1] = text end
+    CreateMacro("Pressed", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), true)
+    ns.Print = oldPrint
+    check("editor, sets: Ctrl held when the drag began: a copy, said in the chat", said[1]
+        == "copied to \"%s\": this character's one waits behind the scenes while a specialization has it"
+        and inSet("group1", "Pressed") and inSet("character", "Pressed"))
+    S.TakeHome("Pressed")
+    DeleteMacro(GetMacroIndexByName("Pressed"))
     S.TakeHome("Dragged")
     DeleteMacro(GetMacroIndexByName("Dragged"))
     Send("UPDATE_MACROS")
