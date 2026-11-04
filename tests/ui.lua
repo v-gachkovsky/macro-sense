@@ -6850,6 +6850,16 @@ do
         and inSet("group2", "Linked Fear") and not inSet("character", "Linked"))
     check("sets: another specialization's of that name stays as it is", inSet("group1", "Linked")
         and inSet("group1", "Linked").body == "/cast Fear" and S.Mine().bars.group1[50] == "Linked")
+    ns.Window.RefreshList()
+    S.MoveTo("character", "Linked Fear", "group1")
+    local still = false
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.what == "stored" and o.name == "Linked Fear" and o.set == "character" and o.shown then
+            still = true
+        end
+    end
+    check("editor, sets: a move behind the scenes shows in its list at once", not still)
+    S.MoveTo("group1", "Linked Fear", "character")
     S.Mine().bars.group1[50] = nil
     S.TakeHome("Linked Fear")
     S.Release("group1", "Linked")

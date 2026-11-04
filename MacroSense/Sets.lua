@@ -610,6 +610,8 @@ function Sets.Update()
     Settle()
     -- What the game told of while busy was let go: the list and the rest now.
     if touched and ns.MacrosChanged then ns.MacrosChanged() end
+    -- The editor's list shows the sets: one moved behind the scenes changes it too.
+    if ns.Window and ns.Window.RefreshList then ns.Window.RefreshList() end
     if not ok then error(err, 0) end
     if waiting > 0 then
         ns.Print("%d macros wait behind the scenes: there is no free slot for them. Pick which to take in under "
@@ -748,6 +750,8 @@ local function Run(fn)
     busy = false
     Settle()
     if touched and ns.MacrosChanged then ns.MacrosChanged() end
+    -- The editor's list shows the sets: one moved behind the scenes changes it too.
+    if ns.Window and ns.Window.RefreshList then ns.Window.RefreshList() end
     if not ok then error(err, 0) end
 end
 
