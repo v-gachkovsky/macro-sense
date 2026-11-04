@@ -1203,21 +1203,22 @@ function Window.HideGhost() if ghost then ghost:Hide() end end
 -- While a macro is dragged in the list: over a group, by the macro on the mouse a sign of what letting go does
 -- there (a copy: a plus; nothing can be done: a crossed circle), and a tooltip that says it, with why not.
 local mark, over
+-- The sign just above the dragged macro's icon: on it, the mouse pointer (and the game's icon of a macro in the game,
+-- drawn over everything) would cover it.
 local function MarkAt()
     mark:ClearAllPoints()
-    if ghost and ghost:IsShown() then return mark:SetPoint("CENTER", ghost.icon, "BOTTOMRIGHT", -2, 2) end
-    -- A macro in the game is on the mouse as the game's own icon, drawn over everything: the sign above and to the
-    -- left of it, where it doesn't cover the sign.
+    if ghost and ghost:IsShown() then return mark:SetPoint("BOTTOM", ghost.icon, "TOP", 0, 3) end
+    -- The game's icon hangs from the mouse to the right and down.
     local x, y = GetCursorPosition()
     local scale = UIParent:GetEffectiveScale()
-    mark:SetPoint("CENTER", UIParent, "BOTTOMLEFT", x / scale - 26, y / scale + 26)
+    mark:SetPoint("BOTTOM", UIParent, "BOTTOMLEFT", x / scale + 16, y / scale + 3)
 end
 function Window.Watch()
     if not mark then
         mark = CreateFrame("Frame", nil, UIParent)
         mark:SetFrameStrata("TOOLTIP")
         mark:SetFrameLevel(100)
-        mark:SetSize(18, 18)
+        mark:SetSize(27, 27)
         mark.icon = mark:CreateTexture(nil, "OVERLAY")
         mark.icon:SetAllPoints()
         mark:Hide()
