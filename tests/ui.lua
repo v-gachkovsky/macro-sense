@@ -6352,6 +6352,17 @@ do
     end
     for key in pairs(sets.specs) do if not hadSpecs[key] then sets.specs[key] = nil end end
     sets.enabled, sets.active, sets.layer, GetNumMacros = wasOn, wasActive, hadLayer, counts
+    -- "Offer all again": what it remembers forgotten, every spell with no macro offered, checked.
+    W.Open()
+    check("book window: \"Offer all again\" there while it remembers something", W.Control("again"):IsEnabled())
+    Fire(W.Control("again"), "OnClick")
+    local offered = true
+    for _, r in ipairs(W.Rows()) do
+        if r.state ~= "has" and not r.spell.general and (r.state ~= "offer" or not planned()[r.spell.name]) then
+            offered = false
+        end
+    end
+    check("book window: offered all again, checked as the first time", offered and not W.Control("again"):IsEnabled())
     W.Close()
     for _, name in ipairs(made) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")

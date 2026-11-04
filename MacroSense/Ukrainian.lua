@@ -1914,4 +1914,9 @@ ns.locales.uk = {
         .. "лишиться збереженою на потім, а коли ви знову ввімкнете набори, усі повернуться туди, де були.",
     ["Chosen: %d of %d free slots"] = "Вибрано: %d із %d вільних слотів",
     ["%s  (%s; a macro of this name is in the game)"] = "%s  (%s; у грі вже є макрос із такою назвою)",
+    ["Offer all again"] = "Запропонувати все знову",
+    ["Forgets which spells you left out before and which macros you deleted: every spell with no macro is offered, "
+        .. "checked, as the first time."] =
+        "Забуває, які заклинання ви колись пропустили і які макроси видалили: кожне заклинання без макроса "
+        .. "пропонується з галочкою, як уперше.",
 }

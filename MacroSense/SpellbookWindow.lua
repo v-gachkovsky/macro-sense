@@ -202,6 +202,11 @@ function Refresh()
     problemText:SetText(over and L["Not enough room: leave some spells out, or join them to others on a key."]
         or problem or "")
     createBtn.label:SetText(string.format(L["Create macros (%d)"], #macros))
+    local remembered = false
+    for _, row in ipairs(rows) do
+        if row.state == "skipped" or row.state == "deleted" then remembered = true end
+    end
+    controls.again:SetEnabled(remembered)
     createBtn:SetEnabled(#macros > 0 and not over and problem == nil)
     for _, control in pairs(controls) do
         if control.Refresh and control ~= createBtn then control:Refresh() end
@@ -510,6 +515,21 @@ local function Build()
     countText = ns.Text(side, 12)
     countText:SetPoint("BOTTOMLEFT", 0, 34)
     controls.count = countText
+    -- What it remembers (left out, made before) forgotten: every spell with no macro offered as the first time.
+    local again = ns.Button(side, L["Offer all again"], 170, function()
+        journal.seen, journal.made = {}, {}
+        SpellbookWindow.Open()
+    end)
+    again:SetPoint("BOTTOMLEFT", 0, 0)
+    again:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Offer all again"], 1, 1, 1)
+        GameTooltip:AddLine(L["Forgets which spells you left out before and which macros you deleted: every spell "
+            .. "with no macro is offered, checked, as the first time."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    again:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    controls.again = again
     problemText = ns.Text(side, 11)
     problemText:SetPoint("BOTTOMLEFT", 0, 50)
     problemText:SetPoint("RIGHT")
