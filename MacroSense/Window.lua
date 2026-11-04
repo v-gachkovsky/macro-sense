@@ -662,7 +662,8 @@ local function Row(i)
         -- A set's group, its name and its macros: the class's yellow, the specialization now's green, another red.
         local tone = self.tone == "class" and { ns.RGB(s.warning) } or self.tone == "now" and { 0.3, 0.75, 0.3 }
             or self.tone == "other" and { ns.RGB(s.invalid) }
-        if tone then self.band:SetColorTexture(tone[1], tone[2], tone[3], self.what == "group" and 0.3 or 0.14) end
+        local strong = self.what == "group" or self.what == "head"
+        if tone then self.band:SetColorTexture(tone[1], tone[2], tone[3], strong and 0.3 or 0.14) end
         self.band:SetShown(tone and true or false)
         local class = self.what == "alt" and self.alt.color
         if class then self.text:SetTextColor(class.r, class.g, class.b) end
@@ -797,9 +798,9 @@ end
 
 ------------------------------------------------------------------------
 -- Macro sets on: the Character tab has all the macros, those in the game and those behind the scenes, each part
--- with the character's first, then the class's in a yellow group, the specialization now's in a green one, and
--- behind the scenes each other specialization's in a red one, closed till you open it. Each part and group opens
--- and closes with a click.
+-- with the character's first, then the class's in a group, then each specialization's. In the game the class's
+-- group is yellow, the specialization now's green; behind the scenes all is red, another specialization's group
+-- closed till you open it. Each part and group opens and closes with a click.
 ------------------------------------------------------------------------
 local function SetsShown()
     return state.scope == "character" and ns.Sets.Mine().enabled
@@ -812,20 +813,20 @@ local function IsOpen(key, default, q)
     return default
 end
 
-local function HeadRow(n, key, label, tip, open)
-    local r = UseRow(n, "head")
+local function HeadRow(n, key, label, tip, open, tone)
+    local r = UseRow(n, "head", tone)
     r.group, r.open, r.name, r.tip = key, open, label, tip
     r.icon:SetTexture(open and MINUS or PLUS)
     r.text:SetText(label)
     r:Paint()
 end
 
--- `tone`: "class", "now" or "other" (see Paint).
-local function GroupRow(n, key, label, count, tone, open)
+-- `tone`: "class", "now" or "other" (see Paint); `kind`: the same, what the group is (its tooltip).
+local function GroupRow(n, key, label, count, tone, open, kind)
     local r = UseRow(n, "group", tone)
     r.group, r.open, r.name = key, open, label
-    r.tip = tone == "class" and L["The same on all your characters of this class: what you change here reaches the "
-        .. "others when they log in."] or tone == "now" and L["The macros of the specialization chosen now."]
+    r.tip = kind == "class" and L["The same on all your characters of this class: what you change here reaches the "
+        .. "others when they log in."] or kind == "now" and L["The macros of the specialization chosen now."]
         or L["This specialization is not chosen now: its macros come into the game when you choose it."]
     r.icon:SetTexture(open and MINUS or PLUS)
     r.text:SetText(string.format("%s  |cff%s%d|r", label, ns.scheme.dim, count))
@@ -854,12 +855,13 @@ local function Behind(id, q)
     return out
 end
 
--- A group: its name, then, open, its rows (`add(n, x, tone)` for each of `items`).
-local function Group(n, key, label, tone, default, items, q, add)
+-- A group: its name, then, open, its rows (`add(n, x, tone)` for each of `items`). `kind`: see GroupRow; else
+-- `tone`.
+local function Group(n, key, label, tone, default, items, q, add, kind)
     if #items == 0 then return n end
     local open = IsOpen(key, default, q)
     n = n + 1
-    GroupRow(n, key, label, #items, tone, open)
+    GroupRow(n, key, label, #items, tone, open, kind or tone)
     for _, x in ipairs(open and items or {}) do
         n = n + 1
         add(n, x, tone)
@@ -905,18 +907,17 @@ local function SetsRows(n, q)
     open = IsOpen("out", true, q)
     n = n + 1
     HeadRow(n, "out", L["Behind the scenes"], L["Kept by MacroSense, on no slot. Change any of them here: they come "
-        .. "into the game with their specialization, or with \"Take in\" under \"Macro sets\"."], open)
+        .. "into the game with their specialization, or with \"Take in\" under \"Macro sets\"."], open, "other")
     if not open then return n end
     for _, m in ipairs(root2) do
         n = n + 1
-        StoredRow(n, "character", m)
+        StoredRow(n, "character", m, "other")
     end
-    n = Group(n, "out:class", L["Class macros"], "class", true, class2, q,
-        function(i, m, tone) StoredRow(i, "class", m, tone) end)
+    n = Group(n, "out:class", L["Class macros"], "other", true, class2, q,
+        function(i, m) StoredRow(i, "class", m, "other") end, "class")
     for _, g in ipairs(groups) do
-        local tone = g.spec.now and "now" or "other"
-        n = Group(n, "out:" .. g.spec.key, g.spec.label, tone, g.spec.now, g.macros, q,
-            function(i, m) StoredRow(i, g.spec.key, m, tone) end)
+        n = Group(n, "out:" .. g.spec.key, g.spec.label, "other", g.spec.now, g.macros, q,
+            function(i, m) StoredRow(i, g.spec.key, m, "other") end, g.spec.now and "now" or "other")
     end
     return n
 end

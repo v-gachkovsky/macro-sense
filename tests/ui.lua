@@ -6803,10 +6803,16 @@ do
     check("editor, sets: and opens", listRow("macro", "Stones") ~= nil)
     local uncolored = true
     for _, o in ipairs(created) do
-        if o.kind == "Button" and o.shown and (o.what == "head" or (o.what == "stored" or o.what == "macro")
-            and not o.tone) and o.band and o.band:IsShown() then uncolored = false end
+        if o.kind == "Button" and o.shown and o.what == "macro" and not o.tone and o.band and o.band:IsShown() then
+            uncolored = false
+        end
     end
-    check("editor, sets: no color out of the groups", uncolored)
+    check("editor, sets: no color in the game out of the groups", uncolored)
+    local allRed = listRow("head", "Behind the scenes").tone == "other"
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.what == "stored" and o.shown and o.tone ~= "other" then allRed = false end
+    end
+    check("editor, sets: all behind the scenes red", allRed)
     Fire(group, "OnClick")
     local stored
     for _, o in ipairs(created) do
