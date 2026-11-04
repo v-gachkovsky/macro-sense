@@ -1717,6 +1717,9 @@ ns.locales.uk = {
         "немає вільного слота: спершу заберіть за лаштунки інший макрос",
     ["\"%s\" has a macro of this name already"] = "у «%s» уже є макрос із такою назвою",
     ["a macro of this name is in the game already"] = "макрос із такою назвою вже є в грі",
+    ["copied to \"%s\""] = "скопійовано в «%s»",
+    ["copied to \"%s\": this character's one waits behind the scenes while a specialization has it"] =
+        "скопійовано в «%s»: макрос «Цього персонажа» чекатиме за лаштунками, поки він є в якійсь спеціалізації",
     ["only a specialization takes a copy, and not of a class macro"] =
         "копію можна покласти лише в спеціалізацію, і не з класових макросів",
     ["a specialization has this macro: it comes into the game from there"] =

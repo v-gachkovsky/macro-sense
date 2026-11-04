@@ -684,13 +684,18 @@ local function Row(i)
     -- With macro sets on, also anywhere in the list: into another set, in the game or behind the scenes.
     r:SetScript("OnDragStart", function()
         if r.what == "macro" then Window.Pickup(r.index) end
-        if r.set then Window.dragging = r end
+        if r.set then Window.dragging, Window.copying = r, IsControlKeyDown() end
+        -- Behind the scenes, the game puts nothing on the cursor: its icon and name follow the mouse instead.
+        if r.what == "stored" then Window.ShowGhost(r) end
     end)
     r:SetScript("OnDragStop", function()
+        Window.HideGhost()
         if Window.dragging ~= r then return end
         Window.dragging = nil
         for _, target in ipairs(rows) do
-            if target:IsShown() and target:IsMouseOver() then return Window.Drop(r, target) end
+            if target:IsShown() and target:IsMouseOver() then
+                return Window.Drop(r, target, Window.copying or IsControlKeyDown())
+            end
         end
     end)
     -- The name is red with errors, yellow with warnings only; another character's in its class color, its macros dim.
@@ -1047,13 +1052,49 @@ function Window.Told(ok, why, label)
     if why == "held" then return ns.Print("a specialization has this macro: it comes into the game from there") end
 end
 
+-- A macro behind the scenes being dragged: its icon and name by the mouse.
+local ghost
+function Window.ShowGhost(r)
+    if not ghost then
+        ghost = CreateFrame("Frame", nil, UIParent)
+        ghost:SetFrameStrata("TOOLTIP")
+        ghost:SetSize(200, 24)
+        ghost.icon = ghost:CreateTexture(nil, "ARTWORK")
+        ghost.icon:SetSize(24, 24)
+        ghost.icon:SetPoint("LEFT")
+        ghost.text = ns.Text(ghost, 12)
+        ghost.text:SetPoint("LEFT", ghost.icon, "RIGHT", 6, 0)
+        ghost:SetScript("OnUpdate", function(self)
+            local x, y = GetCursorPosition()
+            local scale = UIParent:GetEffectiveScale()
+            self:ClearAllPoints()
+            self:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale + 12, y / scale - 4)
+        end)
+    end
+    ghost.icon:SetTexture(r.icon:GetTexture())
+    ghost.text:SetText(r.name)
+    ghost:SetAlpha(0.8)
+    ghost:Show()
+end
+function Window.HideGhost() if ghost then ghost:Hide() end end
+
 -- Macro row `source` dropped on row `target`: into the target's set, in the game or behind the scenes. With Ctrl
--- held, a copy of it.
-function Window.Drop(source, target)
+-- held (`copy`: when the drag began or at the drop), a copy of it.
+function Window.Drop(source, target, copy)
     if not target.dropId or not source.set or target == source then return end
     ClearCursor() -- a macro picked up for the action bars
-    local ok, why = ns.Sets.Place(source.set, source.name, target.dropId, target.dropIn, IsControlKeyDown())
-    Window.Told(ok, why, ns.SetsWindow.Label(target.dropId))
+    copy = copy or IsControlKeyDown()
+    -- The list is made anew by it: what the rows were, first.
+    local from, label = source.set, ns.SetsWindow.Label(target.dropId)
+    local ok, why = ns.Sets.Place(from, source.name, target.dropId, target.dropIn, copy)
+    if ok and copy and why ~= "waits" then
+        if from == "character" then
+            return ns.Print("copied to \"%s\": this character's one waits behind the scenes while a specialization "
+                .. "has it", label)
+        end
+        return ns.Print("copied to \"%s\"", label)
+    end
+    Window.Told(ok, why, label)
 end
 
 -- What the spells say of macro row `r` in its set, in its tooltip: one that can't be cast there in red.
