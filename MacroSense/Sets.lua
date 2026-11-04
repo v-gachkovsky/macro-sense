@@ -581,9 +581,13 @@ function Sets.PlaceBars(key, last)
 end
 
 local rememberDue
+-- As of the last look: the buttons whose macro was off the slots, and the macros in the slots.
+local lastLook = { slots = {} }
 -- The buttons of the specialization now, kept as you change them: the game swaps the bars with the
 -- specialization, so once it changed they are those of the new one. Not while MacroSense puts them back; a
--- button whose macro is off the slots stays kept (deleting the macro took it off).
+-- button whose macro is off the slots stays kept (deleting the macro took it off). A button keeps a macro's place
+-- in the list, not its name: one whose macro was off the slots shows the next macro made in that place. Such a
+-- macro, made since the last look, never put there: taken off (by any way it was made, MacroSense's or the game's).
 function Sets.RememberBars()
     local sets = Sets.Mine()
     if not sets.enabled then return end
@@ -601,18 +605,29 @@ function Sets.RememberBars()
     local have = {}
     for _, m in ipairs(InSlots()) do have[m.name] = true end
     local record = sets.bars[sets.active] or {}
+    local last = lastLook.key == sets.active and lastLook or nil
+    local gone = {}
     for slot = 1, MAX_SLOT do
         local kind, name = At(slot)
         local was = record[slot]
+        if kind == "character" and last and last.slots[slot] and not last.have[name] and name ~= was
+            and not InCombatLockdown() then
+            PickupAction(slot)
+            ClearCursor()
+            Log("took off button %d: %s was never put there", slot, name)
+            kind = "gone"
+        end
         if kind == "character" then
             record[slot] = name
         elseif kind == "gone" then -- its macro off the slots: kept
+            gone[slot] = true
         elseif kind or (was and have[was]) then
             record[slot] = nil
         end
         if record[slot] ~= was then Log("%s button %d: %s", sets.active, slot, tostring(record[slot] or "-")) end
     end
     sets.bars[sets.active] = record
+    lastLook = { key = sets.active, slots = gone, have = have }
 end
 
 -- Brings the slots in line with the specialization and the class: at login, after a change of specialization,
