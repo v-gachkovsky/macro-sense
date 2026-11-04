@@ -48,11 +48,114 @@ StaticPopupDialogs.MACROSENSE_SETS_OFF = {
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
+-- Not all of them fit: you choose which macros come into the game, those MacroSense would pick checked first. One
+-- whose name is in the game, or chosen already, can't be.
+local choose, chooseRows = nil, {}
+local CHOOSE_ROW = 24
+local function ChooseOff()
+    ns.Window.Ready()
+    local all, room = ns.Sets.OffChoice()
+    local picked = {}
+    local first = ns.Sets.OffPlan()
+    for _, b in ipairs(first) do picked[b.m] = true end
+    if not choose then
+        choose = CreateFrame("Frame", "MacroSenseSetsOff", UIParent, "BackdropTemplate")
+        table.insert(UISpecialFrames, "MacroSenseSetsOff") -- Esc closes it
+        choose:SetFrameStrata("DIALOG")
+        choose:SetToplevel(true)
+        choose:SetClampedToScreen(true)
+        choose:EnableMouse(true)
+        choose:SetSize(460, 500)
+        choose:SetPoint("CENTER", 0, 40)
+        ns.Backdrop(choose, "bg", "border", true)
+        local title = ns.Text(choose, 14)
+        title:SetPoint("TOPLEFT", PAD * 2, -PAD * 2)
+        title:SetText(L["Turn off macro sets"])
+        choose.intro = ns.Text(choose, 13)
+        choose.intro:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
+        choose.intro:SetPoint("RIGHT", -PAD * 2, 0)
+        choose.intro:SetSpacing(3)
+        choose.scroll = CreateFrame("ScrollFrame", nil, choose)
+        choose.scroll:SetPoint("TOPLEFT", choose.intro, "BOTTOMLEFT", 0, -12)
+        choose.scroll:SetPoint("BOTTOMRIGHT", -PAD * 2 - 14, PAD * 2 + 60)
+        choose.list = CreateFrame("Frame", nil, choose.scroll)
+        choose.list:SetSize(1, 1)
+        choose.scroll:SetScrollChild(choose.list)
+        ns.AttachScrollBar(choose.scroll, CHOOSE_ROW * 3)
+        choose.count = ns.Text(choose, 12)
+        choose.count:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2 + 34)
+        choose.off = ns.Button(choose, L["Turn off"], 160, function()
+            local bring = {}
+            for _, c in ipairs(choose.all) do
+                if choose.picked[c.m] then bring[#bring + 1] = { m = c.m, id = c.id } end
+            end
+            choose:Hide()
+            ns.Window.Told(ns.Sets.Disable(bring))
+        end, true)
+        choose.off:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2)
+        local cancel = ns.Button(choose, L["Cancel"], 120, function() choose:Hide() end)
+        cancel:SetPoint("LEFT", choose.off, "RIGHT", 10, 0)
+        choose:SetScript("OnHide", function() ns.Window.SetsChanged() end)
+    end
+    choose.all, choose.picked, choose.room = all, picked, room
+    choose.intro:SetText(string.format(L["Not all the macros behind the scenes fit into the game: there are %d free "
+        .. "slots. Choose which come in. The rest stay kept for later, and all go back where they were when you turn "
+        .. "the sets on again."], room))
+    local function refresh()
+        local count, names = 0, {}
+        for m in pairs(choose.picked) do
+            count = count + 1
+            names[m.name] = m
+        end
+        for i, c in ipairs(choose.all) do
+            local row = chooseRows[i]
+            local blocked = c.taken or (names[c.m.name] and names[c.m.name] ~= c.m)
+                or (not choose.picked[c.m] and count >= choose.room)
+            row:SetEnabled(not blocked)
+            row:SetAlpha(blocked and 0.45 or 1)
+            row.Refresh(row)
+        end
+        choose.count:SetText(string.format(L["Chosen: %d of %d free slots"], count, choose.room))
+    end
+    choose.refresh = refresh
+    for i, c in ipairs(all) do
+        local row = chooseRows[i]
+        if not row then
+            row = ns.Check(choose.list, "", function()
+                    local r = chooseRows[i] -- nil while it is made
+                    return r ~= nil and r.c ~= nil and choose.picked[r.c.m] ~= nil
+                end,
+                function(on)
+                    choose.picked[chooseRows[i].c.m] = on or nil
+                    choose.refresh()
+                end)
+            row:SetPoint("TOPLEFT", 0, -(i - 1) * CHOOSE_ROW)
+            chooseRows[i] = row
+        end
+        row.c = c
+        row:SetLabel(c.taken and string.format(L["%s  (%s; a macro of this name is in the game)"], c.m.name,
+            SetsWindow.Label(c.id)) or string.format("%s  (%s)", c.m.name, SetsWindow.Label(c.id)))
+        row:Show()
+    end
+    for i = #all + 1, #chooseRows do chooseRows[i]:Hide() end
+    choose.list:SetSize(400, math.max(1, #all * CHOOSE_ROW))
+    choose.scroll:SetVerticalScroll(0)
+    refresh()
+    choose:Show()
+    choose:Raise()
+end
+-- For the tests: the choice, if shown.
+function SetsWindow.Choosing() return choose ~= nil and choose:IsShown() and choose or nil end
+function SetsWindow.ChooseRows() return chooseRows end
+
 -- "Macro sets" cleared: what comes into the game told first, then turned off (at once when nothing is behind the
--- scenes).
+-- scenes). Not all fit: you choose.
 function SetsWindow.AskOff()
     local bring, left = ns.Sets.OffPlan()
     if #bring == 0 and #left == 0 then return ns.Window.Told(ns.Sets.Disable()) end
+    for _, x in ipairs(left) do
+        if x.why == "room" then return ChooseOff() end
+    end
     local lines = {}
     if #bring > 0 then
         lines[#lines + 1] = string.format(L["%d macros behind the scenes come into the game, so you have them all "
