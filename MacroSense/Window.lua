@@ -1038,6 +1038,18 @@ local function SetsItems(r)
         local ok, why = Sets.Park(id, name, not parked)
         Window.Told(ok, why, { name = name, to = id, park = parked and "in" or "out" })
     end }
+    -- Behind the scenes it has no copy button: a copy in its set here, and the General tab with the other sets.
+    local stored = r.what == "stored"
+    if stored then
+        items[#items + 1] = { name = L["Duplicate"], onClick = function() Window.Duplicate(id, name) end,
+            onEnter = function(row)
+                GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+                GameTooltip:AddLine(L["Duplicate"], 1, 1, 1)
+                GameTooltip:AddLine(L["Makes a copy in the same set, behind the scenes, named like \"Fear 2\"."], 0.8,
+                    0.8, 0.8, true)
+                GameTooltip:Show()
+            end }
+    end
     local sets = { { id = "class" }, { id = "character" } }
     for _, spec in ipairs(Sets.Specs()) do sets[#sets + 1] = { id = spec.key, spec = true } end
     for _, set in ipairs(sets) do
@@ -1049,6 +1061,11 @@ local function SetsItems(r)
             end }
         end
     end
+    if stored then
+        items[#items + 1] = TabItem("general", string.format(L["Move to: %s"], TabName("general")),
+            L["Into the General tab, for all your characters: it leaves its set and comes into the game. Its history "
+                .. "goes with it."], function() Window.StoredToGeneral(id, name, true) end)
+    end
     for _, set in ipairs(sets) do
         local label = ns.SetsWindow.Label(set.id)
         if set.id ~= id then
@@ -1057,6 +1074,11 @@ local function SetsItems(r)
                 Window.Told(ok, why, { name = name, to = set.id, copy = true })
             end }
         end
+    end
+    if stored then
+        items[#items + 1] = TabItem("general", string.format(L["Copy to: %s"], TabName("general")),
+            L["Makes a copy for all your characters, named like \"Fear 2\". This one stays where it is."],
+            function() Window.StoredToGeneral(id, name, false) end)
     end
     if id ~= "character" then
         items[#items + 1] = { name = L["Remove"], onClick = function()
@@ -1792,6 +1814,51 @@ end
 
 -- The copy menu of macro `index`, under its copy button in the list.
 function Window.OpenCopyMenu(owner, index) ns.OpenMenu(owner, CopyItems(index), 180, false, true) end
+
+-- Macro `name` of set `id`, behind the scenes: { name, icon, body } as kept, the one being edited as saved.
+local function StoredOf(id, name)
+    for _, m in ipairs(ns.Sets.List(id)) do if m.name == name then return m end end
+end
+
+-- A copy of macro `name` of set `id` in the same set, behind the scenes, under a free name, opened. In a
+-- specialization not chosen now it comes into the game with it, as the one copied does.
+function Window.Duplicate(id, name)
+    local m = StoredOf(id, name)
+    if not m then return end
+    Guard(function()
+        local taken = {}
+        for _, x in ipairs(ns.Sets.List(id)) do taken[x.name] = true end
+        local copy = FreeName(FirstLetters(m.name, MAX_NAME), taken)
+        if not ns.Sets.Write(id, nil, copy, m.icon or NEW_ICON, m.body or "") then
+            return ns.Print("could not copy the macro")
+        end
+        if not ns.Sets.InGame(id) and not ns.Sets.IsParked(id, m) then ns.Sets.Park(id, copy, false) end
+        Load(nil, { id = id, name = copy })
+        Window.RefreshList()
+    end)
+end
+
+-- Macro `name` of set `id`, behind the scenes, into the General tab under a free name, opened; `move`: it leaves
+-- its set, with its history.
+function Window.StoredToGeneral(id, name, move)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local first, last, max = MacroRange("general")
+    if last - first + 1 >= max then return NoRoom("general") end
+    local m = StoredOf(id, name)
+    if not m then return end
+    Guard(function()
+        local general = FreeName(FirstLetters(m.name, MAX_NAME))
+        local made = CreateMacro(general, m.icon or NEW_ICON, m.body or "", false)
+        if not made or made == 0 then return ns.Print(move and "could not move the macro" or "could not copy the macro") end
+        if move then
+            ns.History.Moved("character", "general", name, general)
+            ns.Sets.Forget(id, name, true)
+        end
+        ns.History.Scan()
+        state.scope, ns.db.scope = "general", "general"
+        Load(IndexIn("general", general))
+    end)
+end
 
 ------------------------------------------------------------------------
 -- Share: macros as a code to copy, and back (Share.lua, ShareWindow.lua)

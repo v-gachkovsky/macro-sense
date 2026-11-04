@@ -245,6 +245,8 @@ local function Sections()
                     .. "same macro (the same text), the two become one."] },
                 { L["Copy to"], L["A copy goes to another set, and the macro itself stays as it is. From then on "
                     .. "they are two separate macros: change or rename one, and the other stays as it was."] },
+                { L["Duplicate"], L["For a macro behind the scenes: a copy in the same set, named like \"Fear 2\". "
+                    .. "A macro behind the scenes can also be moved or copied to the General tab from here."] },
                 { L["Remove"], L["The macro leaves its set and goes back to this character's. If this character's "
                     .. "already has the very same macro, the two become one. If it has a different macro of the same "
                     .. "name, nothing happens: rename one of them first."] },
