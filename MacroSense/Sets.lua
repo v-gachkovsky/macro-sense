@@ -1139,7 +1139,7 @@ function Sets.Forget(id, name)
 end
 
 -- The specializations: { key, label, now } in the game's order (Classic: its talent groups), then any other one
--- with macros kept.
+-- with macros kept: the one before level 10, with no name, too.
 function Sets.Specs()
     local sets, out, seen = Sets.Mine(), {}, {}
     local now, nowLabel = ns.ActionBars.Spec()
@@ -1163,9 +1163,14 @@ function Sets.Specs()
     add(now, nowLabel)
     local bars = ns.Character().bars or {}
     local keys = {}
-    for key in pairs(sets.specs) do keys[#keys + 1] = key end
+    for key, list in pairs(sets.specs) do
+        if #list > 0 then keys[#keys + 1] = key end
+    end
     table.sort(keys)
-    for _, key in ipairs(keys) do add(key, bars[key] and bars[key].label or key) end
+    for _, key in ipairs(keys) do
+        local label = bars[key] and bars[key].label
+        add(key, label and label ~= "" and label or key:find("^spec") and ns.L["No specialization yet"] or key)
+    end
     return out
 end
 
