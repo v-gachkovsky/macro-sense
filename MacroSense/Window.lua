@@ -1715,8 +1715,8 @@ end
 -- bars of your other specializations and, for a general macro, of other characters lose it. Unsaved changes are
 -- asked about first.
 -- General macro `name` into the character's, with no free slot there: behind the scenes, off its buttons (one of a
--- macro gone would show the next general macro made in its place).
-local function MoveBehind(from, name)
+-- macro gone would show the next general macro made in its place). All or nothing, as the moves below.
+local function MoveBehind(from, name) return ns.Sets.Atomic(function()
     local index = IndexIn(from, name)
     if not index then return end
     local _, _, body = GetMacroInfo(index)
@@ -1737,7 +1737,7 @@ local function MoveBehind(from, name)
     Window.RefreshList()
     ns.Print("\"%s\" is moved behind the scenes, in \"This character's\": there is no free slot. Put another macro "
         .. "behind the scenes, then take this one in.", moved)
-end
+end) end
 
 function Window.Move(index)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
@@ -1748,7 +1748,7 @@ function Window.Move(index)
         local name = GetMacroInfo(index)
         return Full(to, function() Guard(function() MoveBehind(from, name) end) end, 1, true)
     end
-    Guard(function()
+    Guard(function() ns.Sets.Atomic(function()
         local name, _, body = GetMacroInfo(index)
         local icon, slots = ns.MacroIcon(index), ns.ActionBars.SlotsOf(name)
         local moved = IndexIn(to, name) and FreeName(name) or name
@@ -1761,7 +1761,7 @@ function Window.Move(index)
         ns.History.Scan()
         state.scope, ns.db.scope = to, to
         Load(IndexIn(to, moved))
-    end)
+    end) end)
 end
 
 local function AskMove(_, m)
@@ -1908,7 +1908,7 @@ end
 function Window.Duplicate(id, name)
     local m = StoredOf(id, name)
     if not m then return end
-    Guard(function()
+    Guard(function() ns.Sets.Atomic(function()
         local taken = {}
         for _, x in ipairs(ns.Sets.List(id)) do taken[x.name] = true end
         local copy = FreeName(FirstLetters(m.name, MAX_NAME), taken)
@@ -1918,7 +1918,7 @@ function Window.Duplicate(id, name)
         if not ns.Sets.InGame(id) and not ns.Sets.IsParked(id, m) then ns.Sets.Park(id, copy, false) end
         Load(nil, { id = id, name = copy })
         Window.RefreshList()
-    end)
+    end) end)
 end
 
 -- Macro `name` of set `id`, behind the scenes, into the General tab under a free name, opened; `move`: it leaves
@@ -1929,7 +1929,7 @@ function Window.StoredToGeneral(id, name, move)
     if last - first + 1 >= max then return NoRoom("general") end
     local m = StoredOf(id, name)
     if not m then return end
-    Guard(function()
+    Guard(function() ns.Sets.Atomic(function()
         local general = FreeName(FirstLetters(m.name, MAX_NAME))
         local made = CreateMacro(general, m.icon or NEW_ICON, m.body or "", false)
         if not made or made == 0 then return ns.Print(move and "could not move the macro" or "could not copy the macro") end
@@ -1940,7 +1940,7 @@ function Window.StoredToGeneral(id, name, move)
         ns.History.Scan()
         state.scope, ns.db.scope = "general", "general"
         Load(IndexIn("general", general))
-    end)
+    end) end)
 end
 
 ------------------------------------------------------------------------

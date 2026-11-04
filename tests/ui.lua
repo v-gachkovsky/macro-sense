@@ -7408,6 +7408,25 @@ do
     S.Enable()
     check("sets: on again: they go back behind the scenes, as they were", slots() == before and S.Mine().out == nil,
         slots())
+    -- Broken halfway (the macros made, the sets not off yet): all undone, the error raised.
+    local changedBefore, general = ns.MacrosChanged, select(1, GetNumMacros())
+    local slot = 77
+    ns.ActionBars.Place(ns.MAX_GENERAL + 1, { slot })
+    local onButton = GetMacroInfo(ns.MAX_GENERAL + 1)
+    ns.MacrosChanged = function() ns.MacrosChanged = changedBefore; error("broken on purpose") end
+    local okOff, errOff = pcall(S.Disable)
+    ns.MacrosChanged = changedBefore
+    check("sets: broken halfway: the error is raised", not okOff and tostring(errOff):find("broken on purpose") ~= nil,
+        errOff)
+    check("sets: broken halfway: undone, the sets on and the macros as they were", S.Mine().enabled
+        and slots() == before and select(1, GetNumMacros()) == general and S.Mine().out == nil, slots())
+    check("sets: broken halfway: the buttons as they were",
+        GetMacroInfo(ns.ActionBars.MacroAt(slot) or 0) == onButton, ns.ActionBars.MacroAt(slot))
+    check("sets: broken halfway: told in the chat", printed[#printed]:find("undid this change") ~= nil,
+        printed[#printed])
+    check("sets: broken halfway: in the log", S.Log()[#S.Log()]:find("broke: ") ~= nil or table.concat(S.Log(), "\n")
+        :find("broke: .*broken on purpose") ~= nil)
+    PickupAction(slot)
     -- Changed while off: back with the change; deleted while off: out of its set too.
     S.Disable()
     local changed, gone = bring[1], bring[2]

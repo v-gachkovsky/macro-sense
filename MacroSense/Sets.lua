@@ -1291,4 +1291,159 @@ function Sets.Describe()
     return out
 end
 
+------------------------------------------------------------------------
+-- All or nothing: a change that breaks halfway (an error) is undone. The sets, the class macros, the macros in
+-- both tabs and their buttons go back as they were before it; the error is raised then, to be reported.
+------------------------------------------------------------------------
+local function Copy(t)
+    if type(t) ~= "table" then return t end
+    local out = {}
+    for k, v in pairs(t) do out[k] = Copy(v) end
+    return out
+end
+
+-- Every macro of the game, in its tab: { general = { { name, icon, body } }, character = { ... } }.
+local function AllMacros()
+    local general, character = GetNumMacros()
+    local out = { general = {}, character = {} }
+    for index = 1, general do
+        local name, _, body = GetMacroInfo(index)
+        if name then out.general[#out.general + 1] = { name = name, icon = ns.MacroIcon(index), body = body or "" } end
+    end
+    for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + character do
+        local name, _, body = GetMacroInfo(index)
+        if name then
+            out.character[#out.character + 1] = { name = name, icon = ns.MacroIcon(index), body = body or "" }
+        end
+    end
+    return out
+end
+
+-- The macro buttons: slot -> { name, general }; a slot with no action: false.
+local function Buttons()
+    local out = {}
+    for slot = 1, MAX_SLOT do
+        local kind = GetActionInfo(slot)
+        local index = kind == "macro" and ns.ActionBars.MacroAt(slot)
+        if index then
+            out[slot] = { name = (GetMacroInfo(index)), general = index <= ns.MAX_GENERAL }
+        elseif not kind then
+            out[slot] = false
+        end
+    end
+    return out
+end
+
+local function IndexIn(general, name)
+    local first, last
+    if general then
+        first, last = 1, (GetNumMacros())
+    else
+        first, last = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + select(2, GetNumMacros())
+    end
+    for index = first, last do
+        if GetMacroInfo(index) == name then return index end
+    end
+end
+
+-- The macros of a tab as `was`: those made since deleted, those deleted made again, those changed written back.
+-- Matched by name, in order (two of one name are two).
+local function TabBack(was, general)
+    local function pair()
+        local now, wanted, extra = general and AllMacros().general or AllMacros().character, {}, {}
+        for _, m in ipairs(was) do
+            wanted[m.name] = wanted[m.name] or {}
+            table.insert(wanted[m.name], m)
+        end
+        local changed = {}
+        for i, m in ipairs(now) do
+            local w = wanted[m.name] and table.remove(wanted[m.name], 1)
+            if not w then
+                extra[#extra + 1] = i
+            elseif w.body ~= m.body or w.icon ~= m.icon then
+                changed[#changed + 1] = w
+            end
+        end
+        return extra, changed, wanted
+    end
+    local extra = pair()
+    local base = general and 0 or ns.MAX_GENERAL
+    for k = #extra, 1, -1 do DeleteMacro(base + extra[k]) end
+    local _, changed, missing = pair()
+    for _, w in ipairs(changed) do
+        local index = IndexIn(general, w.name)
+        if index then EditMacro(index, nil, w.icon, w.body) end
+    end
+    for _, list in pairs(missing) do
+        for _, w in ipairs(list) do CreateMacro(w.name, w.icon or 134400, w.body, not general) end
+    end
+end
+
+local function ButtonsBack(was)
+    local now = Buttons()
+    for slot = 1, MAX_SLOT do
+        local before, after = was[slot], now[slot]
+        if before and not (after and after.name == before.name and after.general == before.general) then
+            local index = IndexIn(before.general, before.name)
+            if index then ns.ActionBars.Place(index, { slot }) end
+        elseif before == false and after then
+            PickupAction(slot)
+            ClearCursor()
+        end
+    end
+end
+
+local depth = 0
+local function Snapshot()
+    local c = ns.Character()
+    return { sets = Copy(c.sets), class = Copy(ClassList()), macros = AllMacros(), buttons = Buttons(),
+        seen = Copy(seen), expect = Copy(expect), fresh = Copy(fresh) }
+end
+
+local function Restore(snap)
+    local c = ns.Character()
+    local lines = c.sets and c.sets.log -- what happened stays, for a report
+    c.sets = snap.sets
+    if c.sets and lines then c.sets.log = lines end
+    ns.db.classMacros[ns.Character().class or "?"] = snap.class
+    seen, expect, fresh = snap.seen, snap.expect, snap.fresh
+    if InCombatLockdown() then return Log("undone in the sets only: in combat, the macros can't be changed") end
+    busy = true
+    local ok, err = pcall(function()
+        TabBack(snap.macros.general, true)
+        TabBack(snap.macros.character, false)
+        ButtonsBack(snap.buttons)
+    end)
+    busy = false
+    if not ok then Log("undoing: %s", err) end
+    pcall(Settle)
+end
+
+-- `fn` all or nothing; one inside another is a part of it.
+function Sets.Atomic(fn, ...)
+    if depth > 0 or not ns.db then return fn(...) end
+    local snap = Snapshot()
+    depth = depth + 1
+    local result = { n = 0 }
+    local function keep(ok, ...) result = { n = select("#", ...), ok = ok, ... } end
+    keep(pcall(fn, ...))
+    depth = depth - 1
+    if result.ok then return (unpack or table.unpack)(result, 1, result.n) end
+    Log("broke: %s", result[1])
+    Restore(snap)
+    pcall(function()
+        if ns.MacrosChanged then ns.MacrosChanged() end
+        if ns.Window and ns.Window.SetsChanged then ns.Window.SetsChanged() end
+    end)
+    ns.Print("something went wrong, so MacroSense undid this change: your macros and sets are as they were. "
+        .. "Please report the error")
+    error(result[1], 0)
+end
+
+for _, name in ipairs({ "Enable", "Disable", "Update", "MoveTo", "Move", "Release", "Park", "Write", "Place",
+    "Forget", "ApplySort" }) do
+    local fn = Sets[name]
+    Sets[name] = function(...) return Sets.Atomic(fn, ...) end
+end
+
 return Sets
