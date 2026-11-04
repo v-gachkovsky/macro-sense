@@ -1,6 +1,6 @@
 ![MacroSense](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/banner-v2.png)
 
-**A macro editor that knows macros: a macro wizard, autocomplete, highlighting, error checks and a live preview.**
+**A macro editor that knows macros: a macro wizard, macro sets, autocomplete, highlighting, error checks and a live preview.**
 
 > **Early development.** MacroSense is young and still growing. If something looks wrong, behaves oddly or
 > you miss a feature, please tell me: no report is too small. I read every one and try to fix things as fast
@@ -106,8 +106,32 @@ new one.
   first; one macro for a hunter's or warlock's pet, by key.
 - The macros go into the character's tab and onto your action bars in place of their spells. Spells with a macro
   already are left out, and next time only the spells you learned since are offered.
+- **Select all** ticks every spell at once (then it is **Clear all**), and **Offer all again** offers every spell
+  with no macro, as the first time.
 
 In the Classic clients, a macro with `/cast Shadow Bolt` now follows the new rank as soon as you learn it.
+
+## Macro sets: more than 30 macros
+
+A character has only 30 macro slots. Tick **Macro sets**, and MacroSense keeps more:
+
+- **Each specialization gets macros of its own.** Choose it, and its macros come into the game, onto the same
+  buttons they had, while the others wait behind the scenes. A macro with the same name in two specializations
+  just changes its text, so its buttons never move.
+- **Class macros** are the same on all your characters of one class: change one, and the others get it too.
+  **This character's** stay in every specialization.
+- **Behind the scenes** macros take no slot, and you edit them like any other. Put one away, take it in, move or
+  copy it to another set from its **...** menu, or just drag it there (Ctrl copies). A sign by the mouse shows
+  whether it can go there.
+- **No free slot?** A new macro is made behind the scenes, after asking.
+- **Sort by spells** offers to put each macro where its spells work.
+- **Take your sets to another character**: **Share > Export macro sets...** makes a code of the sets you tick,
+  and **Import a code or text...** takes it, or the sets of another character of yours.
+- **Nothing is lost.** Turned off, the macros come back into the game (you choose which, if not all fit), and
+  turned on again they go back where they were. A backup of your macros is made first, and a change that breaks
+  halfway is undone.
+
+They are off until you turn them on: without them, MacroSense works as before.
 
 ## Autocomplete
 
@@ -248,16 +272,17 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - **Search** your macros by name or text (**Ctrl+F**): the tabs show how many match in each.
 - Line, column and a length counter (macros are limited to 255 characters).
 - Asks before discarding unsaved changes.
-- **Copy** or **delete** a macro with the buttons at its end in the list: a duplicate in the same tab, or a copy in
-  the Character / General tab.
-- **Your alts' macros** in the Character tab, under each character's name: read them and copy one to this
-  character or General with a click. They are kept as they were when you last played each character.
+- **...** at the end of a macro in the list (or a right click) copies or moves it: a duplicate in the same tab, or
+  a copy in the Character / General tab. Or drag it onto the other tab, with Ctrl to copy it. **x** deletes it.
+- **Your alts' macros** in the Character tab, under each character's name, those behind the scenes too: read them
+  and copy one to this character or General with a click. They are kept as they were when you last played each
+  character.
 - **Move** a macro between the General and Character tabs, which the game's macro window can't do: its buttons on
   your action bars stay, and its history goes along.
 - **Not on action bars** shows only the macros on no bar, to free slots when a tab is full. Hover a macro to see
   where it is: MacroSense remembers the bars of each of your specializations and characters, so a macro an alt or
   your other spec uses counts as used.
-- **Share** macros: a code of one macro, a tab or all of them, to copy and send. **Import a code or text** shows
+- **Share** macros: a code of one macro, a tab, all of them or your macro sets, to copy and send. **Import a code or text** shows
   what it holds and where each macro goes before making them, and never replaces one of yours. It takes a
   macro's plain text from a guide too, and **Copy this macro's text** gives yours as text.
 - **Link a macro in chat** (Share, or Shift-click it in the list): whoever has MacroSense clicks the link, sees
@@ -274,6 +299,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 | `/ms` | Open or close the editor (also `/macrosense`, `/msense`) |
 | `/ms help` | The macro guide in game, with ready-made macros |
 | `/ms book` | Macros from the spellbook |
+| `/ms sets` | What macro sets are, and turning them on |
+| `/ms sets log` | What the macro sets did, for a bug report |
 | `/ms minimap` | Hide or show the minimap button |
 | `/ms bug` | Print the versions to include in a bug report |
 | `/ms autocomplete` | Turn autocomplete on or off |
