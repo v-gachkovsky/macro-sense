@@ -6756,6 +6756,55 @@ do
         and not inSet("character", "Chaos Bolt").parked and S.Mine().layer["Chaos Bolt"] == "character")
     S.MoveTo("character", "Chaos Bolt", "group1")
 
+    -- The editor, macro sets on: every macro, those in the game and those behind the scenes, each part with the
+    -- class's and the character's first, then a group for each specialization; one not chosen now red and closed.
+    local function listRow(what, name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.what == what and o.name == name and o.shown then return o end
+        end
+    end
+    local function nameField()
+        for _, o in ipairs(created) do
+            if o.kind == "EditBox" and o.maxLetters == 16 then return o end
+        end
+    end
+    local label1
+    for _, spec in ipairs(S.Specs()) do if spec.key == "group1" then label1 = spec.label end end
+    ns.Window.SetScope("character")
+    local group = listRow("group", label1)
+    check("editor, sets: in the game and behind the scenes", listRow("head", "In the game")
+        and listRow("head", "Behind the scenes"))
+    check("editor, sets: the character's behind the scenes at the root", listRow("stored", "Chaos Bolt") ~= nil
+        and listRow("stored", "Chaos Bolt").set == "character")
+    check("editor, sets: a specialization not chosen: red, closed", group and group.band:IsShown() and not group.open)
+    Fire(group, "OnClick")
+    local stored
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.what == "stored" and o.set == "group1" and o.shown then stored = o end
+    end
+    check("editor, sets: opened, its macros", stored ~= nil)
+    local storedName = stored.name
+    Fire(stored, "OnClick")
+    check("editor, sets: one behind the scenes in the editor", raw() == inSet("group1", storedName).body, raw())
+    ns.Window.Restore("/cast [@focus] Chaos Bolt")
+    ns.Window.Save()
+    check("editor, sets: saved where it is kept", inSet("group1", storedName).body == "/cast [@focus] Chaos Bolt"
+)
+    -- No free slot: a new one is the character's, behind the scenes.
+    local counts = GetNumMacros
+    GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
+    ns.Window.New()
+    GetNumMacros = counts
+    nameField():SetText("Spare")
+    ns.Window.Restore("/cast Fear")
+    ns.Window.Save()
+    check("editor, sets: no free slot: made behind the scenes", inSet("character", "Spare")
+        and inSet("character", "Spare").parked and not has("Spare"))
+    Fire(listRow("stored", "Spare").remove, "OnClick")
+    local trashed = false
+    for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Spare" then trashed = true end end
+    check("editor, sets: deleted behind the scenes: into the trash", not inSet("character", "Spare") and trashed)
+
     -- A specialization's renamed or changed in the game: the character's of its name behind the scenes is its own,
     -- and follows; another specialization's of that name is a macro of its own, and stays, with its buttons.
     CreateMacro("Linked", 1, "/cast Fear", true)

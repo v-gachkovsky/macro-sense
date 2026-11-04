@@ -900,6 +900,62 @@ function Sets.IsParked(id, m) return Parked(Sets.Mine(), id, m) end
 function Sets.InGame(id) return InGame(Sets.Mine(), id) end
 function Sets.Room() return Room() end
 
+------------------------------------------------------------------------
+-- The editor: it shows every macro of the sets, and changes, makes and deletes those behind the scenes where
+-- they are kept
+------------------------------------------------------------------------
+-- The set of macro `name` in the slots: "class", "character" or "spec".
+function Sets.LayerIn(name)
+    local sets = Sets.Mine()
+    sets.layer = sets.layer or Layers(sets)
+    return sets.layer[name]
+end
+
+-- Whether macro `m` of set `id` is behind the scenes: put away, or of a specialization not chosen.
+function Sets.Behind(id, m) return not InGame(Sets.Mine(), id) or Parked(Sets.Mine(), id, m) end
+
+-- Macro `old` of set `id`, behind the scenes, written as `name`, `icon`, `body`; `old` nil: a new one there,
+-- behind the scenes. Its buttons kept follow a new name. False and "name" when the set has another of that name.
+function Sets.Write(id, old, name, icon, body)
+    local sets = Sets.Mine()
+    if not sets.enabled then return false end
+    local list = ListOf(sets, id)
+    local m = old and Find(list, old)
+    if old and not m then return false end
+    local other = Find(list, name)
+    if other and other ~= m then return false, "name" end
+    if not m then
+        m = { name = name }
+        list[#list + 1] = m
+        SetParked(sets, id, m, true)
+    elseif old ~= name then
+        if id == "class" then sets.classParked[old], sets.classParked[name] = nil, sets.classParked[old] end
+        for key, record in pairs(sets.bars) do
+            if LayerOfSet(id) ~= "spec" or key == id then
+                for slot, at in pairs(record) do
+                    if at == old then record[slot] = name end
+                end
+            end
+        end
+    end
+    m.name, m.icon, m.body = name, icon, body
+    Log("wrote %s behind the scenes: %s", name, id)
+    return true
+end
+
+-- Macro `name` of set `id` deleted, behind the scenes: into the trash, as one deleted in the game.
+function Sets.Forget(id, name)
+    local sets = Sets.Mine()
+    local list = ListOf(sets, id)
+    local m, i = Find(list, name)
+    if not m then return false end
+    table.remove(list, i)
+    if id == "class" then sets.classParked[name] = nil end
+    ns.History.Discard(ns.History.Trash("character"), name, m, time())
+    Log("deleted %s behind the scenes: %s", name, id)
+    return true
+end
+
 -- The specializations: { key, label, now } in the game's order (Classic: its talent groups), then any other one
 -- with macros kept.
 function Sets.Specs()
