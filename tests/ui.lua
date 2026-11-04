@@ -310,6 +310,7 @@ function GetCursorInfo()
     if onCursor then return table.unpack(onCursor) end
 end
 function ClearCursor() picked, onCursor = nil, nil end
+function PickupAction(slot) actions[slot] = nil end
 -- Shift-click on a link: the game passes it here (into the chat being typed).
 function ChatEdit_InsertLink() return false end
 -- This character, and the group it is in: none, unless a test fills `group` ({ raid = true in a raid, members =
@@ -6321,6 +6322,35 @@ do
         and rows().Frostbolt.macro == "Frostbolt" and planned().Frostbolt == nil)
     check("book window: nothing left to make", count > 1 and #W.Planned() == 0,
         tostring(#W.Planned()))
+    -- No free slot, macro sets on: still made, behind the scenes in this character's, asked first.
+    local sets = ns.Sets.Mine()
+    local wasOn, wasActive, counts = sets.enabled, sets.active, GetNumMacros
+    local hadSpecs, hadLayer = {}, sets.layer
+    for key in pairs(sets.specs) do hadSpecs[key] = true end
+    sets.enabled, sets.active = true, sets.active or "spec1"
+    GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
+    DeleteMacro(GetMacroIndexByName("Frostbolt"))
+    Send("UPDATE_MACROS")
+    W.Open()
+    for i, r in ipairs(W.Rows()) do
+        if r.spell.name == "Frostbolt" and not r.picked then Fire(W.RowFrame(i).check, "OnClick") end
+    end
+    check("book window: no free slot, macro sets on: it can still make them", W.Control("create"):IsEnabled()
+        and W.Control("count").text:find("The rest go behind the scenes", 1, true) ~= nil,
+        tostring(W.Control("count") and W.Control("count").text))
+    Fire(W.Control("create"), "OnClick")
+    local asking = ns.SetsWindow.Asking()
+    check("book window: asked first", asking ~= nil)
+    Fire(asking.yes, "OnClick")
+    local kept
+    for _, m in ipairs(sets.character) do if m.name == "Frostbolt" then kept = m end end
+    check("book window: made behind the scenes", kept and kept.parked and not W.IsShown()
+        and GetMacroIndexByName("Frostbolt") == 0)
+    for i = #sets.character, 1, -1 do
+        if sets.character[i].name == "Frostbolt" then table.remove(sets.character, i) end
+    end
+    for key in pairs(sets.specs) do if not hadSpecs[key] then sets.specs[key] = nil end end
+    sets.enabled, sets.active, sets.layer, GetNumMacros = wasOn, wasActive, hadLayer, counts
     W.Close()
     for _, name in ipairs(made) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
@@ -6615,6 +6645,20 @@ do
     S.Release(S.Mine().active, "Nowhere")
     DeleteMacro(GetMacroIndexByName("Nowhere"))
     Send("UPDATE_MACROS")
+    -- A button keeps a macro's place in the list, not its name: one of a macro deleted before shows the one made now
+    -- in that place. Taken off, and the deleted one's button forgotten.
+    stash[1] = stash[1] or {}
+    stash[1][44] = { "macro", 0, nil, text = "Chaos Bolt" }
+    S.Mine().bars.group1 = S.Mine().bars.group1 or {}
+    S.Mine().bars.group1[44] = "Gone Away"
+    local before40 = stash[1][40]
+    switch(1)
+    update()
+    check("sets: a deleted macro's button showing the one made now: taken off, forgotten", actions[44] == nil
+        and S.Mine().bars.group1[44] == nil and has("Chaos Bolt"))
+    check("sets: its own buttons stay", before40 == nil or (actions[40] and actions[40].text == before40.text))
+    switch(2)
+    update()
 
     -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
     -- gets the one that comes in.
@@ -6898,20 +6942,51 @@ do
     ns.Window.Save()
     check("editor, sets: saved where it is kept", inSet("group1", storedName).body == "/cast [@focus] Chaos Bolt"
 )
-    -- No free slot: a new one is the character's, behind the scenes.
+    -- No free slot: asked first, then a new one is the character's, behind the scenes.
     local counts = GetNumMacros
     GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
     ns.Window.New()
+    local asking = ns.SetsWindow.Asking()
+    check("editor, sets: no free slot: asked first", asking ~= nil
+        and asking.text.text:find("All 30 slots are taken", 1, true) ~= nil)
+    Fire(asking.yes, "OnClick")
     GetNumMacros = counts
     nameField():SetText("Spare")
     ns.Window.Restore("/cast Fear")
     ns.Window.Save()
     check("editor, sets: no free slot: made behind the scenes", inSet("character", "Spare")
         and inSet("character", "Spare").parked and not has("Spare"))
+    -- The wizard's macro with no free slot: asked, "Don't remind me again" ticked; the next one made at once.
+    GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
+    ns.Window.CreateFromWizard("Wizarded", "/cast Fear", "character")
+    asking = ns.SetsWindow.Asking()
+    Fire(asking.check, "OnClick")
+    Fire(asking.yes, "OnClick")
+    check("editor, sets: the wizard's, no free slot: behind the scenes", inSet("character", "Wizarded")
+        and inSet("character", "Wizarded").parked and ns.db.noBehindAsk == true)
+    ns.Window.CreateFromWizard("Wizarded", "/cast Fear", "character")
+    check("editor, sets: not asked again, a free name", ns.SetsWindow.Asking() == nil
+        and inSet("character", "Wizarded 2"))
+    GetNumMacros = counts
+    ns.db.noBehindAsk = nil
+    for _, gone in ipairs({ "Wizarded", "Wizarded 2" }) do ns.Window.Forget("character", gone) end
     Fire(listRow("stored", "Spare").remove, "OnClick")
     local trashed = false
     for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Spare" then trashed = true end end
     check("editor, sets: deleted behind the scenes: into the trash", not inSet("character", "Spare") and trashed)
+
+    -- The macro open in the editor moved to a specialization not chosen: it leaves the game, and is edited behind
+    -- the scenes, not left as a new one to save.
+    CreateMacro("Opened", 1, "/cast Fear", true)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Opened"))
+    S.MoveTo("character", "Opened", "group1")
+    check("editor, sets: the open macro moved behind the scenes: edited there", not has("Opened")
+        and listRow("stored", "Opened", "group1") and listRow("stored", "Opened", "group1").selected
+        and nameField():GetText() == "Opened")
+    S.Release("group1", "Opened")
+    DeleteMacro(GetMacroIndexByName("Opened"))
+    Send("UPDATE_MACROS")
 
     -- Dragged anywhere in the list: into that set, in the game or behind the scenes, as dropped.
     CreateMacro("Dragged", 1, "/cast Fear", true)

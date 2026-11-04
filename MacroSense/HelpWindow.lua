@@ -271,8 +271,9 @@ local function Sections()
             { "h", L["Good to know"] },
             { "list", {
                 { L["No free slot"], L["A macro that should come into the game but finds no free slot waits "
-                    .. "behind the scenes. Put another one away to make room. \"New\" with no free slot makes the "
-                    .. "macro behind the scenes, in this character's."] },
+                    .. "behind the scenes. Put another one away to make room. A new macro with no free slot (from "
+                    .. "\"New\", the wizard, a copy, the trash or \"From Spellbook\") is made behind the scenes, "
+                    .. "in this character's; MacroSense asks first, until you tell it not to."] },
                 { L["Sort by spells"], L["MacroSense looks at the spells each macro casts and offers to move it: "
                     .. "one that works in one specialization only, to that one; a specialization's that works in "
                     .. "all, to this character's. You see every move first. It works once MacroSense knows the "

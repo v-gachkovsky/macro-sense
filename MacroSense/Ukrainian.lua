@@ -1802,10 +1802,13 @@ ns.locales.uk = {
     ["Good to know"] = "Варто знати",
     ["No free slot"] = "Немає вільного слота",
     ["A macro that should come into the game but finds no free slot waits behind the scenes. Put another one away "
-        .. "to make room. \"New\" with no free slot makes the macro behind the scenes, in this character's."] =
+        .. "to make room. A new macro with no free slot (from \"New\", the wizard, a copy, the trash or \"From "
+        .. "Spellbook\") is made behind the scenes, in this character's; MacroSense asks first, until you tell it not "
+        .. "to."] =
         "Макрос, який мав би вийти в гру, але не знайшов вільного слота, чекає за лаштунками. Заберіть за "
-        .. "лаштунки інший, щоб звільнити місце. «Новий» без вільного слота створює макрос за лаштунками, серед "
-        .. "макросів цього персонажа.",
+        .. "лаштунки інший, щоб звільнити місце. Новий макрос без вільного слота («Новий», майстер, копія, "
+        .. "кошик чи «З книги заклинань») створюється за лаштунками, серед макросів цього персонажа; спершу "
+        .. "MacroSense перепитає, доки ви не попросите більше не нагадувати.",
     ["MacroSense looks at the spells each macro casts and offers to move it: one that works in one specialization "
         .. "only, to that one; a specialization's that works in all, to this character's. You see every move first. "
         .. "It works once MacroSense knows the spells of every specialization: choose each of them at least once."] =
@@ -1872,4 +1875,24 @@ ns.locales.uk = {
         "Макрос піде зі свого набору туди. Затисніть Ctrl, щоб скопіювати, а не переносити.",
     ["\"%s\" in \"%s\" was the very same macro: the two are one now."] =
         "«%s» у «%s» був точнісінько таким самим макросом: тепер це один макрос.",
+    -- No free slot, macro sets on: made behind the scenes
+    ["\"%s\" is made behind the scenes, in \"This character's\": there is no free slot. Put another macro behind the "
+        .. "scenes, then take this one in."] =
+        "«%s» створено за лаштунками, у «Цього персонажа»: вільного слота немає. Заберіть за лаштунки інший "
+        .. "макрос, а тоді візьміть цей у гру.",
+    ["Don't remind me again"] = "Більше не нагадувати",
+    ["Make it behind the scenes"] = "Створити за лаштунками",
+    ["%d of the macros don't fit: all 30 slots are taken. MacroSense keeps them behind the scenes, in \"This "
+        .. "character's\", where they take no slot. To use one, put another macro behind the scenes and take it in."] =
+        "%d макросів не вміщаються: усі 30 слотів зайняті. MacroSense збереже їх за лаштунками, у «Цього "
+        .. "персонажа», де вони не займають слотів. Щоб скористатися одним, заберіть за лаштунки інший макрос і "
+        .. "візьміть цей у гру.",
+    ["All 30 slots are taken. MacroSense keeps the new macro behind the scenes, in \"This character's\", where it "
+        .. "takes no slot. To use it, put another macro behind the scenes and take it in."] =
+        "Усі 30 слотів зайняті. MacroSense збереже новий макрос за лаштунками, у «Цього персонажа», де він не "
+        .. "займає слота. Щоб ним скористатися, заберіть за лаштунки інший макрос і візьміть цей у гру.",
+    ["Macros: %d. Free slots: %d. The rest go behind the scenes."] =
+        "Макросів: %d. Вільних місць: %d. Решта піде за лаштунки.",
+    ["%d macros are made behind the scenes, in \"This character's\": there is no free slot for them."] =
+        "%d макросів створено за лаштунками, у «Цього персонажа»: вільних слотів для них немає.",
 }

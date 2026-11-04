@@ -1384,6 +1384,19 @@ function Window.SetsChanged()
 end
 
 -- Macro `name` of set `id`, behind the scenes, in the editor.
+-- The set that keeps macro `name` behind the scenes (the specialization now first, then the class's, this
+-- character's, the others), nil when none or the sets are off.
+function Window.StoredSetOf(name)
+    if not ns.Sets.Mine().enabled then return end
+    local ids = { ns.Sets.Mine().active, "class", "character" }
+    for _, spec in ipairs(ns.Sets.Specs()) do ids[#ids + 1] = spec.key end
+    for _, id in ipairs(ids) do
+        for _, m in ipairs(ns.Sets.List(id)) do
+            if m.name == name and ns.Sets.Behind(id, m) then return id end
+        end
+    end
+end
+
 function Window.SelectStored(id, name)
     if state.stored and state.stored.id == id and state.stored.name == name then return end
     Guard(function() Load(nil, { id = id, name = name }) end)
@@ -1428,6 +1441,14 @@ end
 
 function Window.New()
     Guard(function()
+        local first, last, max = MacroRange(state.scope)
+        -- No free slot, macro sets on: asked first, then a new one behind the scenes.
+        if last - first + 1 >= max and SetsShown() then
+            return ns.SetsWindow.AskBehind(1, function()
+                Load(nil, { id = "character" })
+                nameBox:SetFocus()
+            end)
+        end
         if Fresh() then nameBox:SetFocus() end
     end)
 end
@@ -1554,6 +1575,29 @@ local function FreeName(name, also)
     end
 end
 
+-- With macro sets on and no free slot, a new character macro is kept behind the scenes, in this character's: under a
+-- name free in the game and there. Opened, and told in the chat (`quiet`: neither). Returns its name.
+function Window.MakeBehind(name, icon, body, quiet)
+    local taken = {}
+    for _, m in ipairs(ns.Sets.List("character")) do taken[m.name] = true end
+    local free = FreeName(FirstLetters(name, MAX_NAME), taken)
+    ns.Sets.Write("character", nil, free, icon or NEW_ICON, body)
+    if quiet then return free end -- one of many: they say it together
+    state.scope, ns.db.scope = "character", "character"
+    Load(nil, { id = "character", name = free })
+    Window.RefreshList()
+    ns.Print("\"%s\" is made behind the scenes, in \"This character's\": there is no free slot. Put another macro "
+        .. "behind the scenes, then take this one in.", free)
+    return free
+end
+
+-- No free slot in tab `scope`: with macro sets on, a character macro can be made behind the scenes instead (asked
+-- first, unless you said not to; `count` of them), by `make()`; else there is no room.
+local function Full(scope, make, count)
+    if scope ~= "character" or not ns.Sets.Mine().enabled then return NoRoom(scope) end
+    ns.SetsWindow.AskBehind(count or 1, make)
+end
+
 -- A copy of macro `index` (the one being edited when nil) in `scope`, opened then. The one being edited is copied
 -- with what the editor shows (name, icon, text) and keeps its saved text; another one as saved, after asking
 -- about unsaved changes.
@@ -1562,9 +1606,13 @@ function Window.Copy(scope, index)
     index = index or state.index
     if not index then return end
     local first, last, max = MacroRange(scope)
-    if last - first + 1 >= max then return NoRoom(scope) end
+    local full = last - first + 1 >= max
+    if full and (scope ~= "character" or not ns.Sets.Mine().enabled) then return NoRoom(scope) end
     -- `body` as MacroSense shows it: @tank and @heal stay in the copy.
     local function make(name, icon, body)
+        if full then
+            return Full(scope, function() Guard(function() Window.MakeBehind(name, icon, ns.Roles.Fill(body)) end) end)
+        end
         local copy = CreateMacro(FreeName(name), icon or NEW_ICON, ns.Roles.Fill(body), scope == "character")
         if not copy or copy == 0 then return ns.Print("could not copy the macro") end
         local made, _, written = GetMacroInfo(copy)
@@ -1678,7 +1726,9 @@ end
 function Window.CopyIn(scope, m)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local first, last, max = MacroRange(scope)
-    if last - first + 1 >= max then return NoRoom(scope) end
+    if last - first + 1 >= max then
+        return Full(scope, function() Guard(function() Window.MakeBehind(m.name, m.icon, m.body) end) end)
+    end
     Guard(function()
         local name = FreeName(FirstLetters(m.name, MAX_NAME))
         local made = CreateMacro(name, m.icon or NEW_ICON, m.body, scope == "character")
@@ -1736,15 +1786,24 @@ end
 function Window.Import(macros, done)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     Guard(function()
-        local made, first = 0, nil
+        local made, first, behind = 0, nil, {}
         for _, p in ipairs(Window.ImportPlan(macros)) do
+            local m = p.macro
+            -- A text from a guide has no icon: the question mark, so the game shows the spell's.
+            local icon = m.icon ~= "" and m.icon or NEW_ICON
             if p.name then
-                local m = p.macro
-                -- A text from a guide has no icon: the question mark, so the game shows the spell's.
-                local icon = m.icon ~= "" and m.icon or NEW_ICON
                 CreateMacro(p.name, icon, m.body, m.scope == "character")
                 made, first = made + 1, first or p
+            elseif p.full and m.scope == "character" and ns.Sets.Mine().enabled then
+                behind[#behind + 1] = { name = m.name, icon = icon, body = m.body }
             end
+        end
+        -- Those with no free slot, macro sets on: behind the scenes (asked first).
+        if #behind > 0 then
+            Full("character", function()
+                for _, m in ipairs(behind) do Window.MakeBehind(m.name, m.icon, m.body) end
+                if done and not first then done() end
+            end, #behind)
         end
         if not first then return end
         ns.History.Scan()
@@ -1833,7 +1892,14 @@ end
 function Window.Undelete(scope, entry)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local first, last, max = MacroRange(scope)
-    if last - first + 1 >= max then return NoRoom(scope) end
+    if last - first + 1 >= max then
+        return Full(scope, function()
+            Guard(function()
+                ns.History.TakeOut(ns.History.Trash(scope), entry)
+                Window.MakeBehind(entry.name, entry.icon, entry.body)
+            end)
+        end)
+    end
     Guard(function()
         local name = FreeName(entry.name)
         local index = CreateMacro(name, entry.icon or NEW_ICON, entry.body, scope == "character")
@@ -2007,9 +2073,16 @@ function Window.FreeName(name) return FreeName(FirstLetters(name, MAX_NAME)) end
 function Window.CreateFromWizard(name, body, scope)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local first, last, max = MacroRange(scope)
-    if last - first + 1 >= max then return NoRoom(scope) end
     local filled = ns.Roles.Fill(body)
     if Letters(filled) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
+    if last - first + 1 >= max then
+        return Full(scope, function()
+            Guard(function()
+                ns.WizardWindow.Close()
+                Window.MakeBehind(name, NEW_ICON, filled)
+            end)
+        end)
+    end
     Guard(function()
         local index = CreateMacro(Window.FreeName(name), NEW_ICON, filled, scope == "character")
         if not index or index == 0 then return ns.Print("could not save the macro") end
@@ -2039,8 +2112,13 @@ function Window.OnMacrosChanged()
     if state.index then
         local name = GetMacroInfo(state.index)
         if name ~= state.name then
+            local dirty = IsDirty() -- as it was: without its index it would be a new one
             local index = GetMacroIndexByName(state.name)
             state.index = index and index > 0 and index or nil
+            -- Gone from the game into a set behind the scenes (moved to a specialization not chosen, put away):
+            -- edited there, not left as a new one.
+            local id = not state.index and not dirty and Window.StoredSetOf(state.name)
+            if id then return Load(nil, { id = id, name = state.name }) end
         end
     end
     local saved = state.index and ns.Roles.Text(state.scope, state.name, select(3, GetMacroInfo(state.index)) or "")
