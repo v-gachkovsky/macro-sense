@@ -191,8 +191,12 @@ function Refresh()
     end
     for i = #rows + 1, #rowFrames do rowFrames[i]:Hide() end
     list.child:SetHeight(math.max(1, #rows * ROW_H))
-    local over = #macros > kit.free
-    countText:SetText(string.format(L["Macros: %d. Free slots: %d."], #macros, kit.free))
+    -- With macro sets on, those with no free slot go behind the scenes.
+    local sets = ns.Sets.Mine().enabled
+    local over = #macros > kit.free and not sets
+    countText:SetText(sets and #macros > kit.free
+        and string.format(L["Macros: %d. Free slots: %d. The rest go behind the scenes."], #macros, kit.free)
+        or string.format(L["Macros: %d. Free slots: %d."], #macros, kit.free))
     countText:SetTextColor(over and 1 or 0.8, over and 0.3 or 0.8, over and 0.3 or 0.8)
     local _, problem = next(problems)
     problemText:SetText(over and L["Not enough room: leave some spells out, or join them to others on a key."]
@@ -233,10 +237,33 @@ local STEP, RETRY = 0.3, 1
 function SpellbookWindow.Create()
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     Refresh()
-    if #macros == 0 or #macros > kit.free or next(problems) then return end
-    local queue, offered, book, bars = macros, rows, journal, choices.bars
+    local sets = ns.Sets.Mine().enabled
+    if #macros == 0 or (#macros > kit.free and not sets) or next(problems) then return end
+    -- With macro sets on, those with no free slot: behind the scenes, in this character's (asked first).
+    local queue, behind = {}, {}
+    for i, m in ipairs(macros) do
+        if i <= kit.free then queue[#queue + 1] = m else behind[#behind + 1] = m end
+    end
+    if #behind > 0 and not SpellbookWindow.behindAsked then
+        return ns.SetsWindow.AskBehind(#behind, function()
+            SpellbookWindow.behindAsked = true
+            SpellbookWindow.Create()
+            SpellbookWindow.behindAsked = nil
+        end)
+    end
+    local offered, book, bars = rows, journal, choices.bars
     local made, names, failed = {}, {}, {}
     SpellbookWindow.Close()
+    for _, m in ipairs(behind) do
+        local name = ns.Window.MakeBehind(m.name, NEW_ICON, m.body, true)
+        for _, spell in ipairs(m.spells) do made[spell] = { name = name, body = m.body } end
+    end
+    if #behind > 0 then
+        ns.Print("%d macros are made behind the scenes, in \"This character's\": there is no free slot for them.",
+            #behind)
+        if ns.Window.RefreshList then ns.Window.RefreshList() end
+    end
+    if #queue == 0 then return ns.Spellbook.Remember(book, offered, made, failed) end
     ns.Print("making %d macros...", #queue)
 
     local function finish()
@@ -482,6 +509,7 @@ local function Build()
     controls.create = createBtn
     countText = ns.Text(side, 12)
     countText:SetPoint("BOTTOMLEFT", 0, 34)
+    controls.count = countText
     problemText = ns.Text(side, 11)
     problemText:SetPoint("BOTTOMLEFT", 0, 50)
     problemText:SetPoint("RIGHT")

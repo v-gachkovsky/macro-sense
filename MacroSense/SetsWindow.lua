@@ -121,6 +121,52 @@ local function Build()
     onBtn:HookScript("OnHide", function() cancel:Hide() end)
 end
 
+-- No free slot, macro sets on: asked before a macro is made behind the scenes, with "Don't remind me again"; after
+-- that, made at once. `count` macros; `go()` makes them.
+local ask
+function SetsWindow.AskBehind(count, go)
+    if ns.db.noBehindAsk then return go() end
+    ns.Window.Ready()
+    if not ask then
+        ask = CreateFrame("Frame", "MacroSenseBehind", UIParent, "BackdropTemplate")
+        table.insert(UISpecialFrames, "MacroSenseBehind") -- Esc closes it
+        ask:SetFrameStrata("DIALOG")
+        ask:SetToplevel(true)
+        ask:SetClampedToScreen(true)
+        ask:EnableMouse(true)
+        ask:SetSize(440, 200)
+        ask:SetPoint("CENTER", 0, 80)
+        ns.Backdrop(ask, "bg", "border", true)
+        ask.text = ns.Text(ask, 13)
+        ask.text:SetPoint("TOPLEFT", PAD * 2, -PAD * 2)
+        ask.text:SetPoint("RIGHT", -PAD * 2, 0)
+        ask.text:SetSpacing(4)
+        ask.check = ns.Check(ask, L["Don't remind me again"], function() return ask.quiet end, function(on)
+            ask.quiet = on
+        end)
+        ask.check:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2 + 34)
+        ask.yes = ns.Button(ask, L["Make it behind the scenes"], 220, function()
+            ask:Hide()
+            if ask.quiet then ns.db.noBehindAsk = true end
+            ask.go()
+        end, true)
+        ask.yes:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2)
+        local cancel = ns.Button(ask, L["Cancel"], 120, function() ask:Hide() end)
+        cancel:SetPoint("LEFT", ask.yes, "RIGHT", 10, 0)
+    end
+    ask.go, ask.quiet = go, false
+    ask.text:SetText(count > 1 and string.format(L["%d of the macros don't fit: all 30 slots are taken. MacroSense "
+        .. "keeps them behind the scenes, in \"This character's\", where they take no slot. To use one, put another "
+        .. "macro behind the scenes and take it in."], count)
+        or L["All 30 slots are taken. MacroSense keeps the new macro behind the scenes, in \"This character's\", "
+        .. "where it takes no slot. To use it, put another macro behind the scenes and take it in."])
+    ask.check:Refresh()
+    ask:Show()
+    ask:Raise()
+end
+-- For the tests: the question, if shown.
+function SetsWindow.Asking() return ask ~= nil and ask:IsShown() and ask or nil end
+
 function SetsWindow.Open()
     ns.Window.Ready() -- its colors
     if not frame then Build() end
