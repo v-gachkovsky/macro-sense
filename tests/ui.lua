@@ -6816,6 +6816,14 @@ do
         and head.icon.texture:find("MinusButton") ~= nil)
     ns.db.scheme = scheme
     ns.Window.ApplyLook()
+    -- Search, scrolled down: what it finds shown from the top; Enter opens the first one found.
+    MacroSenseListScroll:SetVerticalScroll(900)
+    MacroSenseSearch:SetText("chaos bolt")
+    check("editor, sets: a search from the top", MacroSenseListScroll:GetVerticalScroll() == 0,
+        MacroSenseListScroll:GetVerticalScroll())
+    Fire(MacroSenseSearch, "OnEnterPressed")
+    check("editor, sets: Enter opens the first found", raw():lower():find("chaos bolt") ~= nil, raw())
+    MacroSenseSearch:SetText("")
     local function left(r) return r and r.icon.point[2] end
     check("editor, sets: deeper, further right", left(listRow("head", "In the game")) == 6
         and left(listRow("group", "Class macros")) == 18 and left(listRow("macro", "Stones")) == 30

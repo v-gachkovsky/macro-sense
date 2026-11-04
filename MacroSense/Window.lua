@@ -987,7 +987,11 @@ function Window.RefreshList()
     altHint:Hide()
     if state.scope == "character" and not notOnBars then n = AltRows(n, q) end
     for i = n + 1, #rows do rows[i]:Hide() end
-    list.child:SetHeight(math.max(n * ROW_H + (altHint:IsShown() and 40 or 0), 1))
+    local height = math.max(n * ROW_H + (altHint:IsShown() and 40 or 0), 1)
+    list.child:SetHeight(height)
+    -- Fewer rows than before: not scrolled past the last.
+    local bottom = math.max(0, height - list:GetHeight())
+    if list:GetVerticalScroll() > bottom then list:SetVerticalScroll(bottom) end
     noMatch:SetShown(n == 0 and (q ~= "" or notOnBars))
 
     -- While searching or filtering, the tabs say how many match.
@@ -2026,6 +2030,7 @@ local function Build()
         local empty = self:GetText() == ""
         placeholder:SetShown(empty)
         clear:SetShown(not empty)
+        list:SetVerticalScroll(0) -- what it finds from the top: scrolled down, it could be out of sight
         Window.RefreshList()
     end)
     search:SetScript("OnEscapePressed", function(self)
@@ -2034,7 +2039,12 @@ local function Build()
     end)
     search:SetScript("OnEnterPressed", function(self)
         self:ClearFocus()
-        if rows[1] and rows[1]:IsShown() and rows[1].what == "macro" then Window.Select(rows[1].index) end
+        -- The first macro found opens (with macro sets on, under the names of the parts).
+        for _, r in ipairs(rows) do
+            if not r:IsShown() then break end
+            if r.what == "macro" then return Window.Select(r.index) end
+            if r.what == "stored" then return Window.SelectStored(r.set, r.name) end
+        end
     end)
 
     -- Under it: only the macros on no action bar, to free slots.
