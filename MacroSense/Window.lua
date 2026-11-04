@@ -663,7 +663,7 @@ local function Row(i)
         local tone = self.tone == "class" and { ns.RGB(s.warning) } or self.tone == "now" and { 0.3, 0.75, 0.3 }
             or self.tone == "other" and { ns.RGB(s.invalid) }
         if tone then self.band:SetColorTexture(tone[1], tone[2], tone[3], self.what == "group" and 0.3 or 0.14) end
-        self.band:SetShown(tone ~= nil)
+        self.band:SetShown(tone and true or false)
         local class = self.what == "alt" and self.alt.color
         if class then self.text:SetTextColor(class.r, class.g, class.b) end
     end

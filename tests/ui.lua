@@ -6796,6 +6796,12 @@ do
         and not listRow("head", "In the game").open)
     Fire(listRow("head", "In the game"), "OnClick")
     check("editor, sets: and opens", listRow("macro", "Stones") ~= nil)
+    local uncolored = true
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.shown and (o.what == "head" or (o.what == "stored" or o.what == "macro")
+            and not o.tone) and o.band and o.band:IsShown() then uncolored = false end
+    end
+    check("editor, sets: no color out of the groups", uncolored)
     Fire(group, "OnClick")
     local stored
     for _, o in ipairs(created) do
