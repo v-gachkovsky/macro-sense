@@ -5,6 +5,8 @@ local L = ns.L
 local PREFIX = "|cff569cd6MacroSense|r: "
 -- A chat line; `text` is translated, then filled in like string.format.
 function ns.Print(text, ...) print(PREFIX .. string.format(L[text], ...)) end
+-- A chat line already translated and filled in.
+function ns.Say(text) print(PREFIX .. text) end
 
 -- Where players report bugs.
 ns.ISSUES_URL = "https://github.com/v-gachkovsky/macro-sense/issues"

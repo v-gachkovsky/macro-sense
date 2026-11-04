@@ -1860,4 +1860,13 @@ ns.locales.uk = {
         "«%s» тепер у «%s»: у гру він вийде, коли ви оберете цю спеціалізацію.",
     ["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Choose another name."] =
         "у «%s» уже є макрос «%s»: у наборі може бути лише один макрос із певною назвою. Оберіть іншу назву.",
+    -- Macro sets: a macro dragged over a group
+    ["Copy to \"%s\""] = "Копіювати в «%s»",
+    ["Move to \"%s\""] = "Перенести в «%s»",
+    ["Can't copy to \"%s\""] = "Не можна скопіювати в «%s»",
+    ["Can't move to \"%s\""] = "Не можна перенести в «%s»",
+    ["A macro of its own goes there; this one stays as it is. Let go of Ctrl to move it instead."] =
+        "Туди піде окремий макрос, а цей лишиться як є. Відпустіть Ctrl, щоб перенести, а не копіювати.",
+    ["It leaves its set and goes there. Hold Ctrl to copy it instead."] =
+        "Макрос піде зі свого набору туди. Затисніть Ctrl, щоб скопіювати, а не переносити.",
 }

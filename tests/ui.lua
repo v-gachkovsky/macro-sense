@@ -6888,27 +6888,25 @@ do
         and inSet("character", "Dragged") and not inSet("group1", "Dragged"))
     -- With Ctrl held: a copy, a macro of its own; the one dragged stays as it is.
     local said = {}
-    local oldPrint = ns.Print
-    ns.Print = function(text) said[#said + 1] = text end
+    local function heard(lines, part) return lines[1] ~= nil and lines[1]:find(part, 1, true) ~= nil end
+    local oldSay = ns.Say
+    ns.Say = function(text) said[#said + 1] = text end
     IsControlKeyDown = function() return true end
     drop(listRow("group", label1))
     check("editor, sets: dropped with Ctrl in another specialization: a copy there, the character's in the game",
         has("Dragged") and inSet("group1", "Dragged") and not inSet("character", "Dragged").parked
-        and said[1] == "\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename one, "
-        .. "and the other stays as it is.")
+        and heard(said, "now they are two macros of their own"))
     said = {}
     drop(listRow("group", nowLabel))
     check("editor, sets: dropped with Ctrl in the specialization now, its name in the game: the copy waits",
         has("Dragged") and inSet(S.Mine().active, "Dragged").parked and S.Mine().layer.Dragged == "character"
-        and said[1] == "\"%s\" waits behind the scenes: a macro of this name is in the game already, and the game "
-        .. "tells macros apart by name. Rename one of them, or put the other one behind the scenes.")
+        and heard(said, "a macro of this name is in the game already"))
     said = {}
     ns.Window.Drop(listRow("stored", "Dragged", "group1"), listRow("head", "Behind the scenes"))
     IsControlKeyDown = function() return false end
-    ns.Print = oldPrint
+    ns.Say = oldSay
     check("editor, sets: dropped with Ctrl in a set with one of its name: not, it says why",
-        said[1] == "\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename one of "
-        .. "them first." and inSet("group1", "Dragged"))
+        heard(said, "a set holds only one macro of a name") and inSet("group1", "Dragged"))
     -- Dragged from behind the scenes: its icon and name follow the mouse, till it is dropped.
     local function ghost()
         for _, o in ipairs(created) do
@@ -6923,32 +6921,61 @@ do
     check("editor, sets: dropped: it is gone from the mouse", not ghost():IsShown() and ns.Window.dragging == nil)
     -- Ctrl held when the drag began, let go before the drop: still a copy, and it says so.
     said = {}
-    ns.Print = function(text) said[#said + 1] = text end
+    ns.Say = function(text) said[#said + 1] = text end
     CreateMacro("Pressed", 1, "/cast Fear", true)
     Send("UPDATE_MACROS")
     ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), true)
-    ns.Print = oldPrint
-    check("editor, sets: Ctrl held when the drag began: a copy, said in the chat", said[1]
-        == "\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename one, and the other "
-        .. "stays as it is."
+    ns.Say = oldSay
+    check("editor, sets: Ctrl held when the drag began: a copy, said in the chat",
+        heard(said, "now they are two macros of their own")
         and inSet("group1", "Pressed") and has("Pressed"))
     -- Each change says the rule it met: moved to a specialization not chosen, copied into its own set.
     said = {}
-    ns.Print = function(text) said[#said + 1] = text end
+    ns.Say = function(text) said[#said + 1] = text end
     ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), false)
-    check("editor, sets: moved to a specialization not chosen: when it comes in, said", said[1]
-        == "\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename one of them first.")
+    check("editor, sets: moved into a set with one of its name: not, said",
+        heard(said, "a set holds only one macro of a name"))
     S.Release("group1", "Pressed")
     said = {}
     ns.Window.Drop(listRow("macro", "Pressed"), listRow("group", label1), false)
-    check("editor, sets: moved to a specialization not chosen: when it comes in, said", said[1]
-        == "\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization."
+    check("editor, sets: moved to a specialization not chosen: when it comes in, said",
+        heard(said, "it comes into the game when you choose that specialization")
         and not has("Pressed"))
     said = {}
     ns.Window.Drop(listRow("stored", "Pressed", "group1"), listRow("group", label1), true)
-    ns.Print = oldPrint
-    check("editor, sets: a copy into its own set: where a copy goes, said", said[1]
-        == "a copy goes into another set: drag \"%s\" with Ctrl onto another group.")
+    ns.Say = oldSay
+    check("editor, sets: a copy into its own set: where a copy goes, said", heard(said, "a copy goes into another set"))
+    -- Dragged over a group: what letting go does there, moving and copying apart; where it can't, a crossed circle
+    -- by it, and why.
+    local tip = {}
+    GameTooltip.SetText = function(_, text) tip = { text } end
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    local markIcon = ns.Window.DragSign
+    local pressed = listRow("stored", "Pressed", "group1")
+    ns.Window.dragging = pressed
+    ns.Window.Watch()
+    ns.Window.DragOver(listRow("head", "In the game"))
+    check("editor, sets: dragged over a set it can go to: moved there, no sign", tip[1] == "Move to \"This character's\""
+        and tip[2]:find("Hold Ctrl to copy", 1, true) and not markIcon(), tip[1])
+    ns.Window.copying = true
+    ns.Window.DragOver(listRow("head", "In the game"))
+    check("editor, sets: with Ctrl: a copy, a plus by it", tip[1] == "Copy to \"This character's\""
+        and tip[2]:find("Let go of Ctrl", 1, true) and markIcon() == "Interface\\AddOns\\MacroSense\\Media\\plus")
+    ns.Window.DragOver(listRow("group", label1))
+    check("editor, sets: a copy over its own set: can't, a crossed circle, why", tip[1] == "Can't copy to \"" .. label1 .. "\""
+        and tip[2]:find("a copy goes into another set", 1, true)
+        and markIcon() == "Interface\\AddOns\\MacroSense\\Media\\no", tip[1])
+    ns.Window.copying = false
+    S.MoveTo("group1", "Pressed", "group2", true)
+    ns.Window.DragOver(listRow("group", nowLabel))
+    check("editor, sets: moved into a set with one of its name: can't, why", tip[1] == "Can't move to \"" .. nowLabel .. "\""
+        and tip[2]:find("a set holds only one macro of a name", 1, true)
+        and markIcon() == "Interface\\AddOns\\MacroSense\\Media\\no", tip[1])
+    S.Release("group2", "Pressed")
+    ns.Window.DragOver(nil)
+    check("editor, sets: let go: no sign", not markIcon())
+    ns.Window.dragging = nil
+    GameTooltip.SetText, GameTooltip.AddLine = nil, nil
     S.Release("group1", "Pressed")
     DeleteMacro(GetMacroIndexByName("Pressed"))
     S.Release("group1", "Dragged")
