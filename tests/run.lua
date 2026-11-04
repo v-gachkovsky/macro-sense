@@ -1959,7 +1959,7 @@ do
         { scope = "general", icon = 134400, name = "Empty", body = "" },
     }
     local code = S.Encode(macros)
-    check("share: a code of letters and digits", code:match("^MacroSense1:[%w+/=]+%.$") ~= nil, code)
+    check("share: a code of letters and digits", code:match("^MacroSense:[%w+/=]+%.$") ~= nil, code)
     local function Same(a, b)
         if not (a and #a == #b) then return false end
         for i, m in ipairs(b) do
@@ -1984,6 +1984,34 @@ do
     check("share: a letter changed", Problem(changed):find("changed") ~= nil, Problem(changed))
     local nameless = S.Encode({ { scope = "general", icon = 1, name = "", body = "/sit" } })
     check("share: a macro without a name", Problem(nameless):find("damaged") ~= nil, Problem(nameless))
+    check("share: a code of before is read too", Same(S.Decode(code:gsub("^MacroSense:", "MacroSense1:")), macros))
+
+    -- Macro sets: the class, each set with its macros, those behind the scenes marked.
+    local sets = { class = "WARLOCK", sets = {
+        { id = "class", macros = { { name = "Soulstone", icon = 134400, body = "/cast Soulstone" } } },
+        { id = "spec265", label = "Affliction", macros = {
+            { name = "Agony", icon = 136139, body = "#showtooltip\n/cast [@mouseover,harm][] Agony" },
+            { name = "UA", icon = "Interface\\Icons\\UA", body = "/cast Unstable Affliction", parked = true } } },
+        { id = "character", macros = {} },
+    } }
+    local setsCode = S.EncodeSets(sets)
+    check("share, sets: its own beginning", setsCode:match("^MacroMetaSense:[%w+/=]+%.$") ~= nil and S.IsSets(setsCode)
+        and not S.IsSets(code), setsCode)
+    local back = S.DecodeSets("look: " .. setsCode:sub(1, 40) .. "\n" .. setsCode:sub(41) .. " ok")
+    local function SameSet(a, b)
+        if not a or a.id ~= b.id or a.label ~= b.label or #a.macros ~= #b.macros then return false end
+        for i, m in ipairs(b.macros) do
+            local x = a.macros[i]
+            if x.name ~= m.name or x.icon ~= m.icon or x.body ~= m.body or x.parked ~= m.parked then return false end
+        end
+        return true
+    end
+    check("share, sets: the same sets back", back and back.class == "WARLOCK" and #back.sets == 3
+        and SameSet(back.sets[1], sets.sets[1]) and SameSet(back.sets[2], sets.sets[2])
+        and SameSet(back.sets[3], sets.sets[3]))
+    check("share, sets: a macros code is no sets code", S.DecodeSets(code) == nil)
+    check("share, sets: cut short", (select(2, S.DecodeSets(setsCode:sub(1, -10))) or ""):find("cut short") ~= nil)
+    check("share, sets: not read as macros", S.Decode(setsCode) == nil)
 end
 
 -- The icon for a macro with the question mark: as the game picks it (what #showtooltip shows now, else the first
