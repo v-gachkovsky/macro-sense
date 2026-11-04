@@ -725,7 +725,27 @@ function Sets.Enable()
     sets.enabled = true
     if sets.active then
         sets.layer = sets.layer or {}
+        -- Those that came into the game when the sets were turned off go back where they were, as you left them:
+        -- changed, with the change; deleted, out of their set too.
+        local back = {}
+        local slots = ByName(InSlots())
+        for _, o in ipairs(sets.out or {}) do
+            local list = o.id == "class" and ClassList() or o.id == "character" and sets.character
+                or SpecList(sets, o.id)
+            local m, i = Find(list, o.name)
+            local there = slots[o.name]
+            if m and there then
+                m.body, m.icon = there.body, there.icon
+                Remove(o.name)
+                back[o.name] = true
+            elseif m and o.id ~= "class" then
+                table.remove(list, i)
+            end
+        end
+        if sets.out then Log("on again: %d back behind the scenes", #sets.out) end
+        sets.out = nil
         local now = ByName(InSlots())
+        for name in pairs(back) do now[name], sets.layer[name] = nil, nil end -- shown gone maybe a little later
         local function listOf(layer)
             return layer == "spec" and SpecList(sets, sets.active) or layer == "class" and ClassList() or sets.character
         end
@@ -762,12 +782,6 @@ function Sets.Enable()
     ns.Window.SetsChanged()
 end
 
--- Sets off: the slots stay as they are; the specializations' macros not in them stay kept for later.
-function Sets.Disable()
-    Sets.Mine().enabled = false
-    seen = nil
-    ns.Window.SetsChanged()
-end
 
 -- MacroSense changes the slots itself: what the game tells of meanwhile is not yours; then it is learned, and the
 -- list and the rest are told.
@@ -798,6 +812,64 @@ local function SetParked(sets, id, m, on)
     if id == "class" then sets.classParked[m.name] = on or nil else m.parked = on or nil end
 end
 local function Room() return ns.MAX_CHARACTER - #InSlots() end
+
+-- What comes into the game when the sets are turned off: every macro behind the scenes, as many as there are free
+-- slots, one of a name (the first of: the class's, this character's, the specialization now's, the others').
+-- Returns those that come in ({ m, id }) and those that don't ({ name, why = "room" or "name" }).
+function Sets.OffPlan()
+    local sets = Sets.Mine()
+    local taken, room = {}, Room()
+    for _, m in ipairs(InSlots()) do taken[m.name] = true end
+    local ids = { "class", "character" }
+    if sets.active then ids[#ids + 1] = sets.active end
+    local others = {}
+    for key in pairs(sets.specs) do
+        if key ~= sets.active then others[#others + 1] = key end
+    end
+    table.sort(others)
+    for _, key in ipairs(others) do ids[#ids + 1] = key end
+    local bring, left = {}, {}
+    for _, id in ipairs(ids) do
+        for _, m in ipairs(ListOf(sets, id)) do
+            if Sets.Behind(id, m) then
+                if taken[m.name] then
+                    left[#left + 1] = { name = m.name, why = "name" }
+                elseif room <= 0 then
+                    left[#left + 1] = { name = m.name, why = "room" }
+                else
+                    bring[#bring + 1] = { m = m, id = id }
+                    taken[m.name], room = true, room - 1
+                end
+            end
+        end
+    end
+    return bring, left
+end
+
+-- Sets off: the macros behind the scenes come into the game, as many as fit (Sets.OffPlan), so you have them all;
+-- the sets are kept as they were, and those come back to them when the sets are on again. False and "combat" in
+-- combat.
+function Sets.Disable()
+    local sets = Sets.Mine()
+    if not sets.enabled then return true end
+    if InCombatLockdown() then return false, "combat" end
+    Sets.Scan()
+    local bring = Sets.OffPlan()
+    sets.out = {}
+    Run(function()
+        for _, b in ipairs(bring) do
+            Make(b.m)
+            sets.out[#sets.out + 1] = { name = b.m.name, id = b.id }
+        end
+    end)
+    -- Out of the layers: they are their sets', behind the scenes, to go back there.
+    for _, o in ipairs(sets.out) do sets.layer[o.name] = nil end
+    sets.enabled = false
+    seen = nil
+    Log("off: %d into the game", #bring)
+    ns.Window.SetsChanged()
+    return true
+end
 
 -- Macro `name` of set `from` into set `to`, or a copy of it (`copy`): a macro of its own there, and the one in
 -- `from` stays as it is. It stays in the slots, leaves them or comes in, as its new set is; with no free slot, or

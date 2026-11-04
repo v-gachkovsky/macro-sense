@@ -7184,8 +7184,33 @@ do
     DeleteMacro(GetMacroIndexByName("Again"))
     Send("UPDATE_MACROS")
 
+    -- Off: the macros behind the scenes come into the game, all that fit; on again, they go back where they were.
     local before = slots()
+    local bring, left = S.OffPlan()
     S.Disable()
+    local brought = #bring > 0
+    for _, b in ipairs(bring) do if not has(b.m.name) then brought = false end end
+    check("sets: off: the macros behind the scenes come into the game", brought and not S.Mine().enabled, slots())
+    S.Enable()
+    check("sets: on again: they go back behind the scenes, as they were", slots() == before and S.Mine().out == nil,
+        slots())
+    -- Changed while off: back with the change; deleted while off: out of its set too.
+    S.Disable()
+    local changed, gone = bring[1], bring[2]
+    EditMacro(GetMacroIndexByName(changed.m.name), nil, nil, "/say changed while off")
+    if gone then DeleteMacro(GetMacroIndexByName(gone.m.name)) end
+    Send("UPDATE_MACROS")
+    S.Enable()
+    local function kept(id, name)
+        for _, x in ipairs(S.List(id)) do if x.name == name then return x end end
+    end
+    check("sets: changed while off: back behind the scenes with the change", not has(changed.m.name)
+        and kept(changed.id, changed.m.name).body == "/say changed while off"
+        and S.Behind(changed.id, kept(changed.id, changed.m.name)))
+    check("sets: deleted while off: out of its set", gone == nil or gone.id == "class"
+        or kept(gone.id, gone.m.name) == nil, gone and gone.m.name)
+    S.Disable()
+    local during = slots()
     ns.SetsWindow.Open()
     check("sets window: off: what they are and turning them on", ns.SetsWindow.Offers())
     Fire(ns.SetsWindow.how, "OnClick")
@@ -7194,7 +7219,7 @@ do
     ns.SetsWindow.Close()
     switch(1)
     update()
-    check("sets: off: nothing changes", slots() == before, slots())
+    check("sets: off: a change of specialization changes nothing", slots() == during, slots())
     ns.Window.SetScope("character")
     local shownHeads = false
     for _, o in ipairs(created) do
@@ -7215,6 +7240,20 @@ do
     Fire(turnOn, "OnClick")
     check("editor: turned on, its check box shows it", S.Mine().enabled and setsCheck.fill:IsShown()
         and not ns.SetsWindow.IsShown())
+    -- Cleared: what comes into the game told first, then off.
+    local asked, show = nil, StaticPopup_Show
+    StaticPopup_Show = function(which, ...) asked = which; return show(which, ...) end
+    S.Write("character", nil, "Hidden", 1, "/say hidden")
+    local willCome = #S.OffPlan()
+    Fire(setsCheck, "OnClick")
+    StaticPopup_Show = show
+    check("editor: \"Macro sets\" cleared: asked when macros come into the game, then off",
+        willCome > 0 and asked == "MACROSENSE_SETS_OFF" and not S.Mine().enabled and not setsCheck.fill:IsShown(),
+        willCome)
+    check("editor: off: the one behind the scenes in the game", has("Hidden"))
+    S.Enable()
+    check("editor: on again: back behind the scenes", not has("Hidden"))
+    S.Forget("character", "Hidden")
     S.Disable()
     C_SpecializationInfo.GetActiveSpecGroup = specs
     CreateMacro, DeleteMacro, EditMacro = create, delete, edit

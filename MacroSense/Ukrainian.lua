@@ -1661,10 +1661,6 @@ ns.locales.uk = {
         .. "скористайтеся «...» біля його назви. Або доручіть це кнопці «Розкласти за заклинаннями». Спершу аддон "
         .. "зробить резервну копію ваших макросів.",
     ["Turn on macro sets"] = "Увімкнути набори макросів",
-    ["Macro sets are on. Clear \"Macro sets\" to turn them off: the macros in the game stay as they are, and the "
-        .. "sets are kept for later."] =
-        "Набори макросів увімкнено. Щоб вимкнути, зніміть галочку «Набори макросів»: макроси в грі лишаться як є, а "
-        .. "набори збережуться на потім.",
     ["MacroSense learns the spells of each specialization while you play it. Not yet: %s."] =
         "MacroSense дізнається заклинання кожної спеціалізації, поки ви нею граєте. Ще не знає: %s.",
     ["The same on all your characters of this class: what you change here reaches the others when they log in."] =
@@ -1820,10 +1816,6 @@ ns.locales.uk = {
     ["A macro deleted behind the scenes goes to the trash, like any other."] =
         "Макрос, видалений за лаштунками, потрапляє в кошик, як і будь-який інший.",
     ["Turned off"] = "Вимкнення",
-    ["Clear \"Macro sets\", and the macros in the game stay as they are. The sets are kept: turn them on again, and "
-        .. "everything is where you left it."] =
-        "Зніміть галочку «Набори макросів», і макроси в грі лишаться як є. Набори збережуться: увімкнете їх знову "
-        .. "— і все буде там, де ви залишили.",
     ["A backup"] = "Резервна копія",
     ["Each time you turn the sets on, MacroSense first makes a backup of your macros."] =
         "Щоразу, коли ви вмикаєте набори, MacroSense спершу робить резервну копію ваших макросів.",
@@ -1895,4 +1887,24 @@ ns.locales.uk = {
         "Макросів: %d. Вільних місць: %d. Решта піде за лаштунки.",
     ["%d macros are made behind the scenes, in \"This character's\": there is no free slot for them."] =
         "%d макросів створено за лаштунками, у «Цього персонажа»: вільних слотів для них немає.",
+    -- Macro sets turned off: those behind the scenes come into the game
+    ["Turn off macro sets?\n\n%s"] = "Вимкнути набори макросів?\n\n%s",
+    ["Turn off"] = "Вимкнути",
+    ["%d macros behind the scenes come into the game, so you have them all here. When you turn the sets on again, they "
+        .. "go back where they were."] =
+        "Макросів за лаштунками: %d. Вони вийдуть у гру, тож усі будуть під рукою. Коли ви знову ввімкнете набори, "
+        .. "вони повернуться туди, де були.",
+    ["%d don't fit (no free slot, or a macro of the same name is in the game already) and stay kept for later: %s."] =
+        "%d не вміщаються (немає вільного слота або в грі вже є макрос із такою назвою) і лишаться збереженими на "
+        .. "потім: %s.",
+    ["Macro sets are on. Clear \"Macro sets\" to turn them off: the macros behind the scenes come into the game, and "
+        .. "go back when you turn the sets on again."] =
+        "Набори макросів увімкнено. Щоб вимкнути, зніміть галочку «Набори макросів»: макроси за лаштунками вийдуть у "
+        .. "гру, а коли ви знову ввімкнете набори, повернуться назад.",
+    ["Clear \"Macro sets\", and the macros behind the scenes come into the game, as many as there are free slots, so "
+        .. "you have them all. The sets are kept: turn them on again, and those macros go back where they were, with "
+        .. "what you changed in them meanwhile."] =
+        "Зніміть галочку «Набори макросів», і макроси за лаштунками вийдуть у гру, скільки вміститься у вільні "
+        .. "слоти, тож усі будуть під рукою. Набори збережуться: увімкнете їх знову — і ці макроси повернуться туди, "
+        .. "де були, разом зі змінами, які ви тим часом у них зробили.",
 }
