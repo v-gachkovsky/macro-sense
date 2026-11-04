@@ -22,6 +22,7 @@
 9. [What macros can't do](#9-what-macros-cant-do)
 10. [Ready-made macros](#10-ready-made-macros)
 11. [MacroSense helps along the way](#11-macrosense-helps-along-the-way)
+12. [More than 30 macros: macro sets](#12-more-than-30-macros-macro-sets)
 
 ---
 
@@ -43,7 +44,8 @@ Macros are kept in two places:
 
 - "General": up to 120, the same for every character on your account. Good for things anyone can use:
   a mount, a hearthstone, a chat message.
-- "Character": up to 30, only for the character you play. Good for a class's spells.
+- "Character": up to 30, only for the character you play. Good for a class's spells. Macro sets keep more:
+  see [section 12](#12-more-than-30-macros-macro-sets).
 
 A macro is at most **255 characters** long. That is about five or six lines.
 
@@ -239,7 +241,10 @@ Each ticked spell's row has more, for that spell only:
 
 The count at the bottom shows how many macros you would make and how many slots are free; "Create macros" makes
 them. Spells that some macro casts already are not ticked, nor those you left out before, but you can still tick
-them. Next time, only the spells you learned since are ticked.
+them. Next time, only the spells you learned since are ticked. "Select all" ticks every spell, and once all are
+ticked it becomes "Clear all". "Offer all again" forgets which spells you left out and which macros you deleted,
+and offers every spell with no macro, ticked, as the first time. With macro sets on, the macros that find no free slot are made
+behind the scenes.
 
 ## 5. How a macro line reads
 
@@ -415,7 +420,7 @@ and MacroSense makes the macros for you.
   now.
 - "Shorten": the same macro in fewer characters.
 - "History", "Trash", "Backups": earlier texts, deleted macros and saved copies of all of them.
-- "Share": a code to send a macro to a friend, or a link in chat.
+- "Share": a code to send a macro or your macro sets to a friend, or a link in chat.
 - "Wizard": change a macro with the wizard's questions.
 
 ### Typing less: a few letters find the word
@@ -437,6 +442,88 @@ Capitals that are no name's first letters count as small ones, so Caps Lock does
 **Enter** takes the highlighted one, **Up** and **Down** move through the list, **Esc** closes it.
 
 Each of them is described in full in the [README](../README.md).
+
+## 12. More than 30 macros: macro sets
+
+A character has only 30 macro slots. Macro sets let MacroSense keep more: each specialization gets macros of its
+own, and only those you need right now take a slot. Tick "Macro sets" to turn them on. Until you do, nothing
+changes. MacroSense makes a backup of your macros first.
+
+### Three kinds of sets
+
+- "Class macros": the same on all your characters of one class. Change one, and your other characters of that
+  class get the change too. They are in the game in every specialization.
+- "This character's": its own macros, in the game in every specialization. When you first turn the sets on, all
+  your character macros are here.
+- **A specialization's**: in the game only while it is chosen. Choose another, and they wait behind the scenes,
+  while that one's come into the game, onto the same buttons they had on your action bars.
+
+### In the game and behind the scenes
+
+With the sets on, the "Character" tab has two parts. "In the game" holds the macros in your 30 slots: they are on
+your bars and work. "Behind the scenes" holds the macros MacroSense keeps for you: they take no slot. Open,
+change, make and delete them there like any other macro.
+
+Class macros are yellow, the specialization chosen now green, and all that is behind the scenes red. A macro you
+keep behind the scenes on purpose has a grey name. The groups open and close with a click.
+
+### What you can do with a macro
+
+Press "..." by a macro's name, or right-click it:
+
+- "Put away": the macro leaves the game and waits behind the scenes, in its own set. Its slot is free for
+  another.
+- "Take in": it comes back into the game. It needs a free slot, and no other macro of the same name in the game.
+- "Keep behind the scenes": for a specialization not chosen now. The macro stays behind the scenes even when you
+  choose that specialization. "Come in with its specialization" undoes it.
+- "Move to": the macro goes to another set. If it was in the game and the new set is in the game too, it stays
+  on its buttons. If the set already has the very same macro, the two become one.
+- "Copy to": a copy goes to another set. From then on they are two separate macros.
+- "Duplicate": a copy in the same set, named like "Fear 2".
+- "Remove": the macro leaves its set and goes back to "This character's".
+- "Copy to: General", "Move to: General" and back: any macro can go to the other tab.
+
+### Dragging
+
+- Drag a macro onto any part of the list to move it there: onto "Behind the scenes", and it waits there; onto
+  "In the game", and it comes into the game; onto a group, and it goes to that set.
+- Hold **Ctrl** when you start dragging or when you let go, and the macro is copied instead.
+- Drag it onto the "General" or "Character" tab to move it there, or with Ctrl to copy it. This works with the
+  sets off too.
+- A macro in the game can still be dragged onto an action bar.
+
+While you drag, a sign by the mouse shows whether the macro can go there, and the chat says why not.
+
+### Names
+
+The game tells macros apart by their names, so only one macro of a name can be in the game at a time. Each set
+may have a macro of the same name: two specializations' come in each with its own specialization, onto its own
+buttons. A macro whose name is taken waits behind the scenes, and MacroSense says so in the chat.
+
+### Sets on another character
+
+- "Share" > "Export macro sets...": tick the sets you want and copy the code. "Select all" and "Clear all" tick
+  or clear them at once.
+- "Share" > "Import a code or text...": paste a code of sets, or choose another character of yours. Each set goes
+  into its own. Another class's sets go into "This character's", and MacroSense warns you first. A name the set
+  has already gets a number, and the very same macro is skipped. They all come in behind the scenes: take in
+  those you need.
+- In the "Character" tab, your other characters' macros include those behind the scenes, with their set's name.
+
+### Good to know
+
+- **No free slot**: a macro that should come into the game but finds no free slot waits behind the scenes. A new
+  macro with no free slot (from "New", the wizard, a copy, the trash or "From Spellbook") is made behind the
+  scenes, in "This character's". MacroSense asks first, until you tell it not to.
+- "Sort by spells": MacroSense looks at the spells each macro casts and offers to move it where it works. You
+  see every move first. It works once you have played each specialization at least once.
+- **Turning them off**: clear "Macro sets", and the macros behind the scenes come into the game, as many as fit.
+  If not all fit, you choose which. Turn the sets on again, and those macros go back where they were, with what
+  you changed in them meanwhile.
+- **If something breaks**: if a change breaks halfway, MacroSense undoes all of it, so your macros, sets and
+  buttons are as they were. It says so in the chat; please report the error then.
+- **Before level 10** a character has no specialization yet: its macros are kept as "No specialization yet".
+- A macro deleted behind the scenes goes to the trash, like any other.
 
 Found something wrong, or missing something? Type `/ms bug` in game and tell me: in the comments on
 [CurseForge](https://www.curseforge.com/wow/addons/macro-sense), in

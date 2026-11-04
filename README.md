@@ -2,7 +2,7 @@
 
 <p align="center">
   A macro editor for <b>World of Warcraft</b> that knows macros<br>
-  macro wizard · macros from the spellbook · autocomplete · syntax highlighting · error checks · live preview · icon picker
+  macro wizard · macro sets · macros from the spellbook · autocomplete · syntax highlighting · error checks · live preview · icon picker
 </p>
 
 <p align="center">
@@ -190,7 +190,10 @@ you know, also after you learn a new one. Point at a spell to see its macro.
 - **On the bars.** The macros go into the character's tab, and onto the action bars in place of their spells.
 
 Spells that some macro casts already are not ticked, nor those you left out before; you can still tick them.
-Next time, only the spells you learned since are ticked. If the game doesn't make a macro, the chat says which.
+Next time, only the spells you learned since are ticked. **Select all** ticks every spell (all ticked, it is
+**Clear all**), and **Offer all again** forgets which spells you left out and which macros you deleted. With macro
+sets on, the macros that find no free slot are made behind the scenes. If the game doesn't make a macro, the chat
+says which.
 
 **A new rank.** In the Classic clients a macro with `/cast Shadow Bolt` kept the rank it had when you learned a
 new one, until you edited it. MacroSense now saves such macros again by itself, after combat if you are in one,
@@ -367,7 +370,8 @@ copied as saved. **x** deletes the macro, after asking; the macro being edited s
 goes.
 
 Your other characters' own macros are in the **Character** tab too, under your macros: each character's name (your
-realm first), and a click shows its macros, as they were when you last played it with MacroSense. Hover one to
+realm first), and a click shows its macros, as they were when you last played it with MacroSense; with macro sets,
+those behind the scenes too, with their set's name. Hover one to
 read it; a click, or its "...", copies it into this character's tab or General, under a free name. The search
 finds them too. The **x** next to a character forgets it: its macros and action bars are no longer shown or
 counted, until you log in with it again.
@@ -388,7 +392,8 @@ another specialization or character have asks first: there it will be gone.
 anything is made, the window says what the code holds and where each macro goes. Nothing is replaced: a
 taken name gets a number (`Fear 2`), and a macro with no free slot in its tab is left out. The code is one
 line of letters and digits, which chat apps leave as it is, ending in a dot, so words around it don't
-matter; a code cut short or changed is refused.
+matter; a code cut short or changed is refused. **Share > Export macro sets...** does the same for your
+[macro sets](#macro-sets).
 
 Guides (Wowhead, Icy Veins) and forums write macros as plain text, so **Import a code or text** takes that too:
 paste the macro, or several split by an empty line, and each is made in the tab you are in, named after its first
@@ -413,6 +418,42 @@ they changed, and **Back up now** makes one whenever you like (the last 10 for e
 the General macros and the character's). Pick one to restore it: its macros get their text and icon back,
 the deleted ones are made again, and the macros made since stay as they are. A backup of your macros now is
 made first, so a restore can be undone too. The **x** next to a backup deletes it.
+
+## Macro sets
+
+A character has only 30 macro slots. Tick **Macro sets** in the editor, and MacroSense keeps more: each
+specialization gets macros of its own, and only those you need now take a slot. They are off until you turn them
+on, and a backup of your macros is made first.
+
+- **Three kinds of sets.** **Class macros** are the same on all your characters of one class: change one, and the
+  others get it too. **This character's** stay in every specialization; all your character macros start here. A
+  **specialization's** macros come into the game when you choose it, onto the same buttons they had, and wait
+  behind the scenes while you play another one. A macro of the same name in two specializations just changes its
+  text, so its buttons never move.
+- **In the game and behind the scenes.** With the sets on, the Character tab has two parts: the macros in your
+  slots, and those MacroSense keeps behind the scenes, which take no slot. Open, change, make and delete them
+  there like any other. Class macros are yellow, the specialization now green, the rest behind the scenes red; one
+  you keep behind the scenes on purpose has a grey name.
+- **"..." on a macro** (a right click too): **Put away** / **Take in**, **Keep behind the scenes** for a
+  specialization not chosen now, **Move to** / **Copy to** another set, **Duplicate**, **Remove** (back to this
+  character's), and the other tab.
+- **Dragging.** Drag a macro onto a group or a part of the list to move it there; hold Ctrl to copy it. Onto the
+  General or Character tab it moves or copies there too, with the sets off as well. A sign by the mouse shows
+  whether it can go there, and the chat says why not.
+- **No free slot.** A macro that finds no free slot waits behind the scenes. A new one (New, the wizard, a copy,
+  the trash, From Spellbook, an import) is then made behind the scenes, in this character's, after asking.
+- **Sort by spells** looks at the spells each macro casts and offers to move it where it works, once you have
+  played each specialization.
+- **Turned off,** the macros behind the scenes come into the game, as many as fit; if not all fit, you choose
+  which. Turned on again, they go back where they were, with what you changed meanwhile.
+- **On another character.** **Share > Export macro sets...** makes a code of the sets you tick (**Select all** /
+  **Clear all**). **Share > Import a code or text...** takes such a code, or the sets of another character of
+  yours: each set into its own, another class's into this character's (said first), a taken name with a number,
+  the very same macro skipped, all behind the scenes.
+- **All or nothing.** If a change breaks halfway, MacroSense undoes it: your macros, sets and buttons are as they
+  were. The chat says so; please report the error then.
+
+`/ms sets log` prints what the sets did, for a bug report.
 
 ## Icons and action bars
 
@@ -460,6 +501,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `/ms` - open / close the editor
 - `/ms help` - the macro guide in game, with ready-made macros and a link to the [full guide](docs/GUIDE.md)
 - `/ms book` - macros from the spellbook
+- `/ms sets` - what macro sets are, and turning them on; `/ms sets log` - what they did, for a bug report
 - `/ms minimap` - hide / show the minimap button
 - `/ms bug` - print the versions to include in a bug report
 - `/ms autocomplete` - toggle autocomplete
@@ -494,7 +536,10 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Ranks.lua`: macros saved again when a spell gets a new rank. Which spells and macros is pure Lua.
 - `MacroSense/History.lua`: earlier saved texts of each macro. The lists are pure Lua; watching the macros
   needs the game.
-- `MacroSense/Share.lua`: macros as a code and back. Pure Lua.
+- `MacroSense/Share.lua`: macros and macro sets as a code and back. Pure Lua.
+- `MacroSense/Sets.lua`: macro sets: the layers, what comes into the game with a specialization, the buttons put
+  back, and every change all or nothing. The planning is pure Lua.
+- `MacroSense/SetsWindow.lua`: what macro sets are, turning them on and off, and the questions they ask.
 - `MacroSense/Backups.lua`: backups of all the macros, which to keep and what a restore does. Pure Lua.
 - `MacroSense/ShareWindow.lua`: the window of a code, to export and to import.
 - `MacroSense/Links.lua`: macros linked in chat. The text of a link and the parts of a code are pure Lua.

@@ -247,6 +247,8 @@ local function Sections()
                     .. "they are two separate macros: change or rename one, and the other stays as it was."] },
                 { L["Duplicate"], L["For a macro behind the scenes: a copy in the same set, named like \"Fear 2\". "
                     .. "A macro behind the scenes can also be moved or copied to the General tab from here."] },
+                { L["The other tab"], L["Any macro can be copied or moved from here to the other tab: a character "
+                    .. "macro to General, a general one to Character."] },
                 { L["Remove"], L["The macro leaves its set and goes back to this character's. If this character's "
                     .. "already has the very same macro, the two become one. If it has a different macro of the same "
                     .. "name, nothing happens: rename one of them first."] },
@@ -289,10 +291,27 @@ local function Sections()
                     .. "spells of every specialization: choose each of them at least once."] },
                 { L["Deleted"], L["A macro deleted behind the scenes goes to the trash, like any other."] },
                 { L["Turned off"], L["Clear \"Macro sets\", and the macros behind the scenes come into the game, as "
-                    .. "many as there are free slots, so you have them all. The sets are kept: turn them on again, "
-                    .. "and those macros go back where they were, with what you changed in them meanwhile."] },
+                    .. "many as there are free slots, so you have them all. If not all fit, you choose which come "
+                    .. "in. The sets are kept: turn them on again, and those macros go back where they were, with "
+                    .. "what you changed in them meanwhile."] },
                 { L["A backup"], L["Each time you turn the sets on, MacroSense first makes a backup of your "
                     .. "macros."] },
+                { L["If something breaks"], L["If a change breaks halfway, MacroSense undoes all of it: your "
+                    .. "macros, sets and buttons are as they were. It says so in the chat; please report the error "
+                    .. "then."] },
+                { L["Before level 10"], L["A character has no specialization yet: its macros are kept as \"No "
+                    .. "specialization yet\"."] },
+            } },
+            { "h", L["Sets on another character"] },
+            { "list", {
+                { L["Export sets"], L["\"Share\" > \"Export macro sets...\": check the sets you want and copy the code. "
+                    .. "\"Select all\" and \"Clear all\" check or clear them at once."] },
+                { L["Import sets"], L["\"Share\" > \"Import a code or text...\": paste a code of sets, or choose another "
+                    .. "character of yours. Each set goes into its own; another class's sets go into this "
+                    .. "character's, and MacroSense warns you first. A name the set has already gets a number, the "
+                    .. "very same macro is skipped. They all come in behind the scenes: take in those you need."] },
+                { L["Your other characters"], L["In the Character tab, their macros behind the scenes are listed "
+                    .. "too, with the name of their set."] },
             } },
         } },
         { L["Practice"], {

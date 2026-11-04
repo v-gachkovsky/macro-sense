@@ -7,7 +7,7 @@ local L = ns.L
 local SetsWindow = {}
 ns.SetsWindow = SetsWindow
 
-local WIDTH, HEIGHT, PAD = 560, 360, 14
+local WIDTH, HEIGHT, PAD = 560, 395, 14
 local MAX_LISTED = 12 -- moves listed in the question of "Sort by spells"; the rest are counted
 
 local frame, onBtn, onNote
@@ -247,7 +247,8 @@ local function Build()
         .. "change one, and the others get it too. This character's macros stay in every specialization.\n\nOnce "
         .. "turned on, all your character macros go into \"This character's\". Move them to a specialization or to "
         .. "the class in the list of macros: drag one there (hold Ctrl to copy it), or use \"...\" by its name. Or "
-        .. "let \"Sort by spells\" do it. A backup of your macros is made first."])
+        .. "let \"Sort by spells\" do it. A backup of your macros is made first.\n\nSets made on another character "
+        .. "of yours come over with \"Share\" > \"Import a code or text...\"."])
     onBtn = ns.Button(frame, L["Turn on macro sets"], 200, function()
         ns.Sets.Enable()
         frame:Hide()
