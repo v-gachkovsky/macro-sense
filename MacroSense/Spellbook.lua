@@ -68,8 +68,10 @@ function Spellbook.Name(spell)
 end
 
 -- Who a spell goes to, as the form asks it: "harm" (enemies), "help" (friends, others too), "self" (nobody to choose:
--- Ice Block, Blink, Bear Form).
-local function Kind(S, name)
+-- Ice Block, Blink, Bear Form, and a spell whose tooltip says no range: Howl of Terror, Demonic Circle).
+local function Kind(S, spell)
+    local name = spell.name
+    if S.targeted and S.targeted(spell.id) == false then return "self" end
     local reaction = S.reaction and S.reaction(name)
     if reaction == "enemies" then return "harm" end
     if reaction == "friends" and S.selfOnly and S.selfOnly(name) == false then return "help" end
@@ -105,7 +107,7 @@ function Spellbook.Kit()
         if not s.offSpec then
             local key = s.name:lower()
             kit.spells[#kit.spells + 1] = { name = s.name, ranks = s.ranks, general = s.general,
-                kind = Kind(S, s.name), interrupt = interrupts[key] or nil, control = control[key] or nil }
+                kind = Kind(S, s), interrupt = interrupts[key] or nil, control = control[key] or nil }
         end
     end
     local general, character = GetNumMacros()
