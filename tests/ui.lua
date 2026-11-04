@@ -1,5 +1,6 @@
 -- Loads the whole addon against a tiny fake WoW API and drives the editor like a player would.
 -- `lua tests/ui.lua` from the repo root. It catches load errors and logic bugs, not layout.
+dofile("tests/strict.lua")
 local now, timers = 0, {} -- timers: { at = time, fn = function }
 local created = {} -- every frame, so tests can find anonymous ones (Core's event frame, the editor)
 -- Shown, and so are the frames it is in: only then the game runs its OnUpdate.
