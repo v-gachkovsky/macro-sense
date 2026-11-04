@@ -1012,7 +1012,7 @@ local function SetsItems(r)
     local items, m = {}, nil
     for _, x in ipairs(Sets.List(id)) do if x.name == name then m = x end end
     if not m then return items end
-    local parked = Sets.IsParked(id, m)
+    local parked = Sets.IsParked(id, m) or (Sets.InGame(id) and Sets.Behind(id, m))
     items[#items + 1] = { name = parked and L["Take in"] or L["Put away"], onClick = function()
         local ok, why = Sets.Park(id, name, not parked)
         Window.Told(ok, why, { name = name, to = id, park = parked and "in" or "out" })

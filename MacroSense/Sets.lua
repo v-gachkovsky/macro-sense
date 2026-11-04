@@ -894,7 +894,8 @@ function Sets.Park(id, name, on)
     local m = Find(ListOf(sets, id), name)
     if not m then return false end
     on = on and true or false
-    if on == Parked(sets, id, m) then return true end
+    -- Not put away, yet not in the slots as this set's: taken in, it comes in.
+    if on == Parked(sets, id, m) and (on or not Sets.Behind(id, m)) then return true end
     if not on and InGame(sets, id) then
         if Index(name) then return false, "ingame" end
         if Room() <= 0 then return false, "room" end
@@ -935,8 +936,14 @@ function Sets.LayerIn(name)
     return sets.layer[name]
 end
 
--- Whether macro `m` of set `id` is behind the scenes: put away, or of a specialization not chosen.
-function Sets.Behind(id, m) return not InGame(Sets.Mine(), id) or Parked(Sets.Mine(), id, m) end
+-- Whether macro `m` of set `id` is behind the scenes: put away, of a specialization not chosen, or not in the
+-- slots as this set's (none of its name there, or one of another set): shown there, never nowhere.
+function Sets.Behind(id, m)
+    local sets = Sets.Mine()
+    if not InGame(sets, id) or Parked(sets, id, m) then return true end
+    sets.layer = sets.layer or Layers(sets)
+    return sets.layer[m.name] ~= LayerOfSet(id) or Index(m.name) == nil
+end
 
 -- Macro `old` of set `id`, behind the scenes, written as `name`, `icon`, `body`; `old` nil: a new one there,
 -- behind the scenes. Its buttons kept follow a new name. False and "name" when the set has another of that name.

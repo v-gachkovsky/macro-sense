@@ -6606,6 +6606,15 @@ do
     DeleteMacro(GetMacroIndexByName("Unseen"))
     Send("UPDATE_MACROS")
     check("sets: the log outlasts a reload", #S.Mine().log > 0 and S.Log() == S.Mine().log)
+    -- One of the set now in the game not in the slots as its own: shown behind the scenes, never nowhere.
+    local now = S.Mine().specs[S.Mine().active]
+    now[#now + 1] = { name = "Nowhere", icon = 1, body = "/cast Agony" }
+    check("sets: one of the set now not in the slots: behind the scenes", S.Behind(S.Mine().active, now[#now]))
+    check("sets: taken in, it comes in", S.Park(S.Mine().active, "Nowhere", false) and has("Nowhere")
+        and S.Mine().layer.Nowhere == "spec" and not S.Behind(S.Mine().active, now[#now]))
+    S.Release(S.Mine().active, "Nowhere")
+    DeleteMacro(GetMacroIndexByName("Nowhere"))
+    Send("UPDATE_MACROS")
 
     -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
     -- gets the one that comes in.
