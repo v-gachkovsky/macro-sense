@@ -7063,6 +7063,32 @@ do
     GetNumMacros = counts
     ns.db.noBehindAsk = nil
     for _, gone in ipairs({ "Wizarded", "Wizarded 2" }) do ns.Window.Forget("character", gone) end
+    -- A general macro into the full Character tab: offered, asked, then behind the scenes and off its buttons.
+    CreateMacro("Roaming", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    actions[60] = { "macro", 0, nil, text = "Roaming" }
+    GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
+    ns.Window.SetScope("general")
+    ns.Window.OpenCopyMenu(MacroSenseFrame, GetMacroIndexByName("Roaming"))
+    local moveItem
+    for _, r in ipairs(MacroSenseMenu.rows) do
+        if r:IsShown() and ns.Highlight.Strip(r.text.text):find("^Move to Character") then moveItem = r end
+    end
+    check("move: the full Character tab, sets on: behind the scenes, offered", moveItem
+        and ns.Highlight.Strip(moveItem.text.text):find("(behind the scenes)", 1, true) ~= nil
+        and moveItem:IsEnabled(), moveItem and moveItem.text.text)
+    Fire(moveItem, "OnClick")
+    asking = ns.SetsWindow.Asking()
+    check("move: no free slot: asked, it says it moves", asking ~= nil
+        and asking.text.text:find("moves the macro behind the scenes", 1, true) ~= nil
+        and asking.yes.label.text == "Move it behind the scenes")
+    Fire(asking.yes, "OnClick")
+    GetNumMacros = counts
+    check("move: behind the scenes, the character's, off the bars", inSet("character", "Roaming")
+        and inSet("character", "Roaming").body == "/cast Fear" and GetMacroIndexByName("Roaming") == 0
+        and actions[60] == nil and printed[#printed]:find("is moved behind the scenes", 1, true) ~= nil,
+        printed[#printed])
+    ns.Window.Forget("character", "Roaming")
     Fire(listRow("stored", "Spare").remove, "OnClick")
     local trashed = false
     for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Spare" then trashed = true end end
