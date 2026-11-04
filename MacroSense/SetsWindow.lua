@@ -82,6 +82,9 @@ local function ChooseOff()
         choose.list:SetSize(1, 1)
         choose.scroll:SetScrollChild(choose.list)
         ns.AttachScrollBar(choose.scroll, CHOOSE_ROW * 3)
+        -- The game hides a row scrolled out of the list but it still takes the mouse: one over "Turn off" took its
+        -- click. Rows out of sight are hidden.
+        choose.scroll:HookScript("OnVerticalScroll", function() choose.clip() end)
         choose.count = ns.Text(choose, 12)
         choose.count:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2 + 34)
         choose.off = ns.Button(choose, L["Turn off"], 160, function()
@@ -95,6 +98,8 @@ local function ChooseOff()
         choose.off:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2)
         local cancel = ns.Button(choose, L["Cancel"], 120, function() choose:Hide() end)
         cancel:SetPoint("LEFT", choose.off, "RIGHT", 10, 0)
+        -- Over the list, whatever is in it.
+        for _, b in ipairs({ choose.off, cancel }) do b:SetFrameLevel(choose.scroll:GetFrameLevel() + 10) end
         choose:SetScript("OnHide", function() ns.Window.SetsChanged() end)
     end
     choose.all, choose.picked, choose.room = all, picked, room
@@ -118,6 +123,14 @@ local function ChooseOff()
         choose.count:SetText(string.format(L["Chosen: %d of %d free slots"], count, choose.room))
     end
     choose.refresh = refresh
+    -- The rows in sight shown, the others hidden (all while the list has no height yet).
+    function choose.clip()
+        local top, height = choose.scroll:GetVerticalScroll() or 0, choose.scroll:GetHeight() or 0
+        for i, row in ipairs(chooseRows) do
+            local y = (i - 1) * CHOOSE_ROW
+            row:SetShown(i <= #choose.all and (height <= 0 or (y + CHOOSE_ROW > top and y < top + height)))
+        end
+    end
     for i, c in ipairs(all) do
         local row = chooseRows[i]
         if not row then
@@ -141,6 +154,7 @@ local function ChooseOff()
     choose.list:SetSize(400, math.max(1, #all * CHOOSE_ROW))
     choose.scroll:SetVerticalScroll(0)
     refresh()
+    choose.clip()
     choose:Show()
     choose:Raise()
 end
