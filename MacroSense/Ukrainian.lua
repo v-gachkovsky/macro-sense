@@ -1747,9 +1747,11 @@ ns.locales.uk = {
         "Макрос повертається в гру. Для цього потрібен вільний слот, і в грі не має бути іншого макроса з такою "
         .. "самою назвою.",
     ["For a macro of a specialization not chosen now: it stays behind the scenes even when you choose that "
-        .. "specialization. \"Come in with its specialization\" undoes it."] =
-        "Для макроса спеціалізації, яку зараз не вибрано: він лишається за лаштунками, навіть коли ви її оберете. "
-        .. "«З'являтися разом зі спеціалізацією» це скасовує.",
+        .. "specialization, and its name is grey in the list. \"Come in with its specialization\" undoes it."] =
+        "Для макроса спеціалізації, яку зараз не вибрано: він лишається за лаштунками, навіть коли ви її оберете, "
+        .. "а його назва в списку сіра. «З'являтися разом зі спеціалізацією» це скасовує.",
+    ["Kept behind the scenes: it doesn't come into the game when you choose this specialization."] =
+        "Лишається за лаштунками: не з'явиться в грі, коли ви оберете цю спеціалізацію.",
     ["Move to"] = "Перенести в",
     ["The macro goes to another set and leaves this one. If it was in the game and the new set is in the game too, "
         .. "it stays where it is, on its buttons. Moved to a specialization not chosen now, it leaves the game until "

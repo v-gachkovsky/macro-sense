@@ -639,6 +639,10 @@ local function Row(i)
             GameTooltip:AddLine(r.name, 1, 1, 1)
             AddIssueLines(r.issues or {})
             GameTooltip:AddLine(L["Behind the scenes: not in the game now, and on no slot."], 0.6, 0.6, 0.6, true)
+            if r.kept then
+                GameTooltip:AddLine(L["Kept behind the scenes: it doesn't come into the game when you choose this "
+                    .. "specialization."], 0.6, 0.6, 0.6, true)
+            end
             Window.AddSetsNote(r)
         else
             GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
@@ -709,7 +713,9 @@ local function Row(i)
         if not s then return end
         self.bg:SetColorTexture(ns.RGB(s.selection))
         local color = self.severity == "error" and s.invalid or self.severity == "warning" and s.warning or s.text
-        self.text:SetTextColor(ns.RGB((self.what == "altMacro" or self.what == "head") and s.dim or color))
+        -- Kept behind the scenes: grey, unless it has errors to show.
+        local dim = self.what == "altMacro" or self.what == "head" or (self.kept and color == s.text)
+        self.text:SetTextColor(ns.RGB(dim and s.dim or color))
         -- A set's group, its name and its macros: the class's yellow, the specialization now's green, another red.
         local tone = self.tone == "class" and { ns.RGB(s.warning) } or self.tone == "now" and { 0.3, 0.75, 0.3 }
             or self.tone == "other" and { ns.RGB(s.invalid) }
@@ -780,7 +786,7 @@ local function UseRow(n, what, tone, depth)
     r.alert:SetPoint("RIGHT", r.copy, "LEFT", -2, 0)
     r.alert:Hide()
     r.mark:Hide()
-    r.auto = false
+    r.auto, r.kept = false, false
     r.icon:SetDesaturated(false)
     r.icon.hint = false
     r.text:ClearAllPoints()
@@ -906,6 +912,9 @@ local function StoredRow(n, id, m, tone, depth)
     local auto = (m.icon or NEW_ICON) == NEW_ICON
     ShowFound(r.icon, auto and FoundIcon(m.body or "", nil, m.name) or m.icon, false)
     r.mark:SetShown(Locked(m.icon, m.body))
+    -- Kept behind the scenes in a specialization not chosen now: it won't come in with it. Grey.
+    r.kept = not ns.Sets.InGame(id) and ns.Sets.IsParked(id, m) and true or false
+    if r.kept then r.icon:SetDesaturated(true) end
     r.text:SetText(m.name)
     r.severity, r.issues = MacroIssues(m.body)
     r:Paint()

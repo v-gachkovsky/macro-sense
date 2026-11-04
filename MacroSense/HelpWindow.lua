@@ -237,8 +237,8 @@ local function Sections()
                 { L["Take in"], L["The macro comes back into the game. It needs a free slot, and no other macro of "
                     .. "the same name in the game."] },
                 { L["Keep behind the scenes"], L["For a macro of a specialization not chosen now: it stays behind "
-                    .. "the scenes even when you choose that specialization. \"Come in with its specialization\" "
-                    .. "undoes it."] },
+                    .. "the scenes even when you choose that specialization, and its name is grey in the list. "
+                    .. "\"Come in with its specialization\" undoes it."] },
                 { L["Move to"], L["The macro goes to another set and leaves this one. If it was in the game and the "
                     .. "new set is in the game too, it stays where it is, on its buttons. Moved to a specialization "
                     .. "not chosen now, it leaves the game until you choose it. If the set already has the very "

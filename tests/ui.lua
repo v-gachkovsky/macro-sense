@@ -6903,9 +6903,13 @@ do
     check("editor, sets: kept: it can come in with its specialization again, not taken in",
         inSet("group1", name).parked and items:find("Come in with its specialization", 1, true)
         and not items:find("Take in", 1, true) and not has(name), items)
+    local kept = listRow("stored", name, "group1")
+    check("editor, sets: kept: its name grey, its icon too", kept.kept and kept.icon.desaturated
+        and kept.text.textColor == ns.scheme.dim:lower(), kept.text.textColor)
     pick(listRow("stored", name, "group1"), "Come in with its specialization")
+    kept = listRow("stored", name, "group1")
     check("editor, sets: comes in with its specialization again", not inSet("group1", name).parked
-        and not has(name))
+        and not has(name) and not kept.kept and not kept.icon.desaturated)
     S.MoveTo("group1", name, "character")
     items = shown(listRow("macro", name))
     check("editor, sets: the character's: copied into any other set, not removed",
