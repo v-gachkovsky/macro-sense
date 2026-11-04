@@ -7489,6 +7489,14 @@ do
     Fire(chooseRow("Hidden B"), "OnClick")
     check("editor: the free slots taken: no more", not chooseRow("Hidden A"):IsEnabled()
         and choosing.count.text == "Chosen: 1 of 1 free slots")
+    -- A row scrolled out of sight takes the mouse in the game (over "Turn off"): hidden.
+    choosing.scroll.GetHeight = function() return 24 end
+    choosing.clip()
+    local inSight = 0
+    for _, r in ipairs(ns.SetsWindow.ChooseRows()) do if r:IsShown() then inSight = inSight + 1 end end
+    check("editor: off: only the rows in sight shown", inSight == 1, inSight)
+    choosing.scroll.GetHeight = nil
+    choosing.clip()
     Fire(choosing.off, "OnClick")
     ns.MAX_CHARACTER = max
     check("editor: off: the one you chose in the game, the other kept", not S.Mine().enabled and has("Hidden B")
