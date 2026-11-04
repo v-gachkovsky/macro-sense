@@ -1948,6 +1948,8 @@ do
         and two[2].name == "Fear", two and two[1].name)
     check("text: words around it are no macro", S.FromText("Use this macro:\n/cast Fear", "general") == nil
         and S.FromText("  \n ", "general") == nil)
+    check("text: \"/\" or \"#\" alone, as it is typed or deleted, is no macro yet", S.FromText("/", "general") == nil
+        and S.FromText("#", "general") == nil and S.FromText("/cast Fear\n\n/", "general") == nil)
 end
 
 -- Share: macros as a code and back, whatever a chat app does around it.
