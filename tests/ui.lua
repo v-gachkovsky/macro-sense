@@ -6245,6 +6245,27 @@ do
     Fire(MacroSenseMenu.rows[1], "OnClick")
     check("book window: \"—\" goes back to the choice for all", planned().Frostbolt == "#showtooltip\n/cast Frostbolt",
         planned().Frostbolt)
+    -- A spell whose tooltip says no range goes to nobody you choose (Howl of Terror, Demonic Circle), though the
+    -- game calls it harmful and gives it a range: no target for it, no mouseover in its macro.
+    SPELL_RANGE, MELEE_RANGE, SPELL_RANGE_UNLIMITED = "%s yd range", "Melee Range", "Unlimited range"
+    C_TooltipInfo = { GetSpellByID = function(id)
+        return { lines = { { leftText = "x" }, { leftText = id == 105 and "40 yd range" or "Instant" } } }
+    end }
+    ns.db.targeted = nil
+    W.Open()
+    local function unitShown(name)
+        for i, r in ipairs(W.Rows()) do if r.spell.name == name then return W.RowFrame(i).unit:IsShown() end end
+    end
+    check("book window: no range in the tooltip, no target to choose", unitShown("Frostbolt")
+        and unitShown("Fire Blast") == false and ns.db.targeted[105] == true)
+    Fire(W.Control("harm"), "OnClick")
+    Fire(MacroSenseMenu.rows[1], "OnClick") -- the enemy under the mouse
+    check("book window: no range: no mouseover in its macro", planned()["Fire Blast"]
+        == "#showtooltip\n/cast Fire Blast" and planned().Frostbolt:find("@mouseover") ~= nil, planned()["Fire Blast"])
+    Fire(W.Control("harm"), "OnClick")
+    Fire(MacroSenseMenu.rows[2], "OnClick")
+    SPELL_RANGE, MELEE_RANGE, SPELL_RANGE_UNLIMITED, C_TooltipInfo, ns.db.targeted = nil, nil, nil, nil, nil
+    W.Open()
     check("book window: a warlock gets a macro for the pet", planned().Pet ~= nil, planned().Pet)
     check("book window: the pet's choices in use", W.Control("petNone"):IsEnabled()
         and W.Control("petShift").label.text == "Follow")
