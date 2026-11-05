@@ -1628,6 +1628,7 @@ function Window.Save()
     ShowIcon()
     Window.RefreshList()
     UpdateStatus()
+    ns.Easter.Saved(body)
 end
 
 -- Put a macro on the cursor, to drop on an action bar. A new macro has to be saved first.
@@ -3125,6 +3126,8 @@ local function Build()
         FollowRowIcons()
         UpdateExplain()
     end)
+    -- After OnShow and OnHide are set: it hooks them.
+    ns.Easter.Attach(frame, shortenBtn)
 
     Window.ApplyLook()
 end

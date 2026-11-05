@@ -1709,6 +1709,7 @@ ns.locales.uk = {
     ["Spells that some macro casts already are not ticked. Next time, only the spells you learned since are."] =
         "Заклинання, які вже кастує якийсь макрос, стоять без галочки. Наступного разу галочки стоятимуть лише на "
         .. "тих, що ви вивчили відтоді.",
+    ["shortened by 100%%"] = "скорочено на 100%%",
     ["macro sets %s"] = "набори макросів: %s",
     ["\"%s\" is in this layer now: %s"] = "«%s» тепер у шарі: %s",
     ["no macro \"%s\" in this character's slots (macro sets on?)"] =

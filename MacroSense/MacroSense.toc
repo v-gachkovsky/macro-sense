@@ -46,6 +46,7 @@ ShareWindow.lua
 HelpWindow.lua
 SpellbookWindow.lua
 SetsWindow.lua
+Easter.lua
 Links.lua
 Window.lua
 MinimapButton.lua

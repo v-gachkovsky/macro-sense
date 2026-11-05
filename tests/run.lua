@@ -1,7 +1,7 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 dofile("tests/strict.lua")
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Sets.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Sets.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Easter.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -2539,6 +2539,24 @@ do
         and row("Frostbolt").checked)
     check("book: one left out is skipped", row("Frost Nova").state == "skipped" and not row("Frost Nova").checked)
     check("book: one learned since is new and checked", row("Blink").state == "new" and row("Blink").checked)
+end
+
+-- What no button says (Easter.lua).
+do
+    local E = ns.Easter
+    check("surprise: Polymorph on yourself", E.SelfSheep("#showtooltip\n/cast [@player] Polymorph"))
+    check("surprise: target=player too", E.SelfSheep("/cast [target=player] Polymorph(Rank 1)"))
+    check("surprise: in the game's language", E.SelfSheep("/cast [@player] Превращение", "Превращение"))
+    check("surprise: Polymorph on others is no sheep", not E.SelfSheep("/cast [@mouseover] Polymorph")
+        and not E.SelfSheep("/cast Polymorph") and not E.SelfSheep("/cast [@player] Frostbolt")
+        and not E.SelfSheep("# /cast [@player] Polymorph"))
+    local times = {}
+    local n = 0
+    for i = 1, 9 do if E.Counted(times, i) then n = n + 1 end end
+    check("surprise: nine clicks are not ten", n == 0)
+    check("surprise: the tenth is", E.Counted(times, 10) and #times == 0)
+    for i = 1, 9 do E.Counted(times, i) end
+    check("surprise: a pause starts the count again", not E.Counted(times, 20) and #times == 1)
 end
 
 -- Macro sets (Sets.lua): the layers of the character's slots.

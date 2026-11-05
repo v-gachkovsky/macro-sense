@@ -1,6 +1,7 @@
 -- Loads the whole addon against a tiny fake WoW API and drives the editor like a player would.
 -- `lua tests/ui.lua` from the repo root. It catches load errors and logic bugs, not layout.
 dofile("tests/strict.lua")
+unpack = unpack or table.unpack -- the game has it as a global
 local now, timers = 0, {} -- timers: { at = time, fn = function }
 local created = {} -- every frame, so tests can find anonymous ones (Core's event frame, the editor)
 -- Shown, and so are the frames it is in: only then the game runs its OnUpdate.
@@ -81,14 +82,15 @@ function Frame:CreateFontString()
     return fs
 end
 function Frame:GetWidth() return 300 end
-function Frame:GetHeight() return 200 end
 function Frame:GetFrameLevel() return 1 end
-function Frame:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
 function Frame:SetFrameStrata(strata) self.strata = strata end
 function Frame:SetToplevel(on) self.toplevel = on end
 function Frame:Raise() self.raised = (self.raised or 0) + 1 end
 function Frame:IsMouseOver() return false end
 function Frame:GetParent() return self.parentFrame end
+function Frame:SetParent(parent) self.parentFrame = parent end
+function Frame:SetScrollChild(child) self.scrollChild = child end
+function Frame:GetScrollChild() return self.scrollChild end
 -- Fonts: a character is 0.6 of the size wide, a row is size + 1 high (size 13: 8 x 14 px).
 function Frame:SetFont(path, size) self.fontPath, self.fontSize = path, size; return true end
 function Frame:GetFont() return "font", self.fontSize or 13, "" end
@@ -146,7 +148,41 @@ function Frame:GetStringHeight()
     return math.max(select(2, tostring(self.text):gsub("\n", "")) + 1, self:GetNumLines()) * rowHeight(self)
 end
 function Frame:SetPoint(...) self.point = { ... } end
+function Frame:ClearAllPoints() self.point = nil end
+function Frame:GetNumPoints() return self.point and 1 or 0 end
+function Frame:GetPoint() if self.point then return unpack(self.point) end return "CENTER", nil, "CENTER", 0, 0 end
 function Frame:GetLeft() return self.left end
+function Frame:GetBottom() return self.bottom end
+function Frame:GetEffectiveScale() return 1 end
+function Frame:SetAlpha(a) self.alpha = a end
+-- Animations: a group plays its parts, stopped they are gone.
+local Animation = {}
+Animation.__index = function(_, k)
+    local m = rawget(Animation, k)
+    if m then return m end
+    if type(k) == "string" and k:find("^%u") then return function() end end -- every other method is a no-op
+end
+function Animation:SetOffset(x, y) self.offset = { x, y } end
+function Animation:CreateAnimation(kind)
+    local a = setmetatable({ kind = kind }, Animation)
+    local parts = rawget(self, "parts") or {}
+    rawset(self, "parts", parts)
+    parts[#parts + 1] = a
+    return a
+end
+function Animation:Play() self.playing = true end
+function Animation:Stop() self.playing = false end
+function Animation:IsPlaying() return self.playing end
+function Frame:CreateAnimationGroup() return setmetatable({}, Animation) end
+function Frame:GetHeight() return 200 end
+-- Its frames, not its textures and texts.
+function Frame:GetChildren()
+    local out = {}
+    for _, o in ipairs(created) do
+        if o.parentFrame == self and o.kind ~= "Texture" and o.kind ~= "FontString" then out[#out + 1] = o end
+    end
+    return unpack(out)
+end
 function Frame:SetTextColor(r, g, b)
     self.textColor = string.format("%02x%02x%02x", math.floor(r * 255 + 0.5), math.floor(g * 255 + 0.5), math.floor(b * 255 + 0.5))
 end
@@ -6685,6 +6721,108 @@ do
         and shown("Interface\\Buttons\\UI-CheckBox-Up") == 0 and shown("Interface\\Common\\Common-Input-Border") == 0
         and MacroSenseSearch.backdrop.edgeSize == 1)
     look(before)
+end
+
+-- What no button says: Shorten ten times with Shift and Ctrl, Polymorph on yourself.
+do
+    local frame = MacroSenseFrame
+    ns.Window.Toggle()
+    if not frame:IsShown() then ns.Window.Toggle() end
+    local shorten
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and tostring(o.label.text):find("^Shorten") then shorten = o end
+    end
+    local watch
+    for _, o in ipairs(created) do
+        if o.events and o.events.GLOBAL_MOUSE_DOWN then watch = o end
+    end
+    -- One part of the editor where it is, and where it falls from.
+    local part = shorten
+    part.left, part.bottom = 500, 400
+    part:SetPoint("RIGHT", UIParent, "TOPRIGHT", -12, -29)
+    local function click(n)
+        for _ = 1, n do Fire(watch, "OnEvent", "GLOBAL_MOUSE_DOWN", "LeftButton") end
+    end
+    -- A row of the list, there for the test.
+    local listChild = MacroSenseListScroll and MacroSenseListScroll.child
+    local row = CreateFrame("Button", nil, listChild)
+    row.left, row.bottom = 10, 300
+    shorten.IsMouseOver = function() return true end
+    click(10)
+    check("surprise: ten clicks on Shorten without Shift and Ctrl do nothing", frame:IsShown() and not ns.Easter.Falling())
+    IsShiftKeyDown, IsControlKeyDown = function() return true end, function() return true end
+    click(9)
+    Wait(3)
+    click(9)
+    check("surprise: nine, or with a pause, do nothing", frame:IsShown() and not ns.Easter.Falling())
+    ns.HelpWindow.Open()
+    local hidden = {}
+    local popupHide = StaticPopup_Hide
+    StaticPopup_Hide = function(which) hidden[which] = true end
+    local played
+    local libStub, playFile = LibStub, PlaySoundFile
+    LibStub = function(name) return name == "LibSharedMedia-3.0" and {
+        Fetch = function(_, kind, key) return kind == "sound" and key == "BugSack: Fatality" and "fatality.ogg" or nil end }
+    end
+    PlaySoundFile = function(file) played = file end
+    click(1)
+    LibStub, PlaySoundFile = libStub, playFile
+    check("surprise: BugSack's Fatality, when it is there", played == "fatality.ogg", played)
+    StaticPopup_Hide = popupHide
+    check("surprise: the addon's questions close", hidden.MACROSENSE_DISCARD and hidden.MACROSENSE_DELETE)
+    check("surprise: the help window jolts with it", MacroSenseHelp.jolt and MacroSenseHelp.jolt:IsPlaying())
+    check("surprise: the list's rows fly each on its own, out of the list", row:GetParent() == frame
+        and row.point[1] == "BOTTOMLEFT" and row.point[2] == UIParent)
+    NextFrame()
+    check("surprise: the tenth in a row: the window falls apart", ns.Easter.Falling()
+        and part.point[1] == "BOTTOMLEFT" and part.point[2] == UIParent and part.point[4] ~= 500 and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
+    for _ = 1, 300 do NextFrame() end
+    check("surprise: the rows back in the list", row:GetParent() == listChild)
+    check("surprise: another window open blows apart and closes too", not ns.HelpWindow.IsShown()
+)
+    check("surprise: then it closes, its parts back in place", not frame:IsShown()
+        and part.point[1] == "RIGHT"
+        and part.point[4] == -12 and not ns.Easter.Falling() and frame.scripts.OnUpdate ~= nil)
+    IsShiftKeyDown, IsControlKeyDown = function() return false end, function() return false end
+    shorten.IsMouseOver = nil
+    ns.Window.Toggle()
+    check("surprise: it opens whole", frame:IsShown())
+
+    -- Polymorph on yourself, saved: a sheep.
+    CreateMacro("Baa", 1, "/cast [@player] Polymorph", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Baa"))
+    ns.HelpWindow.Open()
+    ns.WizardWindow.Open()
+    ns.Window.Save()
+    local flock, sizes, real = {}, {}, nil
+    for _, o in ipairs(created) do
+        if o.icon and o.icon.texture == "Interface\\Icons\\Spell_Nature_Polymorph" and o:IsShown() then
+            flock[#flock + 1] = o
+            sizes[o.speed or 0] = true -- each its own pace
+            if o.real then real = o end
+        end
+    end
+    local kinds = 0
+    for _ in pairs(sizes) do kinds = kinds + 1 end
+    check("surprise: Polymorph on yourself: the windows are a flock", #flock >= 7 and #flock <= 18 and kinds > 1
+        and real ~= nil and not frame:IsShown() and not ns.HelpWindow.IsShown() and GetMacroIndexByName("Baa") > 0,
+        #flock)
+    local played = {}
+    local playFile = PlaySoundFile
+    PlaySoundFile = function(file) played[#played + 1] = file end
+    for _ = 1, 30 do NextFrame() end
+    check("surprise: they bleat", played[1] and played[1]:find("sheep%.ogg$") ~= nil, played[1])
+    local wrong = flock[1] == real and flock[2] or flock[1]
+    Fire(wrong, "OnClick")
+    check("surprise: the wrong sheep pops", wrong.popping and played[#played]:find("pop[1-5]%.ogg$") ~= nil
+        and not frame:IsShown(), played[#played])
+    PlaySoundFile = playFile
+    Fire(real, "OnClick")
+    local left = 0
+    for _, o in ipairs(flock) do if o:IsShown() then left = left + 1 end end
+    check("surprise: the right one turns them back, the help and the wizard too", frame:IsShown() and left == 0
+        and ns.HelpWindow.IsShown() and ns.WizardWindow.IsShown(), left)
 end
 
 -- Macro sets: the specialization's macros come and go with it, the buttons too; the class's stay.
