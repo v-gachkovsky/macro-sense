@@ -300,13 +300,17 @@ function GetInventoryItemLink(_, slot) if slot == 13 then return "|cffa335ee|Hit
 local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 133, "spell" } }
 function GetBindingKey(command) return bindings[command] end
 local picked
+-- What the mouse holds besides a macro: { "spell", index, book, id } or { "item", id }, set by a test.
+local onCursor
 function PickupMacro(index) picked = index end
 -- The macro on the cursor goes onto the slot it is dropped on; what was there is left on the cursor.
 function PlaceAction(slot)
-    if picked then actions[slot] = { "macro", 0, nil, text = (GetMacroInfo(picked)) } end
+    if picked then
+        actions[slot] = { "macro", 0, nil, text = (GetMacroInfo(picked)) }
+    elseif onCursor and onCursor[1] == "spell" then
+        actions[slot] = { "spell", onCursor[4] }
+    end
 end
--- What the mouse holds besides a macro: { "spell", index, book, id } or { "item", id }, set by a test.
-local onCursor
 function GetCursorInfo()
     if onCursor then return table.unpack(onCursor) end
 end
@@ -6539,7 +6543,30 @@ do
     for _ in pairs(planned()) do left = left + 1 end
     check("book window: all cleared, no macro", label() == "Select all" and left == 0, left)
     W.Close()
-    for _, name in ipairs(made) do DeleteMacro(GetMacroIndexByName(name)) end
+    -- One made here, deleted while it still casts its spell: its buttons get the spell back. Another macro's
+    -- button is left empty, as the game leaves it.
+    local info, pickup = C_Spell.GetSpellInfo, C_Spell.PickupSpell
+    C_Spell.GetSpellInfo = function(name) return name == "Frostbolt" and { spellID = 116 } or nil end
+    C_Spell.PickupSpell = function(id) onCursor = { "spell", 0, "spell", id } end
+    CreateMacro("Frostbolt", 1, "#showtooltip\n/cast [mod:alt] Fear; Frostbolt", true)
+    ns.Spellbook.Journal(ns.char).made.Frostbolt = { name = "Frostbolt", body = "/cast Frostbolt" }
+    local index = GetMacroIndexByName("Frostbolt")
+    actions[7] = { "macro", 116, "spell", text = "Frostbolt" }
+    CreateMacro("Mine", 1, "/cast Frostbolt", true)
+    actions[9] = { "macro", 116, "spell", text = "Mine" }
+    ns.Window.Delete(GetMacroIndexByName("Frostbolt"))
+    check("book: deleted, its button gets the spell back", index > 0 and GetMacroIndexByName("Frostbolt") == 0
+        and actions[7] and actions[7][1] == "spell" and actions[7][2] == 116, actions[7] and actions[7][1])
+    ns.Window.Delete(GetMacroIndexByName("Mine"))
+    check("book: not for a macro made another way", actions[9] == nil)
+    CreateMacro("Frostbolt", 1, "/cast Fear", true)
+    actions[7] = { "macro", 5782, "spell", text = "Frostbolt" }
+    ns.Window.Delete(GetMacroIndexByName("Frostbolt"))
+    check("book: not once it casts the spell no more", actions[7] == nil)
+    C_Spell.GetSpellInfo, C_Spell.PickupSpell = info, pickup
+    for _, name in ipairs(made) do
+        if GetMacroIndexByName(name) > 0 then DeleteMacro(GetMacroIndexByName(name)) end
+    end
     Send("UPDATE_MACROS")
     actions[7], gameSpells[116], ns.char.spellbook = nil, nil, nil
     C_SpellBook.GetNumSpellBookSkillLines, C_SpellBook.GetSpellBookSkillLineInfo = lines, line

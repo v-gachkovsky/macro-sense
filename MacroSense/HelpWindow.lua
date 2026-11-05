@@ -117,6 +117,8 @@ local function Sections()
             { "code", "#showtooltip\n/cast [mod:shift] Shadow Bolt(Rank 1); Shadow Bolt" },
             { "p", L["Spells that some macro casts already are not ticked. Next time, only the spells you learned "
                 .. "since are."] },
+            { "p", L["Delete such a macro here, and its spell comes back onto its buttons, if the macro still "
+                .. "casts it."] },
             { "button", L["Macros from the Spellbook"], function() ns.SpellbookWindow.Open() end },
         } },
         { L["How a line reads"], {

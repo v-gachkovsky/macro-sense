@@ -188,6 +188,7 @@ you know, also after you learn a new one. Point at a spell to see its macro.
   them. Interrupts stop your cast first.
 - **The pet.** Hunters and warlocks get one macro for the pet: what it does with no key held, and with each key.
 - **On the bars.** The macros go into the character's tab, and onto the action bars in place of their spells.
+  Delete such a macro in MacroSense and its spell comes back onto those buttons, if the macro still casts it.
 
 Spells that some macro casts already are not ticked, nor those you left out before; you can still tick them.
 Next time, only the spells you learned since are ticked. **Select all** ticks every spell (all ticked, it is
