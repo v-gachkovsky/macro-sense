@@ -9,7 +9,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 - A warning for a part of a macro that never runs: the game takes the first part whose conditions hold, so
   after `[]` or a part with no conditions the rest never run. `/cast [@mouseover,harm][] Arcane Shot;
-  [mod:alt] Hunter's Mark` never casts Hunter's Mark: the Alt part has to come first.
+  [mod:alt] Hunter's Mark` never casts Hunter's Mark: the Alt part has to come first. The same for a spell on
+  a line below one that always casts a spell with the global cooldown and no cooldown of its own.
 
 ## [0.13.1] - 2026-11-05
 

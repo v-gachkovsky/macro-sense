@@ -22,6 +22,9 @@ Highlight.checkClick = nil
 Highlight.checkCommand = nil
 -- Set by Roles: function(name) -> true when a player of that name is in your group: "@Bob" is no unknown unit.
 Highlight.isMember = nil
+-- Set by Sources: function(name) -> "gcd" (the spell starts the global cooldown and has no cooldown of its own),
+-- "cooldown" (it starts it and has one of its own), "free" (it doesn't start it), or nil (no spell you know).
+Highlight.gcdOf = nil
 
 local UNIT_ARGS = { target = true, tar = true, focus = true, assist = true, a = true }
 local LUA_KEYWORDS = {}
@@ -293,14 +296,15 @@ local function resetSpans(reset, from, add, sequence)
 end
 
 -- Arguments of a secure command: "[cond] arg; [cond] arg". command: the action command ("cast", ...), if any.
--- A sequence ("reset=" allowed) and /castrandom, /userandom have a list of names, "," between.
-local function argSpans(s, base, add, argKind, sequence, command)
+-- A sequence ("reset=" allowed) and /castrandom, /userandom have a list of names, "," between. `info`, when given,
+-- learns the names: spells = { { name, from, branch } }, always = the first branch that always runs.
+local function argSpans(s, base, add, argKind, sequence, command, info)
     local i = 1
     local list = sequence or command == "castrandom" or command == "userandom"
     local guarded = false -- the conditions of this branch check for a specialization or a talent (GUARDS)
     -- The game runs the first branch whose conditions hold: after one that always does ("[]", or no conditions),
     -- the rest never run. `group`, `empty`, `word`: this branch has conditions, an empty "[]", an argument.
-    local branchFrom, group, empty, word, always = 1, false, false, false, false
+    local branchFrom, group, empty, word, always, branch = 1, false, false, false, false, 1
     local function endBranch(to)
         local text = s:sub(branchFrom, to)
         local lead, body = #text:match("^%s*"), text:match("^%s*(.-)%s*$")
@@ -309,8 +313,9 @@ local function argSpans(s, base, add, argKind, sequence, command)
             add(from, from + #body - 1, "note", L["never runs: the part before it always does (it has [] or no "
                 .. "conditions). Put this part before it"], "warning", { short = L["never runs"] })
         end
+        if info and not always and (empty or (word and not group)) then info.always = branch end
         always = always or empty or (word and not group)
-        group, empty, word = false, false, false
+        group, empty, word, branch = false, false, false, branch + 1
     end
     while i <= #s do
         local c = s:sub(i, i)
@@ -397,6 +402,9 @@ local function argSpans(s, base, add, argKind, sequence, command)
                     if nameOnly ~= "" then
                         if argKind == "action" then
                             actionSpan(nameOnly, base + i, add, command, guarded)
+                            if info then
+                                info.spells[#info.spells + 1] = { name = nameOnly, from = base + i, branch = branch }
+                            end
                         else
                             add(base + i, base + i + #nameOnly - 1, argKind)
                         end
@@ -410,7 +418,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
     endBranch(#s)
 end
 
-local function lineSpans(line, base, add)
+local function lineSpans(line, base, add, info)
     local meta = line:match("^#%a+")
     if meta then
         add(base + 1, base + #meta, "meta")
@@ -437,7 +445,22 @@ local function lineSpans(line, base, add)
     if P.luaCommands[name] then return luaSpans(rest, cmdTo, add) end
     local action = P.actionCommands[name]
     local argKind = UNIT_ARGS[name] and "unit" or (action and "action") or (P.clickCommands[name] and "click") or "option"
-    argSpans(rest, cmdTo, add, argKind, action == "castsequence", action)
+    if info then info.command = action end
+    argSpans(rest, cmdTo, add, argKind, action == "castsequence", action, info)
+end
+
+-- The spells a /cast line always casts, when each starts the global cooldown and has no cooldown of its own: the
+-- lines after it wait for that cooldown, so their spells with it don't cast. Nil for any other line.
+local function Blocking(info)
+    if not info.always or (info.command ~= "cast" and info.command ~= "spell") then return nil end
+    local names, seen = {}, {}
+    for _, sp in ipairs(info.spells) do
+        if sp.branch <= info.always then
+            if Highlight.gcdOf(sp.name) ~= "gcd" then return nil end
+            if not seen[sp.name] then names[#names + 1], seen[sp.name] = sp.name, true end
+        end
+    end
+    return #names > 0 and table.concat(names, L[" or "]) or nil
 end
 
 function Highlight.Spans(raw)
@@ -448,9 +471,22 @@ function Highlight.Spans(raw)
             spans[#spans + 1] = { from, to, kind, message, message and (severity or "error"), extra }
         end
     end
-    local pos = 0
+    local pos, blocking = 0, nil
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
-        lineSpans(line, pos, add)
+        local info = { spells = {} }
+        lineSpans(line, pos, add, info)
+        if Highlight.gcdOf and blocking then
+            for _, sp in ipairs(info.spells) do
+                local gcd = Highlight.gcdOf(sp.name)
+                if gcd == "gcd" or gcd == "cooldown" then
+                    add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["won't cast: the line above always "
+                        .. "casts %s first, and its global cooldown stops this one. To choose between them, put both "
+                        .. "into one /cast, this part first"], blocking), "warning", { short = L["won't cast"] })
+                end
+            end
+        elseif Highlight.gcdOf then
+            blocking = Blocking(info)
+        end
         pos = pos + #line + 1
     end
     table.sort(spans, function(a, b) return a[1] < b[1] end)

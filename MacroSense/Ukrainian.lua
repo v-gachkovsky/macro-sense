@@ -926,6 +926,11 @@ ns.locales.uk = {
         "ніколи не спрацює: частина перед нею спрацьовує завжди (у неї [] або немає умов). Поставте цю частину "
         .. "перед нею",
     ["never runs"] = "ніколи не спрацює",
+    ["won't cast: the line above always casts %s first, and its global cooldown stops this one. To choose between "
+        .. "them, put both into one /cast, this part first"] = "не скаститься: рядок вище завжди спершу кастує %s, і "
+        .. "його глобальний кулдаун зупиняє цей. Щоб вибирати між ними, поставте обидва в один /cast, цю частину "
+        .. "першою",
+    ["won't cast"] = "не скаститься",
     ["unknown condition \"%s\""] = "невідома умова «%s»",
     ["%s: needs a value"] = "%s: потрібне значення",
     ["%s takes no value"] = "%s не приймає значення",

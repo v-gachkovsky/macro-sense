@@ -270,7 +270,9 @@ an empty `[]` removes both.
   (the pet's Move To came with Cataclysm).
 - A part that never runs is a warning: in `/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark`
   the game always stops at `[]` (empty brackets are always true, and so is a part with no conditions), so
-  the Alt part has to come first.
+  the Alt part has to come first. The same for a line after one that always casts a spell with the global
+  cooldown: that cooldown stops the spells with it below. Not when the spell above has a cooldown of its own
+  (while it waits, the line below casts), nor for a spell below without the global cooldown.
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
   yellow name; hover it to see the issues. The marks follow the saved text.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,

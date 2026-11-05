@@ -479,6 +479,30 @@ expectErrs("/cast [ ] A; B", "B=" .. NEVER .. "@1")
 expectErrs("/cast [mod:alt] Hunter's Mark; [@mouseover,harm,nodead][] Arcane Shot", "")
 expectErrs("/cast [mod] A; B; ", "")
 expectErrs("/castsequence reset=10 A, B", "")
+-- A line that always casts a spell with the global cooldown and no cooldown of its own: the spells with it in the
+-- lines after don't cast.
+do
+    local GCD = { ["Arcane Shot"] = "gcd", ["Hunter's Mark"] = "gcd", ["Aimed Shot"] = "cooldown",
+        Berserking = "free", ["Kill Command"] = "cooldown" }
+    H.gcdOf = function(name) return GCD[name] end
+    local WONT = "won't cast: the line above always casts %s first, and its global cooldown stops this one. To "
+        .. "choose between them, put both into one /cast, this part first"
+    expectErrs("#showtooltip\n/cast [@mouseover,harm][] Arcane Shot;\n/cast [mod:alt] Hunter's Mark",
+        "Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")
+    expectErrs("/cast Arcane Shot\n/startattack\n/cast Kill Command", "Kill Command=" .. WONT:format("Arcane Shot")
+        .. "@3")
+    expectErrs("/cast [mod:shift] Hunter's Mark; Arcane Shot\n/cast Aimed Shot",
+        "Aimed Shot=" .. WONT:format("Hunter's Mark or Arcane Shot") .. "@2")
+    expectErrs("/cast Berserking\n/cast Arcane Shot", "")                -- no global cooldown: the next one casts
+    expectErrs("/cast Arcane Shot\n/cast Berserking", "")
+    expectErrs("/cast Aimed Shot\n/cast Arcane Shot", "")                 -- on its cooldown, the next one casts
+    expectErrs("/cast [mod:alt] Arcane Shot\n/cast Hunter's Mark", "")    -- not always
+    expectErrs("/cast [mod:alt] Berserking; Arcane Shot\n/cast Hunter's Mark", "")
+    expectErrs("/cast Unknown Spell\n/cast Arcane Shot", "")
+    expectErrs("#showtooltip Arcane Shot\n/cast Hunter's Mark", "")
+    H.gcdOf = nil
+    expectErrs("/cast Arcane Shot\n/cast Hunter's Mark", "")             -- the game is not asked: no warning
+end
 check("never runs: a warning, said short", issues("/cast A; B") == "warning:B"
     and H.Errors("/cast A; B")[1].short == "never runs")
 check("never runs: what is under it keeps its colors", H.Colorize("/cast A; B", scheme)

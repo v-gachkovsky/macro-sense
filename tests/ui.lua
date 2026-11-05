@@ -4394,6 +4394,23 @@ do
     NextFrame()
 end
 
+-- The global cooldown of a spell you know, as the game gives it: a line that always casts one with it and no
+-- cooldown of its own stops the spells with it in the lines after.
+do
+    local info = C_Spell.GetSpellInfo
+    local ids = { ["Arcane Shot"] = 1, ["Aimed Shot"] = 2, Berserking = 3, ["Hunter's Mark"] = 4 }
+    local base = { { 0, 1500 }, { 6000, 1500 }, { 180000, 0 }, { 0, 1500 } }
+    C_Spell.GetSpellInfo = function(name) return ids[name] and { spellID = ids[name] } end
+    GetSpellBaseCooldown = function(id) return base[id][1], base[id][2] end
+    local G = ns.Highlight.gcdOf
+    check("gcd: as the game gives it", G("Arcane Shot") == "gcd" and G("Aimed Shot") == "cooldown"
+        and G("Berserking") == "free" and G("Fireballl") == nil)
+    local e = ns.Highlight.Errors("/cast Arcane Shot\n/cast [mod:alt] Hunter's Mark")[1]
+    check("gcd: the line after is a warning", e and e.severity == "warning" and e.short == "won't cast" and e.line == 2)
+    C_Spell.GetSpellInfo, GetSpellBaseCooldown = info, nil
+    check("gcd: not in a game that doesn't say", G("Arcane Shot") == nil)
+end
+
 -- A command the client has but its game does nothing with: /petmoveto before Cataclysm is a warning.
 do
     local function warned(raw)
