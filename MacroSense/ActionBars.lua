@@ -50,12 +50,20 @@ local function OnBarsNow()
     return nowCache.names, nowCache.any
 end
 
--- The specialization the bars are of now: a key and its name. Retail and WoW Forever keep bars for each
--- specialization, the Classic clients for each talent group (dual specialization). Before level 10 the game gives
--- a specialization of its own with no name.
+-- The name of talent group `group`: Primary, Secondary.
+function ActionBars.GroupLabel(group)
+    return group == 1 and ns.L["Primary"] or group == 2 and ns.L["Secondary"]
+        or string.format(ns.L["Specialization %d"], group)
+end
+
+-- The specialization the bars are of now: a key and its name. Retail keeps bars for each specialization, the
+-- other clients for each talent group (dual specialization: ns.SpecsByGroup). Before level 10 Retail gives a
+-- specialization of its own with no name.
 local function Spec()
     local S = C_SpecializationInfo or {}
-    local group = S.GetActiveSpecGroup and S.GetActiveSpecGroup() or 1
+    local group = S.GetActiveSpecGroup and S.GetActiveSpecGroup() or GetActiveTalentGroup and GetActiveTalentGroup()
+        or 1
+    if ns.SpecsByGroup() then return "group" .. group, ActionBars.GroupLabel(group) end
     local index = S.GetSpecialization and S.GetSpecialization()
     local id, name
     if index and index > 0 and S.GetSpecializationInfo then id, name = S.GetSpecializationInfo(index) end

@@ -303,6 +303,8 @@ local function Sections()
                     .. "then."] },
                 { L["Before level 10"], L["A character has no specialization yet: its macros are kept as \"No "
                     .. "specialization yet\"."] },
+                { L["Primary and Secondary"], L["In Classic Era, TBC, Mists of Pandaria and WoW Forever the sets "
+                    .. "follow your two talent groups: each has its own action bars there."] },
             } },
             { "h", L["Sets on another character"] },
             { "list", {

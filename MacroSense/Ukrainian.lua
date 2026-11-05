@@ -1720,6 +1720,8 @@ ns.locales.uk = {
         .. "Please report the error"] = "щось пішло не так, тож MacroSense скасував цю зміну: ваші макроси й "
         .. "набори такі, як були. Будь ласка, повідомте про помилку",
     ["Class macros"] = "Класові",
+    ["Primary"] = "Основна",
+    ["Secondary"] = "Додаткова",
     ["This character's"] = "Цього персонажа",
     ["This specialization's"] = "Цієї спеціалізації",
     -- Macro sets
@@ -2025,6 +2027,10 @@ ns.locales.uk = {
     ["Before level 10"] = "До 10 рівня",
     ["A character has no specialization yet: its macros are kept as \"No specialization yet\"."] =
         "У персонажа ще немає спеціалізації: його макроси зберігаються як «Ще без спеціалізації».",
+    ["Primary and Secondary"] = "Основна і додаткова",
+    ["In Classic Era, TBC, Mists of Pandaria and WoW Forever the sets follow your two talent groups: each has its "
+        .. "own action bars there."] = "У Classic Era, TBC, Mists of Pandaria і WoW Forever набори йдуть за двома "
+        .. "наборами талантів: там у кожного з них свої панелі дій.",
     ["Sets on another character"] = "Набори на іншому персонажі",
     ["Export sets"] = "Експорт наборів",
     ["\"Share\" > \"Export macro sets...\": check the sets you want and copy the code. \"Select all\" and \"Clear "

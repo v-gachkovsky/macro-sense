@@ -291,9 +291,33 @@ end
 function Sets.Ours(name) return expect.gone[name] ~= nil end
 
 -- This character's sets, made on first use.
+-- Where the specializations are talent groups (ns.SpecsByGroup), what was kept under a specialization goes to the
+-- talent group chosen now: WoW Forever kept it so before ("spec1485", its one specialization). Once the game
+-- tells the group, after login. Into a group that has something already it doesn't go: it stays as it was, and
+-- the list still shows its macros.
+local function Regroup(c)
+    local sets = c.sets
+    if sets.grouped or not ns.SpecsByGroup() or not (IsLoggedIn and IsLoggedIn()) then return end
+    sets.grouped = true
+    local S = C_SpecializationInfo or {}
+    local group = "group" .. (S.GetActiveSpecGroup and S.GetActiveSpecGroup()
+        or GetActiveTalentGroup and GetActiveTalentGroup() or 1)
+    for _, t in ipairs({ sets.specs, sets.bars, sets.spells or {}, c.bars or {} }) do
+        local old = {}
+        for key in pairs(t) do if key:find("^spec") then old[#old + 1] = key end end
+        table.sort(old)
+        for _, key in ipairs(old) do
+            local here = t[group]
+            if here == nil or (type(here) == "table" and next(here) == nil) then t[group], t[key] = t[key], nil end
+        end
+    end
+    if sets.active and sets.active:find("^spec") then sets.active = group end
+end
+
 function Sets.Mine()
     local c = ns.Character()
     c.sets = c.sets or { enabled = false, character = {}, specs = {}, bars = {}, classParked = {} }
+    Regroup(c)
     return c.sets
 end
 
@@ -1194,7 +1218,7 @@ function Sets.Specs()
         out[#out + 1] = { key = key, label = label, now = key == now }
     end
     local S = C_SpecializationInfo or {}
-    if C_ClassTalents and S.GetSpecializationInfo and GetNumSpecializations then
+    if not ns.SpecsByGroup() and S.GetSpecializationInfo and GetNumSpecializations then
         for i = 1, GetNumSpecializations() do
             local id, name = S.GetSpecializationInfo(i)
             if id and id ~= 0 then add("spec" .. id, name) end
@@ -1202,7 +1226,7 @@ function Sets.Specs()
     else
         local groups = S.GetNumSpecGroups and S.GetNumSpecGroups() or GetNumTalentGroups and GetNumTalentGroups() or 1
         for group = 1, math.max(groups or 1, 1) do
-            add("group" .. group, string.format(ns.L["Specialization %d"], group))
+            add("group" .. group, ns.ActionBars.GroupLabel(group))
         end
     end
     add(now, nowLabel)
@@ -1213,7 +1237,8 @@ function Sets.Specs()
     end
     table.sort(keys)
     for _, key in ipairs(keys) do
-        local label = bars[key] and bars[key].label
+        local label, group = bars[key] and bars[key].label, key:match("^group(%d+)$")
+        if group then label = ns.ActionBars.GroupLabel(tonumber(group)) end
         add(key, label and label ~= "" and label or key:find("^spec") and ns.L["No specialization yet"] or key)
     end
     return out

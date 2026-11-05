@@ -22,6 +22,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   fixed it at once.
 
 ### Fixed
+- Macro sets in Classic Era, TBC, Mists of Pandaria and WoW Forever: the two talent groups are named Primary
+  and Secondary. In WoW Forever the sets follow the talent groups now, as the action bars do; before, both
+  shared the one specialization named as the class. What was kept under it goes to the talent group chosen
+  at the next login.
 - Macro sets: a deleted macro's buttons are forgotten at once. Before, they were kept until the next login or
   change of specialization, and a new macro with the same name could go onto them.
 

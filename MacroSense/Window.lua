@@ -2124,7 +2124,8 @@ function Window.SetsData(key)
     end
     local function label(id)
         if c == mine then return ns.SetsWindow.Label(id) end
-        local bars = (c.bars or {})[id]
+        local bars, group = (c.bars or {})[id], id:match("^group(%d+)$")
+        if group then return ns.ActionBars.GroupLabel(tonumber(group)) end
         return bars and bars.label ~= "" and bars.label or L["No specialization yet"]
     end
     local function parked(m) return m.parked or nil end
