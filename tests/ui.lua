@@ -6867,6 +6867,18 @@ do
     DeleteMacro(GetMacroIndexByName("Newcomer"))
     Send("UPDATE_MACROS")
     Wait(1.1)
+    -- A macro deleted, its button empty: forgotten at once, so one made later with its name doesn't go there.
+    CreateMacro("AotM", 1, "/cast Aspect of the Monkey", true)
+    Send("UPDATE_MACROS")
+    place("AotM", 47)
+    local remembered = S.Mine().bars[S.Mine().active][47]
+    DeleteMacro(GetMacroIndexByName("AotM"))
+    actions[47] = nil
+    Send("ACTIONBAR_SLOT_CHANGED", 47)
+    Send("UPDATE_MACROS")
+    Wait(1.1)
+    check("sets: a deleted macro's button forgotten at once", remembered == "AotM"
+        and S.Mine().bars[S.Mine().active][47] == nil, tostring(S.Mine().bars[S.Mine().active][47]))
 
     -- Bars shared by the specializations (they may be, in the older clients): the button of the macro that goes
     -- gets the one that comes in.

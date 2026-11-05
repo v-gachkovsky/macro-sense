@@ -309,6 +309,11 @@ local function SpecList(sets, key)
     return sets.specs[key]
 end
 
+-- Whether macro `name` is in a set of specialization `key` still: in the slots or behind the scenes.
+local function Kept(sets, key, name)
+    return (Find(ClassList(), name) or Find(sets.character, name) or Find(SpecList(sets, key), name)) ~= nil
+end
+
 -- The character macros in the slots: { name, icon, body }, in the game's order.
 local function InSlots()
     local out = {}
@@ -425,6 +430,22 @@ function Sets.Scan()
                 if sets.layer[new] ~= "spec" or key == sets.active then
                     for slot, name in pairs(record) do
                         if name == old then record[slot] = new end
+                    end
+                end
+            end
+        end
+        -- One deleted, in no set any more: its buttons forgotten at once. Kept, a macro made later with its name
+        -- would go onto them.
+        for name in pairs(before) do
+            if not after[name] and not renamed[name] then
+                for key, record in pairs(sets.bars) do
+                    if not Kept(sets, key, name) then
+                        for slot, was in pairs(record) do
+                            if was == name then
+                                record[slot] = nil
+                                Log("forgot button %d: %s, deleted", slot, name)
+                            end
+                        end
                     end
                 end
             end
@@ -568,8 +589,7 @@ function Sets.PlaceBars(key, last)
     end
     -- The buttons of macros there are no more (deleted): forgotten.
     for slot, name in pairs(record) do
-        if not have[name] and not Find(ClassList(), name) and not Find(sets.character, name)
-            and not Find(SpecList(sets, key), name) then
+        if not have[name] and not Kept(sets, key, name) then
             record[slot] = nil
             Log("forgot button %d: %s, deleted", slot, name)
         end
