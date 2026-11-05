@@ -2772,6 +2772,12 @@ do
     Fire(C("pet"), "OnClick")
     check("wizard: Move To from Cataclysm on", menuItem("Move to the cursor") ~= nil)
     Fire(C("pet"), "OnClick")
+    -- WoW Forever: the world of Classic Era, the game of Retail.
+    LE_EXPANSION_LEVEL_CURRENT, WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = 0, 18, 18
+    Fire(C("pet"), "OnClick")
+    check("wizard: Move To in WoW Forever", menuItem("Move to the cursor") ~= nil)
+    Fire(C("pet"), "OnClick")
+    WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = nil, nil
     LE_EXPANSION_LEVEL_CURRENT = nil
     Fire(C("shift"), "OnClick")
     Fire(C("ctrl"), "OnClick")
@@ -4400,6 +4406,9 @@ do
     check("petmoveto: other commands are fine", #ns.Highlight.Errors("/target party1") == 0)
     LE_EXPANSION_LEVEL_CURRENT = 4
     check("petmoveto: fine from Cataclysm on", warned("/petmoveto [@cursor]") == nil)
+    LE_EXPANSION_LEVEL_CURRENT, WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = 0, 18, 18
+    check("petmoveto: fine in WoW Forever", warned("/petmoveto [@cursor]") == nil)
+    WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = nil, nil
     LE_EXPANSION_LEVEL_CURRENT = nil
     check("petmoveto: fine where the version is not known", warned("/petmoveto") == nil)
 end
