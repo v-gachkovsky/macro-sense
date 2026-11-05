@@ -275,11 +275,15 @@ all true**. The rest of that line is skipped. Then it goes on to the next line.
 
 <p align="center"><img src="guide/flow-en.svg" width="720" alt="The game tries each choice in turn and takes the first that fits"></p>
 
-So the order matters: put the special cases first and the usual one last.
+So the order matters: put the special cases first and the usual one last. A choice after `[]` (or after one with
+no conditions) never runs, and the editor warns about it; when a key chooses it (`[mod:alt]`), Ctrl+click on the
+warning puts it first.
 
 Most spells start the global cooldown, the short pause after a cast. **One press casts only one such spell.**
 Lines after it still run if they don't need the cooldown: `/startattack`, `/use` for a trinket, a chat
-message.
+message. A spell with the global cooldown on a line below one that always casts such a spell is a warning too: it
+won't cast, or, when the spell above has a cooldown of its own, only while that one is on cooldown. Ctrl+click puts
+a line chosen by a key into the line above, first.
 
 ## 7. What macros can do
 
@@ -418,8 +422,8 @@ and MacroSense makes the macros for you.
   Pain.
 - "Live preview": what each line would do right now, changing as you hold keys or change target.
 - **Explanations**: point at a line's number to read it in plain words, at a word for what it means.
-- **Error checks**: mistakes underlined, a one-click fix for the clear ones, a warning for a spell you can't cast
-  now.
+- **Error checks**: mistakes underlined, a Ctrl+click fix for the clear ones, a warning for a spell you can't cast
+  now and for a part of a macro that never runs.
 - "Shorten": the same macro in fewer characters.
 - "History", "Trash", "Backups": earlier texts, deleted macros and saved copies of all of them.
 - "Share": a code to send a macro or your macro sets to a friend, or a link in chat.

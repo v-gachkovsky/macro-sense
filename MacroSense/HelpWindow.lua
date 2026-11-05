@@ -153,6 +153,9 @@ local function Sections()
             { "p", L["So put the special cases first and the usual one last."] },
             { "p", L["One press casts only one spell that starts the global cooldown. Lines after it still run if "
                 .. "they don't need it: /startattack, a trinket, a chat line."] },
+            { "p", L["The editor warns about a part that never runs: one after [], or a spell with the global "
+                .. "cooldown below a line that always casts one. When a key chooses it, Ctrl+click on the warning "
+                .. "puts it first."] },
         } },
         { L["What macros can do"], {
             { "rows", rows },

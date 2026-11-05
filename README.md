@@ -439,7 +439,8 @@ on, and a backup of your macros is made first.
   others get it too. **This character's** stay in every specialization; all your character macros start here. A
   **specialization's** macros come into the game when you choose it, onto the same buttons they had, and wait
   behind the scenes while you play another one. A macro of the same name in two specializations just changes its
-  text, so its buttons never move.
+  text, so its buttons never move. In Classic Era, TBC, Mists of Pandaria and WoW Forever the specializations are
+  your two talent groups, **Primary** and **Secondary**: each has its own action bars there.
 - **In the game and behind the scenes.** With the sets on, the Character tab has two parts: the macros in your
   slots, and those MacroSense keeps behind the scenes, which take no slot. Open, change, make and delete them
   there like any other. Class macros are yellow, the specialization now green, the rest behind the scenes red; one
