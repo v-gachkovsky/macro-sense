@@ -295,15 +295,15 @@ for _, case in ipairs({
     { "/cast [target=focsu] Spell", "/cast [target=focus] Spell" },
     { "/cast [mod:shfit] Spell", "/cast [mod:shift] Spell" },
     { "/castsequence reset=tagret A, B", "/castsequence reset=target A, B" },
-    { "/cast [harm Spell", "/cast [harm] Spell", 'Click to add "]"' },
+    { "/cast [harm Spell", "/cast [harm] Spell", 'Ctrl+click to add "]"' },
     { "/cast [@focus,harm, nodead Spell", "/cast [@focus,harm, nodead] Spell" },
     { "/cast [harm", "/cast [harm]" },
-    { "/cast harm] Spell", "/cast [harm] Spell", 'Click to add "["' },
+    { "/cast harm] Spell", "/cast [harm] Spell", 'Ctrl+click to add "["' },
     { "/cast [harm][@focus,help] A; nodead] B", "/cast [harm][@focus,help] A; [nodead] B" },
-    { "/cast ] Spell", "/cast  Spell", 'Click to remove "]"' },
-    { "/cast [harm,,dead] Spell", "/cast [harm,dead] Spell", 'Click to remove ","' },
+    { "/cast ] Spell", "/cast  Spell", 'Ctrl+click to remove "]"' },
+    { "/cast [harm,,dead] Spell", "/cast [harm,dead] Spell", 'Ctrl+click to remove ","' },
     { "/cast [harm,] Spell", "/cast [harm] Spell" },
-    { "/cast [combat:1] Spell", "/cast [combat] Spell", 'Click to remove ":1"' },
+    { "/cast [combat:1] Spell", "/cast [combat] Spell", 'Ctrl+click to remove ":1"' },
 }) do
     local text, tip = fixed(case[1])
     check("one-click fix: " .. case[1], text == case[2] and (not case[3] or tip == case[3]),
@@ -514,7 +514,7 @@ do
     local text, tip = fix("#showtooltip\n/cast [@mouseover,harm][] Arcane Shot; \n/cast [mod:alt] Hunter's Mark")
     check("gcd fix: the key's line into the one above, first", text
         == "#showtooltip\n/cast [mod:alt] Hunter's Mark; [@mouseover,harm][] Arcane Shot"
-        and tip == "Click to put this line into the line above, first", text)
+        and tip == "Ctrl+click to put this line into the line above, first", text)
     check("gcd fix: the lines between stay", fix("/cast Arcane Shot\n/startattack\n/cast [mod:alt] Hunter's Mark; "
         .. "[mod:ctrl] Aimed Shot\n/say hi") == "/cast [mod:alt] Hunter's Mark; [mod:ctrl] Aimed Shot; Arcane Shot\n"
         .. "/startattack\n/say hi", (fix("/cast Arcane Shot\n/startattack\n/cast [mod:alt] Hunter's Mark; "
@@ -533,7 +533,7 @@ end
 do
     local text, tip = fixed("/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark")
     check("never runs fix: the key's part first", text == "/cast [mod:alt] Hunter's Mark; [@mouseover,harm][] Arcane Shot"
-        and tip == "Click to put the parts with a key first", text)
+        and tip == "Ctrl+click to put the parts with a key first", text)
     check("never runs fix: all of them, in their order", fixed("/cast [] A; [mod:alt] B; C; [mod:ctrl] D;")
         == "/cast [mod:alt] B; [mod:ctrl] D; [] A; C;", (fixed("/cast [] A; [mod:alt] B; C; [mod:ctrl] D;")))
     check("never runs fix: not without a key", fixed("/cast A; [@focus] B") == nil)

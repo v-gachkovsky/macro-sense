@@ -172,11 +172,16 @@ end
 -- Status bar
 ------------------------------------------------------------------------
 -- Tooltip lines for issues: errors red, warnings yellow.
+-- A tooltip line in color `hex`, written into its text too: the tooltip keeps it whatever set the line's color
+-- before (the game's tooltips of spells, other addons).
+local function TipLine(text, hex)
+    local r, g, b = ns.RGB(hex)
+    GameTooltip:AddLine("|cff" .. hex .. text .. "|r", r, g, b)
+end
+
 local function AddIssueLines(issues)
     for _, e in ipairs(issues) do
-        local r, g, b = 1, 0.35, 0.35
-        if e.severity == "warning" then r, g, b = 1, 0.82, 0 end
-        GameTooltip:AddLine(string.format(L["Line %d: %s"], e.line, e.message), r, g, b)
+        TipLine(string.format(L["Line %d: %s"], e.line, e.message), e.severity == "warning" and "ffd100" or "ff5959")
     end
 end
 
@@ -2988,22 +2993,23 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         AddIssueLines(errors)
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
+        if warning.shown then
+            TipLine(string.format(L["Click to go to line %d"], warning.shown.line), "66ff66")
+        end
         if warning.shown and warning.shown.fix then
-            GameTooltip:AddLine(warning.shown.fixTip or string.format(L["Click to use \"%s\""], warning.shown.fix),
-                0.4, 1, 0.4)
-        elseif warning.shown then
-            GameTooltip:AddLine(string.format(L["Click to go to line %d"], warning.shown.line), 0.4, 1, 0.4)
+            TipLine(warning.shown.fixTip or string.format(L["Ctrl+click to use \"%s\""], warning.shown.fix), "66ff66")
         end
         GameTooltip:Show()
     end)
     warningHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Click: replace the misspelled name with the suggestion, or go to the issue.
+    -- Click: go to the issue; with Ctrl (Cmd on a Mac too), its fix (a suggestion for a misspelled name, ...).
     warningHover:SetScript("OnMouseUp", function()
         local e = warning.shown
         if not e then return end
         GameTooltip:Hide()
-        if not e.fix then return code:SetRawCursor(e.from - 1) end
-        ApplyFix(e)
+        local ctrl = IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())
+        if e.fix and ctrl then return ApplyFix(e) end
+        code:SetRawCursor(e.from - 1)
     end)
 
     -- Editor.

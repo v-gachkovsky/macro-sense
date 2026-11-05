@@ -544,10 +544,10 @@ ns.locales.uk = {
     ["Ln %d, Col %d"] = "Рядок %d, стовпець %d",
     ["Line %d: %s"] = "Рядок %d: %s",
     [" (+%d more)"] = " (+ще %d)",
-    ["Click to use \"%s\""] = "Клацніть, щоб вставити «%s»",
+    ["Ctrl+click to use \"%s\""] = "Ctrl+клік, щоб вставити «%s»",
     ["Click to go to line %d"] = "Клацніть, щоб перейти до рядка %d",
-    ["Click to add \"%s\""] = "Клацніть, щоб додати «%s»",
-    ["Click to remove \"%s\""] = "Клацніть, щоб прибрати «%s»",
+    ["Ctrl+click to add \"%s\""] = "Ctrl+клік, щоб додати «%s»",
+    ["Ctrl+click to remove \"%s\""] = "Ctrl+клік, щоб прибрати «%s»",
     ["Discard unsaved changes to this macro?"] = "Відкинути незбережені зміни цього макросу?",
     ["Delete macro \"%s\"?%s"] = "Видалити макрос «%s»?%s",
     ["Yes"] = "Так",
@@ -931,8 +931,9 @@ ns.locales.uk = {
         .. "його глобальний кулдаун зупиняє цей. Щоб вибирати між ними, поставте обидва в один /cast, цю частину "
         .. "першою",
     ["won't cast"] = "не скаститься",
-    ["Click to put the parts with a key first"] = "Клацніть, щоб поставити частини з клавішею першими",
-    ["Click to put this line into the line above, first"] = "Клацніть, щоб перенести цей рядок у рядок вище, на початок",
+    ["Ctrl+click to put the parts with a key first"] = "Ctrl+клік, щоб поставити частини з клавішею першими",
+    ["Ctrl+click to put this line into the line above, first"] =
+        "Ctrl+клік, щоб перенести цей рядок у рядок вище, на початок",
     ["Right-click to fix it"] = "Правий клік — виправити",
     ["works only while %s is on cooldown: the line above always casts it first, and its global cooldown stops this "
         .. "one. To choose with a key, put both into one /cast, this part first"] = "спрацює лише поки %s на "

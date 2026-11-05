@@ -1521,15 +1521,21 @@ do
     Wait(1)
     check("typo suggestion in the status bar", statusText():find('did you mean "Fireball"%?') ~= nil, statusText())
     Fire(hover(), "OnMouseUp")
+    local at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
+    check("a click goes to the issue, its fix waits", raw() == "/cast Firebal" and at == #"/cast ", at)
+    local ctrl = IsControlKeyDown
+    IsControlKeyDown = function() return true end
+    Fire(hover(), "OnMouseUp")
+    IsControlKeyDown = ctrl
     NextFrame()
-    check("click fixes the name", raw() == "/cast Fireball", raw())
+    check("Ctrl+click fixes the name", raw() == "/cast Fireball", raw())
     check("no issue after the fix", statusText() == "", statusText())
     Type("\n/cast [@] x")
     Wait(1)
     edit:ClearFocus()
     edit:SetCursorPosition(0)
     Fire(hover(), "OnMouseUp")
-    local at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
+    at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
     check("click on an issue with no fix goes to it", edit:HasFocus() and at == #"/cast Fireball\n/cast [", at)
     ns.Window.Revert()
     CreateMacro("Fix Me", 1, "/cast [harm Fireball", false)
@@ -1540,10 +1546,15 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(hover(), "OnEnter")
     GameTooltip.AddLine = function() end
-    check("the fix in the tooltip", table.concat(tip, "|"):find('Click to add "]"', 1, true) ~= nil, table.concat(tip, "|"))
+    check("the tooltip: a click goes to the line, Ctrl+click fixes", table.concat(tip, "|")
+        == '|cffff5959Line 1: [ is not closed with ]|r|'
+        .. '|cff66ff66Click to go to line 1|r|' .. '|cff66ff66Ctrl+click to add "]"|r', table.concat(tip, "|"))
+    local ctrl = IsControlKeyDown
+    IsControlKeyDown = function() return true end
     Fire(hover(), "OnMouseUp")
+    IsControlKeyDown = ctrl
     NextFrame()
-    check("a click puts it in", raw() == "/cast [harm] Fireball", raw())
+    check("Ctrl+click puts it in", raw() == "/cast [harm] Fireball", raw())
     ns.Window.Revert()
     DeleteMacro(GetMacroIndexByName("Fix Me"))
     Send("UPDATE_MACROS")
@@ -1846,7 +1857,8 @@ do
     Fire(clean, "OnEnter")
     GameTooltip.AddLine = nil
     check("list: hover lists the issues, and where it is on the bars", table.concat(tip, "\n", 1, 5)
-        == 'Zap broken\nLine 1: unknown condition "harmm"\nNot on your action bars now\nZap clean\nNot on your action bars now',
+        == 'Zap broken\n|cffff5959Line 1: unknown condition "harmm"|r\nNot on your action bars now\nZap clean\n'
+        .. 'Not on your action bars now',
         table.concat(tip, " / "))
     -- An icon chosen, with #showtooltip: the padlock, and the tooltip says what it means. Without: none.
     check("list: a chosen icon with #showtooltip has the padlock", clean.mark:IsShown() and not broken.mark:IsShown()

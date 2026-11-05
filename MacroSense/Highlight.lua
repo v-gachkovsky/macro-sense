@@ -73,10 +73,10 @@ end
 
 -- The extra of an issue fixed by adding `text` at raw position `at` (before it), or taking out from..to.
 local function adding(text, at)
-    return { fix = text, fixFrom = at, fixTo = at - 1, fixTip = string.format(L["Click to add \"%s\""], text) }
+    return { fix = text, fixFrom = at, fixTo = at - 1, fixTip = string.format(L["Ctrl+click to add \"%s\""], text) }
 end
 local function removing(text, from, to)
-    return { fix = "", fixFrom = from, fixTo = to, fixTip = string.format(L["Click to remove \"%s\""], text) }
+    return { fix = "", fixFrom = from, fixTo = to, fixTip = string.format(L["Ctrl+click to remove \"%s\""], text) }
 end
 
 ------------------------------------------------------------------------
@@ -450,7 +450,7 @@ local function argSpans(s, base, add, argKind, sequence, command, info)
             add(b.from, b.to, "note", L["never runs: the part before it always does (it has [] or no conditions). "
                 .. "Put this part before it"], "warning", { short = L["never runs"], fix = keyed and fix or nil,
                 fixFrom = keyed and branches[first].from or nil, fixTo = keyed and last.to or nil,
-                fixTip = keyed and L["Click to put the parts with a key first"] or nil })
+                fixTip = keyed and L["Ctrl+click to put the parts with a key first"] or nil })
         end
     end
 end
@@ -520,7 +520,7 @@ local function Merged(raw, above, info)
     for _, b in ipairs(above.branches) do if b.body ~= "" then last = b end end
     return { fix = table.concat(parts, "; ") .. "; " .. raw:sub(first.from, last.to)
         .. raw:sub(above.lineTo + 1, info.lineFrom - 2), fixFrom = first.from, fixTo = info.lineTo,
-        fixTip = L["Click to put this line into the line above, first"] }
+        fixTip = L["Ctrl+click to put this line into the line above, first"] }
 end
 
 function Highlight.Spans(raw)

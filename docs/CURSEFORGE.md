@@ -167,10 +167,10 @@ Line numbers sit in a gutter on the left, so "Line 3" in a message is easy to fi
 units, values and spell names each get their own color. Mistakes are **underlined**,
 the status bar names them (hover for the full list, click to go there), and the Save button shows a warning sign:
 
-![Mistakes underlined, fixed with a click on the status bar](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/fix-one-click.gif)
+![Mistakes underlined, fixed with Ctrl+click on the status bar](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/fix-one-click.gif)
 
 
-- unknown commands and conditions (a typo like `harmm` or `/cats`: a click on the status bar makes it `harm`,
+- unknown commands and conditions (a typo like `harmm` or `/cats`: Ctrl+click on the status bar makes it `harm`,
   `/cast`; so it adds a missing `]` or takes out a stray one)
 - a `[` without `]`, or a `]` without `[`
 - an empty condition: `[harm,,dead]`
