@@ -934,7 +934,7 @@ ns.locales.uk = {
     ["Ctrl+click to put the parts with a key first"] = "Ctrl+клік, щоб поставити частини з клавішею першими",
     ["Ctrl+click to put this line into the line above, first"] =
         "Ctrl+клік, щоб перенести цей рядок у рядок вище, на початок",
-    ["Right-click to fix it"] = "Правий клік — виправити",
+    ["Ctrl+click to fix it"] = "Ctrl+клік — виправити",
     ["works only while %s is on cooldown: the line above always casts it first, and its global cooldown stops this "
         .. "one. To choose with a key, put both into one /cast, this part first"] = "спрацює лише поки %s на "
         .. "кулдауні: рядок вище завжди спершу кастує його, і його глобальний кулдаун зупиняє цей. Щоб вибирати "

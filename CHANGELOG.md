@@ -13,7 +13,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
   a line below one that always casts a spell with the global cooldown; when that spell has a cooldown of its
   own, the warning says the line below works only while it is on cooldown. When a key chooses the parts
   (`[mod:alt]`), Ctrl+click on the warning puts them first, in one line.
-- A right-click on underlined text fixes it.
+- Ctrl+click on underlined text in the editor fixes it (Cmd+click on a Mac).
 
 ### Changed
 - The status bar: a click goes to the issue's line, Ctrl+click (Cmd+click on a Mac) fixes it. Before, a click

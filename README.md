@@ -261,7 +261,7 @@ an empty `[]` removes both.
 - Ctrl+click on the status bar fixes what is clear (a plain click goes to the line): a typo in a command, condition, unit or value (`/cats` →
   `/cast`, `harmm` → `harm`, `@mousover` → `@mouseover`), a missing `]` or `[`, a stray `]`, an empty condition's
   comma, a value where none belongs (`combat:1`). Its tooltip says what the click does; Ctrl+Z takes it back.
-  A right-click on the underlined text does the same.
+  Ctrl+click on the underlined text in the editor does the same.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
   name, which macros allow.
 - `/click`: a name no button has now is a warning (an addon may make it later), and so is a frame that is

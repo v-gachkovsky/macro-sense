@@ -436,9 +436,9 @@ local function UpdateExplain()
     local lines = text and ns.Explain.Line(text, explainEnv)
     if not lines then
         local shown, e = WordTip(raw, pos), FixAt(pos)
-        if e then -- an issue a right-click fixes: said under what the word means
+        if e then -- an issue Ctrl+click fixes: said under what the word means
             if not shown then GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR") end
-            GameTooltip:AddLine(L["Right-click to fix it"], 0.4, 1, 0.4)
+            TipLine(L["Ctrl+click to fix it"], "66ff66")
             GameTooltip:Show()
         elseif not shown and GameTooltip:GetOwner() == code.scroll then
             GameTooltip:Hide()
@@ -3022,8 +3022,8 @@ local function Build()
     code.scroll:SetPoint("BOTTOMRIGHT", -15, 4)
     ns.AttachAutocomplete(code)
     code:ShowNotes(ns.db.preview)
-    -- A right-click on an issue that has a fix: fixed.
-    code.onRightClick = function(pos)
+    -- Ctrl+click (Cmd+click on a Mac) on an issue that has a fix: fixed, as from the status bar.
+    code.onFixClick = function(pos)
         local e = FixAt(pos)
         if not e then return false end
         GameTooltip:Hide()

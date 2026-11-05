@@ -108,7 +108,7 @@ you point at an enemy, `conditions not met` when you don't.
 
 Point at the line's number to read the whole line in plain words. A mistake is underlined in red, and the status bar
 says what is wrong; a click there goes to that line. Ctrl+click there fixes it when the fix is clear, and so does
-a right-click on the underlined text.
+Ctrl+click on the underlined text.
 
 <p align="center"><img src="guide/shot-3-explain-en.png" width="720" alt="The line's number explains the whole line"></p>
 

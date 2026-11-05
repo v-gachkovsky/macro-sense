@@ -5585,19 +5585,26 @@ do
     C_Spell.GetSpellInfo, GameTooltip.SetSpellByID = nil, nil
     at(letter(20), 2)
     check("explained: not past a line's end", not GameTooltip:IsShown())
-    -- An issue with a fix: the tooltip says a right-click fixes it, and it does.
+    -- An issue with a fix: the tooltip says Ctrl+click fixes it, and it does; a plain click doesn't.
     ns.Window.Restore("/cast [] Frostbolt; [mod:alt] Fear")
     NextFrame()
     NextFrame()
     Wait(1)
-    check("fix: the tooltip says a right-click fixes it", at(letter(25), 1):find("Right-click to fix it", 1, true)
+    check("fix: the tooltip says Ctrl+click fixes it", at(letter(25), 1):find("Ctrl+click to fix it", 1, true)
         ~= nil, at(letter(25), 1))
+    Fire(edit, "OnMouseDown", "LeftButton")
+    check("fix: not on a plain click", raw() == "/cast [] Frostbolt; [mod:alt] Fear", raw())
     Fire(edit, "OnMouseDown", "RightButton")
-    check("fix: a right-click fixes it", raw() == "/cast [mod:alt] Fear; [] Frostbolt", raw())
+    check("fix: nor on a right-click", raw() == "/cast [] Frostbolt; [mod:alt] Fear", raw())
+    local ctrl = IsControlKeyDown
+    IsControlKeyDown = function() return true end
+    Fire(edit, "OnMouseDown", "LeftButton")
+    check("fix: Ctrl+click fixes it", raw() == "/cast [mod:alt] Fear; [] Frostbolt", raw())
     Wait(1)
-    check("fix: nothing to fix there now", not at(letter(25), 1):find("Right-click", 1, true), at(letter(25), 1))
-    Fire(edit, "OnMouseDown", "RightButton")
-    check("fix: a right-click on no issue changes nothing", raw() == "/cast [mod:alt] Fear; [] Frostbolt", raw())
+    check("fix: nothing to fix there now", not at(letter(25), 1):find("Ctrl+click", 1, true), at(letter(25), 1))
+    Fire(edit, "OnMouseDown", "LeftButton")
+    check("fix: Ctrl+click on no issue changes nothing", raw() == "/cast [mod:alt] Fear; [] Frostbolt", raw())
+    IsControlKeyDown = ctrl
     -- A wrapped line: the letters of its second row.
     wrapLines = true
     ns.Window.Restore("/cast [@focus" .. string.rep("target", 15) .. "] X")
