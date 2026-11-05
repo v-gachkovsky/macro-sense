@@ -449,18 +449,21 @@ local function lineSpans(line, base, add, info)
     argSpans(rest, cmdTo, add, argKind, action == "castsequence", action, info)
 end
 
--- The spells a /cast line always casts, when each starts the global cooldown and has no cooldown of its own: the
--- lines after it wait for that cooldown, so their spells with it don't cast. Nil for any other line.
+-- What a /cast line that always casts a spell with the global cooldown does to the lines after it: that cooldown
+-- stops their spells with it. { names, kind }: "gcd" when none of its spells has a cooldown of its own (the lines
+-- after never cast them), "cooldown" when one has (they cast while it is on that cooldown). Nil for any other line.
 local function Blocking(info)
     if not info.always or (info.command ~= "cast" and info.command ~= "spell") then return nil end
-    local names, seen = {}, {}
+    local names, seen, kind = {}, {}, "gcd"
     for _, sp in ipairs(info.spells) do
         if sp.branch <= info.always then
-            if Highlight.gcdOf(sp.name) ~= "gcd" then return nil end
+            local gcd = Highlight.gcdOf(sp.name)
+            if gcd ~= "gcd" and gcd ~= "cooldown" then return nil end
+            if gcd == "cooldown" then kind = "cooldown" end
             if not seen[sp.name] then names[#names + 1], seen[sp.name] = sp.name, true end
         end
     end
-    return #names > 0 and table.concat(names, L[" or "]) or nil
+    return #names > 0 and { names = table.concat(names, L[" or "]), kind = kind } or nil
 end
 
 function Highlight.Spans(raw)
@@ -475,17 +478,23 @@ function Highlight.Spans(raw)
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
         local info = { spells = {} }
         lineSpans(line, pos, add, info)
-        if Highlight.gcdOf and blocking then
-            for _, sp in ipairs(info.spells) do
+        if Highlight.gcdOf then
+            for _, sp in ipairs(blocking and info.spells or {}) do
                 local gcd = Highlight.gcdOf(sp.name)
-                if gcd == "gcd" or gcd == "cooldown" then
+                if (gcd == "gcd" or gcd == "cooldown") and blocking.kind == "gcd" then
                     add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["won't cast: the line above always "
                         .. "casts %s first, and its global cooldown stops this one. To choose between them, put both "
-                        .. "into one /cast, this part first"], blocking), "warning", { short = L["won't cast"] })
+                        .. "into one /cast, this part first"], blocking.names), "warning", { short = L["won't cast"] })
+                elseif gcd == "gcd" or gcd == "cooldown" then
+                    add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only while %s is on cooldown: "
+                        .. "the line above always casts it first, and its global cooldown stops this one. To choose "
+                        .. "with a key, put both into one /cast, this part first"], blocking.names), "warning",
+                        { short = string.format(L["only while %s is on cooldown"], blocking.names) })
                 end
             end
-        elseif Highlight.gcdOf then
-            blocking = Blocking(info)
+            -- One that never lets the lines after cast is the stronger.
+            local now = Blocking(info)
+            if now and (not blocking or now.kind == "gcd" and blocking.kind ~= "gcd") then blocking = now end
         end
         pos = pos + #line + 1
     end

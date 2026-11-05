@@ -931,6 +931,11 @@ ns.locales.uk = {
         .. "його глобальний кулдаун зупиняє цей. Щоб вибирати між ними, поставте обидва в один /cast, цю частину "
         .. "першою",
     ["won't cast"] = "не скаститься",
+    ["works only while %s is on cooldown: the line above always casts it first, and its global cooldown stops this "
+        .. "one. To choose with a key, put both into one /cast, this part first"] = "спрацює лише поки %s на "
+        .. "кулдауні: рядок вище завжди спершу кастує його, і його глобальний кулдаун зупиняє цей. Щоб вибирати "
+        .. "клавішею, поставте обидва в один /cast, цю частину першою",
+    ["only while %s is on cooldown"] = "лише поки %s на кулдауні",
     ["unknown condition \"%s\""] = "невідома умова «%s»",
     ["%s: needs a value"] = "%s: потрібне значення",
     ["%s takes no value"] = "%s не приймає значення",

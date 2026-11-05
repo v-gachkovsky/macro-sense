@@ -495,7 +495,16 @@ do
         "Aimed Shot=" .. WONT:format("Hunter's Mark or Arcane Shot") .. "@2")
     expectErrs("/cast Berserking\n/cast Arcane Shot", "")                -- no global cooldown: the next one casts
     expectErrs("/cast Arcane Shot\n/cast Berserking", "")
-    expectErrs("/cast Aimed Shot\n/cast Arcane Shot", "")                 -- on its cooldown, the next one casts
+    -- A spell above with a cooldown of its own: the line below casts while it waits.
+    local ONLY = "works only while %s is on cooldown: the line above always casts it first, and its global cooldown "
+        .. "stops this one. To choose with a key, put both into one /cast, this part first"
+    expectErrs("/cast Aimed Shot\n/cast [mod:alt] Hunter's Mark", "Hunter's Mark=" .. ONLY:format("Aimed Shot") .. "@2")
+    check("gcd: said short, with the spell", H.Errors("/cast Aimed Shot\n/cast Arcane Shot")[1].short
+        == "only while Aimed Shot is on cooldown")
+    expectErrs("/cast Aimed Shot\n/cast Arcane Shot\n/cast Hunter's Mark", "Arcane Shot=" .. ONLY:format("Aimed Shot")
+        .. "@2 | Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")  -- Arcane Shot always casts when it can
+    expectErrs("/cast Arcane Shot\n/cast Aimed Shot\n/cast Hunter's Mark", "Aimed Shot=" .. WONT:format("Arcane Shot")
+        .. "@2 | Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")
     expectErrs("/cast [mod:alt] Arcane Shot\n/cast Hunter's Mark", "")    -- not always
     expectErrs("/cast [mod:alt] Berserking; Arcane Shot\n/cast Hunter's Mark", "")
     expectErrs("/cast Unknown Spell\n/cast Arcane Shot", "")
