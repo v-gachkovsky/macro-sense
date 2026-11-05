@@ -19,6 +19,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The status bar: a click goes to the issue's line, Ctrl+click (Cmd+click on a Mac) fixes it. Before, a click
   fixed it at once.
 
+### Fixed
+- Macro sets: a deleted macro's buttons are forgotten at once. Before, they were kept until the next login or
+  change of specialization, and a new macro with the same name could go onto them.
+
 ## [0.13.1] - 2026-11-05
 
 ### Fixed
