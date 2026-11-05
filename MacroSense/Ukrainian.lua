@@ -121,6 +121,10 @@ ns.locales.uk = {
     ["If not: is there an enemy under the mouse? Then Frostbolt on it."] =
         "Якщо ні: під мишею є ворог? Тоді Frostbolt у нього.",
     ["If not: Frostbolt on your target."] = "Якщо ні: Frostbolt у вашу ціль.",
+    ["The editor warns about a part that never runs: one after [], or a spell with the global cooldown below a line "
+        .. "that always casts one. When a key chooses it, Ctrl+click on the warning puts it first."] =
+        "Редактор попереджає про частину, що ніколи не спрацює: після [] або заклинання з глобальним кулдауном під "
+        .. "рядком, що завжди кастує таке. Коли її вибирає клавіша, Ctrl+клік по попередженню ставить її першою.",
     ["So put the special cases first and the usual one last."] =
         "Тож особливі випадки ставте першими, а звичайний — останнім.",
     ["One press casts only one spell that starts the global cooldown. Lines after it still run if they don't need "

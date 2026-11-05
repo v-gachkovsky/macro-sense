@@ -118,7 +118,8 @@ A character has only 30 macro slots. Tick **Macro sets**, and MacroSense keeps m
 
 - **Each specialization gets macros of its own.** Choose it, and its macros come into the game, onto the same
   buttons they had, while the others wait behind the scenes. A macro with the same name in two specializations
-  just changes its text, so its buttons never move.
+  just changes its text, so its buttons never move. In Classic Era, TBC, Mists of Pandaria and WoW Forever these
+  are your two talent groups, **Primary** and **Secondary**.
 - **Class macros** are the same on all your characters of one class: change one, and the others get it too.
   **This character's** stay in every specialization.
 - **Behind the scenes** macros take no slot, and you edit them like any other. Put one away, take it in, move or

@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- The in-game help and the guide tell of the warnings for a part of a macro that never runs, and of Primary and
+  Secondary in the older clients.
+
 ## [0.14.0] - 2026-11-05
 
 ### Added
