@@ -34,6 +34,7 @@ Spellbook.lua
 Questions.lua
 Roles.lua
 Ranks.lua
+Sets.lua
 Widgets.lua
 Popup.lua
 CodeBox.lua
@@ -44,6 +45,7 @@ WizardWindow.lua
 ShareWindow.lua
 HelpWindow.lua
 SpellbookWindow.lua
+SetsWindow.lua
 Easter.lua
 Links.lua
 Window.lua

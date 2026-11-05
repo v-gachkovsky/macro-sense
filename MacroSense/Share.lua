@@ -1,6 +1,8 @@
--- Macros as a code to copy and paste: "MacroSense1:", one run of letters and digits (base64), which chat apps
+-- Macros as a code to copy and paste: "MacroSense:", one run of letters and digits (base64), which chat apps
 -- and forums leave as it is, and a dot: words around the code don't get into it. Inside: each macro's tab,
--- icon, name and text, and a sum that tells a code cut short or changed. Pure Lua (5.1).
+-- icon, name and text, and a sum that tells a code cut short or changed. A code of macro sets is the same with
+-- "MacroMetaSense:": the class, then each set with its macros. The codes of before ("MacroSense1:") are read too.
+-- Pure Lua (5.1).
 local _, ns = ...
 ns = ns or {}
 local L = ns.L
@@ -8,8 +10,8 @@ local L = ns.L
 local Share = {}
 ns.Share = Share
 
-local PREFIX = "MacroSense1:"
-Share.PREFIX = PREFIX
+local PREFIX, OLD_PREFIX, SETS_PREFIX = "MacroSense:", "MacroSense1:", "MacroMetaSense:"
+Share.PREFIX, Share.SETS_PREFIX = PREFIX, SETS_PREFIX
 local FIELD, MACRO, SUM = "\31", "\30", "\29" -- between a macro's parts, between macros, before the sum
 local DIGITS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 local VALUE = {}
@@ -56,25 +58,34 @@ local function Sum(s)
     return tostring(sum)
 end
 
+local function Pack(prefix, plain) return prefix .. ToDigits(plain .. SUM .. Sum(plain)) .. "." end
+
+-- What the code after `prefix` in `text` holds, or nil and what is wrong with it.
+local function Unpack(text, prefix)
+    local at = text:find(prefix, 1, true)
+    local digits = text:sub(at + #prefix):gsub("%s", ""):match("^([%w+/=]*)%.")
+    local plain = digits and FromDigits(digits) -- nil: no dot, the end is missing
+    local body, sum = (plain or ""):match("^(.*)" .. SUM .. "(%d+)$")
+    if not body or Sum(body) ~= sum then return nil, L["The code is cut short or changed. Copy all of it again."] end
+    return body
+end
+
 -- macros: { { scope = "general" | "character", icon = file ID or path, name, body } } -> the code.
 function Share.Encode(macros)
     local parts = {}
     for i, m in ipairs(macros) do
         parts[i] = table.concat({ SCOPES[m.scope] or "g", tostring(m.icon or ""), m.name, m.body or "" }, FIELD)
     end
-    local plain = table.concat(parts, MACRO)
-    return PREFIX .. ToDigits(plain .. SUM .. Sum(plain)) .. "."
+    return Pack(PREFIX, table.concat(parts, MACRO))
 end
 
 -- The macros in `text`, which holds a code (spaces and line breaks in it, words around it are fine), or nil and
 -- what is wrong with it.
 function Share.Decode(text)
-    local at = text:find(PREFIX, 1, true)
-    if not at then return nil, L["This is not a MacroSense code."] end
-    local digits = text:sub(at + #PREFIX):gsub("%s", ""):match("^([%w+/=]*)%.")
-    local plain = digits and FromDigits(digits) -- nil: no dot, the end is missing
-    local body, sum = (plain or ""):match("^(.*)" .. SUM .. "(%d+)$")
-    if not body or Sum(body) ~= sum then return nil, L["The code is cut short or changed. Copy all of it again."] end
+    local prefix = text:find(PREFIX, 1, true) and PREFIX or text:find(OLD_PREFIX, 1, true) and OLD_PREFIX
+    if not prefix then return nil, L["This is not a MacroSense code."] end
+    local body, problem = Unpack(text, prefix)
+    if not body then return nil, problem end
     local macros = {}
     for part in (body .. MACRO):gmatch("(.-)" .. MACRO) do
         local scope, icon, name, macroText = part:match("^(%a)" .. FIELD .. "(.-)" .. FIELD .. "(.-)" .. FIELD .. "(.*)$")
@@ -82,6 +93,51 @@ function Share.Decode(text)
         macros[#macros + 1] = { scope = SCOPES[scope], icon = tonumber(icon) or icon, name = name, body = macroText }
     end
     return macros
+end
+
+-- Whether `text` holds a code of macro sets.
+function Share.IsSets(text) return text:find(SETS_PREFIX, 1, true) ~= nil end
+
+-- sets: { class = "WARLOCK", sets = { { id = "class" | "character" | a specialization's key, label, macros = {
+-- { name, icon, body, parked } } } } } -> the code.
+function Share.EncodeSets(sets)
+    local parts = { table.concat({ "1", sets.class or "" }, FIELD) }
+    for _, set in ipairs(sets.sets) do
+        parts[#parts + 1] = table.concat({ "s", set.id, set.label or "" }, FIELD)
+        for _, m in ipairs(set.macros) do
+            parts[#parts + 1] = table.concat({ "m", m.parked and "1" or "", tostring(m.icon or ""), m.name,
+                m.body or "" }, FIELD)
+        end
+    end
+    return Pack(SETS_PREFIX, table.concat(parts, MACRO))
+end
+
+-- The sets in `text`, as Share.EncodeSets takes them, or nil and what is wrong with it.
+function Share.DecodeSets(text)
+    if not Share.IsSets(text) then return nil, L["This is not a MacroSense code."] end
+    local body, problem = Unpack(text, SETS_PREFIX)
+    if not body then return nil, problem end
+    local out, set = { sets = {} }, nil
+    for part in (body .. MACRO):gmatch("(.-)" .. MACRO) do
+        local kind, rest = part:match("^(%w)" .. FIELD .. "(.*)$")
+        if kind == "1" and not out.class then
+            out.class = rest ~= "" and rest or nil
+        elseif kind == "s" then
+            local id, label = rest:match("^(.-)" .. FIELD .. "(.*)$")
+            if not id or id == "" then return nil, L["The code is damaged."] end
+            set = { id = id, label = label ~= "" and label or nil, macros = {} }
+            out.sets[#out.sets + 1] = set
+        elseif kind == "m" and set then
+            local parked, icon, name, macroText = rest:match("^(.-)" .. FIELD .. "(.-)" .. FIELD .. "(.-)" .. FIELD
+                .. "(.*)$")
+            if not name or name == "" then return nil, L["The code is damaged."] end
+            set.macros[#set.macros + 1] = { name = name, icon = tonumber(icon) or icon, body = macroText,
+                parked = parked == "1" or nil }
+        else
+            return nil, L["The code is damaged."]
+        end
+    end
+    return out
 end
 
 -- The macros in a macro's text, as guides and forums write it (Wowhead, Icy Veins: plain text): every line
@@ -111,6 +167,7 @@ function Share.FromText(text, scope)
             if span[3] == "action" and not name then name = body:sub(span[1], span[2]):gsub("%(.-%)$", "") end
         end
         name = name or body:match("/(%S+)") or body:match("#(%a+)")
+        if not name then return nil end -- "/" or "#" alone, as it is typed or deleted: no macro yet
         macros[i] = { scope = scope, icon = "", name = name, body = body }
     end
     return macros

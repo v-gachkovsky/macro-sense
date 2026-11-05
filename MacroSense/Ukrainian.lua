@@ -288,12 +288,36 @@ ns.locales.uk = {
     ["Search name or text"] = "Пошук за назвою чи текстом",
     ["No macros match"] = "Нічого не знайдено",
     ["Delete this macro"] = "Видалити цей макрос",
-    ["Copy this macro"] = "Копіювати цей макрос",
     ["Duplicate"] = "Дублювати",
     ["Copy to Character"] = "Копіювати в «Персонаж»",
     ["Copy to General"] = "Копіювати в «Загальні»",
     ["Move to Character"] = "Перенести в «Персонаж»",
     ["Move to General"] = "Перенести в «Загальні»",
+    ["It leaves this tab and goes there. Hold Ctrl to copy it instead."] =
+        "Макрос іде з цієї вкладки туди. Затисніть Ctrl, щоб скопіювати його натомість.",
+    ["It is in this tab already."] = "Макрос уже в цій вкладці.",
+    ["Copy, move and more"] = "Копіювати, перенести та інше",
+    ["Tabs"] = "Вкладки",
+    ["Drag a macro onto the General or Character tab to move it there, or with Ctrl to copy it. A macro behind the "
+        .. "scenes goes onto General only: it is this character's already. This works with macro sets off too."] =
+        "Перетягніть макрос на вкладку «Загальні» чи «Персонаж», щоб перенести його туди, або з Ctrl, щоб "
+        .. "скопіювати. Макрос за лаштунками можна перетягнути лише на «Загальні»: персонажу він уже належить. "
+        .. "Це працює й з вимкненими наборами.",
+    ["It is this character's already. To bring it into the game, drag it onto \"In the game\" or use \"Take in\"."] =
+        "Цей макрос уже належить персонажу. Щоб вивести його в гру, перетягніть його на «У грі» або оберіть "
+        .. "«Взяти в гру».",
+    ["For a macro behind the scenes: a copy in the same set, named like \"Fear 2\". A macro behind the scenes can "
+        .. "also be moved or copied to the General tab from here."] =
+        "Для макроса за лаштунками: копія в тому самому наборі з назвою на кшталт «Fear 2». Звідси ж макрос за "
+        .. "лаштунками можна перенести або скопіювати у вкладку «Загальні».",
+    ["Makes a copy in the same set, behind the scenes, named like \"Fear 2\"."] =
+        "Створює копію в тому самому наборі, за лаштунками, з назвою на кшталт «Fear 2».",
+    ["Makes a copy for all your characters, named like \"Fear 2\". This one stays where it is."] =
+        "Створює копію для всіх ваших персонажів, з назвою на кшталт «Fear 2». Цей макрос лишається, де був.",
+    ["Into the General tab, for all your characters: it leaves its set and comes into the game. Its history goes "
+        .. "with it."] =
+        "У вкладку «Загальні», для всіх ваших персонажів: макрос іде зі свого набору й з'являється в грі. Його "
+        .. "історія переходить разом із ним.",
     ["Into the Character tab, for this character only. Its buttons on your action bars stay, and its history goes "
         .. "with it."] =
         "У вкладку «Персонаж», лише для цього персонажа. Його кнопки на ваших панелях дій лишаються, а історія "
@@ -308,9 +332,11 @@ ns.locales.uk = {
     ["Move"] = "Перенести",
     ["could not move the macro"] = "не вдалося перенести макрос",
     -- other characters' macros, in the Character tab
-    ["Its own macros, as they were when you last played it: %s. Click to show or hide them."] =
-        "Його власні макроси, якими вони були, коли ви востаннє ним грали: %s. Клацніть, щоб показати чи "
-        .. "сховати їх.",
+    ["Its own macros, those behind the scenes too, as they were when you last played it: %s. Click to show or hide "
+        .. "them."] =
+        "Усі його макроси, і ті, що за лаштунками, такими, як були, коли ви востаннє ним грали: %s. Клацніть, щоб "
+        .. "показати чи сховати їх.",
+    ["Behind the scenes there, in \"%s\"."] = "У нього за лаштунками, у «%s».",
     ["A macro of %s. Click to copy it."] = "Макрос персонажа %s. Клацніть, щоб скопіювати його.",
     ["Forget this character"] = "Забути цього персонажа",
     ["Forget %s? MacroSense no longer shows its macros or counts its action bars, until you log in with it again."] =
@@ -335,7 +361,11 @@ ns.locales.uk = {
     ["It is on the bars of %s too."] = "Він є і на панелях: %s.",
     ["It is on the bars of %s."] = "Він є на панелях: %s.",
     ["Specialization %d"] = "Спеціалізація %d",
+    ["No specialization yet"] = "Ще без спеціалізації",
     ["(full)"] = "(заповнена)",
+    ["(behind the scenes)"] = "(за лаштунки)",
+    ["All 30 slots are taken: it goes behind the scenes, in \"This character's\"."] =
+        "Усі 30 слотів зайняті: макрос піде за лаштунки, у «Цього персонажа».",
     ["The %s tab is full."] = "Вкладка «%s» заповнена.",
     ["Makes a copy in this tab with the text from the editor, named like \"Fear 2\". The macro you copy keeps its "
         .. "saved text."] =
@@ -401,9 +431,14 @@ ns.locales.uk = {
         .. "назву вже зайнято, до неї додасться номер.",
     ["could not ask %s now: try again in a moment"] = "зараз не вдалося спитати в %s: спробуйте за мить",
     ["Paste a code, or a macro's text from a guide, to add its macros. Nothing gets replaced: if a name is taken, a "
-        .. "number is added to it, like \"Fear 2\"."] =
+        .. "number is added to it, like \"Fear 2\". Macro sets come from a code too, or from another character of "
+        .. "yours."] =
         "Вставте код або текст макроса з гайду, щоб додати його макроси. Нічого не заміниться: якщо назву вже "
-        .. "зайнято, до неї додасться номер, як «Fear 2».",
+        .. "зайнято, до неї додасться номер, як «Fear 2». Набори макросів теж можна взяти з коду або з іншого "
+        .. "вашого персонажа.",
+    ["Export macro sets..."] = "Експортувати набори макросів...",
+    ["The code of your macro sets: you choose which. Import it on another character, or share it."] =
+        "Код ваших наборів макросів, вибираєте, яких саме. Імпортуйте його на іншому персонажі або поділіться ним.",
     ["imported %d of %d macros"] = "імпортовано макросів: %d з %d",
     ["Trash"] = "Кошик",
     ["Deleted macros land here, and you can bring them back. It doesn't matter where you deleted them: here, in "
@@ -543,10 +578,35 @@ ns.locales.uk = {
     ["Press %s to copy the code, then share it: anyone with MacroSense can import it."] =
         "Натисніть %s, щоб скопіювати код, і поділіться ним: будь-хто з MacroSense зможе його імпортувати.",
     ["Import macros"] = "Імпортувати макроси",
-    ["Paste a MacroSense code, or a macro's text from a guide (%s). Nothing gets replaced: if a name is taken, a "
-        .. "number is added to it."] =
-        "Вставте код MacroSense або текст макроса з гайду (%s). Нічого не заміниться: якщо назву вже зайнято, до неї "
-        .. "додасться номер.",
+    ["Paste a MacroSense code, or a macro's text from a guide (%s), or choose a character of yours. Nothing gets "
+        .. "replaced: if a name is taken, a number is added to it."] =
+        "Вставте код MacroSense або текст макроса з гайду (%s), або виберіть свого персонажа. Нічого не заміниться: "
+        .. "якщо назву вже зайнято, до неї додасться номер.",
+    ["Or from a character..."] = "Або з персонажа...",
+    ["Export macro sets"] = "Експорт наборів макросів",
+    ["Check the sets to export. Press %s to copy the code: import it on another character, or share it."] =
+        "Позначте набори для експорту. Натисніть %s, щоб скопіювати код: імпортуйте його на іншому персонажі або "
+        .. "поділіться ним.",
+    ["Check the sets to export."] = "Позначте набори для експорту.",
+    ["%d macros in %d sets"] = "Макросів: %d, наборів: %d",
+    ["Select all"] = "Вибрати все",
+    ["Clear all"] = "Зняти все",
+    ["Macro sets of %s: %d macros"] = "Набори макросів: %s, макросів: %d",
+    ["%d new"] = { "%d новий", "%d нові", "%d нових" },
+    ["%d here already"] = { "%d вже є тут", "%d вже є тут", "%d вже є тут" },
+    ["%d too long"] = { "%d задовгий", "%d задовгі", "%d задовгих" },
+    ["%s > This character's"] = "%s > «Цього персонажа»",
+    ["These are the sets of another class (%s): its specializations aren't yours, so all the macros go into "
+        .. "\"This character's\"."] =
+        "Це набори іншого класу (%s): його спеціалізації не ваші, тож усі макроси підуть у «Цього персонажа».",
+    ["Turn on \"Macro sets\" first: these macros go into them."] =
+        "Спершу ввімкніть «Набори макросів»: ці макроси підуть саме туди.",
+    ["They come in behind the scenes: take in those you need."] =
+        "Вони прийдуть за лаштунки: візьміть у гру ті, що потрібні.",
+    ["turn on \"Macro sets\" first: the macros go into them"] =
+        "спершу ввімкніть «Набори макросів»: макроси підуть саме туди",
+    ["imported %d macros into the sets, behind the scenes: take in those you need"] =
+        "імпортовано в набори, за лаштунки, макросів: %d. Візьміть у гру ті, що потрібні",
     ["%d macros in the text:"] = { "У тексті %d макрос:", "У тексті %d макроси:", "У тексті %d макросів:" },
     ["This is neither a MacroSense code nor a macro. Each line of a macro starts with / or #."] =
         "Це ні код MacroSense, ні макрос. Кожен рядок макроса починається з / або #.",
@@ -1552,10 +1612,10 @@ ns.locales.uk = {
     ["From Spellbook"] = "З книги заклинань",
     ["Macros from the Spellbook"] = "Макроси з книги заклинань",
     ["Make macros for the spells in your spellbook, many at once. Pick the spells, where they go and what Shift, Ctrl "
-        .. "or Alt do. Spells that have a macro already are left out, and next time only the spells you learned since "
-        .. "are offered."] = "Макроси для заклинань із вашої книги, багато за раз. Оберіть заклинання, у кого вони "
-        .. "летять і що роблять Shift, Ctrl чи Alt. Заклинання, які вже мають макрос, пропускаються, а наступного разу "
-        .. "запропоновано буде лише те, що ви вивчили відтоді.",
+        .. "or Alt do. Spells that have a macro already are left out. Next time, the spells you learned since and those "
+        .. "whose macro you deleted are offered."] = "Макроси для заклинань із вашої книги, багато за раз. Оберіть заклинання, у кого вони "
+        .. "летять і що роблять Shift, Ctrl чи Alt. Заклинання, які вже мають макрос, пропускаються. Наступного разу "
+        .. "буде запропоновано те, що ви вивчили відтоді, і заклинання, чиї макроси ви видалили.",
     ["Check the spells to make macros for. A macro names the spell with no rank, so it always casts the highest rank "
         .. "you know. Point at a spell to see its macro."] = "Позначте заклинання, для яких зробити макроси. Макрос "
         .. "називає заклинання без рангу, тож завжди кастує найвищий ранг, який ви знаєте. Наведіть мишу на "
@@ -1630,4 +1690,350 @@ ns.locales.uk = {
         "Заклинання, які вже кастує якийсь макрос, стоять без галочки. Наступного разу галочки стоятимуть лише на "
         .. "тих, що ви вивчили відтоді.",
     ["shortened by 100%%"] = "скорочено на 100%%",
+    ["macro sets %s"] = "набори макросів: %s",
+    ["\"%s\" is in this layer now: %s"] = "«%s» тепер у шарі: %s",
+    ["no macro \"%s\" in this character's slots (macro sets on?)"] =
+        "у слотах цього персонажа немає макросу «%s» (набори макросів увімкнено?)",
+    ["%d macros wait behind the scenes: there is no free slot for them. Pick which to take in under "
+        .. "\"Macro sets\""] = "макросів чекають за лаштунками: %d — для них немає вільних слотів. Які взяти в гру, "
+        .. "оберіть у «Наборах макросів»",
+    ["something went wrong, so MacroSense undid this change: your macros and sets are as they were. "
+        .. "Please report the error"] = "щось пішло не так, тож MacroSense скасував цю зміну: ваші макроси й "
+        .. "набори такі, як були. Будь ласка, повідомте про помилку",
+    ["Class macros"] = "Класові",
+    ["This character's"] = "Цього персонажа",
+    ["This specialization's"] = "Цієї спеціалізації",
+    -- Macro sets
+    ["Macro sets"] = "Набори макросів",
+    ["More macros than 30 slots: each specialization gets macros of its own, and they come into the game with it, "
+        .. "onto their buttons. Class macros are shared by all your characters of one class."] =
+        "Більше макросів, ніж 30 слотів: у кожної спеціалізації свої макроси, і вони з'являються в грі разом із нею, "
+        .. "на своїх кнопках. Класові макроси спільні для всіх ваших персонажів одного класу.",
+    ["A character has only 30 macro slots. Macro sets make room: each specialization gets macros of its own. "
+        .. "Choose a specialization, and its macros come into the game, onto their buttons, while the others' wait "
+        .. "behind the scenes.\n\nClass macros are the same on all your characters of one class: change one, and "
+        .. "the others get it too. This character's macros stay in every specialization.\n\nOnce turned on, all "
+        .. "your character macros go into \"This character's\". Move them to a specialization or to the class in the "
+        .. "list of macros: drag one there (hold Ctrl to copy it), or use \"...\" by its name. Or let \"Sort by "
+        .. "spells\" do it. A backup of your macros is made first.\n\nSets made on another character of yours come over "
+        .. "with \"Share\" > \"Import a code or text...\"."] =
+        "У персонажа лише 30 слотів для макросів. Набори дають більше місця: у кожної спеціалізації свої макроси. "
+        .. "Оберете спеціалізацію — її макроси з'являться в грі, на своїх кнопках, а макроси інших чекатимуть за "
+        .. "лаштунками.\n\nКласові макроси однакові на всіх ваших персонажах одного класу: зміните один — інші "
+        .. "отримають його теж. Макроси цього персонажа лишаються в кожній спеціалізації.\n\nЩойно ви ввімкнете "
+        .. "набори, усі макроси персонажа потраплять у набір «Цього персонажа». Розкладіть їх у списку макросів по "
+        .. "спеціалізаціях чи до класових: перетягніть макрос мишею (щоб скопіювати, тримайте Ctrl) або "
+        .. "скористайтеся «...» біля його назви. Або доручіть це кнопці «Розкласти за заклинаннями». Спершу аддон "
+        .. "зробить резервну копію ваших макросів.\n\nНабори, зроблені на іншому вашому персонажі, переносяться через "
+        .. "«Обмін» > «Імпортувати код чи текст...».",
+    ["Turn on macro sets"] = "Увімкнути набори макросів",
+    ["MacroSense learns the spells of each specialization while you play it. Not yet: %s."] =
+        "MacroSense дізнається заклинання кожної спеціалізації, поки ви нею граєте. Ще не знає: %s.",
+    ["The same on all your characters of this class: what you change here reaches the others when they log in."] =
+        "Однакові на всіх ваших персонажах цього класу: те, що ви тут зміните, інші отримають, щойно ви ними зайдете.",
+    ["Behind the scenes"] = "За лаштунками",
+    ["In the game"] = "У грі",
+    ["Take in"] = "Взяти в гру",
+    ["Put away"] = "За лаштунки",
+    ["Keep behind the scenes"] = "Лишати за лаштунками",
+    ["Come in with its specialization"] = "З'являтися разом зі спеціалізацією",
+    ["Move to: %s"] = "Перенести в: %s",
+    ["Copy to: %s"] = "Копіювати в: %s",
+    ["Remove"] = "Прибрати",
+    ["These take the character's macro slots: %d of %d."] = "Вони займають слоти макросів персонажа: %d з %d.",
+    ["This specialization is not chosen now: its macros come into the game when you choose it."] =
+        "Ця спеціалізація зараз не вибрана: її макроси вийдуть у гру, коли ви її виберете.",
+    ["Character  %d/%d  +%d"] = "Персонаж  %d/%d  +%d",
+    ["Kept by MacroSense, on no slot. Change any of them here. They come into the game with their specialization, "
+        .. "with \"Take in\" in \"...\", or dragged into \"In the game\"."] =
+        "Їх зберігає MacroSense, слотів вони не займають. Будь-який із них можна змінити тут. У гру вони виходять "
+        .. "разом зі своєю спеціалізацією, через «Взяти в гру» в «...» або якщо перетягнути їх у «У грі».",
+    ["The macros of the specialization chosen now."] = "Макроси спеціалізації, вибраної зараз.",
+    ["Behind the scenes: not in the game now, and on no slot."] = "За лаштунками: зараз не в грі й не займає слота.",
+    ["Works in every specialization: it could go to \"Class macros\""] =
+        "Працює в усіх спеціалізаціях: його можна перенести в «Класові»",
+    ["It can sort once it knows the spells of every specialization: choose each of them at least once."] =
+        "Розкласти вийде, коли MacroSense знатиме заклинання всіх спеціалізацій: увімкніть кожну хоча б раз.",
+    ["Sort by spells"] = "Розкласти за заклинаннями",
+    ["MacroSense looks at the spells each macro casts, and offers to move it: one that works in one specialization "
+        .. "only, into that one's set; a specialization's that works in all, to this character's. You see the moves "
+        .. "before they are made."] =
+        "MacroSense дивиться, які заклинання кастує кожен макрос, і пропонує його перенести: той, що працює лише в "
+        .. "одній спеціалізації, — у її набір; макрос спеціалізації, що працює в усіх, — до макросів цього "
+        .. "персонажа. Перед перенесенням ви побачите всі зміни.",
+    ["Move these macros to where their spells are?\n\n%s"] =
+        "Перенести ці макроси туди, де є їхні заклинання?\n\n%s",
+    ["and %d more"] = "і ще %d",
+    ["Not in this specialization: %s"] = "Немає в цій спеціалізації: %s",
+    ["Works only in %s"] = "Працює лише в %s",
+    ["the class macro \"%s\" waits off the slots: a macro of yours has this name"] =
+        "класовий макрос «%s» за лаштунками: у вас уже є свій макрос із такою назвою",
+    ["moved: %d"] = "перенесено: %d",
+    ["nothing to move: each macro is where its spells are"] =
+        "переносити нічого: кожен макрос там, де є його заклинання",
+    -- The guide: macro sets
+    ["A character has only 30 macro slots. Macro sets let MacroSense keep more macros than that: each "
+        .. "specialization gets macros of its own, and only the ones you need now are in the game. Turn them on with "
+        .. "\"Macro sets\". They are off until you do."] =
+        "У персонажа лише 30 слотів для макросів. З наборами MacroSense зберігає більше: у кожної спеціалізації "
+        .. "свої макроси, а в грі лише ті, що потрібні зараз. Увімкніть їх галочкою «Набори макросів». Доки ви "
+        .. "цього не зробите, набори вимкнені.",
+    ["Three kinds of sets"] = "Три види наборів",
+    ["The same on all your characters of one class. Change one, and your other characters of that class get the "
+        .. "change too. They are in the game in every specialization."] =
+        "Однакові на всіх ваших персонажах одного класу. Зміните один — зміна дійде й до інших персонажів цього "
+        .. "класу. Вони в грі в кожній спеціалізації.",
+    ["This character's own. They are in the game in every specialization. When the sets are first turned on, all "
+        .. "your character macros are here."] =
+        "Макроси лише цього персонажа. Вони в грі в кожній спеціалізації. Коли ви вперше вмикаєте набори, сюди "
+        .. "потрапляють усі макроси персонажа.",
+    ["A specialization"] = "Спеціалізація",
+    ["Its macros are in the game only while it is chosen. Choose another, and they wait behind the scenes, while "
+        .. "that one's come into the game, onto the same buttons they had on your action bars."] =
+        "Її макроси в грі, лише поки її вибрано. Оберете іншу — вони підуть за лаштунки, а в гру вийдуть макроси "
+        .. "тієї, на ті самі кнопки панелей дій, де вони були.",
+    ["In the game and behind the scenes"] = "У грі й за лаштунками",
+    ["With the sets on, the list of character macros has two parts. \"In the game\" holds the macros in your slots "
+        .. "right now: they are on your action bars and work. \"Behind the scenes\" holds the macros MacroSense keeps "
+        .. "for you: they take no slot. You can open, change, make and delete them there like any other macro."] =
+        "Коли набори ввімкнені, список макросів персонажа має дві частини. «У грі» — макроси, що зараз займають "
+        .. "слоти: вони на ваших панелях дій і працюють. «За лаштунками» — макроси, які зберігає для вас "
+        .. "MacroSense: слотів вони не займають. Їх так само можна відкривати, змінювати, створювати й видаляти.",
+    ["Class macros are marked yellow, the specialization chosen now green, and all that is behind the scenes red. "
+        .. "The groups open and close with a click."] =
+        "Класові макроси позначені жовтим, вибрана зараз спеціалізація — зеленим, а все, що за лаштунками, — "
+        .. "червоним. Групи розгортаються й згортаються клацанням.",
+    ["What you can do with a macro"] = "Що можна зробити з макросом",
+    ["Press \"...\" by a macro's name, or right-click it:"] =
+        "Натисніть «...» біля назви макроса або клацніть по ньому правою кнопкою:",
+    ["The macro leaves the game and waits behind the scenes, in its own set. Its slot is free for another."] =
+        "Макрос виходить із гри й чекає за лаштунками у своєму наборі. Його слот звільняється для іншого.",
+    ["The macro comes back into the game. It needs a free slot, and no other macro of the same name in the game."] =
+        "Макрос повертається в гру. Для цього потрібен вільний слот, і в грі не має бути іншого макроса з такою "
+        .. "самою назвою.",
+    ["For a macro of a specialization not chosen now: it stays behind the scenes even when you choose that "
+        .. "specialization, and its name is grey in the list. \"Come in with its specialization\" undoes it."] =
+        "Для макроса спеціалізації, яку зараз не вибрано: він лишається за лаштунками, навіть коли ви її оберете, "
+        .. "а його назва в списку сіра. «З'являтися разом зі спеціалізацією» це скасовує.",
+    ["Kept behind the scenes: it doesn't come into the game when you choose this specialization."] =
+        "Лишається за лаштунками: не з'явиться в грі, коли ви оберете цю спеціалізацію.",
+    ["Move to"] = "Перенести в",
+    ["The macro goes to another set and leaves this one. If it was in the game and the new set is in the game too, "
+        .. "it stays where it is, on its buttons. Moved to a specialization not chosen now, it leaves the game until "
+        .. "you choose it. If the set already has the very same macro (the same text), the two become one."] =
+        "Макрос переходить в інший набір і зникає з цього. Якщо він був у грі й новий набір теж у грі, макрос "
+        .. "лишається на місці, на своїх кнопках. Перенесений у спеціалізацію, яку зараз не вибрано, він виходить "
+        .. "із гри, доки ви її не оберете. Якщо в наборі вже є точнісінько такий самий макрос (з тим самим "
+        .. "текстом), вони стають одним.",
+    ["Copy to"] = "Копіювати в",
+    ["A copy goes to another set, and the macro itself stays as it is. From then on they are two separate macros: "
+        .. "change or rename one, and the other stays as it was."] =
+        "Копія йде в інший набір, а сам макрос лишається як був. Відтепер це два окремі макроси: зміните чи "
+        .. "перейменуєте один — інший не зміниться.",
+    ["The macro leaves its set and goes back to this character's. If this character's already has the very same "
+        .. "macro, the two become one. If it has a different macro of the same name, nothing happens: rename one of "
+        .. "them first."] =
+        "Макрос іде зі свого набору й повертається до макросів цього персонажа. Якщо там уже є точнісінько такий "
+        .. "самий макрос, вони стають одним. Якщо там є інший макрос із такою самою назвою, нічого не станеться: "
+        .. "спершу перейменуйте один із них.",
+    ["Dragging"] = "Перетягування",
+    ["Drag"] = "Перетягнути",
+    ["Drag a macro onto any part of the list to move it there. Onto \"Behind the scenes\", and it waits there. Onto "
+        .. "\"In the game\", and it becomes this character's and comes into the game. Onto a group, and it goes to "
+        .. "that set, in the game or behind the scenes, as that part of the list is."] =
+        "Перетягніть макрос на будь-яку частину списку, і він переміститься туди. На «За лаштунками» — чекатиме "
+        .. "там. На «У грі» — стане макросом цього персонажа й вийде в гру. На групу — перейде в її набір, у гру "
+        .. "чи за лаштунки, залежно від того, в якій частині списку ця група.",
+    ["Ctrl"] = "Ctrl",
+    ["Hold Ctrl when you start dragging or when you let go, and the macro is copied instead of moved."] =
+        "Затисніть Ctrl, коли починаєте тягнути або коли відпускаєте, і макрос скопіюється, а не переміститься.",
+    ["Action bars"] = "Панелі дій",
+    ["A macro in the game can still be dragged onto an action bar."] =
+        "Макрос, що в грі, як і раніше можна перетягнути на панель дій.",
+    ["Names"] = "Назви",
+    ["One in the game"] = "Одна в грі",
+    ["The game tells macros apart by their names, so only one macro of a name can be in the game at a time. A macro "
+        .. "whose name is taken waits behind the scenes, and MacroSense says so in the chat."] =
+        "Гра розрізняє макроси за назвами, тож у грі водночас може бути лише один макрос із певною назвою. Макрос, "
+        .. "чию назву вже зайнято, чекає за лаштунками, і MacroSense пише про це в чаті.",
+    ["In different sets"] = "У різних наборах",
+    ["Each set may have a macro of the same name. Two specializations' come in each with its own specialization, "
+        .. "onto its own buttons. If a class macro or one of this character's of that name is in the game, the "
+        .. "specialization's waits."] =
+        "У кожному наборі може бути макрос з однаковою назвою. Макроси двох спеціалізацій виходять у гру кожен "
+        .. "зі своєю спеціалізацією, на свої кнопки. Якщо в грі є класовий макрос або макрос цього персонажа з "
+        .. "такою назвою, макрос спеціалізації чекає.",
+    ["Renaming"] = "Перейменування",
+    ["Renaming or changing a macro changes only that one: its copies in other sets stay as they are."] =
+        "Перейменування чи зміна макроса стосується лише його: копії в інших наборах лишаються як були.",
+    ["Good to know"] = "Варто знати",
+    ["No free slot"] = "Немає вільного слота",
+    ["A macro that should come into the game but finds no free slot waits behind the scenes. Put another one away "
+        .. "to make room. A new macro with no free slot (from \"New\", the wizard, a copy, the trash or \"From "
+        .. "Spellbook\") is made behind the scenes, in this character's; MacroSense asks first, until you tell it not "
+        .. "to. A general macro moved into the Character tab with no free slot goes behind the scenes the same way, "
+        .. "off its buttons."] =
+        "Макрос, який мав би вийти в гру, але не знайшов вільного слота, чекає за лаштунками. Заберіть за "
+        .. "лаштунки інший, щоб звільнити місце. Новий макрос без вільного слота («Новий», майстер, копія, "
+        .. "кошик чи «З книги заклинань») створюється за лаштунками, серед макросів цього персонажа; спершу "
+        .. "MacroSense перепитає, доки ви не попросите більше не нагадувати. Загальний макрос, перенесений у "
+        .. "вкладку «Персонаж», коли там немає вільного слота, так само йде за лаштунки й зникає зі своїх кнопок.",
+    ["MacroSense looks at the spells each macro casts and offers to move it: one that works in one specialization "
+        .. "only, to that one; a specialization's that works in all, to this character's. You see every move first. "
+        .. "It works once MacroSense knows the spells of every specialization: choose each of them at least once."] =
+        "MacroSense дивиться, які заклинання кастує кожен макрос, і пропонує його перенести: той, що працює лише "
+        .. "в одній спеціалізації, — у неї; макрос спеціалізації, що працює в усіх, — до макросів цього "
+        .. "персонажа. Спершу ви побачите всі зміни. Це запрацює, коли MacroSense знатиме заклинання всіх "
+        .. "спеціалізацій: увімкніть кожну хоча б раз.",
+    ["Deleted"] = "Видалені",
+    ["A macro deleted behind the scenes goes to the trash, like any other."] =
+        "Макрос, видалений за лаштунками, потрапляє в кошик, як і будь-який інший.",
+    ["Turned off"] = "Вимкнення",
+    ["A backup"] = "Резервна копія",
+    ["Each time you turn the sets on, MacroSense first makes a backup of your macros."] =
+        "Щоразу, коли ви вмикаєте набори, MacroSense спершу робить резервну копію ваших макросів.",
+    ["How it works"] = "Як це працює",
+    -- Macro sets: what each change says, with the rule it met
+    ["\"%s\" waits behind the scenes: there is no free slot, a character has only 30. Put another macro behind the "
+        .. "scenes, then take this one in."] =
+        "«%s» чекає за лаштунками: вільного слота немає, у персонажа їх лише 30. Заберіть за лаштунки інший "
+        .. "макрос, а тоді візьміть цей у гру.",
+    ["\"%s\" waits behind the scenes: a macro of this name is in the game already, and the game tells macros apart "
+        .. "by name. Rename one of them, or put the other one behind the scenes."] =
+        "«%s» чекає за лаштунками: у грі вже є макрос із такою назвою, а гра розрізняє макроси за назвами. "
+        .. "Перейменуйте один із них або заберіть інший за лаштунки.",
+    ["no free slot for \"%s\": a character has only 30. Put another macro behind the scenes first."] =
+        "для «%s» немає вільного слота: у персонажа їх лише 30. Спершу заберіть за лаштунки інший макрос.",
+    ["\"%s\" can't come into the game: a macro of this name is there already, and only one of a name can be. Put "
+        .. "that one behind the scenes, or rename one of them."] =
+        "«%s» не може вийти в гру: там уже є макрос із такою назвою, а з однією назвою може бути лише один. "
+        .. "Заберіть той за лаштунки або перейменуйте один із них.",
+    ["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Rename one of them first."] =
+        "у «%s» уже є макрос «%s»: у наборі може бути лише один макрос із певною назвою. Спершу перейменуйте "
+        .. "один із них.",
+    ["\"%s\" can't go back to \"This character's\": it has another macro of this name. If they had the same text, "
+        .. "the two would be one. Rename one of them, or make them the same."] =
+        "«%s» не може повернутися до «Цього персонажа»: там є інший макрос із такою назвою. Якби в них був "
+        .. "однаковий текст, вони стали б одним макросом. Перейменуйте один із них або зробіть їх однаковими.",
+    ["a copy goes into another set: drag \"%s\" with Ctrl onto another group."] =
+        "копія йде в інший набір: перетягніть «%s» із затиснутою Ctrl на іншу групу.",
+    ["\"%s\" is copied to \"%s\": now they are two macros of their own. Change or rename one, and the other stays "
+        .. "as it is."] =
+        "«%s» скопійовано в «%s»: тепер це два окремі макроси. Зміните чи перейменуєте один — інший лишиться "
+        .. "як є.",
+    ["\"%s\" will come into the game with its specialization: it isn't the one chosen now."] =
+        "«%s» вийде в гру разом зі своєю спеціалізацією: зараз вибрано іншу.",
+    ["\"%s\" stays behind the scenes, also when you choose its specialization. \"Come in with its specialization\" "
+        .. "undoes it."] =
+        "«%s» лишиться за лаштунками, навіть коли ви оберете його спеціалізацію. «З'являтися разом зі "
+        .. "спеціалізацією» це скасовує.",
+    ["\"%s\" is in \"%s\" now: it comes into the game when you choose that specialization."] =
+        "«%s» тепер у «%s»: у гру він вийде, коли ви оберете цю спеціалізацію.",
+    ["\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. Choose another name."] =
+        "у «%s» уже є макрос «%s»: у наборі може бути лише один макрос із певною назвою. Оберіть іншу назву.",
+    -- Macro sets: a macro dragged over a group
+    ["Copy to \"%s\""] = "Копіювати в «%s»",
+    ["Move to \"%s\""] = "Перенести в «%s»",
+    ["Can't copy to \"%s\""] = "Не можна скопіювати в «%s»",
+    ["Can't move to \"%s\""] = "Не можна перенести в «%s»",
+    ["A macro of its own goes there; this one stays as it is. Let go of Ctrl to move it instead."] =
+        "Туди піде окремий макрос, а цей лишиться як є. Відпустіть Ctrl, щоб перенести, а не копіювати.",
+    ["It leaves its set and goes there. Hold Ctrl to copy it instead."] =
+        "Макрос піде зі свого набору туди. Затисніть Ctrl, щоб скопіювати, а не переносити.",
+    ["\"%s\" in \"%s\" was the very same macro: the two are one now."] =
+        "«%s» у «%s» був точнісінько таким самим макросом: тепер це один макрос.",
+    -- No free slot, macro sets on: made behind the scenes
+    ["\"%s\" is made behind the scenes, in \"This character's\": there is no free slot. Put another macro behind the "
+        .. "scenes, then take this one in."] =
+        "«%s» створено за лаштунками, у «Цього персонажа»: вільного слота немає. Заберіть за лаштунки інший "
+        .. "макрос, а тоді візьміть цей у гру.",
+    ["Don't remind me again"] = "Більше не нагадувати",
+    ["Make it behind the scenes"] = "Створити за лаштунками",
+    ["Move it behind the scenes"] = "Перенести за лаштунки",
+    ["All 30 slots are taken. MacroSense moves the macro behind the scenes, in \"This character's\", where it takes "
+        .. "no slot, and off the action bars. To use it, put another macro behind the scenes and take it in."] =
+        "Усі 30 слотів зайняті. MacroSense перенесе макрос за лаштунки, у «Цього персонажа», де він не займає "
+        .. "слота, і прибере його з панелей дій. Щоб ним скористатися, заберіть за лаштунки інший макрос і візьміть "
+        .. "цей у гру.",
+    ["\"%s\" is moved behind the scenes, in \"This character's\": there is no free slot. Put another macro behind the "
+        .. "scenes, then take this one in."] =
+        "«%s» перенесено за лаштунки, у «Цього персонажа»: вільного слота немає. Заберіть за лаштунки інший "
+        .. "макрос, а тоді візьміть цей у гру.",
+    ["%d of the macros don't fit: all 30 slots are taken. MacroSense keeps them behind the scenes, in \"This "
+        .. "character's\", where they take no slot. To use one, put another macro behind the scenes and take it in."] =
+        "%d макросів не вміщаються: усі 30 слотів зайняті. MacroSense збереже їх за лаштунками, у «Цього "
+        .. "персонажа», де вони не займають слотів. Щоб скористатися одним, заберіть за лаштунки інший макрос і "
+        .. "візьміть цей у гру.",
+    ["All 30 slots are taken. MacroSense keeps the new macro behind the scenes, in \"This character's\", where it "
+        .. "takes no slot. To use it, put another macro behind the scenes and take it in."] =
+        "Усі 30 слотів зайняті. MacroSense збереже новий макрос за лаштунками, у «Цього персонажа», де він не "
+        .. "займає слота. Щоб ним скористатися, заберіть за лаштунки інший макрос і візьміть цей у гру.",
+    ["Macros: %d. Free slots: %d. The rest go behind the scenes."] =
+        "Макросів: %d. Вільних місць: %d. Решта піде за лаштунки.",
+    ["%d macros are made behind the scenes, in \"This character's\": there is no free slot for them."] =
+        "%d макросів створено за лаштунками, у «Цього персонажа»: вільних слотів для них немає.",
+    -- Macro sets turned off: those behind the scenes come into the game
+    ["Turn off macro sets?\n\n%s"] = "Вимкнути набори макросів?\n\n%s",
+    ["Turn off"] = "Вимкнути",
+    ["%d macros behind the scenes come into the game, so you have them all here. When you turn the sets on again, they "
+        .. "go back where they were."] =
+        "Макросів за лаштунками: %d. Вони вийдуть у гру, тож усі будуть під рукою. Коли ви знову ввімкнете набори, "
+        .. "вони повернуться туди, де були.",
+    ["%d don't fit (no free slot, or a macro of the same name is in the game already) and stay kept for later: %s."] =
+        "%d не вміщаються (немає вільного слота або в грі вже є макрос із такою назвою) і лишаться збереженими на "
+        .. "потім: %s.",
+    ["Macro sets are on. Clear \"Macro sets\" to turn them off: the macros behind the scenes come into the game, and "
+        .. "go back when you turn the sets on again."] =
+        "Набори макросів увімкнено. Щоб вимкнути, зніміть галочку «Набори макросів»: макроси за лаштунками вийдуть у "
+        .. "гру, а коли ви знову ввімкнете набори, повернуться назад.",
+    ["Clear \"Macro sets\", and the macros behind the scenes come into the game, as many as there are free slots, so "
+        .. "you have them all. If not all fit, you choose which come in. The sets are kept: turn them on again, and "
+        .. "those macros go back where they were, with what you changed in them meanwhile."] =
+        "Зніміть галочку «Набори макросів», і макроси за лаштунками вийдуть у гру, скільки вміститься у вільні "
+        .. "слоти, тож усі будуть під рукою. Якщо всі не вміщаються, ви вибираєте, які саме. Набори збережуться: "
+        .. "увімкнете їх знову — і ці макроси повернуться туди, де були, разом зі змінами, які ви тим часом у них "
+        .. "зробили.",
+    ["The other tab"] = "Інша вкладка",
+    ["Any macro can be copied or moved from here to the other tab: a character macro to General, a general one to "
+        .. "Character."] =
+        "Звідси будь-який макрос можна скопіювати або перенести в іншу вкладку: макрос персонажа в «Загальні», "
+        .. "загальний — у «Персонаж».",
+    ["If something breaks"] = "Якщо щось зламалося",
+    ["If a change breaks halfway, MacroSense undoes all of it: your macros, sets and buttons are as they were. It "
+        .. "says so in the chat; please report the error then."] =
+        "Якщо зміна зламається на півдорозі, MacroSense скасує її повністю: макроси, набори й кнопки будуть такі, "
+        .. "як були. Він напише про це в чаті; тоді, будь ласка, повідомте про помилку.",
+    ["Before level 10"] = "До 10 рівня",
+    ["A character has no specialization yet: its macros are kept as \"No specialization yet\"."] =
+        "У персонажа ще немає спеціалізації: його макроси зберігаються як «Ще без спеціалізації».",
+    ["Sets on another character"] = "Набори на іншому персонажі",
+    ["Export sets"] = "Експорт наборів",
+    ["\"Share\" > \"Export macro sets...\": check the sets you want and copy the code. \"Select all\" and \"Clear "
+        .. "all\" check or clear them at once."] =
+        "«Обмін» > «Експортувати набори макросів...»: позначте потрібні набори й скопіюйте код. «Вибрати все» і "
+        .. "«Зняти все» позначають або знімають усі одразу.",
+    ["Import sets"] = "Імпорт наборів",
+    ["\"Share\" > \"Import a code or text...\": paste a code of sets, or choose another character of yours. Each "
+        .. "set goes into its own; another class's sets go into this character's, and MacroSense warns you first. A "
+        .. "name the set has already gets a number, the very same macro is skipped. They all come in behind the "
+        .. "scenes: take in those you need."] =
+        "«Обмін» > «Імпортувати код чи текст...»: вставте код наборів або виберіть іншого свого персонажа. Кожен "
+        .. "набір іде у свій; набори іншого класу йдуть у «Цього персонажа», і MacroSense спершу про це попередить. "
+        .. "Якщо в наборі вже є така назва, до неї додасться номер, а точнісінько такий самий макрос пропуститься. "
+        .. "Усі вони приходять за лаштунки: візьміть у гру ті, що потрібні.",
+    ["Your other characters"] = "Інші ваші персонажі",
+    ["In the Character tab, their macros behind the scenes are listed too, with the name of their set."] =
+        "У вкладці «Персонаж» видно і їхні макроси за лаштунками, з назвою набору.",
+    ["Turn off macro sets"] = "Вимкнення наборів макросів",
+    ["Not all the macros behind the scenes fit into the game: there are %d free slots. Choose which come in. The rest "
+        .. "stay kept for later, and all go back where they were when you turn the sets on again."] =
+        "Не всі макроси за лаштунками вміщаються в гру: вільних слотів %d. Оберіть, які вийдуть у гру. Решта "
+        .. "лишиться збереженою на потім, а коли ви знову ввімкнете набори, усі повернуться туди, де були.",
+    ["Chosen: %d of %d free slots"] = "Вибрано: %d із %d вільних слотів",
+    ["%s  (%s; a macro of this name is in the game)"] = "%s  (%s; у грі вже є макрос із такою назвою)",
+    ["Offer all again"] = "Запропонувати все знову",
+    ["Forgets which spells you left out before and which macros you deleted: every spell with no macro is offered, "
+        .. "checked, as the first time."] =
+        "Забуває, які заклинання ви колись пропустили і які макроси видалили: кожне заклинання без макроса "
+        .. "пропонується з галочкою, як уперше.",
 }

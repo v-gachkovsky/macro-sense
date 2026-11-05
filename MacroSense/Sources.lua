@@ -151,7 +151,7 @@ function ns.sources.commands()
 end
 
 -- Commands every client has, but the game only carries out from an expansion on: the pet's Move To came with
--- Cataclysm (3). LE_EXPANSION_LEVEL_CURRENT is the client's: 0 Classic Era, 1 TBC, 4 Mists of Pandaria.
+-- Cataclysm (3); ns.CommandsExpansion tells which the client's game is.
 local LATER = { PET_MOVE_TO = 3 }
 
 -- The expansion a command (any of its names) came with, or nil.
@@ -169,7 +169,8 @@ function ns.HasExpansion(since)
 end
 
 function ns.Highlight.checkCommand(name)
-    if ns.HasExpansion(ns.CommandSince(name)) then return nil end
+    local since, expansion = ns.CommandSince(name), ns.CommandsExpansion()
+    if not since or not expansion or expansion >= since then return nil end
     return string.format(L["\"/%s\" does nothing in this version of the game (it came with a later one)"], name),
         L["not in this game version"]
 end
@@ -338,21 +339,49 @@ local function TooltipLines(id)
     return out
 end
 
--- Whether a spell is channeled, by its ID: read once from its tooltip, then kept in MacroSenseDB (a spell stays
--- channeled or not for every character), until the game's next patch. Nil while the tooltip can't be read.
-local channeledMemo = {}
-local function Channeled(id)
+-- What a spell's tooltip says, by its ID: read once, then kept in MacroSenseDB under `field` (a spell says the same
+-- for every character), until the game's next patch. Nil while the tooltip can't be read.
+local tipMemo = {}
+local function FromTooltip(field, id, says)
     local build = GetBuildInfo and select(2, GetBuildInfo()) or ""
     local db = ns.db
-    if db and db.channeledBuild ~= build then db.channeled, db.channeledBuild = {}, build end
-    local known = db and db.channeled or channeledMemo
+    if db and db[field .. "Build"] ~= build then db[field], db[field .. "Build"] = {}, build end
+    tipMemo[field] = tipMemo[field] or {}
+    local known = db and db[field] or tipMemo[field]
     if known[id] ~= nil then return known[id] end
     local ok, lines = pcall(TooltipLines, id)
     if not ok or #lines == 0 then return nil end
-    local channeled = false
-    for _, text in ipairs(lines) do channeled = channeled or text == SPELL_CAST_CHANNELED end
-    known[id] = channeled
-    return channeled
+    local yes = false
+    for _, text in ipairs(lines) do yes = yes or says(text) end
+    known[id] = yes
+    return yes
+end
+
+-- Whether a spell is channeled: its tooltip says "Channeled" (SPELL_CAST_CHANNELED, in the client's language).
+local function Channeled(id)
+    return FromTooltip("channeled", id, function(text) return text == SPELL_CAST_CHANNELED end)
+end
+
+-- Whether a spell goes to someone you choose: its tooltip says a range ("40 yd range", "Melee Range", "Unlimited
+-- range", in the client's language). Howl of Terror, Demonic Circle, Ritual of Summoning, Eye of Kilrogg say none,
+-- though the game calls some of them harmful and gives them a range. Nil when the tooltip can't be read.
+local rangeLine
+local function SaysRange(text)
+    if not rangeLine then
+        rangeLine = { MELEE_RANGE, SPELL_RANGE_UNLIMITED }
+        for _, format in ipairs({ SPELL_RANGE, SPELL_RANGE_DUAL }) do
+            local pattern = format:gsub("%%%d?%$?s", "\1"):gsub("[%%%(%)%.%+%-%*%?%[%]%^%$]", "%%%0")
+            rangeLine[#rangeLine + 1] = "^" .. pattern:gsub("\1", ".+") .. "$"
+        end
+    end
+    for i, line in ipairs(rangeLine) do
+        if i <= 2 and text == line or i > 2 and text:find(line) then return true end
+    end
+    return false
+end
+function ns.sources.targeted(id)
+    if not id or not (SPELL_RANGE or MELEE_RANGE) then return nil end
+    return FromTooltip("targeted", id, SaysRange)
 end
 
 -- Your channeled spells (Drain Life, Mind Flay...), for [channeling:] and [nochanneling:]: their tooltip says

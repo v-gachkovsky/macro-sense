@@ -1,7 +1,8 @@
 -- Macros from the spellbook, the window: the spells on the left, each checked to get a macro, of its own or joined
 -- to another one's on a key held, a lower rank on a key too; where the spells go, what else the macros do and the
--- pet's macro on the right; the count against the free slots and Create at the bottom. The macros go into the
--- character's tab and, if asked, onto the action bars in place of their spells. The logic is Spellbook.lua.
+-- pet's macro on the right; the count against the free slots and Create at the bottom; Offer all again up in the
+-- title bar. The macros go into the character's tab and, if asked, onto the action bars in place of their spells.
+-- The logic is Spellbook.lua.
 local _, ns = ...
 local L = ns.L
 
@@ -191,13 +192,26 @@ function Refresh()
     end
     for i = #rows + 1, #rowFrames do rowFrames[i]:Hide() end
     list.child:SetHeight(math.max(1, #rows * ROW_H))
-    local over = #macros > kit.free
-    countText:SetText(string.format(L["Macros: %d. Free slots: %d."], #macros, kit.free))
+    -- With macro sets on, those with no free slot go behind the scenes.
+    local sets = ns.Sets.Mine().enabled
+    local over = #macros > kit.free and not sets
+    countText:SetText(sets and #macros > kit.free
+        and string.format(L["Macros: %d. Free slots: %d. The rest go behind the scenes."], #macros, kit.free)
+        or string.format(L["Macros: %d. Free slots: %d."], #macros, kit.free))
     countText:SetTextColor(over and 1 or 0.8, over and 0.3 or 0.8, over and 0.3 or 0.8)
     local _, problem = next(problems)
     problemText:SetText(over and L["Not enough room: leave some spells out, or join them to others on a key."]
         or problem or "")
     createBtn.label:SetText(string.format(L["Create macros (%d)"], #macros))
+    local remembered = false
+    for _, row in ipairs(rows) do
+        if row.state == "skipped" or row.state == "deleted" then remembered = true end
+    end
+    controls.again:SetEnabled(remembered)
+    local every = #rows > 0
+    for _, row in ipairs(rows) do every = every and choices.picked[row.spell.name] ~= nil end
+    controls.all.label:SetText(every and L["Clear all"] or L["Select all"])
+    controls.all:SetEnabled(#rows > 0)
     createBtn:SetEnabled(#macros > 0 and not over and problem == nil)
     for _, control in pairs(controls) do
         if control.Refresh and control ~= createBtn then control:Refresh() end
@@ -233,10 +247,33 @@ local STEP, RETRY = 0.3, 1
 function SpellbookWindow.Create()
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     Refresh()
-    if #macros == 0 or #macros > kit.free or next(problems) then return end
-    local queue, offered, book, bars = macros, rows, journal, choices.bars
+    local sets = ns.Sets.Mine().enabled
+    if #macros == 0 or (#macros > kit.free and not sets) or next(problems) then return end
+    -- With macro sets on, those with no free slot: behind the scenes, in this character's (asked first).
+    local queue, behind = {}, {}
+    for i, m in ipairs(macros) do
+        if i <= kit.free then queue[#queue + 1] = m else behind[#behind + 1] = m end
+    end
+    if #behind > 0 and not SpellbookWindow.behindAsked then
+        return ns.SetsWindow.AskBehind(#behind, function()
+            SpellbookWindow.behindAsked = true
+            SpellbookWindow.Create()
+            SpellbookWindow.behindAsked = nil
+        end)
+    end
+    local offered, book, bars = rows, journal, choices.bars
     local made, names, failed = {}, {}, {}
     SpellbookWindow.Close()
+    for _, m in ipairs(behind) do
+        local name = ns.Window.MakeBehind(m.name, NEW_ICON, m.body, true)
+        for _, spell in ipairs(m.spells) do made[spell] = { name = name, body = m.body } end
+    end
+    if #behind > 0 then
+        ns.Print("%d macros are made behind the scenes, in \"This character's\": there is no free slot for them.",
+            #behind)
+        if ns.Window.RefreshList then ns.Window.RefreshList() end
+    end
+    if #queue == 0 then return ns.Spellbook.Remember(book, offered, made, failed) end
     ns.Print("making %d macros...", #queue)
 
     local function finish()
@@ -347,6 +384,30 @@ local function Build()
     titleText:SetText(L["Macros from the Spellbook"])
     local close = ns.Button(title, "x", 24, function() frame:Hide() end)
     close:SetPoint("RIGHT", -6, 0)
+    -- What it remembers (left out, made before) forgotten: every spell with no macro offered as the first time.
+    local again = ns.Button(title, L["Offer all again"], 170, function()
+        journal.seen, journal.made = {}, {}
+        SpellbookWindow.Open()
+    end)
+    again:SetPoint("RIGHT", close, "LEFT", -8, 0)
+    again:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L["Offer all again"], 1, 1, 1)
+        GameTooltip:AddLine(L["Forgets which spells you left out before and which macros you deleted: every spell "
+            .. "with no macro is offered, checked, as the first time."], 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    again:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    controls.again = again
+    -- Every spell checked, or, all checked, none.
+    local all = ns.Button(title, L["Select all"], 120, function()
+        local every = true
+        for _, row in ipairs(rows) do every = every and choices.picked[row.spell.name] ~= nil end
+        for _, row in ipairs(rows) do choices.picked[row.spell.name] = not every or nil end
+        Refresh()
+    end)
+    all:SetPoint("RIGHT", again, "LEFT", -8, 0)
+    controls.all = all
 
     local intro = ns.Text(frame, 12, "dim")
     intro:SetPoint("TOPLEFT", PAD, -34 - PAD)
@@ -452,7 +513,7 @@ local function Build()
     local function actions(none)
         return function()
             local items = none and {} or { { key = "", name = L["Nothing"] } }
-            for _, a in ipairs(ns.Wizard.PetActions(LE_EXPANSION_LEVEL_CURRENT)) do
+            for _, a in ipairs(ns.Wizard.PetActions(ns.CommandsExpansion())) do
                 items[#items + 1] = { key = a.key, name = L[a.name] }
             end
             return items
@@ -482,6 +543,7 @@ local function Build()
     controls.create = createBtn
     countText = ns.Text(side, 12)
     countText:SetPoint("BOTTOMLEFT", 0, 34)
+    controls.count = countText
     problemText = ns.Text(side, 11)
     problemText:SetPoint("BOTTOMLEFT", 0, 50)
     problemText:SetPoint("RIGHT")
@@ -501,6 +563,7 @@ function SpellbookWindow.Open()
         return order[a] < order[b]
     end)
     choices = ns.Spellbook.Fresh(kit)
+    ns.Window.Ready() -- its colors
     for _, row in ipairs(rows) do
         if row.checked then choices.picked[row.spell.name] = true end
     end
@@ -520,7 +583,7 @@ function SpellbookWindow.Toggle()
 end
 
 -- For the tests: a control by name ("harm", "help", "startattack", "stopcasting", "bars", "pet", "petNone",
--- "petShift", "petMouseover", "create"), the rows, the row frames and the macros planned.
+-- "petShift", "petMouseover", "create", "again", "all"), the rows, the row frames and the macros planned.
 function SpellbookWindow.Control(name) return controls[name] end
 SpellbookWindow.Rows = Rows
 function SpellbookWindow.RowFrame(i) return rowFrames[i] end

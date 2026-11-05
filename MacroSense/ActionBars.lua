@@ -15,6 +15,7 @@ ActionBars.TIP = "Shift + right-click: edit in MacroSense"
 local LIBRARIES = { "LibActionButton-1.0", "LibActionButton-1.0-ElvUI" }
 
 local GetActionText = C_ActionBar and C_ActionBar.GetActionText or GetActionText
+ActionBars.Text = GetActionText
 
 -- The index of the macro on action slot `slot`, or nil. For a macro that shows a spell the game gives the
 -- spell's ID, not the macro's, so the macro is found by its name, which the button shows (of two macros with
@@ -50,7 +51,8 @@ local function OnBarsNow()
 end
 
 -- The specialization the bars are of now: a key and its name. Retail and WoW Forever keep bars for each
--- specialization, the Classic clients for each talent group (dual specialization).
+-- specialization, the Classic clients for each talent group (dual specialization). Before level 10 the game gives
+-- a specialization of its own with no name.
 local function Spec()
     local S = C_SpecializationInfo or {}
     local group = S.GetActiveSpecGroup and S.GetActiveSpecGroup() or 1
@@ -58,8 +60,10 @@ local function Spec()
     local id, name
     if index and index > 0 and S.GetSpecializationInfo then id, name = S.GetSpecializationInfo(index) end
     local key = C_ClassTalents and id and id ~= 0 and ("spec" .. id) or ("group" .. group)
+    if id and id ~= 0 and (name or "") == "" then name = ns.L["No specialization yet"] end
     return key, name or string.format(ns.L["Specialization %d"], group)
 end
+ActionBars.Spec = Spec
 
 -- What is on the bars now, kept for this character's specialization. Bars with nothing at all on them are not
 -- kept: the game may not have shown them yet.
@@ -70,6 +74,7 @@ function ActionBars.Remember()
     local c = ns.Character()
     c.bars = c.bars or {}
     c.bars[key] = { label = label, names = names }
+    if ns.Sets then ns.Sets.RememberBars() end
 end
 
 -- Where macro `name` of tab `scope` is on action bars: the buttons of the bars now, and where else it was when last

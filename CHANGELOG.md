@@ -4,6 +4,56 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [0.13.1] - 2026-11-05
+
+### Fixed
+- WoW Forever: /petmoveto is no longer marked as "not in this game version", and the wizard offers "Move to the
+  cursor" for the pet again. Forever has the world of Classic Era, but its game carries the command out.
+
+## [0.13.0] - 2026-11-05
+
+### Added
+- **Macro sets**: more macros than a character's 30 slots. Tick "Macro sets" in the editor, and each
+  specialization gets macros of its own: choose it, and its macros come into the game, onto the buttons they had,
+  while the others' wait behind the scenes. Class macros are the same on all your characters of one class; this
+  character's stay in every specialization. A macro with the same name in two specializations just changes its
+  text, so its buttons never move. A backup of your macros is made first.
+- With the sets on, the Character tab shows every macro, in the game and behind the scenes, by set: the class's
+  yellow, the specialization now green, the rest red, one kept behind the scenes on purpose grey. Those behind the
+  scenes open, change, are made and deleted like any other.
+- "..." on a macro (a right click too): put it away or take it in, keep it behind the scenes in a specialization
+  not chosen now, move or copy it to another set, duplicate it, send it back to this character's, or to the other
+  tab. Drag it onto a group to move it there, with Ctrl to copy it; a sign by the mouse shows whether it can go
+  there, and the chat says why not.
+- With no free slot, a new macro (New, the wizard, a copy, the trash, From Spellbook, an import) or a general one
+  moved into the Character tab is made behind the scenes, after asking ("Don't remind me again").
+- Turned off, the macros behind the scenes come into the game, as many as fit; with more than fit, you choose
+  which. Turned on again, they go back where they were, with what you changed meanwhile.
+- MacroSense learns the spells of each specialization while you play it: a macro that can't be cast in its
+  specialization says so, and "Sort by spells" offers to put each macro where its spells are.
+- **Macro sets on another character**: "Share" > "Export macro sets..." makes a code of the sets you tick, and
+  "Import a code or text..." takes it, or the sets of another character of yours. Each set goes into its own,
+  another class's into this character's (said first); a taken name gets a number, the very same macro is skipped.
+- Your other characters' macros in the Character tab include those behind the scenes, with their set.
+- A change of the sets that breaks halfway is undone: your macros, sets and buttons are as they were, and the chat
+  says so.
+- Dragging a macro onto the General or Character tab moves it there, with Ctrl copies it, with the sets off too.
+- From Spellbook: "Select all" (all ticked, "Clear all"), and "Offer all again", which forgets the spells you left
+  out and the macros you deleted. A spell you deleted the macro of is offered again.
+- The guide (`/ms help` and docs/GUIDE.md) has a section on macro sets; `/ms sets log` prints what they did, for a
+  bug report.
+
+### Changed
+- One "..." on each macro in the list for copying and moving, instead of the copy icon.
+- A code of macros starts with "MacroSense:" now; codes with "MacroSense1:" are read as before.
+- From Spellbook: a spell whose tooltip names no range (Howl of Terror, Demonic Circle, rituals) gets no target to
+  choose.
+- A search in the editor shows what it finds from the top, and Enter opens the first one.
+
+### Fixed
+- The Macros from the Spellbook window (/ms book) and the guide (/ms help), opened before the editor, showed
+  plain white: they had no colors until the editor's window was opened once.
+
 ## [0.12.0] - 2026-11-02
 
 ### Added

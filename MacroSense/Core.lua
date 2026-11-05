@@ -5,6 +5,8 @@ local L = ns.L
 local PREFIX = "|cff569cd6MacroSense|r: "
 -- A chat line; `text` is translated, then filled in like string.format.
 function ns.Print(text, ...) print(PREFIX .. string.format(L[text], ...)) end
+-- A chat line already translated and filled in.
+function ns.Say(text) print(PREFIX .. text) end
 
 -- Where players report bugs.
 ns.ISSUES_URL = "https://github.com/v-gachkovsky/macro-sense/issues"
@@ -103,6 +105,8 @@ local function SpellsChangedSoon(talents)
         ns.ActionBars.Tint()
         ns.ActionBars.TellBroken(talentsChanged)
         ns.Ranks.Update()
+        ns.Sets.LearnSpells() -- which macros work in this specialization
+        ns.Sets.Update() -- another specialization: its macros
         talentsChanged = false
     end)
 end
@@ -110,6 +114,16 @@ end
 -- The talent events differ between the clients, and the game refuses those it doesn't have.
 local TALENT_EVENTS = { PLAYER_TALENT_UPDATE = true, TRAIT_CONFIG_UPDATED = true, TRAIT_CONFIG_LIST_UPDATED = true,
     CHARACTER_POINTS_CHANGED = true, ACTIVE_TALENT_GROUP_CHANGED = true, ACTIVE_PLAYER_SPECIALIZATION_CHANGED = true }
+
+-- The macros changed: what depends on them, again.
+function ns.MacrosChanged()
+    ns.History.Scan()
+    ns.Sets.Scan()
+    ns.Shortcuts.Invalidate()
+    ns.Window.OnMacrosChanged()
+    ns.ActionBars.Tint()
+    ns.SetsWindow.Refresh()
+end
 
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
@@ -143,6 +157,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.History.Scan()
         ns.Ranks.Update()
         ns.Window.DailyBackup()
+        ns.Sets.Update()
         ns.RememberBuffs()
         ns.MinimapButton.Update()
         ns.ActionBars.Setup()
@@ -154,16 +169,15 @@ f:SetScript("OnEvent", function(_, event, name)
         -- Action buttons and macros can't be changed in combat: what waited for it is done now.
         ns.ActionBars.Setup()
         ns.Ranks.Update()
+        if ns.Sets.Pending() then ns.Sets.Update() end
     elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player")
         or TALENT_EVENTS[event] then
         SpellsChangedSoon(TALENT_EVENTS[event])
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then
-        ns.History.Scan()
-        ns.Shortcuts.Invalidate()
-        ns.Window.OnMacrosChanged()
-        ns.ActionBars.Tint()
+        if ns.Sets.Busy() then return end -- MacroSense changes the slots now: learned when it is done
+        ns.MacrosChanged()
     elseif event == "UPDATE_BINDINGS" or event == "ACTIONBAR_SLOT_CHANGED" then
         ns.Shortcuts.Invalidate()
         ns.Window.RefreshStatus()
@@ -173,11 +187,47 @@ end)
 
 local function OnOff(v) return v and L["|cff00ff00on|r"] or L["|cffff0000off|r"] end
 
+-- /ms sets: macro sets on or off, a macro into a layer, the layers. Until the sets have a window of their own.
+local SETS_LAYERS = { class = "class", char = "character", character = "character", spec = "spec" }
+local function LayerName(layer)
+    return layer == "class" and L["Class macros"] or layer == "character" and L["This character's"]
+        or L["This specialization's"]
+end
+local function SetsCommand(args)
+    local word, rest = args:match("^(%S*)%s*(.-)$")
+    word = word:lower()
+    if word == "debug" then
+        for _, line in ipairs(ns.Sets.Debug()) do print("  " .. line) end
+    elseif word == "log" then
+        for _, line in ipairs(ns.Sets.Log()) do print("  " .. line) end
+    elseif word == "on" then
+        ns.Sets.Enable()
+        ns.Print("macro sets %s", OnOff(true))
+    elseif word == "off" then
+        ns.Sets.Disable()
+        ns.Print("macro sets %s", OnOff(false))
+    elseif SETS_LAYERS[word] and rest ~= "" then
+        if ns.Sets.Move(rest, SETS_LAYERS[word]) then
+            ns.Print("\"%s\" is in this layer now: %s", rest, LayerName(SETS_LAYERS[word]))
+        else
+            ns.Print("no macro \"%s\" in this character's slots (macro sets on?)", rest)
+        end
+    elseif word == "" then
+        ns.SetsWindow.Toggle()
+    else
+        ns.Print("macro sets %s", OnOff(ns.Sets.Mine().enabled))
+        for _, l in ipairs(ns.Sets.Describe()) do
+            print(string.format("  %s: %s", LayerName(l.layer), #l.names > 0 and table.concat(l.names, ", ") or "-"))
+        end
+    end
+end
+
 SLASH_MACROSENSE1 = "/macrosense"
 SLASH_MACROSENSE2 = "/ms"
 SLASH_MACROSENSE3 = "/msense" -- in case another addon took /ms
 SlashCmdList.MACROSENSE = function(msg)
-    msg = (msg or ""):lower():match("^%s*(.-)%s*$")
+    local raw = (msg or ""):match("^%s*(.-)%s*$")
+    msg = raw:lower()
     if msg == "" then
         ns.Window.Toggle()
     elseif msg == "autocomplete" then
@@ -188,6 +238,8 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.HelpWindow.Open()
     elseif msg == "book" then
         ns.SpellbookWindow.Open()
+    elseif msg == "sets" or msg:find("^sets ") then
+        SetsCommand(raw:match("^%S+%s*(.*)$"))
     elseif msg == "minimap" then
         ns.Print("minimap button %s", OnOff(ns.MinimapButton.Toggle()))
     elseif msg == "bug" then
