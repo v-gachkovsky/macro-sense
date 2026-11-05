@@ -264,7 +264,7 @@ function Easter.Shatter()
     end
     falling = { groups = groups, rows = rows, windows = windows, pieces = free, time = 0 }
     if not Shared(FATALITY) then Sound("IG_QUEST_FAILED", "IG_MAINMENU_CLOSE") end
-    ns.Print("shortened by 100%%")
+    ns.Print("shortened by 146%%")
     ticker:Show()
 end
 

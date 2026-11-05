@@ -6775,7 +6775,7 @@ do
         and row.point[1] == "BOTTOMLEFT" and row.point[2] == UIParent)
     NextFrame()
     check("surprise: the tenth in a row: the window falls apart", ns.Easter.Falling()
-        and part.point[1] == "BOTTOMLEFT" and part.point[2] == UIParent and part.point[4] ~= 500 and printed[#printed]:find("shortened by 100%%") ~= nil, printed[#printed])
+        and part.point[1] == "BOTTOMLEFT" and part.point[2] == UIParent and part.point[4] ~= 500 and printed[#printed]:find("shortened by 146%%") ~= nil, printed[#printed])
     for _ = 1, 300 do NextFrame() end
     check("surprise: the rows back in the list", row:GetParent() == listChild)
     check("surprise: another window open blows apart and closes too", not ns.HelpWindow.IsShown()
