@@ -1659,12 +1659,35 @@ function Window.Revert()
     if state.index then Load(state.index) end
 end
 
+-- Before macro `index` is deleted: one made in "From Spellbook" that still casts its spell gives its buttons back
+-- to that spell, as they were before it. (Deleted, a macro leaves its buttons empty.)
+local function SpellBack(index)
+    local name, _, body = GetMacroInfo(index)
+    if not name or index <= ns.MAX_GENERAL or InCombatLockdown() then return end
+    local casts, spell = ns.Spellbook.Casts(body), nil
+    for s, m in pairs(ns.Spellbook.Journal(ns.char).made) do
+        if m.name == name and casts[s:lower()] then spell = s end
+    end
+    local info = spell and C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spell)
+    local id = info and info.spellID or (spell and GetSpellInfo and select(7, GetSpellInfo(spell)))
+    local pickup = C_Spell and C_Spell.PickupSpell or PickupSpell
+    if not id or not pickup then return end
+    for _, slot in ipairs(ns.ActionBars.SlotsOf(name)) do
+        if ns.ActionBars.MacroAt(slot) == index then
+            pickup(id)
+            if GetCursorInfo() == "spell" then PlaceAction(slot) end -- a spell you don't have now: nothing
+            ClearCursor()
+        end
+    end
+end
+
 -- Deletes macro `index`. The one being edited: the next one opens, or the one before when it was the last. Another
 -- one: the editor keeps what it shows. Which one it was is known before: the game may report the change while it
 -- deletes (UPDATE_MACROS), and the one being edited, looked up by its name, is gone then.
 function Window.Delete(index)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local editing = state.index
+    SpellBack(index)
     DeleteMacro(index)
     local first, last = MacroRange(state.scope)
     if index == editing then return Load(last >= first and math.min(index, last) or nil) end

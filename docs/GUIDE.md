@@ -224,7 +224,8 @@ On the right you choose for all the spells at once:
 - "Start auto attack with each attack": `/startattack` before attacks, but not before spells that keep an enemy
   out of the fight, such as Sap or Polymorph, which it would break.
 - "Stop your cast before an interrupt": `/stopcasting` before Kick, Counterspell and the like.
-- "Put them on the bars in place of the spells": each macro takes its spell's places on your action bars.
+- "Put them on the bars in place of the spells": each macro takes its spell's places on your action bars. Delete
+  such a macro in MacroSense later and the spell comes back onto those buttons, if the macro still casts it.
 - "A macro for your pet" (hunters and warlocks): what the pet does with no key held, and with each key.
 
 Each ticked spell's row has more, for that spell only:

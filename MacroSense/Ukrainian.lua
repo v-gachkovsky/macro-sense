@@ -1704,6 +1704,8 @@ ns.locales.uk = {
     ["A cheaper rank on a key: to heal a little, or to waste an enemy's dispel or a warrior's Spell Reflection."] =
         "Дешевший ранг на клавішу: щоб підлікувати потроху або змусити ворога витратити розвіювання чи Spell "
         .. "Reflection воїна.",
+    ["Delete such a macro here, and its spell comes back onto its buttons, if the macro still casts it."] =
+        "Видаліть такий макрос тут, і на його кнопки повернеться заклинання, якщо макрос досі його кастує.",
     ["Spells that some macro casts already are not ticked. Next time, only the spells you learned since are."] =
         "Заклинання, які вже кастує якийсь макрос, стоять без галочки. Наступного разу галочки стоятимуть лише на "
         .. "тих, що ви вивчили відтоді.",

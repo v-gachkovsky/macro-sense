@@ -104,7 +104,8 @@ new one.
   warrior's Spell Reflection.
 - Auto attack with each attack (never with Sap or Polymorph, which it would break); interrupts stop your cast
   first; one macro for a hunter's or warlock's pet, by key.
-- The macros go into the character's tab and onto your action bars in place of their spells. Spells with a macro
+- The macros go into the character's tab and onto your action bars in place of their spells. Delete such a
+  macro in MacroSense and the spell comes back onto those buttons, if the macro still casts it. Spells with a macro
   already are left out, and next time only the spells you learned since are offered.
 - **Select all** ticks every spell at once (then it is **Clear all**), and **Offer all again** offers every spell
   with no macro, as the first time.
