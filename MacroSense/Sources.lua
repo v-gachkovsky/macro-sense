@@ -168,6 +168,27 @@ function ns.HasExpansion(since)
     return not since or (LE_EXPANSION_LEVEL_CURRENT or since) >= since
 end
 
+-- Whether a spell you know starts the global cooldown: the game gives each spell's base cooldown and global one.
+local function SpellID(name)
+    if C_Spell and C_Spell.GetSpellInfo then
+        local ok, info = pcall(C_Spell.GetSpellInfo, name)
+        return ok and info and info.spellID or nil
+    end
+    if GetSpellInfo then
+        local ok, _, _, _, _, _, _, id = pcall(GetSpellInfo, name)
+        return ok and id or nil
+    end
+end
+function ns.Highlight.gcdOf(name)
+    local base = C_Spell and C_Spell.GetSpellBaseCooldown or GetSpellBaseCooldown
+    local id = base and SpellID(name)
+    if not id then return nil end
+    local cooldown, gcd = base(id)
+    if not gcd then return nil end
+    if gcd == 0 then return "free" end
+    return (cooldown or 0) > 0 and "cooldown" or "gcd"
+end
+
 function ns.Highlight.checkCommand(name)
     local since, expansion = ns.CommandSince(name), ns.CommandsExpansion()
     if not since or not expansion or expansion >= since then return nil end

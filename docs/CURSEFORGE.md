@@ -167,10 +167,10 @@ Line numbers sit in a gutter on the left, so "Line 3" in a message is easy to fi
 units, values and spell names each get their own color. Mistakes are **underlined**,
 the status bar names them (hover for the full list, click to go there), and the Save button shows a warning sign:
 
-![Mistakes underlined, fixed with a click on the status bar](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/fix-one-click.gif)
+![Mistakes underlined, fixed with Ctrl+click on the status bar](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/fix-one-click.gif)
 
 
-- unknown commands and conditions (a typo like `harmm` or `/cats`: a click on the status bar makes it `harm`,
+- unknown commands and conditions (a typo like `harmm` or `/cats`: Ctrl+click on the status bar makes it `harm`,
   `/cast`; so it adds a missing `]` or takes out a stray one)
 - a `[` without `]`, or a `]` without `[`
 - an empty condition: `[harm,,dead]`
@@ -180,6 +180,10 @@ the status bar names them (hover for the full list, click to go there), and the 
 - `/click` on a button that isn't there, or with `down` at the end: the game reads that as no, `true` clicks
   on key press
 - unknown units like `@mousover` are a yellow **warning**: they may be a player's name
+- a part that **never runs**, a yellow warning: in `/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark`
+  the game always stops at `[]`, so the Alt part has to come first; the same for a spell on a line below one
+  that always casts a spell with the global cooldown (if that spell has a cooldown of its own, the line below
+  works only while it is on cooldown, and the warning says so)
 - **typos in spell and item names**: `Shadwo Bolt` gets `did you mean "Shadow Bolt"?`, and a click fixes it.
   Your pets' spells are remembered from every pet you summon, so a Succubus macro stays fine while the
   Felhunter is out

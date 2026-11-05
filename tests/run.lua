@@ -229,7 +229,9 @@ end
 local H = ns.Highlight
 local function kinds(raw)
     local out = {}
-    for _, sp in ipairs(H.Spans(raw)) do out[#out + 1] = raw:sub(sp[1], sp[2]) .. "=" .. sp[3] end
+    for _, sp in ipairs(H.Spans(raw)) do
+        if sp[3] ~= "note" then out[#out + 1] = raw:sub(sp[1], sp[2]) .. "=" .. sp[3] end -- notes have no color
+    end
     return table.concat(out, " ")
 end
 local function expectKinds(raw, want)
@@ -293,15 +295,15 @@ for _, case in ipairs({
     { "/cast [target=focsu] Spell", "/cast [target=focus] Spell" },
     { "/cast [mod:shfit] Spell", "/cast [mod:shift] Spell" },
     { "/castsequence reset=tagret A, B", "/castsequence reset=target A, B" },
-    { "/cast [harm Spell", "/cast [harm] Spell", 'Click to add "]"' },
+    { "/cast [harm Spell", "/cast [harm] Spell", 'Ctrl+click to add "]"' },
     { "/cast [@focus,harm, nodead Spell", "/cast [@focus,harm, nodead] Spell" },
     { "/cast [harm", "/cast [harm]" },
-    { "/cast harm] Spell", "/cast [harm] Spell", 'Click to add "["' },
+    { "/cast harm] Spell", "/cast [harm] Spell", 'Ctrl+click to add "["' },
     { "/cast [harm][@focus,help] A; nodead] B", "/cast [harm][@focus,help] A; [nodead] B" },
-    { "/cast ] Spell", "/cast  Spell", 'Click to remove "]"' },
-    { "/cast [harm,,dead] Spell", "/cast [harm,dead] Spell", 'Click to remove ","' },
+    { "/cast ] Spell", "/cast  Spell", 'Ctrl+click to remove "]"' },
+    { "/cast [harm,,dead] Spell", "/cast [harm,dead] Spell", 'Ctrl+click to remove ","' },
     { "/cast [harm,] Spell", "/cast [harm] Spell" },
-    { "/cast [combat:1] Spell", "/cast [combat] Spell", 'Click to remove ":1"' },
+    { "/cast [combat:1] Spell", "/cast [combat] Spell", 'Ctrl+click to remove ":1"' },
 }) do
     local text, tip = fixed(case[1])
     check("one-click fix: " .. case[1], text == case[2] and (not case[3] or tip == case[3]),
@@ -467,6 +469,80 @@ local function issues(raw)
     for _, e in ipairs(H.Errors(raw)) do out[#out + 1] = e.severity .. ":" .. raw:sub(e.from, e.to) end
     return table.concat(out, " ")
 end
+-- After a branch that always runs ("[]", or no conditions), the rest never do.
+local NEVER = "never runs: the part before it always does (it has [] or no conditions). Put this part before it"
+expectErrs("/cast [@mouseover,harm,nodead][] Arcane Shot; [mod:alt] Hunter's Mark",
+    "[mod:alt] Hunter's Mark=" .. NEVER .. "@1")
+expectErrs("/cast Arcane Shot; Hunter's Mark", "Hunter's Mark=" .. NEVER .. "@1")
+expectErrs("#showtooltip\n/cast [] A; [mod] B; C", "[mod] B=" .. NEVER .. "@2 | C=" .. NEVER .. "@2")
+expectErrs("/cast [ ] A; B", "B=" .. NEVER .. "@1")
+expectErrs("/cast [mod:alt] Hunter's Mark; [@mouseover,harm,nodead][] Arcane Shot", "")
+expectErrs("/cast [mod] A; B; ", "")
+expectErrs("/castsequence reset=10 A, B", "")
+-- A line that always casts a spell with the global cooldown and no cooldown of its own: the spells with it in the
+-- lines after don't cast.
+do
+    local GCD = { ["Arcane Shot"] = "gcd", ["Hunter's Mark"] = "gcd", ["Aimed Shot"] = "cooldown",
+        Berserking = "free", ["Kill Command"] = "cooldown" }
+    H.gcdOf = function(name) return GCD[name] end
+    local WONT = "won't cast: the line above always casts %s first, and its global cooldown stops this one. To "
+        .. "choose between them, put both into one /cast, this part first"
+    expectErrs("#showtooltip\n/cast [@mouseover,harm][] Arcane Shot;\n/cast [mod:alt] Hunter's Mark",
+        "Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")
+    expectErrs("/cast Arcane Shot\n/startattack\n/cast Kill Command", "Kill Command=" .. WONT:format("Arcane Shot")
+        .. "@3")
+    expectErrs("/cast [mod:shift] Hunter's Mark; Arcane Shot\n/cast Aimed Shot",
+        "Aimed Shot=" .. WONT:format("Hunter's Mark or Arcane Shot") .. "@2")
+    expectErrs("/cast Berserking\n/cast Arcane Shot", "")                -- no global cooldown: the next one casts
+    expectErrs("/cast Arcane Shot\n/cast Berserking", "")
+    -- A spell above with a cooldown of its own: the line below casts while it waits.
+    local ONLY = "works only while %s is on cooldown: the line above always casts it first, and its global cooldown "
+        .. "stops this one. To choose with a key, put both into one /cast, this part first"
+    expectErrs("/cast Aimed Shot\n/cast [mod:alt] Hunter's Mark", "Hunter's Mark=" .. ONLY:format("Aimed Shot") .. "@2")
+    check("gcd: said short, with the spell", H.Errors("/cast Aimed Shot\n/cast Arcane Shot")[1].short
+        == "only while Aimed Shot is on cooldown")
+    expectErrs("/cast Aimed Shot\n/cast Arcane Shot\n/cast Hunter's Mark", "Arcane Shot=" .. ONLY:format("Aimed Shot")
+        .. "@2 | Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")  -- Arcane Shot always casts when it can
+    expectErrs("/cast Arcane Shot\n/cast Aimed Shot\n/cast Hunter's Mark", "Aimed Shot=" .. WONT:format("Arcane Shot")
+        .. "@2 | Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")
+    expectErrs("/cast [mod:alt] Arcane Shot\n/cast Hunter's Mark", "")    -- not always
+    expectErrs("/cast [mod:alt] Berserking; Arcane Shot\n/cast Hunter's Mark", "")
+    expectErrs("/cast Unknown Spell\n/cast Arcane Shot", "")
+    expectErrs("#showtooltip Arcane Shot\n/cast Hunter's Mark", "")
+    -- The fix: a line whose every part a key chooses goes into the line above, first; any other is not clear.
+    local function fix(raw) return (fixed(raw)), select(2, fixed(raw)) end
+    local text, tip = fix("#showtooltip\n/cast [@mouseover,harm][] Arcane Shot; \n/cast [mod:alt] Hunter's Mark")
+    check("gcd fix: the key's line into the one above, first", text
+        == "#showtooltip\n/cast [mod:alt] Hunter's Mark; [@mouseover,harm][] Arcane Shot"
+        and tip == "Ctrl+click to put this line into the line above, first", text)
+    check("gcd fix: the lines between stay", fix("/cast Arcane Shot\n/startattack\n/cast [mod:alt] Hunter's Mark; "
+        .. "[mod:ctrl] Aimed Shot\n/say hi") == "/cast [mod:alt] Hunter's Mark; [mod:ctrl] Aimed Shot; Arcane Shot\n"
+        .. "/startattack\n/say hi", (fix("/cast Arcane Shot\n/startattack\n/cast [mod:alt] Hunter's Mark; "
+        .. "[mod:ctrl] Aimed Shot\n/say hi")))
+    check("gcd fix: also while on cooldown", fix("/cast Aimed Shot\n/cast [mod:shift] Arcane Shot")
+        == "/cast [mod:shift] Arcane Shot; Aimed Shot")
+    check("gcd fix: not without a key", fixed("/cast Arcane Shot\n/cast [@focus] Hunter's Mark") == nil)
+    check("gcd fix: not with a part no key chooses", fixed("/cast Arcane Shot\n/cast [mod:alt] Hunter's Mark; "
+        .. "Aimed Shot") == nil)
+    check("gcd fix: not into another command", fixed("/cast Arcane Shot\n/castsequence [mod:alt] Hunter's Mark, "
+        .. "Aimed Shot") == nil)
+    H.gcdOf = nil
+    expectErrs("/cast Arcane Shot\n/cast Hunter's Mark", "")             -- the game is not asked: no warning
+end
+-- The fix: the parts a key chooses go first, the rest stay after the one that always runs.
+do
+    local text, tip = fixed("/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark")
+    check("never runs fix: the key's part first", text == "/cast [mod:alt] Hunter's Mark; [@mouseover,harm][] Arcane Shot"
+        and tip == "Ctrl+click to put the parts with a key first", text)
+    check("never runs fix: all of them, in their order", fixed("/cast [] A; [mod:alt] B; C; [mod:ctrl] D;")
+        == "/cast [mod:alt] B; [mod:ctrl] D; [] A; C;", (fixed("/cast [] A; [mod:alt] B; C; [mod:ctrl] D;")))
+    check("never runs fix: not without a key", fixed("/cast A; [@focus] B") == nil)
+    check("never runs fix: not for one that always runs too", fixed("/cast A; [mod:alt][] B") == nil)
+end
+check("never runs: a warning, said short", issues("/cast A; B") == "warning:B"
+    and H.Errors("/cast A; B")[1].short == "never runs")
+check("never runs: what is under it keeps its colors", H.Colorize("/cast A; B", scheme)
+    == "|cff111111/cast|r |cff222222A|r|cff333333;|r |cff222222B|r", H.Colorize("/cast A; B", scheme))
 check("nochanneling is no mistake", issues("/cast [nochanneling] X; [nochanneling:Drain Life] Y") == "")
 check("unknown unit is a warning", issues("/cast [@mousover] X") == "warning:mousover", issues("/cast [@mousover] X"))
 check("player name is only a warning", issues("/cast [target=Thrall] X") == "warning:Thrall")
@@ -602,7 +678,7 @@ do
         == "Immolate guarded, Chaos Bolt guarded")
     check("missing spell: #showtooltip", seen("#showtooltip [spec:2] Chaos Bolt") == "Chaos Bolt guarded")
     check("missing spell: no name to check in an unclosed bracket", seen("/cast [spec:2 Chaos Bolt") == "")
-    local typo = H.Errors("/cast Chaos Bolt; Fireball")
+    local typo = H.Errors("/cast [mod] Chaos Bolt; Fireball")
     check("missing spell: only that one", #typo == 1 and typo[1].missing == true)
 end
 H.checkAction = nil

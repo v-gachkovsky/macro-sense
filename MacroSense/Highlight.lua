@@ -22,6 +22,9 @@ Highlight.checkClick = nil
 Highlight.checkCommand = nil
 -- Set by Roles: function(name) -> true when a player of that name is in your group: "@Bob" is no unknown unit.
 Highlight.isMember = nil
+-- Set by Sources: function(name) -> "gcd" (the spell starts the global cooldown and has no cooldown of its own),
+-- "cooldown" (it starts it and has one of its own), "free" (it doesn't start it), or nil (no spell you know).
+Highlight.gcdOf = nil
 
 local UNIT_ARGS = { target = true, tar = true, focus = true, assist = true, a = true }
 local LUA_KEYWORDS = {}
@@ -70,10 +73,10 @@ end
 
 -- The extra of an issue fixed by adding `text` at raw position `at` (before it), or taking out from..to.
 local function adding(text, at)
-    return { fix = text, fixFrom = at, fixTo = at - 1, fixTip = string.format(L["Click to add \"%s\""], text) }
+    return { fix = text, fixFrom = at, fixTo = at - 1, fixTip = string.format(L["Ctrl+click to add \"%s\""], text) }
 end
 local function removing(text, from, to)
-    return { fix = "", fixFrom = from, fixTo = to, fixTip = string.format(L["Click to remove \"%s\""], text) }
+    return { fix = "", fixFrom = from, fixTo = to, fixTip = string.format(L["Ctrl+click to remove \"%s\""], text) }
 end
 
 ------------------------------------------------------------------------
@@ -292,12 +295,36 @@ local function resetSpans(reset, from, add, sequence)
     end
 end
 
+-- Whether a key held chooses a branch: [mod:alt], [modifier]; not [nomod].
+local function Keyed(body)
+    for inner in body:gmatch("%[([^%]]*)%]") do
+        for part in (inner .. ","):gmatch("([^,]*),") do
+            local name = (part:match("^%s*(%a+)") or ""):lower()
+            if name == "mod" or name == "modifier" then return true end
+        end
+    end
+    return false
+end
+
 -- Arguments of a secure command: "[cond] arg; [cond] arg". command: the action command ("cast", ...), if any.
--- A sequence ("reset=" allowed) and /castrandom, /userandom have a list of names, "," between.
-local function argSpans(s, base, add, argKind, sequence, command)
+-- A sequence ("reset=" allowed) and /castrandom, /userandom have a list of names, "," between. `info`, when given,
+-- learns the names: spells = { { name, from, branch } }, always = the first branch that always runs.
+local function argSpans(s, base, add, argKind, sequence, command, info)
     local i = 1
     local list = sequence or command == "castrandom" or command == "userandom"
     local guarded = false -- the conditions of this branch check for a specialization or a talent (GUARDS)
+    -- The game runs the first branch whose conditions hold: after one that always does ("[]", or no conditions),
+    -- the rest never run. `group`, `empty`, `word`: this branch has conditions, an empty "[]", an argument.
+    -- branches: { body, from, to (raw positions), always, key (a key held chooses it) }.
+    local branchFrom, group, empty, word, branch, branches = 1, false, false, false, 1, {}
+    local function endBranch(to)
+        local text = s:sub(branchFrom, to)
+        local lead, body = #text:match("^%s*"), text:match("^%s*(.-)%s*$")
+        local from = base + branchFrom + lead
+        branches[branch] = { body = body, from = from, to = from + #body - 1, always = empty or (word and not group),
+            key = Keyed(body) }
+        group, empty, word, branch = false, false, false, branch + 1
+    end
     while i <= #s do
         local c = s:sub(i, i)
         if c == "[" then
@@ -324,6 +351,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
             -- Split on "," by hand: gmatch with an empty-matching pattern behaves differently in Lua 5.1.
             local inner, from = s:sub(i + 1, close - 1), 1
             guarded = guarded or guards(inner)
+            group, empty = true, empty or not inner:find("%S")
             local split = inner:find(",", 1, true) ~= nil
             while true do
                 local comma = inner:find(",", from, true)
@@ -349,11 +377,16 @@ local function argSpans(s, base, add, argKind, sequence, command)
             i = i + 1
         elseif c == ";" or (list and c == ",") then
             add(base + i, base + i, "operator")
-            if c == ";" then guarded = false end -- the next branch has conditions of its own
+            if c == ";" then
+                guarded = false -- the next branch has conditions of its own
+                endBranch(i - 1)
+                branchFrom = i + 1
+            end
             i = i + 1
         elseif c:find("%s") then
             i = i + 1
         else
+            word = true
             local stop = (s:find(list and "[;,%[%]]" or "[;%[%]]", i) or (#s + 1)) - 1
             local word = s:sub(i, stop):match("^(.-)%s*$")
             local reset = argKind == "action" and word:match("^reset=%S*")
@@ -377,6 +410,9 @@ local function argSpans(s, base, add, argKind, sequence, command)
                     if nameOnly ~= "" then
                         if argKind == "action" then
                             actionSpan(nameOnly, base + i, add, command, guarded)
+                            if info then
+                                info.spells[#info.spells + 1] = { name = nameOnly, from = base + i, branch = branch }
+                            end
                         else
                             add(base + i, base + i + #nameOnly - 1, argKind)
                         end
@@ -387,9 +423,39 @@ local function argSpans(s, base, add, argKind, sequence, command)
             end
         end
     end
+    endBranch(#s)
+    local first
+    for k, b in ipairs(branches) do
+        if b.always then
+            first = k
+            break
+        end
+    end
+    if info then info.always, info.branches = first, branches end
+    if not first then return end
+    -- The parts after it that a key chooses were meant for that key: the fix puts them first, the rest stay after.
+    local moved, kept, last = {}, { branches[first].body }, branches[first]
+    for k = first + 1, #branches do
+        local b = branches[k]
+        if b.body ~= "" then
+            table.insert((b.key and not b.always) and moved or kept, b.body)
+            last = b
+        end
+    end
+    local fix = #moved > 0 and table.concat(moved, "; ") .. "; " .. table.concat(kept, "; ")
+    for k = first + 1, #branches do
+        local b = branches[k]
+        if b.body ~= "" then
+            local keyed = fix and b.key and not b.always
+            add(b.from, b.to, "note", L["never runs: the part before it always does (it has [] or no conditions). "
+                .. "Put this part before it"], "warning", { short = L["never runs"], fix = keyed and fix or nil,
+                fixFrom = keyed and branches[first].from or nil, fixTo = keyed and last.to or nil,
+                fixTip = keyed and L["Ctrl+click to put the parts with a key first"] or nil })
+        end
+    end
 end
 
-local function lineSpans(line, base, add)
+local function lineSpans(line, base, add, info)
     local meta = line:match("^#%a+")
     if meta then
         add(base + 1, base + #meta, "meta")
@@ -416,7 +482,45 @@ local function lineSpans(line, base, add)
     if P.luaCommands[name] then return luaSpans(rest, cmdTo, add) end
     local action = P.actionCommands[name]
     local argKind = UNIT_ARGS[name] and "unit" or (action and "action") or (P.clickCommands[name] and "click") or "option"
-    argSpans(rest, cmdTo, add, argKind, action == "castsequence", action)
+    if info then info.command = action end
+    argSpans(rest, cmdTo, add, argKind, action == "castsequence", action, info)
+end
+
+-- What a /cast line that always casts a spell with the global cooldown does to the lines after it: that cooldown
+-- stops their spells with it. { names, kind }: "gcd" when none of its spells has a cooldown of its own (the lines
+-- after never cast them), "cooldown" when one has (they cast while it is on that cooldown). Nil for any other line.
+local function Blocking(info)
+    if not info.always or (info.command ~= "cast" and info.command ~= "spell") then return nil end
+    local names, seen, kind = {}, {}, "gcd"
+    for _, sp in ipairs(info.spells) do
+        if sp.branch <= info.always then
+            local gcd = Highlight.gcdOf(sp.name)
+            if gcd ~= "gcd" and gcd ~= "cooldown" then return nil end
+            if gcd == "cooldown" then kind = "cooldown" end
+            if not seen[sp.name] then names[#names + 1], seen[sp.name] = sp.name, true end
+        end
+    end
+    return #names > 0 and { names = table.concat(names, L[" or "]), kind = kind, info = info } or nil
+end
+
+-- The fix for line `info`, whose spells wait for those of line `above`: when a key held chooses each of its parts,
+-- they were meant for that key. They go into the line above, before its part that always runs, and the line goes
+-- (with the line break before it). Nil when it isn't so clear.
+local function Merged(raw, above, info)
+    if info.command ~= "cast" and info.command ~= "spell" then return nil end
+    local parts = {}
+    for _, b in ipairs(info.branches or {}) do
+        if b.body ~= "" then
+            if not b.key or b.always then return nil end
+            parts[#parts + 1] = b.body
+        end
+    end
+    if #parts == 0 then return nil end
+    local first, last = above.branches[above.always], nil
+    for _, b in ipairs(above.branches) do if b.body ~= "" then last = b end end
+    return { fix = table.concat(parts, "; ") .. "; " .. raw:sub(first.from, last.to)
+        .. raw:sub(above.lineTo + 1, info.lineFrom - 2), fixFrom = first.from, fixTo = info.lineTo,
+        fixTip = L["Ctrl+click to put this line into the line above, first"] }
 end
 
 function Highlight.Spans(raw)
@@ -427,9 +531,32 @@ function Highlight.Spans(raw)
             spans[#spans + 1] = { from, to, kind, message, message and (severity or "error"), extra }
         end
     end
-    local pos = 0
+    local pos, blocking = 0, nil
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
-        lineSpans(line, pos, add)
+        local info = { spells = {}, lineFrom = pos + 1, lineTo = pos + #line }
+        lineSpans(line, pos, add, info)
+        if Highlight.gcdOf then
+            local merged = blocking and Merged(raw, blocking.info, info) or {}
+            for _, sp in ipairs(blocking and info.spells or {}) do
+                local gcd = Highlight.gcdOf(sp.name)
+                local extra = { fix = merged.fix, fixFrom = merged.fixFrom, fixTo = merged.fixTo,
+                    fixTip = merged.fixTip }
+                if (gcd == "gcd" or gcd == "cooldown") and blocking.kind == "gcd" then
+                    extra.short = L["won't cast"]
+                    add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["won't cast: the line above always "
+                        .. "casts %s first, and its global cooldown stops this one. To choose between them, put both "
+                        .. "into one /cast, this part first"], blocking.names), "warning", extra)
+                elseif gcd == "gcd" or gcd == "cooldown" then
+                    extra.short = string.format(L["only while %s is on cooldown"], blocking.names)
+                    add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only while %s is on cooldown: "
+                        .. "the line above always casts it first, and its global cooldown stops this one. To choose "
+                        .. "with a key, put both into one /cast, this part first"], blocking.names), "warning", extra)
+                end
+            end
+            -- One that never lets the lines after cast is the stronger.
+            local now = Blocking(info)
+            if now and (not blocking or now.kind == "gcd" and blocking.kind ~= "gcd") then blocking = now end
+        end
         pos = pos + #line + 1
     end
     table.sort(spans, function(a, b) return a[1] < b[1] end)
@@ -462,7 +589,7 @@ function Highlight.Colorize(raw, scheme)
     local out, pos = {}, 1
     for _, span in ipairs(Highlight.Spans(raw)) do
         local from, to, kind = span[1], span[2], span[3]
-        if from >= pos then
+        if from >= pos and kind ~= "note" then -- a note only says something: what is under it has its colors
             out[#out + 1] = raw:sub(pos, from - 1)
             out[#out + 1] = "|cff" .. (scheme[kind] or scheme.text) .. raw:sub(from, to) .. "|r"
             pos = to + 1

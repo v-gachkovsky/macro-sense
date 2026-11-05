@@ -172,11 +172,16 @@ end
 -- Status bar
 ------------------------------------------------------------------------
 -- Tooltip lines for issues: errors red, warnings yellow.
+-- A tooltip line in color `hex`, written into its text too: the tooltip keeps it whatever set the line's color
+-- before (the game's tooltips of spells, other addons).
+local function TipLine(text, hex)
+    local r, g, b = ns.RGB(hex)
+    GameTooltip:AddLine("|cff" .. hex .. text .. "|r", r, g, b)
+end
+
 local function AddIssueLines(issues)
     for _, e in ipairs(issues) do
-        local r, g, b = 1, 0.35, 0.35
-        if e.severity == "warning" then r, g, b = 1, 0.82, 0 end
-        GameTooltip:AddLine(string.format(L["Line %d: %s"], e.line, e.message), r, g, b)
+        TipLine(string.format(L["Line %d: %s"], e.line, e.message), e.severity == "warning" and "ffd100" or "ff5959")
     end
 end
 
@@ -394,6 +399,20 @@ local function PutName(name, command)
     code:InsertText(line:find("%S") and name or (command .. " " .. name))
 end
 
+-- Issue `e` fixed: its fix put in place of its text.
+local function ApplyFix(e)
+    local raw, from, to = code:GetRaw(), e.fixFrom or e.from, e.fixTo or e.to
+    code:SetRaw(raw:sub(1, from - 1) .. e.fix .. raw:sub(to + 1), from - 1 + #e.fix, true)
+    code:CheckNow()
+end
+
+-- The issue with a fix at raw position `pos` of the text, if any.
+local function FixAt(pos)
+    for _, e in ipairs(pos and code.errors or {}) do
+        if e.fix and pos >= e.from and pos <= e.to then return e end
+    end
+end
+
 -- The word under the mouse: what it means, or the game's tooltip of the spell or item.
 local function WordTip(raw, pos)
     local doc = pos and ns.Docs.At(raw, pos, explainEnv)
@@ -416,7 +435,14 @@ local function UpdateExplain()
     local text = n and select(n, (raw .. "\n"):match(string.rep("([^\n]*)\n", n)))
     local lines = text and ns.Explain.Line(text, explainEnv)
     if not lines then
-        if not WordTip(raw, pos) and GameTooltip:GetOwner() == code.scroll then GameTooltip:Hide() end
+        local shown, e = WordTip(raw, pos), FixAt(pos)
+        if e then -- an issue Ctrl+click fixes: said under what the word means
+            if not shown then GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR") end
+            TipLine(L["Ctrl+click to fix it"], "66ff66")
+            GameTooltip:Show()
+        elseif not shown and GameTooltip:GetOwner() == code.scroll then
+            GameTooltip:Hide()
+        end
         return
     end
     GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
@@ -2967,24 +2993,23 @@ local function Build()
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         AddIssueLines(errors)
         if message then GameTooltip:AddLine(message, 1, 0.82, 0) end
+        if warning.shown then
+            TipLine(string.format(L["Click to go to line %d"], warning.shown.line), "66ff66")
+        end
         if warning.shown and warning.shown.fix then
-            GameTooltip:AddLine(warning.shown.fixTip or string.format(L["Click to use \"%s\""], warning.shown.fix),
-                0.4, 1, 0.4)
-        elseif warning.shown then
-            GameTooltip:AddLine(string.format(L["Click to go to line %d"], warning.shown.line), 0.4, 1, 0.4)
+            TipLine(warning.shown.fixTip or string.format(L["Ctrl+click to use \"%s\""], warning.shown.fix), "66ff66")
         end
         GameTooltip:Show()
     end)
     warningHover:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    -- Click: replace the misspelled name with the suggestion, or go to the issue.
+    -- Click: go to the issue; with Ctrl (Cmd on a Mac too), its fix (a suggestion for a misspelled name, ...).
     warningHover:SetScript("OnMouseUp", function()
         local e = warning.shown
         if not e then return end
         GameTooltip:Hide()
-        if not e.fix then return code:SetRawCursor(e.from - 1) end
-        local raw, from, to = code:GetRaw(), e.fixFrom or e.from, e.fixTo or e.to
-        code:SetRaw(raw:sub(1, from - 1) .. e.fix .. raw:sub(to + 1), from - 1 + #e.fix, true)
-        code:CheckNow()
+        local ctrl = IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())
+        if e.fix and ctrl then return ApplyFix(e) end
+        code:SetRawCursor(e.from - 1)
     end)
 
     -- Editor.
@@ -2997,6 +3022,14 @@ local function Build()
     code.scroll:SetPoint("BOTTOMRIGHT", -15, 4)
     ns.AttachAutocomplete(code)
     code:ShowNotes(ns.db.preview)
+    -- Ctrl+click (Cmd+click on a Mac) on an issue that has a fix: fixed, as from the status bar.
+    code.onFixClick = function(pos)
+        local e = FixAt(pos)
+        if not e then return false end
+        GameTooltip:Hide()
+        ApplyFix(e)
+        return true
+    end
     -- A spell, mount or item dropped on the text: its name, as the game's macro window takes it.
     code.onDrop = function()
         local name, command = OnCursor()

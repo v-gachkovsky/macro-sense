@@ -1521,15 +1521,21 @@ do
     Wait(1)
     check("typo suggestion in the status bar", statusText():find('did you mean "Fireball"%?') ~= nil, statusText())
     Fire(hover(), "OnMouseUp")
+    local at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
+    check("a click goes to the issue, its fix waits", raw() == "/cast Firebal" and at == #"/cast ", at)
+    local ctrl = IsControlKeyDown
+    IsControlKeyDown = function() return true end
+    Fire(hover(), "OnMouseUp")
+    IsControlKeyDown = ctrl
     NextFrame()
-    check("click fixes the name", raw() == "/cast Fireball", raw())
+    check("Ctrl+click fixes the name", raw() == "/cast Fireball", raw())
     check("no issue after the fix", statusText() == "", statusText())
     Type("\n/cast [@] x")
     Wait(1)
     edit:ClearFocus()
     edit:SetCursorPosition(0)
     Fire(hover(), "OnMouseUp")
-    local at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
+    at = ns.Highlight.ToRaw(edit:GetText(), edit:GetCursorPosition())
     check("click on an issue with no fix goes to it", edit:HasFocus() and at == #"/cast Fireball\n/cast [", at)
     ns.Window.Revert()
     CreateMacro("Fix Me", 1, "/cast [harm Fireball", false)
@@ -1540,10 +1546,15 @@ do
     GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
     Fire(hover(), "OnEnter")
     GameTooltip.AddLine = function() end
-    check("the fix in the tooltip", table.concat(tip, "|"):find('Click to add "]"', 1, true) ~= nil, table.concat(tip, "|"))
+    check("the tooltip: a click goes to the line, Ctrl+click fixes", table.concat(tip, "|")
+        == '|cffff5959Line 1: [ is not closed with ]|r|'
+        .. '|cff66ff66Click to go to line 1|r|' .. '|cff66ff66Ctrl+click to add "]"|r', table.concat(tip, "|"))
+    local ctrl = IsControlKeyDown
+    IsControlKeyDown = function() return true end
     Fire(hover(), "OnMouseUp")
+    IsControlKeyDown = ctrl
     NextFrame()
-    check("a click puts it in", raw() == "/cast [harm] Fireball", raw())
+    check("Ctrl+click puts it in", raw() == "/cast [harm] Fireball", raw())
     ns.Window.Revert()
     DeleteMacro(GetMacroIndexByName("Fix Me"))
     Send("UPDATE_MACROS")
@@ -1846,7 +1857,8 @@ do
     Fire(clean, "OnEnter")
     GameTooltip.AddLine = nil
     check("list: hover lists the issues, and where it is on the bars", table.concat(tip, "\n", 1, 5)
-        == 'Zap broken\nLine 1: unknown condition "harmm"\nNot on your action bars now\nZap clean\nNot on your action bars now',
+        == 'Zap broken\n|cffff5959Line 1: unknown condition "harmm"|r\nNot on your action bars now\nZap clean\n'
+        .. 'Not on your action bars now',
         table.concat(tip, " / "))
     -- An icon chosen, with #showtooltip: the padlock, and the tooltip says what it means. Without: none.
     check("list: a chosen icon with #showtooltip has the padlock", clean.mark:IsShown() and not broken.mark:IsShown()
@@ -4394,6 +4406,23 @@ do
     NextFrame()
 end
 
+-- The global cooldown of a spell you know, as the game gives it: a line that always casts one with it and no
+-- cooldown of its own stops the spells with it in the lines after.
+do
+    local info = C_Spell.GetSpellInfo
+    local ids = { ["Arcane Shot"] = 1, ["Aimed Shot"] = 2, Berserking = 3, ["Hunter's Mark"] = 4 }
+    local base = { { 0, 1500 }, { 6000, 1500 }, { 180000, 0 }, { 0, 1500 } }
+    C_Spell.GetSpellInfo = function(name) return ids[name] and { spellID = ids[name] } end
+    GetSpellBaseCooldown = function(id) return base[id][1], base[id][2] end
+    local G = ns.Highlight.gcdOf
+    check("gcd: as the game gives it", G("Arcane Shot") == "gcd" and G("Aimed Shot") == "cooldown"
+        and G("Berserking") == "free" and G("Fireballl") == nil)
+    local e = ns.Highlight.Errors("/cast Arcane Shot\n/cast [mod:alt] Hunter's Mark")[1]
+    check("gcd: the line after is a warning", e and e.severity == "warning" and e.short == "won't cast" and e.line == 2)
+    C_Spell.GetSpellInfo, GetSpellBaseCooldown = info, nil
+    check("gcd: not in a game that doesn't say", G("Arcane Shot") == nil)
+end
+
 -- A command the client has but its game does nothing with: /petmoveto before Cataclysm is a warning.
 do
     local function warned(raw)
@@ -5556,6 +5585,26 @@ do
     C_Spell.GetSpellInfo, GameTooltip.SetSpellByID = nil, nil
     at(letter(20), 2)
     check("explained: not past a line's end", not GameTooltip:IsShown())
+    -- An issue with a fix: the tooltip says Ctrl+click fixes it, and it does; a plain click doesn't.
+    ns.Window.Restore("/cast [] Frostbolt; [mod:alt] Fear")
+    NextFrame()
+    NextFrame()
+    Wait(1)
+    check("fix: the tooltip says Ctrl+click fixes it", at(letter(25), 1):find("Ctrl+click to fix it", 1, true)
+        ~= nil, at(letter(25), 1))
+    Fire(edit, "OnMouseDown", "LeftButton")
+    check("fix: not on a plain click", raw() == "/cast [] Frostbolt; [mod:alt] Fear", raw())
+    Fire(edit, "OnMouseDown", "RightButton")
+    check("fix: nor on a right-click", raw() == "/cast [] Frostbolt; [mod:alt] Fear", raw())
+    local ctrl = IsControlKeyDown
+    IsControlKeyDown = function() return true end
+    Fire(edit, "OnMouseDown", "LeftButton")
+    check("fix: Ctrl+click fixes it", raw() == "/cast [mod:alt] Fear; [] Frostbolt", raw())
+    Wait(1)
+    check("fix: nothing to fix there now", not at(letter(25), 1):find("Ctrl+click", 1, true), at(letter(25), 1))
+    Fire(edit, "OnMouseDown", "LeftButton")
+    check("fix: Ctrl+click on no issue changes nothing", raw() == "/cast [mod:alt] Fear; [] Frostbolt", raw())
+    IsControlKeyDown = ctrl
     -- A wrapped line: the letters of its second row.
     wrapLines = true
     ns.Window.Restore("/cast [@focus" .. string.rep("target", 15) .. "] X")

@@ -544,10 +544,10 @@ ns.locales.uk = {
     ["Ln %d, Col %d"] = "Рядок %d, стовпець %d",
     ["Line %d: %s"] = "Рядок %d: %s",
     [" (+%d more)"] = " (+ще %d)",
-    ["Click to use \"%s\""] = "Клацніть, щоб вставити «%s»",
+    ["Ctrl+click to use \"%s\""] = "Ctrl+клік, щоб вставити «%s»",
     ["Click to go to line %d"] = "Клацніть, щоб перейти до рядка %d",
-    ["Click to add \"%s\""] = "Клацніть, щоб додати «%s»",
-    ["Click to remove \"%s\""] = "Клацніть, щоб прибрати «%s»",
+    ["Ctrl+click to add \"%s\""] = "Ctrl+клік, щоб додати «%s»",
+    ["Ctrl+click to remove \"%s\""] = "Ctrl+клік, щоб прибрати «%s»",
     ["Discard unsaved changes to this macro?"] = "Відкинути незбережені зміни цього макросу?",
     ["Delete macro \"%s\"?%s"] = "Видалити макрос «%s»?%s",
     ["Yes"] = "Так",
@@ -922,6 +922,24 @@ ns.locales.uk = {
     ["\"/%s\" does nothing in this version of the game (it came with a later one)"] =
         "«/%s» нічого не робить у цій версії гри (з'явилася в пізнішій)",
     ["not in this game version"] = "немає в цій версії гри",
+    ["never runs: the part before it always does (it has [] or no conditions). Put this part before it"] =
+        "ніколи не спрацює: частина перед нею спрацьовує завжди (у неї [] або немає умов). Поставте цю частину "
+        .. "перед нею",
+    ["never runs"] = "ніколи не спрацює",
+    ["won't cast: the line above always casts %s first, and its global cooldown stops this one. To choose between "
+        .. "them, put both into one /cast, this part first"] = "не скаститься: рядок вище завжди спершу кастує %s, і "
+        .. "його глобальний кулдаун зупиняє цей. Щоб вибирати між ними, поставте обидва в один /cast, цю частину "
+        .. "першою",
+    ["won't cast"] = "не скаститься",
+    ["Ctrl+click to put the parts with a key first"] = "Ctrl+клік, щоб поставити частини з клавішею першими",
+    ["Ctrl+click to put this line into the line above, first"] =
+        "Ctrl+клік, щоб перенести цей рядок у рядок вище, на початок",
+    ["Ctrl+click to fix it"] = "Ctrl+клік — виправити",
+    ["works only while %s is on cooldown: the line above always casts it first, and its global cooldown stops this "
+        .. "one. To choose with a key, put both into one /cast, this part first"] = "спрацює лише поки %s на "
+        .. "кулдауні: рядок вище завжди спершу кастує його, і його глобальний кулдаун зупиняє цей. Щоб вибирати "
+        .. "клавішею, поставте обидва в один /cast, цю частину першою",
+    ["only while %s is on cooldown"] = "лише поки %s на кулдауні",
     ["unknown condition \"%s\""] = "невідома умова «%s»",
     ["%s: needs a value"] = "%s: потрібне значення",
     ["%s takes no value"] = "%s не приймає значення",

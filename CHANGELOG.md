@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- A warning for a part of a macro that never runs: the game takes the first part whose conditions hold, so
+  after `[]` or a part with no conditions the rest never run. `/cast [@mouseover,harm][] Arcane Shot;
+  [mod:alt] Hunter's Mark` never casts Hunter's Mark: the Alt part has to come first. The same for a spell on
+  a line below one that always casts a spell with the global cooldown; when that spell has a cooldown of its
+  own, the warning says the line below works only while it is on cooldown. When a key chooses the parts
+  (`[mod:alt]`), Ctrl+click on the warning puts them first, in one line.
+- Ctrl+click on underlined text in the editor fixes it (Cmd+click on a Mac).
+
+### Changed
+- The status bar: a click goes to the issue's line, Ctrl+click (Cmd+click on a Mac) fixes it. Before, a click
+  fixed it at once.
+
 ## [0.13.1] - 2026-11-05
 
 ### Fixed
