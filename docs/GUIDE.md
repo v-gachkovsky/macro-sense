@@ -525,6 +525,8 @@ buttons. A macro whose name is taken waits behind the scenes, and MacroSense say
 - **If something breaks**: if a change breaks halfway, MacroSense undoes all of it, so your macros, sets and
   buttons are as they were. It says so in the chat; please report the error then.
 - **Before level 10** a character has no specialization yet: its macros are kept as "No specialization yet".
+- **Primary and Secondary.** In Classic Era, TBC, Mists of Pandaria and WoW Forever the sets follow your two
+  talent groups, each with its own action bars there.
 - A macro deleted behind the scenes goes to the trash, like any other.
 
 Found something wrong, or missing something? Type `/ms bug` in game and tell me: in the comments on

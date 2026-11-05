@@ -20,7 +20,8 @@ function SetsWindow.Label(id)
     for _, spec in ipairs(ns.Sets.Specs()) do
         if spec.key == id then return spec.label end
     end
-    return id
+    local group = id:match("^group(%d+)$")
+    return group and ns.ActionBars.GroupLabel(tonumber(group)) or id
 end
 
 -- Turned on already: no button, it says so. As tall as its text is in the language chosen.

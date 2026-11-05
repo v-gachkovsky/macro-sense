@@ -5383,7 +5383,35 @@ do
     local groups = {}
     for key in pairs(ns.Character().bars) do if key:find("^group") then groups[#groups + 1] = key end end
     check("bars: Classic, by talent group", #groups == 1 and ns.Character().bars.group1.names.Twin == 1
-        and ns.Character().bars.group1.label == "Demonology", table.concat(groups, ","))
+        and ns.Character().bars.group1.label == "Primary", table.concat(groups, ","))
+    check("bars: the second talent group is Secondary", select(2, ns.ActionBars.Spec()) == "Primary"
+        and ns.ActionBars.GroupLabel(2) == "Secondary")
+    -- WoW Forever: Retail's talent tree, but bars for each talent group, as the Classic clients.
+    C_ClassTalents, WOW_PROJECT_ID, WOW_PROJECT_MAINLINE = {}, 18, 1
+    check("bars: WoW Forever, by talent group", ns.ActionBars.Spec() == "group1")
+    -- What it kept under its one specialization before goes to the talent group chosen now, once.
+    local c = ns.Character()
+    local hadSets, hadBars = c.sets, c.bars
+    c.sets = { enabled = true, character = {}, classParked = {}, active = "spec1485",
+        specs = { spec1485 = { { name = "Shot", body = "/cast Arcane Shot" } } }, bars = { spec1485 = { [3] = "Shot" } },
+        spells = { spec1485 = { ["arcane shot"] = true } } }
+    c.bars = { spec1485 = { label = "Hunter", names = { Shot = 1 } } }
+    IsLoggedIn = function() return true end
+    local sets = ns.Sets.Mine()
+    check("sets: WoW Forever's specialization into the talent group chosen now", sets.active == "group1"
+        and sets.specs.group1[1].name == "Shot" and sets.specs.spec1485 == nil and sets.bars.group1[3] == "Shot"
+        and sets.spells.group1["arcane shot"] and c.bars.group1.names.Shot == 1 and c.bars.spec1485 == nil)
+    check("sets: the talent groups named Primary and Secondary", ns.SetsWindow.Label("group1") == "Primary"
+        and ns.SetsWindow.Label("group2") == "Secondary", ns.SetsWindow.Label("group1"))
+    sets.specs.spec1485 = { { name = "Later" } }
+    check("sets: moved once", ns.Sets.Mine().specs.spec1485 ~= nil)
+    sets.grouped = nil
+    ns.Sets.Mine()
+    check("sets: not into a group that has macros already", sets.specs.spec1485[1].name == "Later"
+        and sets.specs.group1[1].name == "Shot")
+    c.sets, c.bars, IsLoggedIn = hadSets, hadBars, nil
+    WOW_PROJECT_ID, WOW_PROJECT_MAINLINE = nil, nil
+    C_ClassTalents = nil
     for _, name in ipairs({ "Bar A", "Bar B", "Loose", "Twin", "Twin 2", "Char C", "Unused One", "AAA First" }) do
         while GetMacroIndexByName(name) > 0 do DeleteMacro(GetMacroIndexByName(name)) end
     end

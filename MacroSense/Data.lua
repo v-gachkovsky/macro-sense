@@ -223,6 +223,14 @@ function ns.CommandsExpansion()
     return LE_EXPANSION_LEVEL_CURRENT
 end
 
+-- Whether a character's specializations are the two talent groups of dual specialization (Primary, Secondary),
+-- each with its own action bars, as in every client but Retail. WoW Forever has Retail's talent tree with one
+-- specialization named as the class, and two talent groups. Unknown clients: by the talent tree.
+function ns.SpecsByGroup()
+    if WOW_PROJECT_ID and WOW_PROJECT_MAINLINE then return WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE end
+    return not C_ClassTalents
+end
+
 -- The icon chosen for macro `index`, to keep and to save. GetMacroInfo gives the one shown now, which for the
 -- question mark and #showtooltip can be the shown spell's: the game's macro window too picks with this one.
 function ns.MacroIcon(index)
