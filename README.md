@@ -261,6 +261,7 @@ an empty `[]` removes both.
 - One click on the status bar fixes what is clear: a typo in a command, condition, unit or value (`/cats` →
   `/cast`, `harmm` → `harm`, `@mousover` → `@mouseover`), a missing `]` or `[`, a stray `]`, an empty condition's
   comma, a value where none belongs (`combat:1`). Its tooltip says what the click does; Ctrl+Z takes it back.
+  A right-click on the underlined text does the same.
 - Warnings are underlined in yellow and don't mark Save: an unknown unit (`@mousover`) may be a player's
   name, which macros allow.
 - `/click`: a name no button has now is a warning (an addon may make it later), and so is a frame that is
@@ -270,10 +271,11 @@ an empty `[]` removes both.
   (the pet's Move To came with Cataclysm).
 - A part that never runs is a warning: in `/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark`
   the game always stops at `[]` (empty brackets are always true, and so is a part with no conditions), so
-  the Alt part has to come first. The same for a line after one that always casts a spell with the global
-  cooldown: that cooldown stops the spells with it below. When the spell above has a cooldown of its own, the
-  warning says the line below works only while that spell is on cooldown. A spell below without the global
-  cooldown is fine.
+  the Alt part has to come first, and a click puts it there. The same for a line after one that always casts
+  a spell with the global cooldown: that cooldown stops the spells with it below. When the spell above has a
+  cooldown of its own, the warning says the line below works only while that spell is on cooldown. A spell
+  below without the global cooldown is fine. When a key chooses each part of the line below (`[mod:alt]`), a click moves them into the
+  line above, first; without a key it is not clear what the macro was meant to do, and nothing is changed.
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
   yellow name; hover it to see the issues. The marks follow the saved text.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,

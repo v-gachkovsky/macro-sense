@@ -509,8 +509,35 @@ do
     expectErrs("/cast [mod:alt] Berserking; Arcane Shot\n/cast Hunter's Mark", "")
     expectErrs("/cast Unknown Spell\n/cast Arcane Shot", "")
     expectErrs("#showtooltip Arcane Shot\n/cast Hunter's Mark", "")
+    -- The fix: a line whose every part a key chooses goes into the line above, first; any other is not clear.
+    local function fix(raw) return (fixed(raw)), select(2, fixed(raw)) end
+    local text, tip = fix("#showtooltip\n/cast [@mouseover,harm][] Arcane Shot; \n/cast [mod:alt] Hunter's Mark")
+    check("gcd fix: the key's line into the one above, first", text
+        == "#showtooltip\n/cast [mod:alt] Hunter's Mark; [@mouseover,harm][] Arcane Shot"
+        and tip == "Click to put this line into the line above, first", text)
+    check("gcd fix: the lines between stay", fix("/cast Arcane Shot\n/startattack\n/cast [mod:alt] Hunter's Mark; "
+        .. "[mod:ctrl] Aimed Shot\n/say hi") == "/cast [mod:alt] Hunter's Mark; [mod:ctrl] Aimed Shot; Arcane Shot\n"
+        .. "/startattack\n/say hi", (fix("/cast Arcane Shot\n/startattack\n/cast [mod:alt] Hunter's Mark; "
+        .. "[mod:ctrl] Aimed Shot\n/say hi")))
+    check("gcd fix: also while on cooldown", fix("/cast Aimed Shot\n/cast [mod:shift] Arcane Shot")
+        == "/cast [mod:shift] Arcane Shot; Aimed Shot")
+    check("gcd fix: not without a key", fixed("/cast Arcane Shot\n/cast [@focus] Hunter's Mark") == nil)
+    check("gcd fix: not with a part no key chooses", fixed("/cast Arcane Shot\n/cast [mod:alt] Hunter's Mark; "
+        .. "Aimed Shot") == nil)
+    check("gcd fix: not into another command", fixed("/cast Arcane Shot\n/castsequence [mod:alt] Hunter's Mark, "
+        .. "Aimed Shot") == nil)
     H.gcdOf = nil
     expectErrs("/cast Arcane Shot\n/cast Hunter's Mark", "")             -- the game is not asked: no warning
+end
+-- The fix: the parts a key chooses go first, the rest stay after the one that always runs.
+do
+    local text, tip = fixed("/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark")
+    check("never runs fix: the key's part first", text == "/cast [mod:alt] Hunter's Mark; [@mouseover,harm][] Arcane Shot"
+        and tip == "Click to put the parts with a key first", text)
+    check("never runs fix: all of them, in their order", fixed("/cast [] A; [mod:alt] B; C; [mod:ctrl] D;")
+        == "/cast [mod:alt] B; [mod:ctrl] D; [] A; C;", (fixed("/cast [] A; [mod:alt] B; C; [mod:ctrl] D;")))
+    check("never runs fix: not without a key", fixed("/cast A; [@focus] B") == nil)
+    check("never runs fix: not for one that always runs too", fixed("/cast A; [mod:alt][] B") == nil)
 end
 check("never runs: a warning, said short", issues("/cast A; B") == "warning:B"
     and H.Errors("/cast A; B")[1].short == "never runs")

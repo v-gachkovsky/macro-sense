@@ -295,6 +295,17 @@ local function resetSpans(reset, from, add, sequence)
     end
 end
 
+-- Whether a key held chooses a branch: [mod:alt], [modifier]; not [nomod].
+local function Keyed(body)
+    for inner in body:gmatch("%[([^%]]*)%]") do
+        for part in (inner .. ","):gmatch("([^,]*),") do
+            local name = (part:match("^%s*(%a+)") or ""):lower()
+            if name == "mod" or name == "modifier" then return true end
+        end
+    end
+    return false
+end
+
 -- Arguments of a secure command: "[cond] arg; [cond] arg". command: the action command ("cast", ...), if any.
 -- A sequence ("reset=" allowed) and /castrandom, /userandom have a list of names, "," between. `info`, when given,
 -- learns the names: spells = { { name, from, branch } }, always = the first branch that always runs.
@@ -304,17 +315,14 @@ local function argSpans(s, base, add, argKind, sequence, command, info)
     local guarded = false -- the conditions of this branch check for a specialization or a talent (GUARDS)
     -- The game runs the first branch whose conditions hold: after one that always does ("[]", or no conditions),
     -- the rest never run. `group`, `empty`, `word`: this branch has conditions, an empty "[]", an argument.
-    local branchFrom, group, empty, word, always, branch = 1, false, false, false, false, 1
+    -- branches: { body, from, to (raw positions), always, key (a key held chooses it) }.
+    local branchFrom, group, empty, word, branch, branches = 1, false, false, false, 1, {}
     local function endBranch(to)
         local text = s:sub(branchFrom, to)
         local lead, body = #text:match("^%s*"), text:match("^%s*(.-)%s*$")
-        if always and body ~= "" then
-            local from = base + branchFrom + lead
-            add(from, from + #body - 1, "note", L["never runs: the part before it always does (it has [] or no "
-                .. "conditions). Put this part before it"], "warning", { short = L["never runs"] })
-        end
-        if info and not always and (empty or (word and not group)) then info.always = branch end
-        always = always or empty or (word and not group)
+        local from = base + branchFrom + lead
+        branches[branch] = { body = body, from = from, to = from + #body - 1, always = empty or (word and not group),
+            key = Keyed(body) }
         group, empty, word, branch = false, false, false, branch + 1
     end
     while i <= #s do
@@ -416,6 +424,35 @@ local function argSpans(s, base, add, argKind, sequence, command, info)
         end
     end
     endBranch(#s)
+    local first
+    for k, b in ipairs(branches) do
+        if b.always then
+            first = k
+            break
+        end
+    end
+    if info then info.always, info.branches = first, branches end
+    if not first then return end
+    -- The parts after it that a key chooses were meant for that key: the fix puts them first, the rest stay after.
+    local moved, kept, last = {}, { branches[first].body }, branches[first]
+    for k = first + 1, #branches do
+        local b = branches[k]
+        if b.body ~= "" then
+            table.insert((b.key and not b.always) and moved or kept, b.body)
+            last = b
+        end
+    end
+    local fix = #moved > 0 and table.concat(moved, "; ") .. "; " .. table.concat(kept, "; ")
+    for k = first + 1, #branches do
+        local b = branches[k]
+        if b.body ~= "" then
+            local keyed = fix and b.key and not b.always
+            add(b.from, b.to, "note", L["never runs: the part before it always does (it has [] or no conditions). "
+                .. "Put this part before it"], "warning", { short = L["never runs"], fix = keyed and fix or nil,
+                fixFrom = keyed and branches[first].from or nil, fixTo = keyed and last.to or nil,
+                fixTip = keyed and L["Click to put the parts with a key first"] or nil })
+        end
+    end
 end
 
 local function lineSpans(line, base, add, info)
@@ -463,7 +500,27 @@ local function Blocking(info)
             if not seen[sp.name] then names[#names + 1], seen[sp.name] = sp.name, true end
         end
     end
-    return #names > 0 and { names = table.concat(names, L[" or "]), kind = kind } or nil
+    return #names > 0 and { names = table.concat(names, L[" or "]), kind = kind, info = info } or nil
+end
+
+-- The fix for line `info`, whose spells wait for those of line `above`: when a key held chooses each of its parts,
+-- they were meant for that key. They go into the line above, before its part that always runs, and the line goes
+-- (with the line break before it). Nil when it isn't so clear.
+local function Merged(raw, above, info)
+    if info.command ~= "cast" and info.command ~= "spell" then return nil end
+    local parts = {}
+    for _, b in ipairs(info.branches or {}) do
+        if b.body ~= "" then
+            if not b.key or b.always then return nil end
+            parts[#parts + 1] = b.body
+        end
+    end
+    if #parts == 0 then return nil end
+    local first, last = above.branches[above.always], nil
+    for _, b in ipairs(above.branches) do if b.body ~= "" then last = b end end
+    return { fix = table.concat(parts, "; ") .. "; " .. raw:sub(first.from, last.to)
+        .. raw:sub(above.lineTo + 1, info.lineFrom - 2), fixFrom = first.from, fixTo = info.lineTo,
+        fixTip = L["Click to put this line into the line above, first"] }
 end
 
 function Highlight.Spans(raw)
@@ -476,20 +533,24 @@ function Highlight.Spans(raw)
     end
     local pos, blocking = 0, nil
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
-        local info = { spells = {} }
+        local info = { spells = {}, lineFrom = pos + 1, lineTo = pos + #line }
         lineSpans(line, pos, add, info)
         if Highlight.gcdOf then
+            local merged = blocking and Merged(raw, blocking.info, info) or {}
             for _, sp in ipairs(blocking and info.spells or {}) do
                 local gcd = Highlight.gcdOf(sp.name)
+                local extra = { fix = merged.fix, fixFrom = merged.fixFrom, fixTo = merged.fixTo,
+                    fixTip = merged.fixTip }
                 if (gcd == "gcd" or gcd == "cooldown") and blocking.kind == "gcd" then
+                    extra.short = L["won't cast"]
                     add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["won't cast: the line above always "
                         .. "casts %s first, and its global cooldown stops this one. To choose between them, put both "
-                        .. "into one /cast, this part first"], blocking.names), "warning", { short = L["won't cast"] })
+                        .. "into one /cast, this part first"], blocking.names), "warning", extra)
                 elseif gcd == "gcd" or gcd == "cooldown" then
+                    extra.short = string.format(L["only while %s is on cooldown"], blocking.names)
                     add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only while %s is on cooldown: "
                         .. "the line above always casts it first, and its global cooldown stops this one. To choose "
-                        .. "with a key, put both into one /cast, this part first"], blocking.names), "warning",
-                        { short = string.format(L["only while %s is on cooldown"], blocking.names) })
+                        .. "with a key, put both into one /cast, this part first"], blocking.names), "warning", extra)
                 end
             end
             -- One that never lets the lines after cast is the stronger.

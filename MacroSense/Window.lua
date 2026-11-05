@@ -394,6 +394,20 @@ local function PutName(name, command)
     code:InsertText(line:find("%S") and name or (command .. " " .. name))
 end
 
+-- Issue `e` fixed: its fix put in place of its text.
+local function ApplyFix(e)
+    local raw, from, to = code:GetRaw(), e.fixFrom or e.from, e.fixTo or e.to
+    code:SetRaw(raw:sub(1, from - 1) .. e.fix .. raw:sub(to + 1), from - 1 + #e.fix, true)
+    code:CheckNow()
+end
+
+-- The issue with a fix at raw position `pos` of the text, if any.
+local function FixAt(pos)
+    for _, e in ipairs(pos and code.errors or {}) do
+        if e.fix and pos >= e.from and pos <= e.to then return e end
+    end
+end
+
 -- The word under the mouse: what it means, or the game's tooltip of the spell or item.
 local function WordTip(raw, pos)
     local doc = pos and ns.Docs.At(raw, pos, explainEnv)
@@ -416,7 +430,14 @@ local function UpdateExplain()
     local text = n and select(n, (raw .. "\n"):match(string.rep("([^\n]*)\n", n)))
     local lines = text and ns.Explain.Line(text, explainEnv)
     if not lines then
-        if not WordTip(raw, pos) and GameTooltip:GetOwner() == code.scroll then GameTooltip:Hide() end
+        local shown, e = WordTip(raw, pos), FixAt(pos)
+        if e then -- an issue a right-click fixes: said under what the word means
+            if not shown then GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR") end
+            GameTooltip:AddLine(L["Right-click to fix it"], 0.4, 1, 0.4)
+            GameTooltip:Show()
+        elseif not shown and GameTooltip:GetOwner() == code.scroll then
+            GameTooltip:Hide()
+        end
         return
     end
     GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
@@ -2982,9 +3003,7 @@ local function Build()
         if not e then return end
         GameTooltip:Hide()
         if not e.fix then return code:SetRawCursor(e.from - 1) end
-        local raw, from, to = code:GetRaw(), e.fixFrom or e.from, e.fixTo or e.to
-        code:SetRaw(raw:sub(1, from - 1) .. e.fix .. raw:sub(to + 1), from - 1 + #e.fix, true)
-        code:CheckNow()
+        ApplyFix(e)
     end)
 
     -- Editor.
@@ -2997,6 +3016,14 @@ local function Build()
     code.scroll:SetPoint("BOTTOMRIGHT", -15, 4)
     ns.AttachAutocomplete(code)
     code:ShowNotes(ns.db.preview)
+    -- A right-click on an issue that has a fix: fixed.
+    code.onRightClick = function(pos)
+        local e = FixAt(pos)
+        if not e then return false end
+        GameTooltip:Hide()
+        ApplyFix(e)
+        return true
+    end
     -- A spell, mount or item dropped on the text: its name, as the game's macro window takes it.
     code.onDrop = function()
         local name, command = OnCursor()

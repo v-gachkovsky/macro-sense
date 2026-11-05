@@ -138,8 +138,9 @@ function ns.CreateCodeBox(parent, name)
             self:Key(key, "keydown")
         end
     end)
-    edit:SetScript("OnMouseDown", function()
+    edit:SetScript("OnMouseDown", function(_, button)
         self.lockCursor = nil
+        if button == "RightButton" and self.onRightClick and self.onRightClick(self:HoveredPos()) then return end
         drop()
     end)
     return self

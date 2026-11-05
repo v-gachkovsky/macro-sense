@@ -11,7 +11,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   after `[]` or a part with no conditions the rest never run. `/cast [@mouseover,harm][] Arcane Shot;
   [mod:alt] Hunter's Mark` never casts Hunter's Mark: the Alt part has to come first. The same for a spell on
   a line below one that always casts a spell with the global cooldown; when that spell has a cooldown of its
-  own, the warning says the line below works only while it is on cooldown.
+  own, the warning says the line below works only while it is on cooldown. When a key chooses the parts
+  (`[mod:alt]`), a click on the warning puts them first, in one line.
+- A right-click on underlined text fixes it, as a click on the status bar does.
 
 ## [0.13.1] - 2026-11-05
 

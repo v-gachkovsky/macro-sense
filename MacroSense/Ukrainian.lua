@@ -931,6 +931,9 @@ ns.locales.uk = {
         .. "його глобальний кулдаун зупиняє цей. Щоб вибирати між ними, поставте обидва в один /cast, цю частину "
         .. "першою",
     ["won't cast"] = "не скаститься",
+    ["Click to put the parts with a key first"] = "Клацніть, щоб поставити частини з клавішею першими",
+    ["Click to put this line into the line above, first"] = "Клацніть, щоб перенести цей рядок у рядок вище, на початок",
+    ["Right-click to fix it"] = "Правий клік — виправити",
     ["works only while %s is on cooldown: the line above always casts it first, and its global cooldown stops this "
         .. "one. To choose with a key, put both into one /cast, this part first"] = "спрацює лише поки %s на "
         .. "кулдауні: рядок вище завжди спершу кастує його, і його глобальний кулдаун зупиняє цей. Щоб вибирати "
