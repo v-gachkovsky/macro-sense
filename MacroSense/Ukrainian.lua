@@ -922,6 +922,10 @@ ns.locales.uk = {
     ["\"/%s\" does nothing in this version of the game (it came with a later one)"] =
         "«/%s» нічого не робить у цій версії гри (з'явилася в пізнішій)",
     ["not in this game version"] = "немає в цій версії гри",
+    ["never runs: the part before it always does (it has [] or no conditions). Put this part before it"] =
+        "ніколи не спрацює: частина перед нею спрацьовує завжди (у неї [] або немає умов). Поставте цю частину "
+        .. "перед нею",
+    ["never runs"] = "ніколи не спрацює",
     ["unknown condition \"%s\""] = "невідома умова «%s»",
     ["%s: needs a value"] = "%s: потрібне значення",
     ["%s takes no value"] = "%s не приймає значення",

@@ -229,7 +229,9 @@ end
 local H = ns.Highlight
 local function kinds(raw)
     local out = {}
-    for _, sp in ipairs(H.Spans(raw)) do out[#out + 1] = raw:sub(sp[1], sp[2]) .. "=" .. sp[3] end
+    for _, sp in ipairs(H.Spans(raw)) do
+        if sp[3] ~= "note" then out[#out + 1] = raw:sub(sp[1], sp[2]) .. "=" .. sp[3] end -- notes have no color
+    end
     return table.concat(out, " ")
 end
 local function expectKinds(raw, want)
@@ -467,6 +469,20 @@ local function issues(raw)
     for _, e in ipairs(H.Errors(raw)) do out[#out + 1] = e.severity .. ":" .. raw:sub(e.from, e.to) end
     return table.concat(out, " ")
 end
+-- After a branch that always runs ("[]", or no conditions), the rest never do.
+local NEVER = "never runs: the part before it always does (it has [] or no conditions). Put this part before it"
+expectErrs("/cast [@mouseover,harm,nodead][] Arcane Shot; [mod:alt] Hunter's Mark",
+    "[mod:alt] Hunter's Mark=" .. NEVER .. "@1")
+expectErrs("/cast Arcane Shot; Hunter's Mark", "Hunter's Mark=" .. NEVER .. "@1")
+expectErrs("#showtooltip\n/cast [] A; [mod] B; C", "[mod] B=" .. NEVER .. "@2 | C=" .. NEVER .. "@2")
+expectErrs("/cast [ ] A; B", "B=" .. NEVER .. "@1")
+expectErrs("/cast [mod:alt] Hunter's Mark; [@mouseover,harm,nodead][] Arcane Shot", "")
+expectErrs("/cast [mod] A; B; ", "")
+expectErrs("/castsequence reset=10 A, B", "")
+check("never runs: a warning, said short", issues("/cast A; B") == "warning:B"
+    and H.Errors("/cast A; B")[1].short == "never runs")
+check("never runs: what is under it keeps its colors", H.Colorize("/cast A; B", scheme)
+    == "|cff111111/cast|r |cff222222A|r|cff333333;|r |cff222222B|r", H.Colorize("/cast A; B", scheme))
 check("nochanneling is no mistake", issues("/cast [nochanneling] X; [nochanneling:Drain Life] Y") == "")
 check("unknown unit is a warning", issues("/cast [@mousover] X") == "warning:mousover", issues("/cast [@mousover] X"))
 check("player name is only a warning", issues("/cast [target=Thrall] X") == "warning:Thrall")
@@ -602,7 +618,7 @@ do
         == "Immolate guarded, Chaos Bolt guarded")
     check("missing spell: #showtooltip", seen("#showtooltip [spec:2] Chaos Bolt") == "Chaos Bolt guarded")
     check("missing spell: no name to check in an unclosed bracket", seen("/cast [spec:2 Chaos Bolt") == "")
-    local typo = H.Errors("/cast Chaos Bolt; Fireball")
+    local typo = H.Errors("/cast [mod] Chaos Bolt; Fireball")
     check("missing spell: only that one", #typo == 1 and typo[1].missing == true)
 end
 H.checkAction = nil

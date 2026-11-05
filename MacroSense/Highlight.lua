@@ -298,6 +298,20 @@ local function argSpans(s, base, add, argKind, sequence, command)
     local i = 1
     local list = sequence or command == "castrandom" or command == "userandom"
     local guarded = false -- the conditions of this branch check for a specialization or a talent (GUARDS)
+    -- The game runs the first branch whose conditions hold: after one that always does ("[]", or no conditions),
+    -- the rest never run. `group`, `empty`, `word`: this branch has conditions, an empty "[]", an argument.
+    local branchFrom, group, empty, word, always = 1, false, false, false, false
+    local function endBranch(to)
+        local text = s:sub(branchFrom, to)
+        local lead, body = #text:match("^%s*"), text:match("^%s*(.-)%s*$")
+        if always and body ~= "" then
+            local from = base + branchFrom + lead
+            add(from, from + #body - 1, "note", L["never runs: the part before it always does (it has [] or no "
+                .. "conditions). Put this part before it"], "warning", { short = L["never runs"] })
+        end
+        always = always or empty or (word and not group)
+        group, empty, word = false, false, false
+    end
     while i <= #s do
         local c = s:sub(i, i)
         if c == "[" then
@@ -324,6 +338,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
             -- Split on "," by hand: gmatch with an empty-matching pattern behaves differently in Lua 5.1.
             local inner, from = s:sub(i + 1, close - 1), 1
             guarded = guarded or guards(inner)
+            group, empty = true, empty or not inner:find("%S")
             local split = inner:find(",", 1, true) ~= nil
             while true do
                 local comma = inner:find(",", from, true)
@@ -349,11 +364,16 @@ local function argSpans(s, base, add, argKind, sequence, command)
             i = i + 1
         elseif c == ";" or (list and c == ",") then
             add(base + i, base + i, "operator")
-            if c == ";" then guarded = false end -- the next branch has conditions of its own
+            if c == ";" then
+                guarded = false -- the next branch has conditions of its own
+                endBranch(i - 1)
+                branchFrom = i + 1
+            end
             i = i + 1
         elseif c:find("%s") then
             i = i + 1
         else
+            word = true
             local stop = (s:find(list and "[;,%[%]]" or "[;%[%]]", i) or (#s + 1)) - 1
             local word = s:sub(i, stop):match("^(.-)%s*$")
             local reset = argKind == "action" and word:match("^reset=%S*")
@@ -387,6 +407,7 @@ local function argSpans(s, base, add, argKind, sequence, command)
             end
         end
     end
+    endBranch(#s)
 end
 
 local function lineSpans(line, base, add)
@@ -462,7 +483,7 @@ function Highlight.Colorize(raw, scheme)
     local out, pos = {}, 1
     for _, span in ipairs(Highlight.Spans(raw)) do
         local from, to, kind = span[1], span[2], span[3]
-        if from >= pos then
+        if from >= pos and kind ~= "note" then -- a note only says something: what is under it has its colors
             out[#out + 1] = raw:sub(pos, from - 1)
             out[#out + 1] = "|cff" .. (scheme[kind] or scheme.text) .. raw:sub(from, to) .. "|r"
             pos = to + 1

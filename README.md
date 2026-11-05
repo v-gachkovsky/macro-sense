@@ -268,6 +268,9 @@ an empty `[]` removes both.
   since the game reads it as no (`true` clicks on key press).
 - A command this game version has but does nothing with is a warning: `/petmoveto` in Classic Era and TBC
   (the pet's Move To came with Cataclysm).
+- A part that never runs is a warning: in `/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark`
+  the game always stops at `[]` (empty brackets are always true, and so is a part with no conditions), so
+  the Alt part has to come first.
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
   yellow name; hover it to see the issues. The marks follow the saved text.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,

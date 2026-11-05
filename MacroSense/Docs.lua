@@ -189,7 +189,7 @@ end
 function Docs.At(raw, pos, env)
     local span
     for _, s in ipairs(ns.Highlight.Spans(raw)) do
-        if pos >= s[1] and pos <= s[2] then span = s end
+        if pos >= s[1] and pos <= s[2] and s[3] ~= "note" then span = s end
     end
     if not span then return nil end
     local word, kind = raw:sub(span[1], span[2]), span[3]
