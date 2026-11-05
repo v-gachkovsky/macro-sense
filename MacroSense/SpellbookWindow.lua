@@ -513,7 +513,7 @@ local function Build()
     local function actions(none)
         return function()
             local items = none and {} or { { key = "", name = L["Nothing"] } }
-            for _, a in ipairs(ns.Wizard.PetActions(LE_EXPANSION_LEVEL_CURRENT)) do
+            for _, a in ipairs(ns.Wizard.PetActions(ns.CommandsExpansion())) do
                 items[#items + 1] = { key = a.key, name = L[a.name] }
             end
             return items

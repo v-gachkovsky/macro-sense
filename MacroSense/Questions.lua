@@ -294,7 +294,7 @@ end
 
 local function PetAnswers()
     local out = {}
-    for _, a in ipairs(W.PetActions(LE_EXPANSION_LEVEL_CURRENT)) do
+    for _, a in ipairs(W.PetActions(ns.CommandsExpansion())) do
         out[#out + 1] = { key = a.key, name = L[a.name], hint = a.command }
     end
     return out

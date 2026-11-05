@@ -215,6 +215,14 @@ local slots = Constants and Constants.MacroConsts or {}
 ns.MAX_GENERAL = slots.MAX_ACCOUNT_MACROS or MAX_ACCOUNT_MACROS or 120
 ns.MAX_CHARACTER = slots.MAX_CHARACTER_MACROS or MAX_CHARACTER_MACROS or 30
 
+-- The expansion to tell which commands the game carries out by (LE_EXPANSION_LEVEL_CURRENT: 0 Classic Era, 1 TBC,
+-- 4 Mists of Pandaria), or nil where it carries out all of them: WoW Forever has the world of Classic Era but the
+-- game of Retail (/petmoveto works there); unknown clients too.
+function ns.CommandsExpansion()
+    if WOW_PROJECT_ID == (WOW_PROJECT_CAMELOT or 18) then return nil end
+    return LE_EXPANSION_LEVEL_CURRENT
+end
+
 -- The icon chosen for macro `index`, to keep and to save. GetMacroInfo gives the one shown now, which for the
 -- question mark and #showtooltip can be the shown spell's: the game's macro window too picks with this one.
 function ns.MacroIcon(index)

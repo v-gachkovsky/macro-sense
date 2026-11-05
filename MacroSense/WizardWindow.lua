@@ -1006,7 +1006,7 @@ local function Build()
     blocks.pet = Block(34)
     Text(blocks.pet, L["Pet"], PAD, -5)
     -- Only what this game has (no Move To before Cataclysm).
-    local function petActions() return W.PetActions(LE_EXPANSION_LEVEL_CURRENT) end
+    local function petActions() return W.PetActions(ns.CommandsExpansion()) end
     Choice(blocks.pet, "pet", 150, petActions, function() return spec.pet end, function(action)
         spec.pet = action
         Arrange()

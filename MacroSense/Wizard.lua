@@ -100,7 +100,8 @@ function Wizard.MountPlaces(expansion)
 end
 
 -- What the pet can be told. Attack takes units, Move to goes to the cursor; `since`: the expansion it came with
--- (Move To with Cataclysm: Classic Era and TBC have the command, but their game does nothing with it).
+-- (Move To with Cataclysm: Classic Era and TBC have the command, but their game does nothing with it; WoW
+-- Forever's does).
 Wizard.petActions = {
     { key = "attack", name = "Attack", command = "/petattack" },
     { key = "follow", name = "Follow", command = "/petfollow" },
