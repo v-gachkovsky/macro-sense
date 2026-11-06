@@ -71,6 +71,17 @@ function Spellbook.Casts(body)
     return out
 end
 
+-- The spell a macro casts with no key held, lowercase, with no rank: the last of its first /cast line ("/cast
+-- [mod:shift] Frost Nova; Frostbolt" casts frostbolt then). Nil with no such line.
+function Spellbook.Main(body)
+    for line in (body or ""):gmatch("[^\n]+") do
+        local command, rest = line:match("^%s*/(%a+)%s*(.*)$")
+        if command and command:lower() == "cast" then
+            return next(Spellbook.Casts("/cast " .. (rest:match("([^;]*)$") or "")))
+        end
+    end
+end
+
 -- A name of up to 16 letters: the spell's, or shorter as players write it: "SW: Pain" for Shadow Word: Pain, "BoK"
 -- for Blessing of Kings.
 function Spellbook.Name(spell)
@@ -292,13 +303,13 @@ function Spellbook.Plan(kit, choices)
 end
 
 -- After the macros are made: every spell offered is seen, and those made remembered with their macro as written
--- (`made`: spell -> { name, body }, the names the game took). A spell whose macro the game didn't make (`failed`)
--- is offered again as before.
+-- (`made`: spell -> { name, body, main }, the names the game took; `main`: the spell the macro was made for, not
+-- one joined to it on a key). A spell whose macro the game didn't make (`failed`) is offered again as before.
 function Spellbook.Remember(journal, rows, made, failed)
     for _, row in ipairs(rows) do
         if not (failed and failed[row.spell.name]) then journal.seen[row.spell.name] = true end
     end
-    for spell, m in pairs(made) do journal.made[spell] = { name = m.name, body = m.body } end
+    for spell, m in pairs(made) do journal.made[spell] = { name = m.name, body = m.body, main = m.main or nil } end
 end
 
 return Spellbook

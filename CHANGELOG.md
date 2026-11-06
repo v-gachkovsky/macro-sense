@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Macros from the spellbook: an interrupt joined to another spell on a key lost "Stop your cast first".
   Now the macro stops the cast only when that key casts the interrupt (`/stopcasting [mod:ctrl]`), and
   the other spell casts as before. The wizard reads such a line back.
+- Deleting a macro from the spellbook that casts two spells (one joined on a key) could put the joined
+  spell on its buttons instead of the one the macro was made for. Now it is always the macro's own spell.
 
 ## [0.15.0] - 2026-11-06
 

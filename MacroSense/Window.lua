@@ -786,9 +786,14 @@ end
 local function SpellBack(index)
     local name, _, body = GetMacroInfo(index)
     if not name or index <= ns.MAX_GENERAL or InCombatLockdown() then return end
-    local casts, spell = ns.Spellbook.Casts(body), nil
+    -- Two spells in it, one joined on a key: the one it was made for; remembered before that was, the one it casts
+    -- with no key held.
+    local casts, main, spell, best = ns.Spellbook.Casts(body), ns.Spellbook.Main(body), nil, 0
     for s, m in pairs(ns.Spellbook.Journal(ns.char).made) do
-        if m.name == name and casts[s:lower()] then spell = s end
+        if m.name == name and casts[s:lower()] then
+            local rank = m.main and 3 or s:lower() == main and 2 or 1
+            if rank > best then spell, best = s, rank end
+        end
     end
     local id = spell and ns.SpellID(spell)
     local pickup = C_Spell and C_Spell.PickupSpell or PickupSpell
