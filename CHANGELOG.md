@@ -7,6 +7,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at
+  the bars once, not for each button.
 - The in-game help and the guide tell of the warnings for a part of a macro that never runs, and of Primary and
   Secondary in the older clients.
 

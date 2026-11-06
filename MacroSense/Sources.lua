@@ -179,14 +179,17 @@ local function SpellID(name)
         return ok and id or nil
     end
 end
+-- Asked as the text is typed: kept by name until the spells change (false: no spell you know).
+local gcdCache = {}
 function ns.Highlight.gcdOf(name)
-    local base = C_Spell and C_Spell.GetSpellBaseCooldown or GetSpellBaseCooldown
-    local id = base and SpellID(name)
-    if not id then return nil end
-    local cooldown, gcd = base(id)
-    if not gcd then return nil end
-    if gcd == 0 then return "free" end
-    return (cooldown or 0) > 0 and "cooldown" or "gcd"
+    if gcdCache[name] == nil then
+        local base = C_Spell and C_Spell.GetSpellBaseCooldown or GetSpellBaseCooldown
+        local id = base and SpellID(name)
+        local cooldown, gcd
+        if id then cooldown, gcd = base(id) end
+        gcdCache[name] = gcd and (gcd == 0 and "free" or (cooldown or 0) > 0 and "cooldown" or "gcd") or false
+    end
+    return gcdCache[name] or nil
 end
 
 function ns.Highlight.checkCommand(name)
@@ -1033,7 +1036,7 @@ end
 
 function ns.InvalidateSources(what)
     if not what or what == "commands" then commandCache = nil end
-    if not what or what == "spells" then spellCache = nil end
+    if not what or what == "spells" then spellCache, gcdCache = nil, {} end
     if not what or what == "items" then itemCache = nil end
     if what ~= "commands" then knownCache = nil end
 end

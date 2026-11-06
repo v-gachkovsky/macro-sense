@@ -125,6 +125,23 @@ function ns.MacrosChanged()
     ns.SetsWindow.Refresh()
 end
 
+-- Bindings or what is on the action bars changed: the keys, the status bar and the buttons' tints follow.
+local function BarsChanged()
+    ns.Shortcuts.Invalidate()
+    ns.Window.RefreshStatus()
+    ns.ActionBars.Tint()
+end
+-- The game changes many slots at once (all of them with a specialization, at login): once, the next frame.
+local barsDue
+local function BarsChangedSoon()
+    if barsDue then return end
+    barsDue = true
+    C_Timer.After(0, function()
+        barsDue = false
+        BarsChanged()
+    end)
+end
+
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
     "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED", "UNIT_PET",
@@ -178,10 +195,10 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "UPDATE_MACROS" then
         if ns.Sets.Busy() then return end -- MacroSense changes the slots now: learned when it is done
         ns.MacrosChanged()
-    elseif event == "UPDATE_BINDINGS" or event == "ACTIONBAR_SLOT_CHANGED" then
-        ns.Shortcuts.Invalidate()
-        ns.Window.RefreshStatus()
-        ns.ActionBars.Tint()
+    elseif event == "UPDATE_BINDINGS" then
+        BarsChanged()
+    elseif event == "ACTIONBAR_SLOT_CHANGED" then
+        BarsChangedSoon()
     end
 end)
 

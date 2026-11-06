@@ -1312,12 +1312,22 @@ do
     -- An equipment set named like the macro, on the W button: not the macro (Cmd+W closes the window).
     actions[2], bindings.ACTIONBUTTON2 = { "equipmentset", "Bar", text = (GetMacroInfo(1)) }, "W"
     Send("ACTIONBAR_SLOT_CHANGED", 2)
+    NextFrame()
     check("only the macro's own buttons", not warningText():find("Cmd%+W"), warningText())
     actions[2], bindings.ACTIONBUTTON2 = nil, nil
     Send("ACTIONBAR_SLOT_CHANGED", 2)
     bindings.ACTIONBUTTON1 = "E"
     Send("UPDATE_BINDINGS")
     check("rebinding to E clears it", warningText() == "", warningText())
+    -- The game changes many slots at once (a specialization: all of them): the bars are looked at once, a frame
+    -- later.
+    local tint, tints = ns.ActionBars.Tint, 0
+    ns.ActionBars.Tint = function() tints = tints + 1 end
+    for slot = 1, 180 do Send("ACTIONBAR_SLOT_CHANGED", slot) end
+    local before = tints
+    NextFrame()
+    check("bars: many slots changed, looked at once", before == 0 and tints == 1, tints)
+    ns.ActionBars.Tint = tint
     bindings.ACTIONBUTTON1 = "Q"
     Send("UPDATE_BINDINGS")
     check("back on Q warns again", warningText() ~= "")
@@ -4454,12 +4464,18 @@ do
     local base = { { 0, 1500 }, { 6000, 1500 }, { 180000, 0 }, { 0, 1500 } }
     C_Spell.GetSpellInfo = function(name) return ids[name] and { spellID = ids[name] } end
     GetSpellBaseCooldown = function(id) return base[id][1], base[id][2] end
+    ns.InvalidateSources("spells")
     local G = ns.Highlight.gcdOf
     check("gcd: as the game gives it", G("Arcane Shot") == "gcd" and G("Aimed Shot") == "cooldown"
         and G("Berserking") == "free" and G("Fireballl") == nil)
     local e = ns.Highlight.Errors("/cast Arcane Shot\n/cast [mod:alt] Hunter's Mark")[1]
     check("gcd: the line after is a warning", e and e.severity == "warning" and e.short == "won't cast" and e.line == 2)
+    base[1][1] = 6000
+    check("gcd: kept until the spells change", G("Arcane Shot") == "gcd")
+    ns.InvalidateSources("spells")
+    check("gcd: asked again then", G("Arcane Shot") == "cooldown")
     C_Spell.GetSpellInfo, GetSpellBaseCooldown = info, nil
+    ns.InvalidateSources("spells")
     check("gcd: not in a game that doesn't say", G("Arcane Shot") == nil)
 end
 
