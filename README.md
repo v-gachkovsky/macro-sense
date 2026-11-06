@@ -510,8 +510,8 @@ on, and a backup of your macros is made first.
   **Clear all**). **Share > Import a code or text...** takes such a code, or the sets of another character of
   yours: each set into its own, another class's into this character's (said first), a taken name with a number,
   the very same macro skipped, all behind the scenes.
-- **All or nothing.** If a change breaks halfway, MacroSense undoes it: your macros, sets and buttons are as they
-  were. The chat says so; please report the error then.
+- **An error leaves no mess.** If MacroSense runs into an error of its own halfway through a change, it undoes
+  the change: your macros, sets and buttons are as they were. The chat says so; please report the error then.
 
 `/ms sets log` prints what the sets did, for a bug report.
 
@@ -598,7 +598,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
   needs the game.
 - `MacroSense/Share.lua`: macros and macro sets as a code and back. Pure Lua.
 - `MacroSense/Sets.lua`: macro sets: the layers, what comes into the game with a specialization, the buttons put
-  back, and every change all or nothing. The planning is pure Lua.
+  back, and a change undone when an error stops it halfway. The planning is pure Lua.
 - `MacroSense/SetsWindow.lua`: what macro sets are, turning them on and off, and the questions they ask.
 - `MacroSense/Backups.lua`: backups of all the macros, which to keep and what a restore does. Pure Lua.
 - `MacroSense/ShareWindow.lua`: the window of a code, to export and to import.

@@ -131,8 +131,8 @@ A character has only 30 macro slots. Tick **Macro sets**, and MacroSense keeps m
 - **Take your sets to another character**: **Share > Export macro sets...** makes a code of the sets you tick,
   and **Import a code or text...** takes it, or the sets of another character of yours.
 - **Nothing is lost.** Turned off, the macros come back into the game (you choose which, if not all fit), and
-  turned on again they go back where they were. A backup of your macros is made first, and a change that breaks
-  halfway is undone.
+  turned on again they go back where they were. A backup of your macros is made first, and a change that MacroSense's
+  own error stops halfway is undone.
 
 They are off until you turn them on: without them, MacroSense works as before.
 
