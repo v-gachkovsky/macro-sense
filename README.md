@@ -405,7 +405,9 @@ goes.
 
 The General tab can have **favorites** and **folders** of your own: **Add to favorites** in a macro's **...** puts
 it at the top, under Favorites; **Into a new folder** makes a folder with the name you give, **Into the folder:
-...** puts it in one you have, **Out of the folder** takes it out. Each folder opens and closes with a click; a
+...** puts it in one you have, **Out of the folder** takes it out. Or drag the macro onto a folder or Favorites, or
+onto a macro out of the folders to take it out. A macro is a favorite or in a folder, not both. Each folder opens
+and closes with a click; a
 right click on its name renames or deletes it (its macros stay). They follow a macro renamed; one moved into the
 Character tab leaves them behind. They are kept for the account, as the General macros are.
 

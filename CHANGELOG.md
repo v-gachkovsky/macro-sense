@@ -27,7 +27,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the list "All" picks every macro shown or none, x takes back every pick, and "Actions" shares, moves, puts into a
   set or deletes them all; with macro sets on it also takes them into the game or puts them behind the scenes.
 - Favorites and folders in the General tab: a macro's "..." puts it at the top under Favorites, or into a folder of
-  your own; a right click on a folder's name renames or deletes it. Picked macros go into one all at once.
+  your own, and so does dragging it there; a right click on a folder's name renames or deletes it. Picked macros
+  go into one all at once.
 - "What if" by the live preview: the notes next to the lines for a moment you set up yourself, the keys held,
   combat, and who your target, mouseover and focus are. A mouseover macro can be checked with the editor open.
 

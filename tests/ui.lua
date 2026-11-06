@@ -4641,6 +4641,34 @@ do
     Fire(row("PvP 1").check, "OnClick")
     check("folders: and takes it back", not row("Fold A").pick:IsShown() and not row("PvP 1").check.fill:IsShown())
     ns.Window.SetPicking(false)
+    -- Dragged: onto a folder's name it goes in, onto Favorites it is one, onto a macro out of the folders it comes
+    -- out; a favorite or in a folder, not both.
+    local function drag(name, onto)
+        local source, target = row(name), row(onto)
+        Fire(source, "OnDragStart")
+        target.IsMouseOver = function() return true end
+        Fire(source, "OnDragStop")
+        target.IsMouseOver = nil
+    end
+    drag("Fold B", "PvP 1")
+    check("folders: dragged into a folder, no longer a favorite", ns.Folders.Of("Fold B") == "PvP"
+        and not ns.Folders.IsFavorite("Fold B") and row("PvP 2") ~= nil, order())
+    drag("Fold B", "Fold A")
+    check("folders: dropped on a macro in it, still in it", ns.Folders.Of("Fold B") == "PvP")
+    ns.Folders.SetFavorite("Fold A", true)
+    ns.Window.RefreshList()
+    drag("Fold B", "Favorites 1")
+    check("folders: dragged onto Favorites", ns.Folders.IsFavorite("Fold B") and ns.Folders.Of("Fold B") == nil)
+    -- A favorite into a new folder: in it, out of Favorites.
+    check("folders: a favorite into a new folder", menu(row("Fold B"), "Into a new folder") and MacroSenseNote:IsShown())
+    focused:SetText("Raid")
+    Fire(focused, "OnEnterPressed")
+    check("folders: in it, no longer a favorite", ns.Folders.Of("Fold B") == "Raid" and not ns.Folders.IsFavorite("Fold B")
+        and row("Raid 1") ~= nil and order():find("Raid 1 / Fold B", 1, true) ~= nil, order())
+    ns.Folders.Remove("Raid")
+    ns.Folders.SetFavorite("Fold B", true)
+    ns.Folders.Put("Fold A", "PvP")
+    ns.Window.RefreshList()
     -- The folder's name: renamed; a name taken or empty is asked again.
     check("folders: renamed", menu(row("PvP 1"), "Rename the folder") and MacroSenseNote:IsShown())
     focused:SetText("")
@@ -4882,7 +4910,8 @@ do
     Fire(box, "OnEnterPressed")
     check("notes: kept, trimmed", not MacroSenseNote:IsShown()
         and ns.History.Note("general", "Noted") == "For the Onyxia pull")
-    check("notes: in the tooltip", hover("Noted"):find("Noted / For the Onyxia pull", 1, true) == 1, hover("Noted"))
+    check("notes: in the tooltip, yellow", hover("Noted"):find("Noted / |cffffd100For the Onyxia pull|r", 1, true) == 1,
+        hover("Noted"))
     Fire(row("Noted"), "OnClick", "RightButton")
     check("notes: the menu says it has one", menuItem("Change the note") ~= nil)
     Fire(menuItem("Change the note"), "OnClick")
