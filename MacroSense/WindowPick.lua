@@ -34,8 +34,11 @@ function shared.IsPicked(r)
     return Find(Of(r)) ~= nil
 end
 
--- Those still there: a macro deleted or renamed since is no longer picked.
+-- Those still there: a macro deleted or renamed since is no longer picked. Not while picked ones are being moved:
+-- the game tells the macros changed while CreateMacro and DeleteMacro run, with one moved half way.
+local working = false
 local function Prune()
+    if working then return end
     for i = #picked, 1, -1 do
         local p = picked[i]
         local there
@@ -48,6 +51,16 @@ local function Prune()
         end
         if not there then table.remove(picked, i) end
     end
+end
+
+-- `fn()` on the picked ones, with the picks as they are till it is done (one by one, a copy of the list).
+local function Each(fn)
+    local list = {}
+    for i, p in ipairs(picked) do list[i] = p end
+    working = true
+    local ok, err = pcall(function() for _, p in ipairs(list) do fn(p) end end)
+    working = false
+    if not ok then error(err, 0) end
 end
 
 -- The row over the list, shown while picking; the list makes room for it.
@@ -188,7 +201,7 @@ local function MoveAll(from)
     local to = from == "general" and "character" or "general"
     Guard(function() ns.Sets.Atomic(function()
         local moved, left = 0, 0
-        for _, p in ipairs(picked) do
+        Each(function(p)
             if p.what == "macro" and p.scope == from then
                 local first, last, max = MacroRange(to)
                 local index = IndexIn(from, p.name)
@@ -199,7 +212,7 @@ local function MoveAll(from)
                     left = left + 1
                 end
             end
-        end
+        end)
         ns.History.Scan()
         ns.Say(ns.Plural(moved, "moved %d macro", "moved %d macros"))
         if left > 0 then ns.Print("no free slots for %d of them: they stay where they were", left) end
@@ -214,14 +227,14 @@ local function IntoSet(to)
     local now = ns.ActionBars.Spec()
     local done = 0
     ns.Sets.Atomic(function()
-        for _, p in ipairs(picked) do
+        Each(function(p)
             local from = p.set
             if p.what == "macro" and p.scope == "character" then
                 local layer = ns.Sets.LayerIn(p.name)
                 from = layer == "spec" and now or layer or "character"
             end
             if from and from ~= to and ns.Sets.Place(from, p.name, to, p.what == "macro") then done = done + 1 end
-        end
+        end)
     end)
     ns.Say(string.format(L["%s: %s"], ns.SetsWindow.Label(to), ns.Plural(done, "%d macro put in", "%d macros put in")))
     Clear()
@@ -237,16 +250,14 @@ StaticPopupDialogs.MACROSENSE_DELETE_PICKED = {
 -- All of them: those in the game into the trash (as one deleted with x), those behind the scenes out of their sets.
 function Window.DeletePicked()
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
-    local list = {}
-    for i, p in ipairs(picked) do list[i] = p end
-    for _, p in ipairs(list) do
+    Each(function(p)
         if p.what == "stored" then
             Window.Forget(p.set, p.name)
         else
             local index = IndexIn(p.scope, p.name)
             if index then Window.Delete(index) end
         end
-    end
+    end)
     ns.History.Scan()
     Clear()
 end
@@ -262,7 +273,8 @@ local function Actions()
         local n = Count("macro", from)
         local to = from == "general" and "character" or "general"
         if n > 0 then
-            items[#items + 1] = { name = string.format(L["Move %d to %s"], n, TabName(to)),
+            -- From which tab: the picks may be in both, whichever tab is open.
+            items[#items + 1] = { name = string.format(L["Move %d from %s to %s"], n, TabName(from), TabName(to)),
                 onClick = function() MoveAll(from) end }
         end
     end
