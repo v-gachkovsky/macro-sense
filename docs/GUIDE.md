@@ -529,8 +529,8 @@ buttons. A macro whose name is taken waits behind the scenes, and MacroSense say
 - **Turning them off**: clear "Macro sets", and the macros behind the scenes come into the game, as many as fit.
   If not all fit, you choose which. Turn the sets on again, and those macros go back where they were, with what
   you changed in them meanwhile.
-- **If something breaks**: if a change breaks halfway, MacroSense undoes all of it, so your macros, sets and
-  buttons are as they were. It says so in the chat; please report the error then.
+- **If something breaks**: if MacroSense runs into an error of its own halfway through a change, it undoes all
+  of it, so your macros, sets and buttons are as they were. It says so in the chat; please report the error then.
 - **Before level 10** a character has no specialization yet: its macros are kept as "No specialization yet".
 - **Primary and Secondary.** In Classic Era, TBC, Mists of Pandaria and WoW Forever the sets follow your two
   talent groups, each with its own action bars there.
