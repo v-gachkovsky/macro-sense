@@ -1,7 +1,7 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 dofile("tests/strict.lua")
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "Folders.lua", "History.lua", "Ranks.lua", "Sets.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Easter.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "WhatIf.lua", "Folders.lua", "History.lua", "Ranks.lua", "Sets.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Easter.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -702,6 +702,31 @@ local function expectPreview(label, body, state, want, env, skip)
     check("preview " .. label, got == want, "\n  got  " .. got .. "\n  want " .. want)
 end
 local harmful = { harm = true }
+-- "What if": the moment set up by hand; what it doesn't set up is the game's (`real`).
+do
+    local W = ns.WhatIf
+    local body = "#showtooltip\n/cast [mod:alt] Hunter's Mark; [@mouseover,harm,nodead][] Arcane Shot"
+    local function whatIf(label, state, want, real)
+        local s = W.Fresh()
+        for k, v in pairs(state) do
+            if k == "units" then for u, kind in pairs(v) do s.units[u] = kind end else s[k] = v end
+        end
+        expectPreview("what if: " .. label, body, nil, want, W.Env(s, real))
+    end
+    whatIf("as fresh: your target", {}, "icon: Arcane Shot | Arcane Shot")
+    whatIf("an enemy under the mouse", { units = { mouseover = "enemy" } }, "icon: Arcane Shot | Arcane Shot @mouseover")
+    whatIf("a dead one: not it", { units = { mouseover = "dead" } }, "icon: Arcane Shot | Arcane Shot")
+    whatIf("a friend: not it", { units = { mouseover = "friend" } }, "icon: Arcane Shot | Arcane Shot")
+    whatIf("Alt held", { mods = { alt = true } }, "icon: Hunter's Mark | Hunter's Mark")
+    expectPreview("what if: nomod, combat, a key list", "/cast [nomod:shift/ctrl,combat] A; [nocombat] B; C", nil,
+        "A", W.Env({ mods = { alt = true }, combat = true, units = { target = "enemy" } }))
+    -- Not set up here: the game's answer, for the unit of the group.
+    local asked = {}
+    local real = function(cond, unit) asked[#asked + 1] = cond .. "@" .. unit; return false end
+    expectPreview("what if: the rest is the game's", "/cast [pet:Imp,@focus] A; [nopet:Imp] B", nil, "B",
+        W.Env({ mods = {}, units = { focus = "none" } }, real))
+    check("what if: asked the game", table.concat(asked, " ") == "pet:Imp@focus pet:Imp@target", table.concat(asked, " "))
+end
 -- The author's macros: modifiers pick the line, and #showtooltip follows.
 expectPreview("demons, no modifier", fixtures.demons, {},
     "icon: Summon Voidwalker | Summon Voidwalker | conditions not met | conditions not met")

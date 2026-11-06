@@ -529,6 +529,16 @@ ns.locales.uk = {
     ["Note on \"%s\""] = "Нотатка до «%s»",
     ["Replace"] = "Замінити",
     ["%d picked"] = { "Вибрано %d", "Вибрано %d", "Вибрано %d" },
+    ["What if"] = "Що, як...",
+    ["The notes next to the lines for a moment you set up: the keys held, combat, and who your target, mouseover and focus are. With the editor open your mouse can't be over someone, so this is how to check a mouseover macro. Anything else the macro checks is as in the game now."] =
+        "Підказки біля рядків для моменту, який ви задаєте самі: затиснуті клавіші, бій, і хто ваша ціль, хто "
+        .. "під мишею і хто у фокусі. Поки відкритий редактор, миша не може бути над кимось у світі, тож так "
+        .. "перевіряють макрос із маусовером. Усе інше, що перевіряє макрос, — як у грі зараз.",
+    ["set up the keys, the target and the mouseover yourself"] = "задайте клавіші, ціль і маусовер самі",
+    ["Nobody"] = "Нікого",
+    ["An enemy"] = "Ворог",
+    ["A friend"] = "Друг",
+    ["A dead enemy"] = "Мертвий ворог",
     ["Favorites"] = "Улюблені",
     ["The macros you marked as favorites: always at the top."] = "Макроси, які ви позначили як улюблені: завжди вгорі.",
     ["A folder of your own. A right click renames or deletes it; \"...\" on a macro puts it in or takes it out."] =

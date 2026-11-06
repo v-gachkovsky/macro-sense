@@ -350,11 +350,14 @@ local function UpdatePreview()
         if e.severity == "error" then skip[e.line] = true end
     end
     -- As the game would run it: with the names of your group's tank and healer.
-    local results = ns.Preview.Evaluate(ns.Roles.Fill(code:GetRaw()), ns.previewEnv, skip)
+    -- "What if" on: the moment set up by hand instead of the game's now (WindowWhatIf.lua).
+    local env = Window.PreviewEnv and Window.PreviewEnv() or ns.previewEnv
+    local results = ns.Preview.Evaluate(ns.Roles.Fill(code:GetRaw()), env, skip)
     local notes = {}
     for i = 1, results.n do notes[i] = ns.Preview.Note(results[i], noteColors) end
     code:SetLineNotes(notes)
 end
+function Window.RefreshPreview() UpdatePreview() end
 
 ------------------------------------------------------------------------
 -- Explained: over a line's number or note, the tooltip says in plain words what the line does, every branch
@@ -1392,6 +1395,7 @@ local function Build()
     local previewCheck = ns.Check(title, L["Live preview"], function() return ns.db.preview end, function(on)
         ns.db.preview = on
         code:ShowNotes(on)
+        Window.RefreshWhatIf()
         UpdatePreview()
     end)
     previewCheck:SetPoint("RIGHT", fontDrop, "LEFT", -16, 0)
@@ -1818,6 +1822,8 @@ local function Build()
     editorBg:SetPoint("TOPLEFT", 12, -58)
     editorBg:SetPoint("BOTTOMRIGHT", bar, "TOPRIGHT", -12, 10)
     ns.Backdrop(editorBg, "bg", "border")
+    -- Over the status bar with Live preview on: "What if" (WindowWhatIf.lua). The editor ends over it.
+    Window.BuildWhatIf(main, editorBg, bar)
     code = ns.CreateCodeBox(editorBg, "MacroSenseCodeScroll")
     code.scroll:SetPoint("TOPLEFT", 4, -4)
     code.scroll:SetPoint("BOTTOMRIGHT", -15, 4)

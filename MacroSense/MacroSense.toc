@@ -17,6 +17,7 @@ Themes.lua
 Highlight.lua
 Spelling.lua
 Preview.lua
+WhatIf.lua
 Explain.lua
 Docs.lua
 Shorten.lua
@@ -57,6 +58,7 @@ WindowNotes.lua
 WindowReplace.lua
 WindowPick.lua
 WindowFolders.lua
+WindowWhatIf.lua
 MinimapButton.lua
 ActionBars.lua
 Core.lua

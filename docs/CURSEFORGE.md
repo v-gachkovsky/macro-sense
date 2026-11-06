@@ -218,6 +218,8 @@ whom (`Fear @mouseover`), `conditions not met` when its conditions don't hold, `
 that fires, and the icon `#showtooltip` shows. Hold Shift, Ctrl or Alt (Cmd on a Mac), pick another target,
 summon another pet or point at a unit, and the notes change with it: you see every branch of a macro
 without casting anything. The game itself checks the conditions, exactly as when you press the key.
+**What if** sets up the moment yourself: the keys, combat, and who your target, mouseover and focus are. That
+is how to check a mouseover macro while the editor is open.
 
 Got a macro from a guide and not sure what it does? Point at a line's number and read it in plain words:
 `with Shift held: Polymorph on your focus, if it is an enemy and alive`, `otherwise: Frostbolt`. Point at a

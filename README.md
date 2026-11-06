@@ -331,6 +331,12 @@ mouseover unit: point at a unit in the world or at a unit frame to see the `@mou
 itself checks the conditions (`SecureCmdOptionParse`, what macros run with). Lines with syntax errors get
 no note. **Live preview** in the title bar turns it off; the text then takes the whole width.
 
+**What if**, over the status bar with the live preview on, shows the notes for a moment you set up yourself
+instead: the keys held (Shift, Ctrl, Alt, Cmd on a Mac), **In combat**, and who your **Target**, **Mouseover**
+and **Focus** are (nobody, an enemy, a friend, a dead enemy). With the editor open your mouse can't be over
+someone in the world, so this is how to see a mouseover macro at work. Anything else the macro checks (your
+pet, a form, a specialization) is as in the game now. Turn it off, and the notes follow the game again.
+
 Point at a line's number, or at its note, to read what the whole line does in plain words: every branch, not only
 the one that would run now. `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` reads `with Shift held:
 Polymorph on your focus, if it is an enemy and alive`, then `otherwise: Frostbolt`; a unit tried after another
@@ -600,7 +606,8 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
   `MacroSense/WindowTrash.lua`: the Trash and Backups menus; `MacroSense/WindowNotes.lua`: the notes on the
   macros; `MacroSense/WindowReplace.lua`: find and replace;
   `MacroSense/WindowPick.lua`: many macros picked at once; `MacroSense/WindowFolders.lua`: the General tab's
-  favorites and folders (`MacroSense/Folders.lua` keeps them, pure Lua). They share the window's state and helpers through `ns.WindowShared`.
+  favorites and folders (`MacroSense/Folders.lua` keeps them, pure Lua); `MacroSense/WindowWhatIf.lua`: "What
+  if" by the live preview (`MacroSense/WhatIf.lua` reads a macro's options for it, pure Lua). They share the window's state and helpers through `ns.WindowShared`.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 - `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
   code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.
