@@ -4544,6 +4544,78 @@ do
     NextFrame()
 end
 
+-- Notes: a line of your own on a macro, from its "..." menu, in its tooltip; it follows the macro renamed, moved,
+-- deleted and brought back.
+do
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    local function hover(name)
+        local tip = {}
+        GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+        Fire(row(name), "OnEnter")
+        GameTooltip.AddLine = nil
+        return table.concat(tip, " / ")
+    end
+    CreateMacro("Noted", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    NextFrame()
+    Fire(row("Noted"), "OnClick", "RightButton")
+    Fire(menuItem("Add a note"), "OnClick")
+    local box = focused
+    check("notes: the window, its line in focus", MacroSenseNote:IsShown() and box and box.parentFrame == MacroSenseNote)
+    box:SetText("  For the Onyxia pull  ")
+    Fire(box, "OnEnterPressed")
+    check("notes: kept, trimmed", not MacroSenseNote:IsShown() and ns.History.Note("general", "Noted") == "For the Onyxia pull")
+    check("notes: in the tooltip", hover("Noted"):find("Noted / For the Onyxia pull", 1, true) == 1, hover("Noted"))
+    Fire(row("Noted"), "OnClick", "RightButton")
+    check("notes: the menu says it has one", menuItem("Change the note") ~= nil)
+    Fire(menuItem("Change the note"), "OnClick")
+    check("notes: the window shows it", focused.text == "For the Onyxia pull")
+    Fire(focused, "OnEscapePressed")
+    -- Renamed here: it follows.
+    ns.Window.Open(GetMacroIndexByName("Noted"))
+    NextFrame()
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 and o.text == "Noted" then o:SetText("Noted 2") end
+    end
+    ns.Window.Save()
+    Send("UPDATE_MACROS")
+    check("notes: follows a new name", ns.History.Note("general", "Noted 2") == "For the Onyxia pull"
+        and ns.History.Note("general", "Noted") == nil)
+    -- Renamed in the game's window: it follows too.
+    EditMacro(GetMacroIndexByName("Noted 2"), "Noted 3", nil, nil)
+    Send("UPDATE_MACROS")
+    check("notes: follows a name changed elsewhere", ns.History.Note("general", "Noted 3") == "For the Onyxia pull")
+    -- Deleted: into the trash with it, and back.
+    DeleteMacro(GetMacroIndexByName("Noted 3"))
+    Send("UPDATE_MACROS")
+    local trash = ns.History.Trash("general")
+    local entry = trash[#trash]
+    check("notes: into the trash with the macro", ns.History.Note("general", "Noted 3") == nil and entry.name == "Noted 3"
+        and entry.note == "For the Onyxia pull")
+    ns.Window.Undelete("general", entry)
+    check("notes: back with the macro", ns.History.Note("general", "Noted 3") == "For the Onyxia pull")
+    -- An empty line deletes it.
+    ns.Window.EditNote("general", "Noted 3")
+    focused:SetText("")
+    Fire(focused, "OnEnterPressed")
+    check("notes: an empty line deletes it", ns.History.Note("general", "Noted 3") == nil)
+    DeleteMacro(GetMacroIndexByName("Noted 3"))
+    Send("UPDATE_MACROS")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- "With mistakes": only the macros with a mistake or a warning, the tabs counting them; off when the editor opens
 -- again.
 do
@@ -6141,7 +6213,7 @@ do
     end
     local saveBtn, nameBox -- the editor's: its name box is the first one of 16 letters
     for _, o in ipairs(created) do
-        if o.kind == "Button" and o.label and o.label.text == "Save" then saveBtn = o end
+        if o.kind == "Button" and o.label and o.label.text == "Save" and not saveBtn then saveBtn = o end
         if o.kind == "EditBox" and o.maxLetters == 16 and not nameBox then nameBox = o end
     end
     local BOB, CARL = { name = "Bob", realm = "", role = "TANK" }, { name = "Carl", role = "TANK" }

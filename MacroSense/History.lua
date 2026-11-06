@@ -42,9 +42,10 @@ function History.Rename(store, old, new)
     store[new], store[old] = Merge(store[new] or {}, store[old]), nil
 end
 
--- trash: { { name, icon, body, time }, ... }, oldest first. A deleted macro goes in, the oldest go out.
-function History.Discard(trash, name, macro, time)
-    trash[#trash + 1] = { name = name, icon = macro.icon, body = macro.body, time = time }
+-- trash: { { name, icon, body, time, note }, ... }, oldest first. A deleted macro goes in with its note, the oldest
+-- go out.
+function History.Discard(trash, name, macro, time, note)
+    trash[#trash + 1] = { name = name, icon = macro.icon, body = macro.body, time = time, note = note }
     while #trash > History.TRASH do table.remove(trash, 1) end
 end
 
@@ -156,6 +157,19 @@ end
 function History.Store(scope) return Saved(scope, "history") end
 function History.Trash(scope) return Saved(scope, "trash") end
 
+-- A note on a macro, kept by MacroSense outside its 255 characters: by the macro's name, as its versions. It
+-- follows the macro renamed or moved, and goes into the trash with it.
+function History.Note(scope, name) return name and Saved(scope, "notes")[name] or nil end
+function History.SetNote(scope, name, text)
+    text = text and text:gsub("^%s+", ""):gsub("%s+$", "")
+    Saved(scope, "notes")[name] = text ~= "" and text or nil
+end
+local function MoveNote(from, old, to, new)
+    local a, b = Saved(from, "notes"), Saved(to, "notes")
+    if a[old] and (from ~= to or old ~= new) then b[new], a[old] = a[old], nil end
+end
+History.MoveNote = MoveNote
+
 local function Macros()
     local now = { general = {}, character = {} }
     local general, character = GetNumMacros()
@@ -186,11 +200,16 @@ function History.Scan()
                 if old and old.body ~= m.body then History.Add(store, name, old.body, time()) end
             end
             local renamed, deleted = History.Gone(before, macros)
-            for old, new in pairs(renamed) do History.Rename(store, old, new) end
+            for old, new in pairs(renamed) do
+                History.Rename(store, old, new)
+                MoveNote(scope, old, scope, new)
+            end
+            local notes = Saved(scope, "notes")
             for _, name in ipairs(deleted) do
-                -- One MacroSense took out of the slots itself (macro sets) is not in the trash.
+                -- One MacroSense took out of the slots itself (macro sets) is not in the trash, and keeps its note.
                 if not (scope == "character" and ns.Sets and ns.Sets.Ours(name)) then
-                    History.Discard(History.Trash(scope), name, before[name], time())
+                    History.Discard(History.Trash(scope), name, before[name], time(), notes[name])
+                    notes[name] = nil
                 end
             end
         end
@@ -203,6 +222,7 @@ end
 function History.Moved(from, to, old, new)
     local source, target = History.Store(from), History.Store(to)
     if source[old] then target[new], source[old] = Merge(target[new] or {}, source[old]), nil end
+    MoveNote(from, old, to, new)
     if known and known[from][old] then known[to][new], known[from][old] = known[from][old], nil end
 end
 
@@ -218,6 +238,7 @@ end
 -- This editor is about to rename a macro: its versions and its last text go with the name.
 function History.Renamed(scope, old, new)
     History.Rename(History.Store(scope), old, new)
+    MoveNote(scope, old, scope, new)
     if known and known[scope][old] then
         known[scope][new], known[scope][old] = known[scope][old], nil
     end

@@ -52,6 +52,7 @@ Window.lua
 WindowList.lua
 WindowShare.lua
 WindowTrash.lua
+WindowNotes.lua
 MinimapButton.lua
 ActionBars.lua
 Core.lua

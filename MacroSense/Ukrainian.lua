@@ -526,6 +526,9 @@ ns.locales.uk = {
     ["Nothing to shorten here."] = "Тут нічого скорочувати.",
     ["History"] = "Історія",
     ["The same as the text now."] = "Такий самий, як текст зараз.",
+    ["Note on \"%s\""] = "Нотатка до «%s»",
+    ["Add a note"] = "Додати нотатку",
+    ["Change the note"] = "Змінити нотатку",
     ["If you pick it, the text changes like this:"] = "Якщо вибрати цю версію, текст зміниться так:",
     ["Earlier saved versions of this macro. Pick one, and it goes into the editor. Save keeps it, and %s takes it "
         .. "back."] =

@@ -246,6 +246,7 @@ local function Row(i)
             GameTooltip:AddLine(r.tip, 0.8, 0.8, 0.8, true)
         elseif r.what == "stored" then
             GameTooltip:AddLine(r.name, 1, 1, 1)
+            shared.AddNoteLine("character", r.name)
             AddIssueLines(r.issues or {})
             GameTooltip:AddLine(L["Behind the scenes: not in the game now, and on no slot."], 0.6, 0.6, 0.6, true)
             if r.kept then
@@ -255,6 +256,7 @@ local function Row(i)
             Window.AddSetsNote(r)
         else
             GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
+            shared.AddNoteLine(r.scope, r.name)
             AddIssueLines(r.issues or {})
             AddBarsLines(r.scope, r.name)
             Window.AddSetsNote(r)
