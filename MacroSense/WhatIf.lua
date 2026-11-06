@@ -46,9 +46,44 @@ local function Own(state, name, value, unit)
     return nil
 end
 
+-- Where a spell goes when it is cast, for the moment set up: `reaction(name, item)` says what it is for ("friends",
+-- "enemies" or nil, as Sources does). One for enemies won't cast on a friend, a dead one or nobody; one for friends
+-- won't on an enemy named in the macro, and goes to you when the game picks (Auto Self Cast). Nil: as it is.
+local NOBODY = { target = "won't cast: you have no target", mouseover = "won't cast: nobody is under the mouse",
+    focus = "won't cast: you have no focus" }
+local WORDS = { target = "the target", mouseover = "the mouseover", focus = "the focus" }
+-- Its texts kept in these tables, for the check that each has its translation.
+function WhatIf.Texts()
+    local out = {}
+    for _, t in ipairs({ NOBODY, WORDS }) do for _, text in pairs(t) do out[#out + 1] = text end end
+    return out
+end
+
+function WhatIf.Verdict(state, reaction, name, unit, item)
+    local u = (unit or "target"):lower()
+    local kind = state.units[u]
+    local what = kind and reaction and reaction(name, item)
+    if not what then return nil end
+    local L = ns.L or setmetatable({}, { __index = function(_, k) return k end })
+    local who = L[WORDS[u]]
+    if what == "enemies" then
+        if kind == "none" then return { fails = L[NOBODY[u]] } end
+        if kind == "friend" then return { fails = string.format(L["won't cast: %s is a friend"], who) } end
+        if kind == "dead" then return { fails = string.format(L["won't cast: %s is a dead enemy"], who) } end
+        return nil
+    end
+    if kind == "friend" then return nil end
+    -- For friends, on an enemy or nobody: named in the macro, it won't; else the game casts it on you.
+    if unit then
+        if kind == "none" then return { fails = L[NOBODY[u]] } end
+        return { fails = string.format(L["won't cast: %s is an enemy"], who) }
+    end
+    return { unit = "player" }
+end
+
 -- The env for Preview.Evaluate: parse(options) -> what it casts and on whom, as the game would in this moment.
--- `real(cond, unit)`: whether one condition holds in the game now (nil: it doesn't).
-function WhatIf.Env(state, real, icon)
+-- `real(cond, unit)`: whether one condition holds in the game now (nil: it doesn't); `reaction`: see Verdict.
+function WhatIf.Env(state, real, icon, reaction)
     -- "nocombat" is "combat" turned round; "modifier" is "mod".
     local function holds(cond, unit)
         local negate = cond:sub(1, 2):lower() == "no"
@@ -93,7 +128,8 @@ function WhatIf.Env(state, real, icon)
         end
         return nil
     end
-    return { parse = parse, icon = icon }
+    local function verdict(name, unit, item) return WhatIf.Verdict(state, reaction, name, unit, item) end
+    return { parse = parse, icon = icon, verdict = reaction and verdict or nil }
 end
 
 return WhatIf

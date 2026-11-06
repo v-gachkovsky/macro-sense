@@ -19,7 +19,7 @@ function Window.PreviewEnv()
         local ok, action = pcall(SecureCmdOptionParse, "[@" .. unit .. "," .. cond .. "] x")
         return ok and action == "x"
     end
-    return ns.WhatIf.Env(moment, real, ns.previewEnv.icon)
+    return ns.WhatIf.Env(moment, real, ns.previewEnv.icon, ns.sources.reaction)
 end
 
 -- Shown with Live preview on; its second row and the keys with "What if" on. The editor ends over it.

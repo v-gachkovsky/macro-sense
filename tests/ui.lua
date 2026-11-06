@@ -5217,6 +5217,7 @@ do
     for _, what in pairs(ns.Shortcuts.MAC) do add(what) end
     for _, text in ipairs(ns.Explain.Texts()) do add(text) end
     for _, text in ipairs(ns.Docs.Texts()) do add(text) end
+    for _, text in ipairs(ns.WhatIf.Texts()) do add(text) end
     add(ns.ActionBars.TIP)
     -- Kept in their files' locals: month names, tab names, the preview's quiet notes and verbs, hints made in
     -- Sources and Completion, what a condition's value should be, and the wizard's names for a macro.

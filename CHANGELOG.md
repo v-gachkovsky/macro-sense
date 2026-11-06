@@ -30,7 +30,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   your own, and so does dragging it there; a right click on a folder's name renames or deletes it. Picked macros
   go into one all at once.
 - "What if" by the live preview: the notes next to the lines for a moment you set up yourself, the keys held,
-  combat, and who your target, mouseover and focus are. A mouseover macro can be checked with the editor open.
+  combat, and who your target, mouseover and focus are. A mouseover macro can be checked with the editor open. It
+  says when a spell won't cast there: one for enemies on a friend, a dead enemy or nobody.
 
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at

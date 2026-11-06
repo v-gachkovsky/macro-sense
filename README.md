@@ -337,7 +337,10 @@ no note. **Live preview** in the title bar turns it off; the text then takes the
 **What if**, over the status bar with the live preview on, shows the notes for a moment you set up yourself
 instead: the keys held (Shift, Ctrl, Alt, Cmd on a Mac), **In combat**, and who your **Target**, **Mouseover**
 and **Focus** are (nobody, an enemy, a friend, a dead enemy). With the editor open your mouse can't be over
-someone in the world, so this is how to see a mouseover macro at work. Anything else the macro checks (your
+someone in the world, so this is how to see a mouseover macro at work. It also says when the spell won't go
+where the macro sends it: a spell for enemies on a friend, a dead enemy or nobody (`won't cast: the target is a
+friend`), a heal named for an enemy; a heal the game sends to an enemy target goes to you, as Auto Self Cast does.
+Anything else the macro checks (your
 pet, a form, a specialization) is as in the game now. Turn it off, and the notes follow the game again.
 
 Point at a line's number, or at its note, to read what the whole line does in plain words: every branch, not only
