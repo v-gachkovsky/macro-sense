@@ -4441,7 +4441,8 @@ do
     Fire(open, "OnClick")
     local bolt = "#showtooltip\n/startattack\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
         .. "[@mouseover,harm,nodead][] !Shadow Bolt"
-    check("open in wizard: none held is the macro's spell", C("cast").text == "Shadow Bolt" and C("altCast").text == "Shoot"
+    check("open in wizard: none held is the macro's spell", C("cast").text == "Shadow Bolt"
+        and C("altCast").text == "Shoot"
         and C("keep").shown and C("keep").label.text == "Don't turn it off" and shown() == bolt, shown())
     ns.db.wizardForm = nil
     Fire(C("mode"), "OnClick")
@@ -4539,6 +4540,78 @@ do
     check("combat ends: saved again as usual", body("Fight New") == "#showtooltip\n/cast Fear\n/sit"
         and GetNumMacros() == count + 1)
     for _, name in ipairs({ "Fight Z", "Fight B", "Fight New" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- Favorites and folders in the General tab: from a macro's "...", a folder's name renamed or deleted with a right
+-- click; Favorites first, then the folders, then the rest.
+do
+    local function row(text)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o:IsShown()
+                and ns.Highlight.Strip(tostring(o.text.text)):gsub("%s+", " ") == text then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    local function menu(r, label, button)
+        Fire(r, "OnClick", button or "RightButton")
+        local item = menuItem(label)
+        if item then Fire(item, "OnClick") end
+        return item ~= nil
+    end
+    local function order()
+        local out = {}
+        for _, o in ipairs(ns.WindowShared.rows) do
+            if not o:IsShown() then break end
+            out[#out + 1] = ns.Highlight.Strip(tostring(o.text.text)):gsub("%s+", " ")
+        end
+        return table.concat(out, " / ")
+    end
+    CreateMacro("Fold A", 1, "/cast Fear", false)
+    CreateMacro("Fold B", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    NextFrame()
+    check("folders: into a new folder, asked its name", menu(row("Fold A"), "Into a new folder")
+        and MacroSenseNote:IsShown())
+    focused:SetText("PvP")
+    Fire(focused, "OnEnterPressed")
+    check("folders: the folder, the macro in it, first", ns.Folders.Of("Fold A") == "PvP" and row("PvP 1")
+        and order():find("^PvP 1 / Fold A / ") ~= nil, order())
+    check("folders: favorites over the folders", menu(row("Fold B"), "Add to favorites")
+        and order():find("^Favorites 1 / Fold B / PvP 1 / Fold A / ") ~= nil, order())
+    -- The folder's name: renamed; a name taken or empty is asked again.
+    check("folders: renamed", menu(row("PvP 1"), "Rename the folder") and MacroSenseNote:IsShown())
+    focused:SetText("")
+    Fire(focused, "OnEnterPressed")
+    check("folders: no empty name", MacroSenseNote:IsShown() and printed[#printed]:find("needs a name", 1, true) ~= nil)
+    focused:SetText("Arena")
+    Fire(focused, "OnEnterPressed")
+    check("folders: the macro goes with it", not MacroSenseNote:IsShown() and ns.Folders.Of("Fold A") == "Arena"
+        and row("Arena 1") ~= nil)
+    -- A macro renamed stays in its folder.
+    ns.Window.Open(GetMacroIndexByName("Fold A"))
+    NextFrame()
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 and o.text == "Fold A" then o:SetText("Fold C") end
+    end
+    ns.Window.Save()
+    Send("UPDATE_MACROS")
+    check("folders: a macro renamed stays in it", ns.Folders.Of("Fold C") == "Arena")
+    check("folders: out of it", menu(row("Fold C"), "Out of the folder") and ns.Folders.Of("Fold C") == nil)
+    check("folders: deleted, the macros stay", menu(row("Arena 0"), "Delete the folder") and #ns.Folders.List() == 0
+        and row("Fold C") ~= nil)
+    menu(row("Fold B"), "Remove from favorites")
+    check("folders: none, the list as it was", row("Favorites 1") == nil and order():find("Favorites", 1, true) == nil)
+    DeleteMacro(GetMacroIndexByName("Fold B"))
+    DeleteMacro(GetMacroIndexByName("Fold C"))
     Send("UPDATE_MACROS")
     ns.Window.Select(1)
     NextFrame()
@@ -4718,10 +4791,12 @@ do
     Fire(row("Noted"), "OnClick", "RightButton")
     Fire(menuItem("Add a note"), "OnClick")
     local box = focused
-    check("notes: the window, its line in focus", MacroSenseNote:IsShown() and box and box.parentFrame == MacroSenseNote)
+    check("notes: the window, its line in focus", MacroSenseNote:IsShown() and box
+        and box.parentFrame == MacroSenseNote)
     box:SetText("  For the Onyxia pull  ")
     Fire(box, "OnEnterPressed")
-    check("notes: kept, trimmed", not MacroSenseNote:IsShown() and ns.History.Note("general", "Noted") == "For the Onyxia pull")
+    check("notes: kept, trimmed", not MacroSenseNote:IsShown()
+        and ns.History.Note("general", "Noted") == "For the Onyxia pull")
     check("notes: in the tooltip", hover("Noted"):find("Noted / For the Onyxia pull", 1, true) == 1, hover("Noted"))
     Fire(row("Noted"), "OnClick", "RightButton")
     check("notes: the menu says it has one", menuItem("Change the note") ~= nil)
@@ -4747,7 +4822,8 @@ do
     Send("UPDATE_MACROS")
     local trash = ns.History.Trash("general")
     local entry = trash[#trash]
-    check("notes: into the trash with the macro", ns.History.Note("general", "Noted 3") == nil and entry.name == "Noted 3"
+    check("notes: into the trash with the macro", ns.History.Note("general", "Noted 3") == nil
+        and entry.name == "Noted 3"
         and entry.note == "For the Onyxia pull")
     ns.Window.Undelete("general", entry)
     check("notes: back with the macro", ns.History.Note("general", "Noted 3") == "For the Onyxia pull")

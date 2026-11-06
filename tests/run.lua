@@ -1,7 +1,7 @@
 -- Plain Lua tests for the parser and completion: `lua tests/run.lua` from the repo root.
 dofile("tests/strict.lua")
 local ns = {}
-for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "History.lua", "Ranks.lua", "Sets.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Easter.lua", "Questions.lua", "MinimapButton.lua" }) do
+for _, file in ipairs({ "Locale.lua", "Ukrainian.lua", "Parser.lua", "Data.lua", "Conditions.lua", "Themes.lua", "Completion.lua", "Highlight.lua", "Shortcuts.lua", "Editing.lua", "Spelling.lua", "Preview.lua", "Explain.lua", "Docs.lua", "Shorten.lua", "Folders.lua", "History.lua", "Ranks.lua", "Sets.lua", "Share.lua", "Links.lua", "Backups.lua", "Wizard.lua", "WizardRead.lua", "Practice.lua", "Spellbook.lua", "Easter.lua", "Questions.lua", "MinimapButton.lua" }) do
     assert(loadfile("MacroSense/" .. file))("MacroSense", ns)
 end
 ns.sources.spells = function()
@@ -1931,6 +1931,27 @@ do
         check("questions: " .. body:gsub("\n", " | ") .. ": read back", again == body and #lost == 0,
             "\n  got  " .. tostring(again) .. "\n  lost " .. table.concat(lost or {}, " | "))
     end
+end
+
+-- Folders: the General tab's favorites and folders, by the macros' names; they follow a macro renamed, and stay
+-- behind when it leaves the tab.
+do
+    local F = ns.Folders
+    check("folders: a new one", F.Add("  PvP ") and F.List()[1] == "PvP" and not F.Add("PvP") and not F.Add("  "))
+    check("folders: a macro in it", F.Put("Bolt", "PvP") and F.Of("Bolt") == "PvP" and not F.Put("Bolt", "None"))
+    F.SetFavorite("Bolt", true)
+    F.Moved("general", "Bolt", "general", "Bolt MO")
+    check("folders: follow a new name", F.Of("Bolt MO") == "PvP" and F.IsFavorite("Bolt MO") and F.Of("Bolt") == nil)
+    check("folders: renamed, the macros with it", F.Rename("PvP", "Arena") and F.Of("Bolt MO") == "Arena"
+        and not F.Rename("Arena", ""))
+    F.Add("Raid")
+    check("folders: a name taken", select(2, F.Rename("Raid", "Arena")) == "taken")
+    F.Moved("general", "Bolt MO", "character", "Bolt MO")
+    check("folders: left behind in the other tab", F.Of("Bolt MO") == nil and not F.IsFavorite("Bolt MO"))
+    F.Put("Heal", "Raid")
+    F.Remove("Raid")
+    check("folders: deleted, its macros out of it", F.Of("Heal") == nil and #F.List() == 1)
+    F.Remove("Arena")
 end
 
 -- History.Diff: one text becoming another, line by line, as diff shows it.

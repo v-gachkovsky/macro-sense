@@ -35,14 +35,16 @@ local function Build()
     box:SetScript("OnEscapePressed", function() frame:Hide() end)
 end
 
--- The note of macro `name` in tab `scope` (one behind the scenes is the character's), to write.
-function Window.EditNote(scope, name)
+-- A line to write, under `heading`, with `text` in it first: save(text) when Save or Enter is pressed (a true
+-- return keeps the window open: the line can't be taken). The notes, and the folders' names (Folders.lua) too.
+local function AskLine(heading, text, save, maxLetters)
     if not frame then Build() end
     Window.ClearFocus() -- the keys come here, not to the editor
-    title:SetText(string.format(L["Note on \"%s\""], name))
-    box:SetText(ns.History.Note(scope, name) or "")
+    title:SetText(heading)
+    box:SetMaxLetters(maxLetters or MAX_NOTE)
+    box:SetText(text or "")
     function frame.save()
-        ns.History.SetNote(scope, name, box:GetText())
+        if save(box:GetText()) then return end
         frame:Hide()
         Window.RefreshList()
     end
@@ -50,6 +52,14 @@ function Window.EditNote(scope, name)
     frame:SetPoint("CENTER", shared.frame or UIParent, "CENTER", 0, 60)
     frame:Show()
     box:SetFocus()
+    box:HighlightText()
+end
+shared.AskLine = AskLine
+
+-- The note of macro `name` in tab `scope` (one behind the scenes is the character's), to write.
+function Window.EditNote(scope, name)
+    AskLine(string.format(L["Note on \"%s\""], name), ns.History.Note(scope, name),
+        function(text) ns.History.SetNote(scope, name, text) end)
 end
 
 -- Its menu item, for the "..." menus of a macro.

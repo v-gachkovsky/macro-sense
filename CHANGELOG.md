@@ -25,6 +25,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Many macros at once: Ctrl+click (Cmd+click on a Mac) picks a macro in the list, a right click on a group's name
   picks the whole group. "Actions" on the row over the list shares, moves, puts into a set or deletes them all,
   picks all in the list or none.
+- Favorites and folders in the General tab: a macro's "..." puts it at the top under Favorites, or into a folder of
+  your own; a right click on a folder's name renames or deletes it. Picked macros go into one all at once.
 
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at

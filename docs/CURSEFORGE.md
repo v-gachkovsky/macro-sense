@@ -287,6 +287,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - **Your alts' macros** in the Character tab, under each character's name, those behind the scenes too: read them
   and copy one to this character or General with a click. They are kept as they were when you last played each
   character.
+- **Favorites and folders** in the General tab: keep the macros you use most at the top, the rest in folders
+  of your own.
 - **Many at once**: Ctrl+click picks macros (a right click on a group picks it all), then share, move, put
   into a set or delete them in one go.
 - **Notes**: a line of your own on a macro, outside its 255 characters, shown in its tooltip in the list.
