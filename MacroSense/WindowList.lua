@@ -1058,7 +1058,8 @@ end
 function Window.RefreshList()
     if not shared.frame then return end
     local setsOn = ns.Sets.Mine().enabled
-    Window.SideWidth(setsOn and 280 or 220)
+    -- As wide with macro sets off: the search, Replace and the checks have room in every language.
+    Window.SideWidth(280)
     shared.sortBtn:SetShown(setsOn)
     shared.sortBtn:SetEnabled(#ns.Sets.Unvisited() == 0)
     shared.sortBtn:SetAlpha(shared.sortBtn:IsEnabled() and 1 or 0.4)

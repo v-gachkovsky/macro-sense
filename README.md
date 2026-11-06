@@ -32,7 +32,7 @@ spellbook, many at once.
 
 Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), the **MacroSense** button in
 the title bar of the Blizzard macro window, or **Shift + right-click** on a macro on an action bar, which opens
-that macro. Drag the editor's title bar to move it and the dotted corner to resize it (780 x 460 at least).
+that macro. Drag the editor's title bar to move it and the dotted corner to resize it (840 x 460 at least).
 Drag the minimap button to move it along the edge; `/ms minimap` hides it. On Retail, MacroSense is in the
 addon menu by the minimap too.
 

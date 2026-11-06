@@ -12,7 +12,8 @@ local SORT_ICON = "Interface\\AddOns\\MacroSense\\Media\\sort"
 local NO_ICON = "Interface\\AddOns\\MacroSense\\Media\\no" -- dragged where it can't go
 local PLUS_ICON = "Interface\\AddOns\\MacroSense\\Media\\plus" -- dragged with Ctrl: a copy
 local ROW_H = 24
-local MIN_W, MIN_H = 780, 460 -- also the first size
+-- Also the first size. The sidebar is 280 wide; the editor's header needs some 560 more.
+local MIN_W, MIN_H = 840, 460
 local PREVIEW_EVERY = 0.1 -- seconds: modifiers, target, mouseover and pet change any time
 
 local Window = {}
@@ -1418,7 +1419,7 @@ local function Build()
     shared.side = side
     side:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -1)
     side:SetPoint("BOTTOMLEFT", 1, 1)
-    side:SetWidth(220)
+    side:SetWidth(280)
     ns.Backdrop(side, "panel", "panel")
 
     tabs = { general = Tab(side, "general"), character = Tab(side, "character") }
