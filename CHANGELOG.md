@@ -19,6 +19,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   go in red, the ones that come back in green.
 - Notes: "Add a note" in a macro's "..." keeps a line of your own about it, outside its 255 characters; the
   macro's tooltip in the list shows it. It follows the macro renamed or moved, and into the Trash and back.
+- Find and replace: "Replace" next to the search (Ctrl+H) changes a word or a spell in many macros at once, in
+  the General and Character tabs or, with macro sets on, in the sets you tick. Each macro's History keeps the
+  text it had.
 
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at
