@@ -4659,6 +4659,14 @@ do
     ns.Window.RefreshList()
     drag("Fold B", "Favorites 1")
     check("folders: dragged onto Favorites", ns.Folders.IsFavorite("Fold B") and ns.Folders.Of("Fold B") == nil)
+    -- A favorite into a new folder: in it, out of Favorites.
+    check("folders: a favorite into a new folder", menu(row("Fold B"), "Into a new folder") and MacroSenseNote:IsShown())
+    focused:SetText("Raid")
+    Fire(focused, "OnEnterPressed")
+    check("folders: in it, no longer a favorite", ns.Folders.Of("Fold B") == "Raid" and not ns.Folders.IsFavorite("Fold B")
+        and row("Raid 1") ~= nil and order():find("Raid 1 / Fold B", 1, true) ~= nil, order())
+    ns.Folders.Remove("Raid")
+    ns.Folders.SetFavorite("Fold B", true)
     ns.Folders.Put("Fold A", "PvP")
     ns.Window.RefreshList()
     -- The folder's name: renamed; a name taken or empty is asked again.
