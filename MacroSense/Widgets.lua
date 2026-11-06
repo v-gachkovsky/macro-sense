@@ -9,6 +9,11 @@ local UI_FONT = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF" -- localized: covers
 local OWN_LETTERS = { ruRU = true, koKR = true, zhCN = true, zhTW = true }
 
 -- The font of the interface's texts in the chosen language.
+-- Ctrl held, or Cmd on a Mac: what MacroSense's shortcuts (Ctrl+S, Ctrl+Z...) and Ctrl+click take.
+function ns.CtrlDown()
+    return (IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())) and true or false
+end
+
 function ns.UIFont()
     if ns.language == "uk" and not OWN_LETTERS[GetLocale()] then return "Fonts\\FRIZQT___CYR.TTF" end
     return UI_FONT

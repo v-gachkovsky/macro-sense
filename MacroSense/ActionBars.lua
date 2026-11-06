@@ -56,13 +56,18 @@ function ActionBars.GroupLabel(group)
         or string.format(ns.L["Specialization %d"], group)
 end
 
+-- The talent group chosen now (dual specialization), 1 in a client without.
+function ActionBars.Group()
+    local S = C_SpecializationInfo or {}
+    return S.GetActiveSpecGroup and S.GetActiveSpecGroup() or GetActiveTalentGroup and GetActiveTalentGroup() or 1
+end
+
 -- The specialization the bars are of now: a key and its name. Retail keeps bars for each specialization, the
 -- other clients for each talent group (dual specialization: ns.SpecsByGroup). Before level 10 Retail gives a
 -- specialization of its own with no name.
 local function Spec()
     local S = C_SpecializationInfo or {}
-    local group = S.GetActiveSpecGroup and S.GetActiveSpecGroup() or GetActiveTalentGroup and GetActiveTalentGroup()
-        or 1
+    local group = ActionBars.Group()
     if ns.SpecsByGroup() then return "group" .. group, ActionBars.GroupLabel(group) end
     local index = S.GetSpecialization and S.GetSpecialization()
     local id, name

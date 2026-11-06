@@ -129,7 +129,7 @@ function ns.CreateCodeBox(parent, name)
     edit:SetScript("OnArrowPressed", function(_, key) self:Key(key, "arrow") end)
     edit:SetScript("OnKeyDown", function(_, key)
         self.keyDown, self.keyDownTime = key, GetTime()
-        local mod = IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())
+        local mod = ns.CtrlDown()
         if mod and key == "Z" then
             if IsShiftKeyDown() then self:Redo() else self:Undo() end
         elseif mod and key == "Y" then
@@ -140,8 +140,7 @@ function ns.CreateCodeBox(parent, name)
     end)
     edit:SetScript("OnMouseDown", function(_, button)
         self.lockCursor = nil
-        local ctrl = IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())
-        if button == "LeftButton" and ctrl and self.onFixClick and self.onFixClick(self:HoveredPos()) then return end
+        if button == "LeftButton" and ns.CtrlDown() and self.onFixClick and self.onFixClick(self:HoveredPos()) then return end
         drop()
     end)
     return self
