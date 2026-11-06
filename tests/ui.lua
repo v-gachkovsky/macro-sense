@@ -8433,6 +8433,57 @@ do
     CreateMacro, DeleteMacro, EditMacro = create, delete, edit
 end
 
+-- Picked with macro sets on: those in the game behind the scenes at once, and back into the game at once.
+do
+    local S = ns.Sets
+    S.Enable()
+    local create, delete = CreateMacro, DeleteMacro
+    CreateMacro = function(...) local i = create(...) Send("UPDATE_MACROS") return i end
+    DeleteMacro = function(...) delete(...) Send("UPDATE_MACROS") end
+    for _, name in ipairs({ "Park A", "Park B", "Park C" }) do create(name, 1, "/cast Fear", true) end
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("character")
+    NextFrame()
+    local function row(what, name)
+        for _, o in ipairs(ns.WindowShared.rows) do
+            if o:IsShown() and o.what == what and o.name == name then return o end
+        end
+    end
+    local function act(prefix)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == "Actions" then Fire(o, "OnClick") end
+        end
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text:find(prefix, 1, true) == 1 then
+                Fire(r, "OnClick")
+                return true
+            end
+        end
+        ns.CloseMenu()
+    end
+    ns.Window.SetPicking(true)
+    for _, name in ipairs({ "Park A", "Park B", "Park C" }) do Fire(row("macro", name).check, "OnClick") end
+    check("pick, sets: put away at once", act("Put away 3"))
+    Wait(5)
+    check("pick, sets: all three behind the scenes, still picked", GetMacroIndexByName("Park A") == 0
+        and GetMacroIndexByName("Park B") == 0 and GetMacroIndexByName("Park C") == 0
+        and row("stored", "Park B") and row("stored", "Park B").pick:IsShown(), printed[#printed])
+    check("pick, sets: take in at once", act("Take in 3"))
+    Wait(5)
+    check("pick, sets: all three in the game again", GetMacroIndexByName("Park A") > 0
+        and GetMacroIndexByName("Park B") > 0 and GetMacroIndexByName("Park C") > 0
+        and printed[#printed]:find("took in 3 macros", 1, true) ~= nil, printed[#printed])
+    CreateMacro, DeleteMacro = create, delete
+    ns.Window.SetPicking(false)
+    for _, name in ipairs({ "Park A", "Park B", "Park C" }) do
+        S.Forget("character", name)
+        if GetMacroIndexByName(name) > 0 then DeleteMacro(GetMacroIndexByName(name)) end
+    end
+    Send("UPDATE_MACROS")
+    S.Disable()
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)
