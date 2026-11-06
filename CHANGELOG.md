@@ -18,6 +18,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the game ("History" shows them, "Find and replace" keeps them). Backups hold them as well, each in its
   set; restored, one gets its text back or comes back behind the scenes. Before, a backup had only the
   macros in the game, and none at all when every macro was behind the scenes.
+- Macros from the spellbook: an interrupt joined to another spell on a key lost "Stop your cast first".
+  Now the macro stops the cast only when that key casts the interrupt (`/stopcasting [mod:ctrl]`), and
+  the other spell casts as before. The wizard reads such a line back.
 
 ## [0.15.0] - 2026-11-06
 

@@ -26,6 +26,27 @@ local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 
 local function Letters(s) return select(2, s:gsub("[^\128-\191]", "")) end
 
+-- /stopcasting for an interrupt only, not for the other spells of its macro: true when all of them are interrupts,
+-- else the keys that cast one ("[mod:ctrl,nomod:shift]": the cast line takes the first key held, in Wizard.KEYS
+-- order), nil for none. `main`: whether the spell with no key is one; `keys`: key -> whether the spell on it is.
+local function Stop(main, keys)
+    local groups, before, all = {}, {}, main
+    for _, key in ipairs(ns.Wizard.KEYS) do
+        if keys[key] ~= nil then
+            all = all and keys[key]
+            if keys[key] then
+                local held = "mod:" .. key
+                if #before > 0 then held = held .. ",nomod:" .. table.concat(before, "/") end
+                groups[#groups + 1] = "[" .. held .. "]"
+            end
+            before[#before + 1] = key
+        end
+    end
+    if all then return true end
+    if main then groups[#groups + 1] = "[nomod:" .. table.concat(before, "/") .. "]" end
+    return #groups > 0 and table.concat(groups) or nil
+end
+
 -- The commands that cast or use what they name.
 local CASTS = { cast = true, use = true, spell = true, castsequence = true, castrandom = true, userandom = true }
 
@@ -236,7 +257,8 @@ function Spellbook.Plan(kit, choices)
             local spec = W.Fresh()
             spec.action = { name = s.name, selfOnly = s.kind == "self" or nil }
             spec.on, spec.only = unitsOf(s)
-            local all, attack, stop = { s.name }, s.kind == "harm" and not s.control, s.interrupt
+            local all, attack = { s.name }, s.kind == "harm" and not s.control
+            local interrupts = {} -- key -> whether the spell on it is an interrupt
             for _, k in ipairs(keys[s.name] or {}) do
                 local held = spec.keys[k.key]
                 held.active, held.action = true, { name = k.spell.name, rank = k.rank }
@@ -244,10 +266,10 @@ function Spellbook.Plan(kit, choices)
                 held.reaction = k.spell.kind == "harm" and "enemies" or k.spell.kind == "help" and "friends" or nil
                 if k.spell ~= s then all[#all + 1] = k.spell.name end
                 attack = attack and k.spell.kind == "harm" and not k.spell.control
-                stop = stop and k.spell.interrupt
+                interrupts[k.key] = k.spell.interrupt == true
             end
             spec.startattack = choices.startattack and attack or nil
-            spec.stopcasting = choices.stopcasting and stop or nil
+            spec.stopcasting = choices.stopcasting and Stop(s.interrupt == true, interrupts) or nil
             local body = W.Text(spec)
             if Letters(body) > MAX_BODY then
                 problems[s.name] = string.format(ns.L["The macro would be longer than %d characters."], MAX_BODY)

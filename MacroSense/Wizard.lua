@@ -640,7 +640,10 @@ function Wizard.Text(spec)
     if not pet then
         for _, l in ipairs(before) do lines[#lines + 1] = l end
     end
-    if spec.stopcasting then lines[#lines + 1] = "/stopcasting" end
+    -- True, or the conditions it has: "[mod:ctrl]" stops only for the interrupt on Ctrl (Spellbook.lua).
+    if spec.stopcasting then
+        lines[#lines + 1] = "/stopcasting" .. (type(spec.stopcasting) == "string" and (" " .. spec.stopcasting) or "")
+    end
     if spec.cancelform then lines[#lines + 1] = "/cancelform" end
     if spec.dismount and spec.command ~= "mount" then lines[#lines + 1] = "/dismount [mounted]" end
     if spec.cancelaura then lines[#lines + 1] = "/cancelaura " .. spec.cancelaura.name end
