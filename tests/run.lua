@@ -720,6 +720,27 @@ do
     whatIf("Alt held", { mods = { alt = true } }, "icon: Hunter's Mark | Hunter's Mark")
     expectPreview("what if: nomod, combat, a key list", "/cast [nomod:shift/ctrl,combat] A; [nocombat] B; C", nil,
         "A", W.Env({ mods = { alt = true }, combat = true, units = { target = "enemy" } }))
+    -- Whether it can go there at all: a spell for enemies won't on a friend, a dead one or nobody; one for friends
+    -- named for an enemy won't, and goes to you when the game picks.
+    local reaction = function(name) return ({ ["Bane of Agony"] = "enemies", ["Flash Heal"] = "friends" })[name] end
+    local bane = "/cast [@mouseover,harm,nodead][] Bane of Agony"
+    local function verdict(label, body, units, want)
+        local s = W.Fresh()
+        for u, kind in pairs(units) do s.units[u] = kind end
+        expectPreview("what if: " .. label, body, nil, want, W.Env(s, nil, nil, reaction))
+    end
+    verdict("an enemy targeted", bane, {}, "Bane of Agony")
+    verdict("a friend targeted", bane, { target = "friend" }, "Bane of Agony  won't cast: the target is a friend")
+    verdict("a dead one targeted", bane, { target = "dead" }, "Bane of Agony  won't cast: the target is a dead enemy")
+    verdict("nobody targeted", bane, { target = "none" }, "Bane of Agony  won't cast: you have no target")
+    verdict("an enemy under the mouse still goes there", bane, { target = "friend", mouseover = "enemy" },
+        "Bane of Agony @mouseover")
+    verdict("a heal, an enemy targeted: on you", "/cast Flash Heal", {}, "Flash Heal @player")
+    verdict("a heal on the focus, an enemy", "/cast [@focus] Flash Heal", { focus = "enemy" },
+        "Flash Heal @focus  won't cast: the focus is an enemy")
+    verdict("a heal on the mouseover, nobody", "/cast [@mouseover] Flash Heal", {},
+        "Flash Heal @mouseover  won't cast: nobody is under the mouse")
+    verdict("not known what it is for: as it is", "/cast Life Tap", { target = "friend" }, "Life Tap")
     -- Not set up here: the game's answer, for the unit of the group.
     local asked = {}
     local real = function(cond, unit) asked[#asked + 1] = cond .. "@" .. unit; return false end

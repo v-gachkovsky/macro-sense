@@ -69,12 +69,17 @@ local function command(name, rest, env)
     end
     if base == "cancelaura" then return { kind = "cast", verb = "cancel", name = displayName(action) } end
     local spell = displayName(action)
-    return { kind = "cast", name = spell, unit = unit, icon = spell }
+    local r = { kind = "cast", name = spell, unit = unit, icon = spell }
+    -- Whether it can go there at all ("What if": WhatIf.lua): on you instead, or why it won't cast.
+    local v = env.verdict and env.verdict(spell, unit, base == "use")
+    if v then r.unit, r.fails = v.unit or r.unit, v.fails end
+    return r
 end
 
 -- Per line (1 .. results.n): what it does now, or nil for an empty line, a comment or a line in `skip`
 -- (lines with syntax errors: how the game reads those is anyone's guess).
---   { kind = "cast", name, unit?, verb?, step?, steps?, icon? }  casts, uses, equips (verb) or cancels
+--   { kind = "cast", name, unit?, verb?, step?, steps?, icon?, fails? }  casts, uses, equips (verb) or cancels;
+--     `fails`: why it won't, when env.verdict(name, unit, item) tells (-> { unit?, fails? })
 --   { kind = "runs", command, arg?, unit? }  another command that runs: "startattack", chat, Lua
 --   { kind = "nothing" }            a clause matches, but it names no spell or item
 --   { kind = "nomatch" }            no clause matches: the line does nothing
@@ -136,7 +141,9 @@ function Preview.Note(r, c)
     if not r then return "" end
     local function paint(color, s) return "|cff" .. color .. s .. "|r" end
     local unit = r.unit and paint(c.unit, " @" .. r.unit) or ""
-    if r.kind == "cast" then
+    if r.kind == "cast" and r.fails then
+        return paint(c.dim, r.name .. (r.unit and " @" .. r.unit or "")) .. "  " .. paint(c.warning, r.fails)
+    elseif r.kind == "cast" then
         local s = (r.verb and paint(c.text, L[r.verb] .. " ") or "") .. paint(c.action, r.name)
         if r.step then s = s .. paint(c.dim, string.format(" (%d/%d)", r.step, r.steps)) end
         return s .. unit
