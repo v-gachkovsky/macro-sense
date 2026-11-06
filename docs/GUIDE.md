@@ -185,12 +185,12 @@ The form has the same choices as the questions, each in its own row:
 | Row | What it sets | In the macro |
 |---|---|---|
 | "Command" | what the macro does: a spell or item, a list in turn, one at random, target, focus, assist, pet, mount, gear | `/cast`, `/castsequence`, `/target`... |
-| "Cast" / "Use" | the spell or item: a few letters, or the first letters of its words in capitals (`SB`) | `Shadow Bolt` |
+| "Cast" / "Use" | the spell or item: a few letters, or the first letters of its words in capitals (`SB`); "!" by it: pressed again, it stays on | `Shadow Bolt`, `!Shoot` |
 | "On" | on whom, up to three in order: as usual, your target, mouseover, focus, yourself, a party member, at the cursor... | `[@mouseover][]` |
 | "Only" | friends, enemies or anyone; "Alive only" | `harm`, `help`, `nodead` |
 | "With a key held" | for Shift, Ctrl, Alt (Cmd on a Mac): another spell, or the same on someone else | `[mod:shift]...;` |
 | "When" | only in or out of combat, in stealth, in a group, with your pet, not while channeling, in a form, and what it does otherwise | `[combat]`, `[nochanneling:Drain Soul]` |
-| "Also" | stop your cast first, a trinket, start attack, leave your form, "Don't turn it off", cancel a buff, a chat line | `/stopcasting`, `/use 13`, `!Shoot` |
+| "Also" | stop your cast first, a trinket, start attack, leave your form, cancel a buff, a chat line | `/stopcasting`, `/use 13` |
 | "Name" and "Tab" | the macro's name, and General or Character | |
 
 A few of what you can get:

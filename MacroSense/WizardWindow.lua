@@ -311,6 +311,21 @@ local function SpellBox(parent, width, hint, get, set, candidates)
     return box
 end
 
+-- "!" for the spell of `box`, in it at its right end: pressed again, the macro doesn't turn it off. `slot()`: the
+-- spell's place in spec.keeps ("main", a key, "otherwise").
+local function KeepCheck(box, name, slot)
+    local c = ns.Check(box, "!", function() return spec and spec.keeps[slot()] end, function(on)
+        spec.keeps[slot()] = on or nil
+        Update()
+    end)
+    c:SetPoint("RIGHT", box, "RIGHT", -4, 0)
+    box:SetTextInsets(6, 30, 0, 0)
+    controls[name] = c
+    Tip(c, L["Don't turn it off"], L["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off what "
+        .. "it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."])
+    return c
+end
+
 ------------------------------------------------------------------------
 -- The form
 ------------------------------------------------------------------------
@@ -465,7 +480,10 @@ function Arrange()
     -- A mount macro gets you off a mount its own way. "!" is for /cast and /use.
     controls.dismount:SetShown(not mount)
     local casts = spec.command == "cast" or spec.command == "use"
-    controls.keep:SetShown(casts)
+    -- "!" by each spell: for /cast and /use, not a mount.
+    for _, name in ipairs({ "keepMain", "keepOtherwise", "keepShift", "keepCtrl", "keepAlt", "keepCmd" }) do
+        if controls[name] then controls[name]:SetShown(casts) end
+    end
     -- The When rows, and Otherwise under them for /cast and /use.
     blocks.when.height = (casts and 3 or 2) * ROW + 2
     local shown = {}
@@ -528,8 +546,6 @@ local function BuildAlso(parent, prefix)
         { "petattack", L["Pet attacks your target"] },
         { "dismount", L["Off your mount first"], L["Gets you off your mount first (/dismount [mounted]), so the "
             .. "spell doesn't fail."] },
-        { "keep", L["Don't turn it off"], L["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn "
-            .. "off what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."] },
     }
     for i, c in ipairs(also) do
         local name = c[1]
@@ -624,7 +640,8 @@ local function ShowStep()
         or asked.slot and L["nothing"] or asked.key and L["same spell"] or L["type a spell or item"])
     if asked.kind == "spell" and not asked.optional and not asked.key and not spec.action then box:SetFocus() end
     controls.stepDismount:SetShown(not mount)
-    controls.stepKeep:SetShown(spec.command == "cast" or spec.command == "use")
+    controls.stepKeep:SetShown((spec.command == "cast" or spec.command == "use") and asked.kind == "spell"
+        and not asked.mount and asked.slot ~= "equip")
     controls.stepGeneral:SetChosen(scope == "general")
     controls.stepCharacter:SetChosen(scope == "character")
     controls.back:SetEnabled(Q.Next(spec, keys, step, true) ~= nil)
@@ -723,6 +740,13 @@ local function BuildSteps()
     box:SetPoint("TOPLEFT", PAD, 0)
     box:HookScript("OnTextChanged", function() controls.next:SetEnabled(Answered()) end)
     box.noRanks = true -- the next question asks for the rank
+    -- Under it, for a spell to cast: "!" before it.
+    local function slotOf() return keyOf() or (otherwise() and "otherwise") or "main" end
+    local keep = Check(panels.spell, "stepKeep", L["Don't turn it off"], function() return spec and spec.keeps[slotOf()] end,
+        function(on) spec.keeps[slotOf()] = on or nil end)
+    keep:SetPoint("TOPLEFT", PAD, -32)
+    Tip(keep, L["Don't turn it off"], L["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off "
+        .. "what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."])
     local pick = box.Pick
     function box:Pick(item)
         if pick(self, item) then
@@ -921,6 +945,7 @@ local function Build()
             FollowSelf()
         end)
     controls.cast:SetPoint("TOPLEFT", X, 0)
+    KeepCheck(controls.cast, "keepMain", function() return "main" end)
 
     -- A list: /castsequence, /castrandom. Two columns, read across.
     blocks.list = Block(22 + 3 * ROW + 2)
@@ -1060,6 +1085,7 @@ local function Build()
             function(action) SetKeyAction(key, action) end)
         box:SetPoint("TOPLEFT", X, y)
         controls[key .. "Cast"] = box
+        KeepCheck(box, "keep" .. KEY_NAMES[key], function() return key end)
         local row = { y = y, box = box, word = Text(blocks.keys, L["then"], X + 284, y - 5, "dim") }
         row.pet = Choice(blocks.keys, key .. "Pet", 150, petActions, function() return spec.keys[key].pet end,
             function(action)
@@ -1110,6 +1136,7 @@ local function Build()
     controls.otherwise = SpellBox(blocks.when, 160, L["otherwise: do nothing"], function() return spec.otherwise end,
         function(action) spec.otherwise = action end)
     controls.otherwise:SetPoint("TOPLEFT", X, -2 * ROW)
+    KeepCheck(controls.otherwise, "keepOtherwise", function() return "otherwise" end)
     Tip(controls.otherwise, L["Otherwise"], L["What the macro casts when the conditions on the left aren't met. Leave "
         .. "it empty to do nothing then."])
 

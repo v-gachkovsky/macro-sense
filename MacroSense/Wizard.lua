@@ -285,7 +285,7 @@ end
 function Wizard.Fresh()
     local spec = { command = "cast", on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {},
         list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party", mounts = {}, offMount = "safe",
-        when = {}, equip = {} }
+        when = {}, equip = {}, keeps = {} }
     for i = 1, Wizard.EQUIP do spec.equip[i] = { slot = "", key = "always" } end
     for _, key in ipairs(Wizard.KEYS) do
         spec.keys[key] = { active = false, on = { "default", "none" }, pet = PET_KEYS[key] }
@@ -339,33 +339,39 @@ end
 -- both: /cast looks for a spell first, /use for an item.
 
 -- How the macro names an action: "Shadow Bolt(Rank 3)" with a rank picked, "Shadow Bolt" (the highest learned)
--- without. "!" before it (`spec.keep`) is the macro's, not the action's: see CastLine.
+-- without. "!" before it is the form's, by the spell's place (`spec.keeps`): see Clauses.
 function Wizard.Spelled(action)
     return action.rank and action.name .. "(" .. action.rank .. ")" or action.name
 end
 
 -- The clauses of a /cast or /use line: the keys held with their units, then the units in order, those casting the
--- same next to each other as one ("[mod:alt,@party4][@party1] Flash Heal").
+-- same next to each other as one ("[mod:alt,@party4][@party1] Flash Heal"). "!" before a spell (`keep`): pressed
+-- again, it stays on (Auto Shot, Stealth, a form); each spell's own (`spec.keeps`: "main", a key, "otherwise"), a
+-- key casting the macro's spell the macro's. Not for items.
 local function Clauses(spec)
     local out = {}
-    local function add(group, action)
+    local function add(group, action, keep)
+        keep = keep and not action.item or false
         local last = out[#out]
-        if last and Wizard.Spelled(last.action) == Wizard.Spelled(action) and last.action.item == action.item then
+        if last and Wizard.Spelled(last.action) == Wizard.Spelled(action) and last.action.item == action.item
+            and last.keep == keep then
             last.groups = last.groups .. group
         else
-            out[#out + 1] = { groups = group, action = action }
+            out[#out + 1] = { groups = group, action = action, keep = keep }
         end
     end
+    local keeps = spec.keeps or {}
     for _, key in ipairs(Wizard.KEYS) do
         local k = spec.keys[key]
         local action = k.active and (k.action or spec.action)
         if action then
             local only = Wizard.Only(spec, key)
-            for _, unit in ipairs(Chain(k.on)) do add(Group(spec, unit, "mod:" .. key, nil, only), action) end
+            local keep = keeps[k.action and key or "main"]
+            for _, unit in ipairs(Chain(k.on)) do add(Group(spec, unit, "mod:" .. key, nil, only), action, keep) end
         end
     end
     if spec.action then
-        for _, unit in ipairs(Chain(spec.on)) do add(Group(spec, unit), spec.action) end
+        for _, unit in ipairs(Chain(spec.on)) do add(Group(spec, unit), spec.action, keeps.main) end
     end
     return out
 end
@@ -374,14 +380,15 @@ local function CastLine(spec)
     local clauses = Clauses(spec)
     if #clauses == 0 then return nil end
     -- What it casts when the When row doesn't hold: the last clause, which always does.
-    if spec.otherwise and When(spec) ~= "" then clauses[#clauses + 1] = { groups = "[]", action = spec.otherwise } end
+    if spec.otherwise and When(spec) ~= "" then
+        local keep = (spec.keeps or {}).otherwise and not spec.otherwise.item or false
+        clauses[#clauses + 1] = { groups = "[]", action = spec.otherwise, keep = keep }
+    end
     local parts = {}
     for i, c in ipairs(clauses) do
         -- A last clause that always holds needs no brackets: "; Frostbolt".
         local groups = (i == #clauses and c.groups == "[]") and "" or (c.groups .. " ")
-        -- "!Shoot": pressed again, the spell stays on (Auto Shot, Stealth, a form); not for items.
-        local keep = spec.keep and not c.action.item and "!" or ""
-        parts[i] = groups .. keep .. Wizard.Spelled(c.action)
+        parts[i] = groups .. (c.keep and "!" or "") .. Wizard.Spelled(c.action)
     end
     return "/" .. spec.command .. " " .. table.concat(parts, "; ")
 end

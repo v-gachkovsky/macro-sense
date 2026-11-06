@@ -145,6 +145,10 @@ is set.
   knows what it is for; a key's own spell is checked for what it is for.
 - **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
   fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
+- **!** at the end of each spell's box, for `/cast` and `/use`: `!` before that spell (`!Shoot`). Pressed again,
+  the macro doesn't turn off what it turned on: Auto Shot, Stealth, a form or an aura. Each spell has its own, the
+  macro's, each key's and the one it casts otherwise; in the questions it is **Don't turn it off** under the
+  spell.
 - **When**: only in or out of combat, in stealth or not, in a group, a raid or alone, with your pet out or not, in
   one of your forms or none; every branch checks it (`[combat,@mouseover,harm,nodead][combat] Fireball`). A
   channeled spell (Drain Soul) stops when you press another one: **Not while channeling it** keeps a press of the
@@ -152,8 +156,7 @@ is set.
   them (`[nochanneling]`). For `/cast` and `/use` the box under them says what it casts otherwise (`; Frostbolt`).
 - **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
   none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
-  first, **Don't turn it off** for `/cast` and `/use` (`!Shoot`: pressed again, the macro doesn't turn off Auto
-  Shot, Stealth, a form or an aura), cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
+  first, cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
   chat last (`%t` is your target's name).
 - **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.
 
