@@ -145,7 +145,7 @@ Wizard.whens = {
         { key = "no", name = "Alone", cond = "nogroup" } } },
     { key = "pet", items = { { key = "any", name = "With a pet or not" },
         { key = "yes", name = "Your pet is out", cond = "pet" }, { key = "no", name = "No pet out", cond = "nopet" } } },
-    { key = "channel", items = { { key = "any", name = "Channeling: any time" },
+    { key = "channel", items = { { key = "any", name = "Channeling or not" },
         { key = "own", name = "Not while channeling it" }, { key = "no", name = "Not while channeling", cond = "nochanneling" },
         { key = "yes", name = "While channeling", cond = "channeling" } } },
     { key = "form" },

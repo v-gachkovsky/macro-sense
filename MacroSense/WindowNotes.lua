@@ -72,7 +72,8 @@ end
 -- Its tooltip line, when it has one.
 local function AddNoteLine(scope, name)
     local note = ns.History.Note(scope, name)
-    if note then GameTooltip:AddLine(note, 1, 0.82, 0, true) end
+    -- Yellow, written into the text too: the tooltip keeps it whatever colored its lines before.
+    if note then GameTooltip:AddLine("|cffffd100" .. note:gsub("|", "||") .. "|r", 1, 0.82, 0, true) end
 end
 
 shared.NoteItem, shared.AddNoteLine = NoteItem, AddNoteLine

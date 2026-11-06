@@ -19,8 +19,13 @@ end
 
 local function Trim(s) return ((s or ""):gsub("^%s+", ""):gsub("%s+$", "")) end
 
+-- A macro is a favorite or in a folder, not both: the list shows it in one place.
 function Folders.IsFavorite(name) return Folders.Shelf().favorites[name] == true end
-function Folders.SetFavorite(name, on) Folders.Shelf().favorites[name] = on and true or nil end
+function Folders.SetFavorite(name, on)
+    local shelf = Folders.Shelf()
+    shelf.favorites[name] = on and true or nil
+    if on then shelf.of[name] = nil end
+end
 
 -- The folder of macro `name`, or nil.
 function Folders.Of(name) return Folders.Shelf().of[name] end
@@ -29,6 +34,7 @@ function Folders.Put(name, folder)
     local shelf = Folders.Shelf()
     if folder and not Folders.Has(folder) then return false end
     shelf.of[name] = folder
+    if folder then shelf.favorites[name] = nil end
     return true
 end
 

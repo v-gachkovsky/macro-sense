@@ -332,6 +332,14 @@ local function Row(i)
                 return Window.DropOnTab(r, scope, Window.copying or IsControlKeyDown())
             end
         end
+        -- The General tab's folders: into one, into Favorites, or out of them.
+        if r.what == "macro" and r.scope == "general" then
+            for _, target in ipairs(rows) do
+                if target:IsShown() and target.dropFolder ~= nil and target:IsMouseOver() then
+                    return Window.DropInFolder(r, target)
+                end
+            end
+        end
         if not r.set then return end
         for _, target in ipairs(rows) do
             if target:IsShown() and target:IsMouseOver() then
@@ -411,7 +419,7 @@ local function UseRow(n, what, tone, depth)
     r.depth = depth or (what == "altMacro" and 1 or 0)
     r.folder, r.shelf = nil, false
     r.pick:Hide()
-    r.tone, r.toggle, r.set, r.dropId, r.dropIn = tone, false, nil, nil, nil
+    r.tone, r.toggle, r.set, r.dropId, r.dropIn, r.dropFolder = tone, false, nil, nil, nil, nil
     local indent = 12 * (depth or (what == "altMacro" and 1 or 0))
     local checked = shared.Picking() and (what == "macro" or what == "stored" or what == "group" or what == "head")
     r.check:SetShown(checked)
@@ -873,7 +881,8 @@ function Window.Watch()
             local at, tab
             for scope, t in pairs(shared.tabs or {}) do if t:IsShown() and t:IsMouseOver() then tab = scope end end
             for _, target in ipairs(rows) do
-                if not tab and target:IsShown() and target.dropId and target:IsMouseOver() then at = target end
+                if not tab and target:IsShown() and (target.dropId or target.dropFolder ~= nil)
+                    and target:IsMouseOver() then at = target end
             end
             Window.DragOver(at, tab)
             if mark:IsShown() then MarkAt() end
@@ -918,9 +927,29 @@ end
 
 -- The dragged macro over row `target` (nil: over none, or let go) or tab `tab`: the sign and the tooltip, as Ctrl is
 -- now.
+-- Where a General macro dropped on row `target` goes: "favorites", a folder's name, or "" out of them.
+local function FolderLabel(where)
+    if where == "favorites" then return L["Favorites"] end
+    return where
+end
+
 function Window.DragOver(target, tab)
     local source = Window.dragging
     if source and tab and mark then return OverTab(source, tab) end
+    -- Over the General tab's folders.
+    if source and target and target.dropFolder ~= nil and target ~= source then
+        local key = "folder " .. tostring(target)
+        if key == over then return end
+        over = key
+        if mark then mark:Hide() end
+        GameTooltip:SetOwner(target, "ANCHOR_RIGHT")
+        if target.dropFolder == "" then
+            GameTooltip:SetText(L["Out of the folder"], 0.3, 0.75, 0.3)
+        else
+            GameTooltip:SetText(string.format(L["Into \"%s\""], FolderLabel(target.dropFolder)), 0.3, 0.75, 0.3)
+        end
+        return GameTooltip:Show()
+    end
     if not (source and source.set and target and target.dropId) or target == source then
         if over then GameTooltip:Hide() end
         over = nil
@@ -953,6 +982,21 @@ function Window.DragOver(target, tab)
         if text then GameTooltip:AddLine(text, 1, 1, 1, true) end
     end
     GameTooltip:Show()
+end
+
+-- General macro row `source` dropped on row `target` of the folders: into Favorites, into the folder, or out of them.
+function Window.DropInFolder(source, target)
+    ClearCursor() -- a macro picked up for the action bars
+    local F, where = ns.Folders, target.dropFolder
+    if where == "favorites" then
+        F.SetFavorite(source.name, true)
+    elseif where == "" then
+        F.SetFavorite(source.name, false)
+        F.Put(source.name, nil)
+    else
+        F.Put(source.name, where)
+    end
+    Window.RefreshList()
 end
 
 -- Macro row `source` dropped on row `target`: into the target's set, in the game or behind the scenes. With Ctrl
@@ -1005,6 +1049,8 @@ local function ShelfGroup(n, key, label, items, tip, folder, filtered)
     n = n + 1
     local r = UseRow(n, "group", nil, 1)
     r.group, r.open, r.name, r.tip, r.folder, r.shelf = key, open, label, tip, folder, true
+    -- A macro dragged here goes in (WindowList's drag: Window.DropInFolder).
+    r.dropFolder = folder or "favorites"
     r:Toggle(open)
     r.text:SetText(string.format("%s  |cff%s%d|r", label, ns.scheme.dim, #items))
     r:Paint()
@@ -1012,6 +1058,7 @@ local function ShelfGroup(n, key, label, items, tip, folder, filtered)
     for _, index in ipairs(open and items or {}) do
         n = n + 1
         MacroRow(n, index, nil, 2)
+        rows[n].dropFolder = r.dropFolder
     end
     return n
 end
@@ -1051,6 +1098,7 @@ local function GeneralRows(n, q)
     for _, index in ipairs(root) do
         n = n + 1
         MacroRow(n, index)
+        rows[n].dropFolder = "" -- dropped here: out of the folders
     end
     return n
 end
