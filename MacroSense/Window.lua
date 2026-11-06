@@ -117,6 +117,9 @@ end
 -- History: earlier saved texts of the macro
 ------------------------------------------------------------------------
 local function Versions()
+    if state.stored and state.stored.name then
+        return ns.History.Versions(ns.History.Store("character"), state.stored.name, state.body)
+    end
     if not state.index then return {} end
     return ns.History.Versions(ns.History.Store(state.scope), state.name, state.body)
 end

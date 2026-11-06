@@ -473,8 +473,9 @@ for good. A macro renamed in the game's window is not taken for deleted.
 
 **Backups** keeps all your macros as they were: one is made by itself on your first login of a day when
 they changed, and **Back up now** makes one whenever you like (the last 10 for each character, each with
-the General macros and the character's). Pick one to restore it: its macros get their text and icon back,
-the deleted ones are made again, and the macros made since stay as they are. A backup of your macros now is
+the General macros, the character's and, with macro sets on, those behind the scenes). Pick one to restore
+it: its macros get their text and icon back, the deleted ones are made again (one behind the scenes comes
+back there), and the macros made since stay as they are. A backup of your macros now is
 made first, so a restore can be undone too. The **x** next to a backup deletes it.
 
 ## Macro sets

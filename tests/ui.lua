@@ -8642,6 +8642,51 @@ do
     S.Disable()
 end
 
+-- Behind the scenes as in the game: a change keeps the text it replaced as a version, and a backup holds those
+-- macros too; restored, they get their text back, or come back behind the scenes.
+do
+    local S = ns.Sets
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    S.Enable()
+    local function stored()
+        for _, m in ipairs(S.List("character")) do if m.name == "Hidden" then return m end end
+    end
+    S.Write("character", nil, "Hidden", 1, "/say ONE")
+    S.Write("character", "Hidden", "Hidden", 1, "/say TWO")
+    S.Write("character", "Hidden", "Hidden", 1, "/say THREE")
+    ns.Window.SelectStored("character", "Hidden")
+    local historyBtn
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "History" then historyBtn = o end
+    end
+    Fire(historyBtn, "OnClick")
+    local shown = 0
+    for _, r in ipairs(MacroSenseMenu.rows) do
+        if r:IsShown() and tostring(r.text.text):find("chars", 1, true) then shown = shown + 1 end
+    end
+    ns.CloseMenu()
+    check("history, behind: its versions", shown == 2, shown)
+
+    ns.Window.BackupNow()
+    local backup = ns.char.backups[#ns.char.backups]
+    local kept
+    for _, m in ipairs(backup.macros) do
+        if m.name == "Hidden" and m.set == "character" then kept = m end
+    end
+    check("backup, behind: it holds them", kept and kept.body == "/say THREE", kept and kept.body)
+    S.Write("character", "Hidden", "Hidden", 1, "/say FOUR")
+    ns.Window.RestoreBackup(backup)
+    check("backup, behind: restored, its text back", stored() and stored().body == "/say THREE"
+        and GetMacroIndexByName("Hidden") == 0, stored() and stored().body)
+    S.Forget("character", "Hidden")
+    ns.Window.RestoreBackup(backup)
+    check("backup, behind: deleted, back behind the scenes", stored() and stored().body == "/say THREE"
+        and S.IsParked("character", stored()) and GetMacroIndexByName("Hidden") == 0)
+
+    S.Forget("character", "Hidden")
+    S.Disable()
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)
