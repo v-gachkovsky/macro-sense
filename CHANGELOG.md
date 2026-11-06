@@ -23,6 +23,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the other spell casts as before. The wizard reads such a line back.
 - Deleting a macro from the spellbook that casts two spells (one joined on a key) could put the joined
   spell on its buttons instead of the one the macro was made for. Now it is always the macro's own spell.
+- A game client in another language: a macro with its own name of `/cast` (`/zaubern` in German) is now
+  seen as casting its spells, as the editor already saw it. The spellbook doesn't offer those spells again,
+  and "Sort by spells" knows where such a macro works.
 
 ## [0.15.0] - 2026-11-06
 
