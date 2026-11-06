@@ -26,6 +26,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A game client in another language: a macro with its own name of `/cast` (`/zaubern` in German) is now
   seen as casting its spells, as the editor already saw it. The spellbook doesn't offer those spells again,
   and "Sort by spells" knows where such a macro works.
+- A macro linked in chat opened as a blank white window for anyone who hadn't opened MacroSense since logging
+  in. Now the window has its colors and text from the first click.
 
 ### Changed
 - The tests run on GitHub on every push and pull request, and a release isn't packed or published while

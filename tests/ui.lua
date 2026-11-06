@@ -570,6 +570,21 @@ do
         and b.point[3] == "LEFT", b and b.point and table.concat({ tostring(b.point[1]), tostring(b.point[3]) }, " "))
 end
 
+-- A macro linked in chat, clicked before the editor was ever opened: the import window comes in the colors of the
+-- scheme, not white (they come with the editor's window).
+ns.ShareWindow.Import(ns.Share.Encode({ { scope = "general", name = "Fear MO", icon = 1, body = "/cast Fear" } }),
+    "Friend")
+do
+    -- The game's look (the default) puts the game's dark background on it; another scheme its own color.
+    local f, s = MacroSenseShare, ns.scheme
+    local styled = s and (s.native and f.backdrop.bgFile:find("DialogBox", 1, true) ~= nil
+        or not s.native and f.backdropColor and f.backdropColor[1] == ns.RGB(s.bg))
+    check("link: the import window has its colors before the editor was opened", styled,
+        f.backdrop and f.backdrop.bgFile)
+    check("link: the editor stays closed", not (MacroSenseFrame and MacroSenseFrame:IsShown()))
+end
+ns.ShareWindow.Close()
+
 CreateMacro("Nuke", 1, "#showtooltip\n/cast Fireball", false)
 -- Shift + right-click on it on an action bar opens the editor, also before it was ever opened.
 actions[2] = { "macro", 133, "spell", text = "Nuke" }
