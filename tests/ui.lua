@@ -4464,12 +4464,18 @@ do
     local base = { { 0, 1500 }, { 6000, 1500 }, { 180000, 0 }, { 0, 1500 } }
     C_Spell.GetSpellInfo = function(name) return ids[name] and { spellID = ids[name] } end
     GetSpellBaseCooldown = function(id) return base[id][1], base[id][2] end
+    ns.InvalidateSources("spells")
     local G = ns.Highlight.gcdOf
     check("gcd: as the game gives it", G("Arcane Shot") == "gcd" and G("Aimed Shot") == "cooldown"
         and G("Berserking") == "free" and G("Fireballl") == nil)
     local e = ns.Highlight.Errors("/cast Arcane Shot\n/cast [mod:alt] Hunter's Mark")[1]
     check("gcd: the line after is a warning", e and e.severity == "warning" and e.short == "won't cast" and e.line == 2)
+    base[1][1] = 6000
+    check("gcd: kept until the spells change", G("Arcane Shot") == "gcd")
+    ns.InvalidateSources("spells")
+    check("gcd: asked again then", G("Arcane Shot") == "cooldown")
     C_Spell.GetSpellInfo, GetSpellBaseCooldown = info, nil
+    ns.InvalidateSources("spells")
     check("gcd: not in a game that doesn't say", G("Arcane Shot") == nil)
 end
 
