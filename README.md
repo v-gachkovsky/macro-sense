@@ -84,7 +84,7 @@ questions; the wizard opens as you left it.
 - **Put on gear**: which item, the slot it goes to (the default one, or a trinket, ring or hand slot) and when (always,
   or only with a key held), then another one, up to four; first an equipment set, when you have some.
 - **Should the macro work only at certain times?** In or out of combat, in stealth, in a group, with your pet out,
-  in a form; then, for a spell or item, what it casts the rest of the time.
+  while channeling a spell or not, in a form; then, for a spell or item, what it casts the rest of the time.
 - **Would you like to add anything else?** The same as the form's Also.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
   the name, saves it and opens it in the editor.
@@ -100,7 +100,8 @@ spell, the units in order, the keys, the When row, the mounts, the gear. Change 
 then **Put in editor**. The new text goes into the editor, and Save keeps it (Ctrl+Z, Cmd+Z on a Mac, takes it
 back). It works for macros the wizard could have made, also typed by hand or taken from a guide. When the wizard
 writes some lines its own way or has no place for them (`/run`, a second `/cast`), it says so before you open it,
-and the window shows those lines under **lines will change**.
+and the window shows those lines under **lines will change**. `[nomod]` (no key held) is the macro's own spell to
+it: the wizard writes the keys first, then that spell, which does the same.
 
 ### Your group's tank and healer: @tank and @heal
 
@@ -145,11 +146,14 @@ is set.
 - **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
   fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
 - **When**: only in or out of combat, in stealth or not, in a group, a raid or alone, with your pet out or not, in
-  one of your forms or none; every branch checks it (`[combat,@mouseover,harm,nodead][combat] Fireball`). For
-  `/cast` and `/use` the box after them says what it casts otherwise (`; Frostbolt`).
+  one of your forms or none; every branch checks it (`[combat,@mouseover,harm,nodead][combat] Fireball`). A
+  channeled spell (Drain Soul) stops when you press another one: **Not while channeling it** keeps a press of the
+  macro from starting its own spell over (`[nochanneling:Drain Soul]`), **Not while channeling** waits for any of
+  them (`[nochanneling]`). For `/cast` and `/use` the box under them says what it casts otherwise (`; Frostbolt`).
 - **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
   none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
-  first, cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
+  first, **Don't turn it off** for `/cast` and `/use` (`!Shoot`: pressed again, the macro doesn't turn off Auto
+  Shot, Stealth, a form or an aura), cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
   chat last (`%t` is your target's name).
 - **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.
 

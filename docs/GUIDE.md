@@ -164,7 +164,7 @@ The same Shadow Bolt macro as in section 3, question by question:
 6. **"Should the macro do something else while you hold Shift, Ctrl or Alt?"** Skip it for now. Pick a key, and
    the next questions ask what that key casts, and where.
 7. **"Should the macro work only at certain times?"** In combat or out of it, in stealth, in a group, with your
-   pet out, in a form. Skip it for now.
+   pet out, while channeling a spell or not, in a form. Skip it for now.
 8. **"Would you like to add anything else?"** Stop your cast first, use a trinket, start auto attack, say
    something in chat. Skip it for now.
 9. **"Almost done: name your macro"**. Type `Bolt MO` and choose who keeps it: all your characters or only this
@@ -186,8 +186,8 @@ The form has the same choices as the questions, each in its own row:
 | "On" | on whom, up to three in order: as usual, your target, mouseover, focus, yourself, a party member, at the cursor... | `[@mouseover][]` |
 | "Only" | friends, enemies or anyone; "Alive only" | `harm`, `help`, `nodead` |
 | "With a key held" | for Shift, Ctrl, Alt (Cmd on a Mac): another spell, or the same on someone else | `[mod:shift]...;` |
-| "When" | only in or out of combat, in stealth, in a group, with your pet, in a form, and what it does otherwise | `[combat]` |
-| "Also" | stop your cast first, a trinket, start attack, leave your form, cancel a buff, a chat line | `/stopcasting`, `/use 13` |
+| "When" | only in or out of combat, in stealth, in a group, with your pet, not while channeling, in a form, and what it does otherwise | `[combat]`, `[nochanneling:Drain Soul]` |
+| "Also" | stop your cast first, a trinket, start attack, leave your form, "Don't turn it off", cancel a buff, a chat line | `/stopcasting`, `/use 13`, `!Shoot` |
 | "Name" and "Tab" | the macro's name, and General or Character | |
 
 A few of what you can get:

@@ -1953,6 +1953,32 @@ do
     read("a unit without a check: the wizard checks it", "/cast [@focus] Polymorph",
         "#showtooltip\n/cast [@focus,exists] Polymorph", "/cast [@focus] Polymorph")
     read("a second cast line", "/cast Fireball\n/cast Frostbolt", "#showtooltip\n/cast Fireball", "/cast Frostbolt")
+    -- [nomod] is the macro's own spell: the keys come first in the wizard's text. "!" is the form's "Don't turn it off".
+    local body = "#showtooltip\n/startattack\n/cast [nomod,@mouseover,harm,nodead][nomod] Shadow Bolt; "
+        .. "[mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot"
+    spec = read("none held: the macro's spell, the key's after", body,
+        "#showtooltip\n/startattack\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
+        .. "[@mouseover,harm,nodead][] !Shadow Bolt",
+        "/cast [nomod,@mouseover,harm,nodead][nomod] Shadow Bolt; [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot")
+    check("wizard read: none held, the answers", spec.action.name == "Shadow Bolt" and spec.keys.alt.active
+        and spec.keys.alt.action.name == "Shoot" and spec.keep and spec.only == "enemies"
+        and table.concat(spec.on, ",") == "mouseover,default,none" and spec.startattack)
+    read("one key's own none held", "/cast [nomod:shift] Fireball; [mod:shift] Frostbolt",
+        "#showtooltip\n/cast [mod:shift] Frostbolt", "/cast [nomod:shift] Fireball; [mod:shift] Frostbolt")
+    read("\"!\" alone", "#showtooltip\n/cast !Shoot", "#showtooltip\n/cast !Shoot")
+    spec = read("not while channeling it", "#showtooltip\n/startattack\n/cast [nochanneling:Drain Soul] Drain Soul",
+        "#showtooltip\n/startattack\n/cast [nochanneling:Drain Soul] Drain Soul")
+    check("wizard read: not while channeling it, the answer", spec.when.channel == "own" and not spec.keep)
+    spec.when.channel = "no"
+    check("wizard: not while channeling any", W.Text(spec) == "#showtooltip\n/startattack\n/cast [nochanneling] Drain Soul",
+        W.Text(spec))
+    spec.when.channel, spec.keep = "own", true
+    spec.keys.shift.active = true
+    check("wizard: its own spell named for every key, with \"!\"", W.Text(spec) == "#showtooltip\n/startattack\n"
+        .. "/cast [mod:shift,nochanneling:Drain Soul][nochanneling:Drain Soul] !Drain Soul", W.Text(spec))
+    read("channeling another spell: the macro's then", "/cast [nochanneling:Mind Flay] Mind Blast",
+        "#showtooltip\n/cast [nochanneling:Mind Blast] Mind Blast", "/cast [nochanneling:Mind Flay] Mind Blast")
+    read("while channeling", "/cast [channeling] Fireball", "#showtooltip\n/cast [channeling] Fireball")
     check("wizard read: nothing it makes", W.Read("/say hi") == nil and W.Read("") == nil
         and W.Read("/run print(1)") == nil)
     spec = read("a sequence", "/castsequence [@focus,harm,nodead][] reset=12/target Corruption, Immolate(Rank 2)",

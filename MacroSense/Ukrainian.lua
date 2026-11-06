@@ -734,6 +734,10 @@ ns.locales.uk = {
     ["Off your mount first"] = "Спершу злізти з маунта",
     ["Gets you off your mount first (/dismount [mounted]), so the spell doesn't fail."] =
         "Спершу знімає вас із маунта (/dismount [mounted]), щоб заклинання не зірвалося.",
+    ["Don't turn it off"] = "Не вимикати повторно",
+    ["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."] =
+        "Ставить ! перед заклинанням (!Shoot). Якщо натиснути макрос ще раз, він не вимкне те, що увімкнув: "
+        .. "Auto Shot, Shoot із жезла, стелс, форму чи ауру.",
     ["Cancel a buff"] = "Скасувати бафф",
     ["Cancel a buff first"] = "Спершу скасувати бафф",
     ["the buff's name"] = "назва баффу",
@@ -1587,6 +1591,15 @@ ns.locales.uk = {
     ["With a pet or not"] = "З улюбленцем чи без",
     ["Your pet is out"] = "Улюбленець викликаний",
     ["No pet out"] = "Улюбленця немає",
+    ["Channeling: any time"] = "Потокове: будь-коли",
+    ["Not while channeling it"] = "Не поки воно триває",
+    ["Not while channeling"] = "Не під час потокового",
+    ["While channeling"] = "Під час потокового",
+    ["Channeling"] = "Потокові заклинання",
+    ["A channeled spell (Drain Soul, Mind Flay) stops when you press another one. \"Not while channeling it\": pressed again, the macro doesn't start its spell over. \"Not while channeling\": the macro does nothing until any of them ends."] =
+        "Потокове заклинання (Drain Soul, Mind Flay) зривається, коли натиснути інше. «Не поки воно триває»: "
+        .. "повторне натискання не почне заклинання макросу спочатку. «Не під час потокового»: макрос нічого не "
+        .. "робить, доки триває будь-яке з них.",
     ["In any form or none"] = "У будь-якій формі чи без",
     ["In no form"] = "Без форми",
     ["Put on gear"] = "Вдягнути спорядження",
