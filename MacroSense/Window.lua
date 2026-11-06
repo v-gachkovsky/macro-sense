@@ -160,12 +160,24 @@ local function HistoryItems()
                 ns.Plural(Letters(v.body), "%d char", "%d chars")),
             current = v.body == code:GetRaw(),
             onClick = function() Window.Restore(v.body) end,
+            -- What it changes in the text now, as diff shows it: lines that go red, lines that come back green.
             onEnter = function(row)
                 GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
                 GameTooltip:AddLine(When(v.time), 1, 1, 1)
-                for line in (v.body .. "\n"):gmatch("([^\n]*)\n") do
-                    -- "|" would start a color code in the tooltip: shown as typed.
-                    GameTooltip:AddLine(line ~= "" and line:gsub("|", "||") or " ", 0.8, 0.8, 0.8, true)
+                local now = code:GetRaw()
+                if v.body == now then
+                    GameTooltip:AddLine(L["The same as the text now."], 0.6, 0.6, 0.6, true)
+                else
+                    GameTooltip:AddLine(L["If you pick it, the text changes like this:"], 0.6, 0.6, 0.6, true)
+                end
+                local signs = { same = "  ", gone = "- ", new = "+ " }
+                local colors = { same = "cccccc", gone = "ff5959", new = "66ff66" }
+                for _, d in ipairs(ns.History.Diff(now, v.body)) do
+                    -- "|" would start a color code in the tooltip: shown as typed. The color is in the text, as
+                    -- for TipLine.
+                    local r, g, b = ns.RGB(colors[d.kind])
+                    GameTooltip:AddLine("|cff" .. colors[d.kind] .. signs[d.kind] .. d.text:gsub("|", "||") .. "|r",
+                        r, g, b, true)
                 end
                 GameTooltip:Show()
             end,

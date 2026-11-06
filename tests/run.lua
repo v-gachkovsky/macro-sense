@@ -1933,6 +1933,23 @@ do
     end
 end
 
+-- History.Diff: one text becoming another, line by line, as diff shows it.
+do
+    local function diff(from, to)
+        local out = {}
+        for _, d in ipairs(ns.History.Diff(from, to)) do
+            out[#out + 1] = ({ same = " ", gone = "-", new = "+" })[d.kind] .. d.text
+        end
+        return table.concat(out, "|")
+    end
+    check("diff: a line changed, one added", diff("#showtooltip\n/cast A\n/cast B", "#showtooltip\n/cast C\n/cast B\n/say hi")
+        == " #showtooltip|-/cast A|+/cast C| /cast B|+/say hi", diff("#showtooltip\n/cast A\n/cast B",
+        "#showtooltip\n/cast C\n/cast B\n/say hi"))
+    check("diff: the same", diff("/cast A", "/cast A") == " /cast A")
+    check("diff: all new", diff("", "/cast A\n/cast B") == "-|+/cast A|+/cast B", diff("", "/cast A\n/cast B"))
+    check("diff: lines moved", diff("/a\n/b\n/c", "/c\n/a\n/b") == "+/c| /a| /b|-/c", diff("/a\n/b\n/c", "/c\n/a\n/b"))
+end
+
 -- The wizard reads a macro back: the form's answers, and the lines it would write otherwise or leave out.
 do
     local W = ns.Wizard
