@@ -2638,6 +2638,11 @@ do
     macros, problems = B.Plan(kit, choices)
     check("book: joined to a spell that is joined itself", problems.Polymorph ~= nil)
     choices.join["Polymorph"] = nil
+    -- A client in another language: its own name of /cast, as the editor knows it (Sources.lua).
+    ns.Parser.actionCommands.zaubern = "cast"
+    check("book: /cast by its German name", B.Casts("/zaubern [mod:shift] Frost Nova; Frostbolt").frostbolt
+        and B.Main("/zaubern [mod:shift] Frost Nova; Frostbolt") == "frostbolt")
+    ns.Parser.actionCommands.zaubern = nil
     -- An interrupt joined on a key: the cast is stopped only when that key casts it; Frost Nova on Shift comes first.
     choices.join["Counterspell"] = { into = "Frostbolt", key = "ctrl" }
     macros = B.Plan(kit, choices)

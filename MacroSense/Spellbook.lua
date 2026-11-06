@@ -47,8 +47,13 @@ local function Stop(main, keys)
     return #groups > 0 and table.concat(groups) or nil
 end
 
--- The commands that cast or use what they name.
-local CASTS = { cast = true, use = true, spell = true, castsequence = true, castrandom = true, userandom = true }
+-- The commands that cast or use what they name, by their English names; a client's own (/zaubern) as the editor
+-- knows them (Parser.actionCommands, Sources.lua).
+local CASTS = { cast = true, use = true, castsequence = true, castrandom = true, userandom = true }
+local function Base(command)
+    command = command:lower()
+    return ns.Parser and ns.Parser.actionCommands[command] or command
+end
 
 -- The spells and items a macro casts or uses, lowercase, with no rank: "/cast [mod] !Frost Nova; Frostbolt(Rank 2)"
 -- casts frost nova and frostbolt.
@@ -56,7 +61,7 @@ function Spellbook.Casts(body)
     local out = {}
     for line in (body or ""):gmatch("[^\n]+") do
         local command, rest = line:match("^%s*/(%a+)%s*(.*)$")
-        if command and CASTS[command:lower()] then
+        if command and CASTS[Base(command)] then
             for option in (rest .. ";"):gmatch("([^;]*);") do
                 local part = option:gsub("%b[]", "")
                 part = part:gsub("reset=%S*", "")
@@ -76,7 +81,7 @@ end
 function Spellbook.Main(body)
     for line in (body or ""):gmatch("[^\n]+") do
         local command, rest = line:match("^%s*/(%a+)%s*(.*)$")
-        if command and command:lower() == "cast" then
+        if command and Base(command) == "cast" then
             return next(Spellbook.Casts("/cast " .. (rest:match("([^;]*)$") or "")))
         end
     end
