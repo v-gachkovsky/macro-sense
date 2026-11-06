@@ -388,6 +388,11 @@ being edited is copied with what the editor shows (name, icon, text) and keeps i
 copied as saved. **x** deletes the macro, after asking; the macro being edited stays open when another one
 goes.
 
+**Add a note**, last in **...**, keeps a line of your own about the macro (`For the Onyxia pull`), outside its 255
+characters: the macro's tooltip in the list shows it. The note follows the macro renamed or moved, goes into the
+Trash with it and comes back with it. General macros keep theirs for the account, character macros for the
+character.
+
 Your other characters' own macros are in the **Character** tab too, under your macros: each character's name (your
 realm first), and a click shows its macros, as they were when you last played it with MacroSense; with macro sets,
 those behind the scenes too, with their set's name. Hover one to
@@ -575,8 +580,8 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/SpellbookWindow.lua`: the window of macros from the spellbook.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window: the editor, its status bar and how it is built.
   `MacroSense/WindowList.lua`: its macro list; `MacroSense/WindowShare.lua`: the Share menu;
-  `MacroSense/WindowTrash.lua`: the Trash and Backups menus. They share the window's state and helpers through
-  `ns.WindowShared`.
+  `MacroSense/WindowTrash.lua`: the Trash and Backups menus; `MacroSense/WindowNotes.lua`: the notes on the
+  macros. They share the window's state and helpers through `ns.WindowShared`.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 - `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
   code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.

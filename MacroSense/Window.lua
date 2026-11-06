@@ -716,6 +716,7 @@ function Window.Save()
             end
             return ns.Print("could not save the macro")
         end
+        ns.History.MoveNote("character", state.stored.name or name, "character", name)
         state.stored.name, state.name, state.body, state.savedIcon = name, name, body, state.icon
         Window.RefreshList()
         return UpdateStatus()
@@ -1047,6 +1048,8 @@ function Window.OpenRowMenu(owner, r)
     else
         items = CopyItems(r.index)
     end
+    -- Its note, last (one behind the scenes is the character's).
+    items[#items + 1] = shared.NoteItem(r.what == "stored" and "character" or r.scope, r.name)
     ns.OpenMenu(owner, items, 200, false, true)
 end
 

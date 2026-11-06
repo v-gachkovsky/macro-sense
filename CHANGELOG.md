@@ -17,6 +17,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the tabs say how many each has.
 - History: a version's tooltip shows what it changes in the text now, line by line as a diff: the lines that
   go in red, the ones that come back in green.
+- Notes: "Add a note" in a macro's "..." keeps a line of your own about it, outside its 255 characters; the
+  macro's tooltip in the list shows it. It follows the macro renamed or moved, and into the Trash and back.
 
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at

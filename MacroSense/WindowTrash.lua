@@ -50,7 +50,8 @@ function Window.Undelete(scope, entry)
         return Full(scope, function()
             Guard(function()
                 ns.History.TakeOut(ns.History.Trash(scope), entry)
-                Window.MakeBehind(entry.name, entry.icon, entry.body)
+                local made = Window.MakeBehind(entry.name, entry.icon, entry.body)
+                ns.History.SetNote("character", made, entry.note)
             end)
         end)
     end
@@ -60,6 +61,7 @@ function Window.Undelete(scope, entry)
         if not index or index == 0 then return ns.Print("could not restore the macro") end
         ns.History.TakeOut(ns.History.Trash(scope), entry)
         ns.History.Scan()
+        ns.History.SetNote(scope, name, entry.note)
         state.scope, ns.db.scope = scope, scope
         Load(GetMacroIndexByName(name))
     end)
