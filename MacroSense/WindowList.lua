@@ -360,11 +360,13 @@ end
 -- Search: a macro matches by its name or its text, in any case.
 local function Query() return strtrim(shared.search:GetText() or ""):lower() end
 
+-- With "With mistakes", only a macro with a mistake or a warning.
 local function Matches(q, name, body)
+    if shared.mistakes and not MacroIssues(body) then return false end
     return q == "" or name:lower():find(q, 1, true) ~= nil or (body or ""):lower():find(q, 1, true) ~= nil
 end
 
--- What the list shows: the macros the search matches, and with "Not on action bars" only those on no bar, of
+-- What the list shows: the macros the search matches (Matches), and with "Not on action bars" only those on no bar, of
 -- this character's specializations and, for a general macro, of your other characters as last seen.
 local function Shown(q, scope, name, body)
     if not Matches(q, name, body) then return false end
@@ -959,17 +961,21 @@ function Window.RefreshList()
         end
     end
     shared.altHint:Hide()
-    if state.scope == "character" and not shared.notOnBars then n = AltRows(n, q) end
+    -- Your other characters' macros: not with the filters, they are for this character's.
+    if state.scope == "character" and not shared.notOnBars and not shared.mistakes then n = AltRows(n, q) end
     for i = n + 1, #rows do rows[i]:Hide() end
     local height = math.max(n * ROW_H + (shared.altHint:IsShown() and 40 or 0), 1)
     shared.list.child:SetHeight(height)
     -- Fewer rows than before: not scrolled past the last.
     local bottom = math.max(0, height - shared.list:GetHeight())
     if shared.list:GetVerticalScroll() > bottom then shared.list:SetVerticalScroll(bottom) end
-    shared.noMatch:SetShown(n == 0 and (q ~= "" or shared.notOnBars))
+    local filtered = q ~= "" or shared.notOnBars or shared.mistakes
+    shared.noMatch:SetText(shared.mistakes and q == "" and not shared.notOnBars and L["No mistakes found"]
+        or L["No macros match"])
+    shared.noMatch:SetShown(n == 0 and filtered)
 
     -- While searching or filtering, the tabs say how many match.
-    if q == "" and not shared.notOnBars then
+    if not filtered then
         local general, character = GetNumMacros()
         shared.tabs.general.label:SetText(string.format(L["General  %d/%d"], general, MAX_GENERAL))
         local behind = ns.Sets.Mine().enabled and BehindCount() or 0

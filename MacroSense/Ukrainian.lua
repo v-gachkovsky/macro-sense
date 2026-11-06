@@ -355,6 +355,12 @@ ns.locales.uk = {
         "Зайдіть у гру іншими персонажами хоч раз, і їхні власні макроси з'являться тут, щоб їх можна було скопіювати.",
     -- where a macro is on the action bars
     ["Not on action bars"] = "Не на панелях дій",
+    ["With mistakes"] = "З помилками",
+    ["Only the macros with a mistake (red) or a warning (yellow): every macro is checked. The tabs say how many each has. Point at a macro to read what is wrong, click it to fix it."] =
+        "Лише макроси з помилкою (червоні) чи попередженням (жовті): аддон перевіряє всі макроси. Вкладки "
+        .. "показують, скільки таких у кожній. Наведіть мишу на макрос, щоб прочитати, що не так, і клацніть, "
+        .. "щоб виправити.",
+    ["No mistakes found"] = "Помилок не знайдено",
     ["Only the macros you have put on no action bar: handy to free slots. MacroSense remembers the bars of each of "
         .. "your specializations and characters as it last saw them, so a general macro an alt uses counts as used."] =
         "Лише макроси, яких немає на жодній панелі дій: зручно, щоб звільнити слоти. MacroSense пам'ятає панелі "

@@ -4537,6 +4537,70 @@ do
     NextFrame()
 end
 
+-- "With mistakes": only the macros with a mistake or a warning, the tabs counting them; off when the editor opens
+-- again.
+do
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
+        end
+    end
+    local function find(kind, text)
+        for _, o in ipairs(created) do
+            if o.kind == kind and (o.label and o.label.text == text or o.text == text) then return o end
+        end
+    end
+    local filter = find("Button", "With mistakes")
+    CreateMacro("Bad One", 1, "/cats Fear", false)
+    CreateMacro("Odd One", 1, "/cast [@mousover] Fear", false)
+    CreateMacro("Fine One", 1, "/cast Fear", false)
+    CreateMacro("Bad Char", 1, "/cast [mod:shfit] Fear", true)
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    NextFrame()
+    check("mistakes: the filter is there", filter ~= nil and row("Fine One") ~= nil)
+    Fire(filter, "OnClick")
+    local function bad(scope)
+        local first, last = 1, select(1, GetNumMacros())
+        if scope == "character" then
+            first, last = SLOTS.MAX_ACCOUNT_MACROS + 1, SLOTS.MAX_ACCOUNT_MACROS + select(2, GetNumMacros())
+        end
+        local n = 0
+        for index = first, last do
+            if #ns.Highlight.Errors(select(3, GetMacroInfo(index)) or "") > 0 then n = n + 1 end
+        end
+        return n
+    end
+    local general, character = bad("general"), bad("character")
+    check("mistakes: errors and warnings only", row("Bad One") and row("Odd One") and not row("Fine One"))
+    check("mistakes: the tabs count them", find("FontString", string.format("General  (%d)", general))
+        and find("FontString", string.format("Character  (%d)", character)), general .. " " .. character)
+    ns.Window.SetScope("character")
+    NextFrame()
+    check("mistakes: in the Character tab too", row("Bad Char") ~= nil)
+    ns.Window.SetScope("general")
+    NextFrame()
+    -- Fixed and saved: it leaves the list.
+    ns.Window.Open(GetMacroIndexByName("Bad One"))
+    NextFrame()
+    edit:SetFocus()
+    edit.text = "/cast Fear"
+    edit:SetCursorPosition(#edit.text)
+    Fire(edit, "OnTextChanged", true)
+    NextFrame()
+    ns.Window.Save()
+    Send("UPDATE_MACROS")
+    check("mistakes: fixed, it is gone from the list", not row("Bad One") and row("Odd One"))
+    MacroSenseFrame:Hide()
+    MacroSenseFrame:Show()
+    check("mistakes: off when the editor opens again", row("Fine One") and not filter.fill:IsShown())
+    for _, name in ipairs({ "Bad One", "Odd One", "Fine One", "Bad Char" }) do
+        DeleteMacro(GetMacroIndexByName(name))
+    end
+    Send("UPDATE_MACROS")
+end
+
 -- The global cooldown of a spell you know, as the game gives it: a line that always casts one with it and no
 -- cooldown of its own stops the spells with it in the lines after.
 do

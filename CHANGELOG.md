@@ -13,6 +13,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The wizard: "Not while channeling it" and "Not while channeling" under When (`[nochanneling:Drain Soul]`,
   `[nochanneling]`), and "Don't turn it off" under Also (`!Shoot`), in the form and in the questions. It reads
   them back from a macro you have.
+- "With mistakes" under the search: only the macros with a mistake or a warning, every macro checked at once;
+  the tabs say how many each has.
 
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at

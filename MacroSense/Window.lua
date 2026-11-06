@@ -31,13 +31,13 @@ local sideRows -- its buttons at the bottom, by row: they share its width
 local setsCheck, sortBtn -- macro sets on or off; "Sort by spells", with them on
 local barInside -- the status bar's part not under the window's border: what it shows is centered in it
 local NATIVE_EDGE_COVERS = 6 -- how much of the status bar the game's window border covers (the In-game scheme)
-local shortenBtn, historyBtn, wizardEditBtn, search, noMatch, barsCheck, altHint
+local shortenBtn, historyBtn, wizardEditBtn, search, noMatch, barsCheck, mistakesCheck, altHint
 local expanded = {} -- the other characters whose macros the Character tab shows, by key
 local groupOpen = {} -- the groups opened or closed: "in", "out", and those under them by "in:" or "out:" and the set
 local PLUS, MINUS = "Interface\\Buttons\\UI-PlusButton-Up", "Interface\\Buttons\\UI-MinusButton-Up"
 -- Shared with the window's other files (WindowList.lua, WindowShare.lua, WindowTrash.lua): its state, widgets and
 -- helpers, put in below as they are made. Theirs come back the same way.
-local shared = { state = state, expanded = expanded, groupOpen = groupOpen, notOnBars = false }
+local shared = { state = state, expanded = expanded, groupOpen = groupOpen, notOnBars = false, mistakes = false }
 ns.WindowShared = shared
 local SCOPE_NAMES = { general = "General", character = "Character" }
 
@@ -1551,9 +1551,25 @@ local function Build()
     end)
     barsCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- And only the macros with a mistake or a warning: all of them checked at once.
+    mistakesCheck = ns.Check(side, L["With mistakes"], function() return shared.mistakes end, function(on)
+        shared.mistakes = on
+        Window.RefreshList()
+    end)
+    mistakesCheck:SetPoint("TOPLEFT", 10, -84)
+    mistakesCheck:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L["With mistakes"], 1, 1, 1)
+        GameTooltip:AddLine(L["Only the macros with a mistake (red) or a warning (yellow): every macro is checked. "
+            .. "The tabs say how many each has. Point at a macro to read what is wrong, click it to fix it."],
+            0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    mistakesCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     shared.list = list
-    list:SetPoint("TOPLEFT", 0, -84)
+    list:SetPoint("TOPLEFT", 0, -108)
     list:SetPoint("BOTTOMRIGHT", -13, 122)
     ns.AttachScrollBar(list, ROW_H * 3)
     list.child = CreateFrame("Frame", nil, list)
@@ -1828,8 +1844,9 @@ local function Build()
         ns.ShareWindow.Close()
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
-        shared.notOnBars = false
+        shared.notOnBars, shared.mistakes = false, false
         barsCheck:Refresh()
+        mistakesCheck:Refresh()
     end)
     -- The preview also follows the game: modifiers held, target, mouseover, pet, combat.
     local sincePreview = 0
