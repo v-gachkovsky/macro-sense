@@ -6,6 +6,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Save in combat: the game doesn't let macros change then, so MacroSense keeps the change and saves it as
+  soon as combat ends. The status bar says "Saves when combat ends" meanwhile. A macro behind the scenes
+  saves in combat at once.
+
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at
   the bars once, not for each button.

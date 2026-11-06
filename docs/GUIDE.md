@@ -120,7 +120,7 @@ means "otherwise, as usual":
 /cast [@mouseover,harm][] Shadow Bolt
 ```
 
-**Step 6. Save.** Press "Save", or **Ctrl+S** (Cmd+S on a Mac).
+**Step 6. Save.** Press "Save", or **Ctrl+S** (Cmd+S on a Mac). In combat the game doesn't let you change macros. "Save" then keeps your change, and the macro is saved as soon as combat ends.
 
 **Step 7. Put it on a bar.** Drag the macro from the list, or its icon from the top of the editor, onto an action
 bar. Done: press it in game.

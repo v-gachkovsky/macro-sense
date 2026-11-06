@@ -4432,9 +4432,22 @@ do
     Send("UPDATE_MACROS")
 end
 
--- In combat the game doesn't let macros change: Save and Delete say so and leave the macro as it is.
+-- In combat the game doesn't let macros change: Save keeps the change and saves it when combat ends, Delete says
+-- so and leaves the macro as it is.
 do
+    local nameBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 and not nameBox then nameBox = o end
+    end
+    -- The status bar says it waits.
+    local function waits()
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and o.text == "Saves when combat ends" then return true end
+        end
+        return false
+    end
     CreateMacro("Fight", 1, "/cast Fear", false)
+    CreateMacro("Fight B", 1, "/cast Corruption", false)
     Send("UPDATE_MACROS")
     ns.Window.Open(GetMacroIndexByName("Fight"))
     NextFrame()
@@ -4442,15 +4455,51 @@ do
     edit:SetCursorPosition(#edit.text)
     Type("\n/sit")
     InCombatLockdown = function() return true end
+    local count = GetNumMacros()
     ns.Window.Save()
-    local saved = select(3, GetMacroInfo(GetMacroIndexByName("Fight")))
-    check("combat: no save", saved == "/cast Fear" and printed[#printed]:find("in combat") ~= nil, saved)
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    check("combat: not saved yet", body("Fight") == "/cast Fear"
+        and printed[#printed]:find("when combat ends", 1, true) ~= nil, body("Fight"))
+    check("combat: waits, nothing unsaved", waits() and not saveIsEnabled())
+    -- Saved again, renamed: what waits is the last one; another macro opened and back shows it.
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/dance")
+    nameBox:SetText("Fight Z")
+    ns.Window.Save()
+    ns.Window.Open(GetMacroIndexByName("Fight B"))
+    NextFrame()
+    check("combat: another one opens with no question", nameBox.text == "Fight B")
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/sit")
+    ns.Window.Save()
+    ns.Window.Open(GetMacroIndexByName("Fight"))
+    NextFrame()
+    check("combat: back to the first, as saved", raw() == "/cast Fear\n/sit\n/dance" and nameBox.text == "Fight Z"
+        and waits(), raw())
+    -- A new one waits too.
+    ns.Window.New()
+    NextFrame()
+    nameBox:SetText("Fight New")
+    edit:SetFocus()
+    Type("/cast Fear")
+    ns.Window.Save()
+    check("combat: a new one waits", GetNumMacros() == count and waits())
     printed[#printed] = nil
     ns.Window.Delete(GetMacroIndexByName("Fight"))
     check("combat: no delete", GetMacroIndexByName("Fight") > 0 and printed[#printed]:find("in combat") ~= nil)
     InCombatLockdown = function() return false end
-    ns.Window.Revert()
-    DeleteMacro(GetMacroIndexByName("Fight"))
+    Send("PLAYER_REGEN_ENABLED")
+    Send("UPDATE_MACROS")
+    check("combat ends: all saved", GetMacroIndexByName("Fight") == 0 and body("Fight Z") == "/cast Fear\n/sit\n/dance"
+        and body("Fight B") == "/cast Corruption\n/sit" and body("Fight New") == "#showtooltip\n/cast Fear"
+        and printed[#printed]:find("saved after combat", 1, true) ~= nil)
+    check("combat ends: the one open is saved", nameBox.text == "Fight New" and not waits()
+        and GetMacroInfo(GetMacroIndexByName("Fight New")) == "Fight New")
+    Type("\n/sit")
+    ns.Window.Save()
+    check("combat ends: saved again as usual", body("Fight New") == "#showtooltip\n/cast Fear\n/sit"
+        and GetNumMacros() == count + 1)
+    for _, name in ipairs({ "Fight Z", "Fight B", "Fight New" }) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
     ns.Window.Select(1)
     NextFrame()

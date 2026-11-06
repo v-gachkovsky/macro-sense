@@ -90,6 +90,8 @@ local function Sections()
                     .. "to read the whole line in plain words."] },
                 { "6", L["Press \"Save\", then drag the macro from the list onto an action bar. Done."] },
             } },
+            { "p", L["In combat the game doesn't let you change macros. \"Save\" then keeps your change, and the "
+                .. "macro is saved as soon as combat ends."] },
             { "button", L["New macro"], function() ns.Window.Make() end },
         } },
         { L["The wizard"], {

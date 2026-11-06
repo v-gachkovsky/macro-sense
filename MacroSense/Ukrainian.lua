@@ -76,6 +76,10 @@ ns.locales.uk = {
         .. "рядок простими словами.",
     ["Press \"Save\", then drag the macro from the list onto an action bar. Done."] =
         "Натисніть «Зберегти» і перетягніть макрос зі списку на панель дій. Готово.",
+    ["In combat the game doesn't let you change macros. \"Save\" then keeps your change, and the macro is saved as "
+        .. "soon as combat ends."] =
+        "У бою гра не дає змінювати макроси. Тоді «Зберегти» запам'ятає зміну, і макрос збережеться одразу після "
+        .. "бою.",
     ["New macro"] = "Новий макрос",
     ["The wizard"] = "Майстер",
     ["You don't have to write anything: \"New (Wizard)\" makes the macro for you."] =
@@ -544,6 +548,7 @@ ns.locales.uk = {
     ["The macro has syntax errors"] = "У макросі є синтаксичні помилки",
     ["It can still be saved."] = "Його все одно можна зберегти.",
     ["Unsaved changes"] = "Незбережені зміни",
+    ["Saves when combat ends"] = "Збережеться після бою",
     ["Macro is longer than %d characters"] = "Макрос довший за %d символів",
     ["Ln %d, Col %d"] = "Рядок %d, стовпець %d",
     ["Line %d: %s"] = "Рядок %d: %s",
@@ -563,6 +568,10 @@ ns.locales.uk = {
     ["the macro needs a name"] = "макросу потрібна назва",
     ["macro is longer than %d characters"] = "макрос довший за %d символів",
     ["could not save the macro"] = "не вдалося зберегти макрос",
+    ["\"%s\" will be saved when combat ends: the game doesn't let you change macros in combat"] =
+        "«%s» збережеться після бою: у бою гра не дає змінювати макроси",
+    ["\"%s\" saved after combat"] = "«%s» збережено після бою",
+    ["could not save \"%s\" after combat"] = "не вдалося зберегти «%s» після бою",
     ["could not copy the macro"] = "не вдалося скопіювати макрос",
     ["MacroSense: your group's new tank is %s"] = "MacroSense: новий танк групи — %s",
     ["MacroSense: your group's new healer is %s"] = "MacroSense: новий хілер групи — %s",
