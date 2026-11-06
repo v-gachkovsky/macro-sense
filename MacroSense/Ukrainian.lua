@@ -477,13 +477,15 @@ ns.locales.uk = {
         .. "змінилися. Бекап можна зробити й самому, будь-коли. Щоб повернути макроси такими, якими вони були, "
         .. "просто оберіть бекап. Для кожного персонажа лишаються останні %d бекапів, старіші видаляються самі.",
     ["Back up now"] = "Зробити бекап зараз",
-    ["Saves all your macros now, General and this character's. Each character keeps its last %d backups; older "
-        .. "ones are deleted by themselves."] =
-        "Зберігає всі ваші макроси просто зараз, загальні й цього персонажа. Для кожного персонажа лишаються "
-        .. "останні %d бекапів, старіші видаляються самі.",
+    ["Saves all your macros now: General, this character's, and those behind the scenes. Each character keeps its "
+        .. "last %d backups; older ones are deleted by themselves."] =
+        "Зберігає всі ваші макроси просто зараз: загальні, цього персонажа й ті, що за лаштунками. Для кожного "
+        .. "персонажа лишаються останні %d бекапів, старіші видаляються самі.",
     ["%d macros"] = { "%d макрос", "%d макроси", "%d макросів" },
     ["Backup of %s"] = "Бекап: %s",
     ["General %d, Character %d. Click to restore it."] = "Загальних: %d, персонажа: %d. Клацніть, щоб відновити.",
+    ["General %d, Character %d, behind the scenes %d. Click to restore it."] =
+        "Загальних: %d, персонажа: %d, за лаштунками: %d. Клацніть, щоб відновити.",
     [" and %d more"] = " і ще %d",
     ["Delete this backup"] = "Видалити цей бекап",
     ["No backups yet"] = "Бекапів ще немає",

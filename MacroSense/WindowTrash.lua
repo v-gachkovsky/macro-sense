@@ -109,13 +109,24 @@ local function BackupList()
     return ns.char.backups
 end
 
+-- What a backup holds: the macros in the game, and with the sets on those behind the scenes, each in its set.
+local function All()
+    local out = Macros()
+    if ns.Sets.Mine().enabled then
+        for _, c in ipairs((ns.Sets.OffChoice())) do
+            out[#out + 1] = { scope = "stored", set = c.id, name = c.m.name, icon = c.m.icon, body = c.m.body or "" }
+        end
+    end
+    return out
+end
+
 -- A backup now, unless the macros are as in the last one.
-function Window.BackupNow() ns.Backups.Add(BackupList(), Macros(), time()) end
+function Window.BackupNow() ns.Backups.Add(BackupList(), All(), time()) end
 
 -- On login: the day's backup, if the macros changed since the last one.
 function Window.DailyBackup()
     local list = BackupList()
-    if ns.Backups.Due(list, time()) then ns.Backups.Add(list, Macros(), time()) end
+    if ns.Backups.Due(list, time()) then ns.Backups.Add(list, All(), time()) end
 end
 
 -- The macros of `backup` as they were, after a backup of them now; macros made since stay. Unsaved changes are
@@ -123,17 +134,33 @@ end
 function Window.RestoreBackup(backup)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     Guard(function()
-        ns.Backups.Add(BackupList(), Macros(), time())
-        local room = {}
+        ns.Backups.Add(BackupList(), All(), time())
+        local room = { stored = math.huge } -- behind the scenes, in their sets: no slot needed
         for _, s in ipairs({ "general", "character" }) do
             local first, last, max = MacroRange(s)
             room[s] = max - (last - first + 1)
         end
-        local plan = ns.Backups.Plan(backup.macros, Macros(), room)
-        for _, m in ipairs(plan.back) do EditMacro(IndexIn(m.scope, m.name), m.name, m.icon, m.body) end
-        for _, m in ipairs(plan.again) do CreateMacro(m.name, m.icon or NEW_ICON, m.body, m.scope == "character") end
+        local plan = ns.Backups.Plan(backup.macros, All(), room)
+        local back, again = 0, 0
+        for _, m in ipairs(plan.back) do
+            if m.scope ~= "stored" then
+                EditMacro(IndexIn(m.scope, m.name), m.name, m.icon, m.body)
+                back = back + 1
+            elseif ns.Sets.Write(m.set, m.name, m.name, m.icon, m.body) then
+                back = back + 1
+            end
+        end
+        -- One behind the scenes comes back there; not with the sets off, nor when its set has it in the game now.
+        for _, m in ipairs(plan.again) do
+            if m.scope ~= "stored" then
+                CreateMacro(m.name, m.icon or NEW_ICON, m.body, m.scope == "character")
+                again = again + 1
+            elseif ns.Sets.Write(m.set, nil, m.name, m.icon or NEW_ICON, m.body) then
+                again = again + 1
+            end
+        end
         ns.History.Scan()
-        ns.Print("backup restored: %d changed back, %d made again", #plan.back, #plan.again)
+        ns.Print("backup restored: %d changed back, %d made again", back, again)
         if #plan.full > 0 then
             ns.Print(ns.Plural(#plan.full, "%d did not fit: no free slot in its tab",
                 "%d did not fit: no free slot in their tab"))
@@ -168,7 +195,7 @@ local function BackupItems()
     local items = { {
         name = L["Back up now"],
         onClick = function()
-            local macros = Macros()
+            local macros = All()
             if #macros == 0 then return ns.Print("no macros to back up") end
             if ns.Backups.Add(list, macros, time()) then
                 return ns.Print(ns.Plural(#macros, "backed up %d macro", "backed up %d macros"))
@@ -176,8 +203,9 @@ local function BackupItems()
             ns.Print("your macros are as in the last backup")
         end,
         onEnter = function(row)
-            tip(row, L["Back up now"], string.format(L["Saves all your macros now, General and this character's. "
-                .. "Each character keeps its last %d backups; older ones are deleted by themselves."],
+            tip(row, L["Back up now"], string.format(L["Saves all your macros now: General, this character's, and "
+                .. "those behind the scenes. Each character keeps its last %d backups; older ones are deleted by "
+                .. "themselves."],
                 ns.Backups.LIMIT))
             GameTooltip:Show()
         end,
@@ -190,14 +218,18 @@ local function BackupItems()
             onRemove = function() ns.Ask("MACROSENSE_DELETE_BACKUP", When(b.time), nil, b) end,
             removeTip = L["Delete this backup"],
             onEnter = function(row)
-                local count = { general = 0, character = 0 }
+                local count = { general = 0, character = 0, stored = 0 }
                 local names = {}
                 for n, m in ipairs(b.macros) do
                     count[m.scope] = count[m.scope] + 1
                     if n <= NAMES_SHOWN then names[n] = m.name end
                 end
-                tip(row, string.format(L["Backup of %s"], When(b.time)), string.format(L["General %d, Character %d. "
-                    .. "Click to restore it."], count.general, count.character))
+                local counts = count.stored > 0
+                    and string.format(L["General %d, Character %d, behind the scenes %d. Click to restore it."],
+                        count.general, count.character, count.stored)
+                    or string.format(L["General %d, Character %d. Click to restore it."], count.general,
+                        count.character)
+                tip(row, string.format(L["Backup of %s"], When(b.time)), counts)
                 local more = #b.macros > NAMES_SHOWN and string.format(L[" and %d more"], #b.macros - NAMES_SHOWN)
                     or ""
                 GameTooltip:AddLine(table.concat(names, ", ") .. more, 0.6, 0.6, 0.6, true)

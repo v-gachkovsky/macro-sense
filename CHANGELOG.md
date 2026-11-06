@@ -14,6 +14,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - `@tank` and `@heal` behind the scenes: a macro saved there, or put away, kept the name of the tank or
   healer then, and that name stayed after it came back into the game. Now its set keeps the tags; the
   macro gets your group's names when it comes in, and the new ones as the group changes.
+- Macros behind the scenes have a history too: each change keeps the text it replaced, as for a macro in
+  the game ("History" shows them, "Find and replace" keeps them). Backups hold them as well, each in its
+  set; restored, one gets its text back or comes back behind the scenes. Before, a backup had only the
+  macros in the game, and none at all when every macro was behind the scenes.
 
 ## [0.15.0] - 2026-11-06
 

@@ -9,8 +9,9 @@ ns.Backups = Backups
 
 Backups.LIMIT = 10 -- backups kept per character
 
--- macros: { { scope, name, icon, body }, ... }, as Window takes them.
-local function Key(m) return m.scope .. "\1" .. m.name end
+-- macros: { { scope, name, icon, body }, ... }, as Window takes them; one behind the scenes has scope "stored" and
+-- its set (`set`).
+local function Key(m) return m.scope .. "\1" .. (m.set or "") .. "\1" .. m.name end
 
 -- Whether `a` and `b` hold the same macros, in any order.
 function Backups.Same(a, b)
@@ -51,11 +52,11 @@ function Backups.Due(list, now)
     return not last or date("%Y-%m-%d", last.time) ~= date("%Y-%m-%d", now)
 end
 
--- What restoring `backup` (its macros) does to `now`, with `room` free slots per tab ({ general, character }):
+-- What restoring `backup` (its macros) does to `now`, with `room` free slots per tab ({ general, character, stored }):
 -- { back = macros to give their text and icon back, again = macros to make again, full = no free slot for
 -- them, same = nothing to do }, each a list of the backup's macros.
 function Backups.Plan(backup, now, room)
-    local current, free = {}, { general = room.general, character = room.character }
+    local current, free = {}, { general = room.general, character = room.character, stored = room.stored or 0 }
     for _, m in ipairs(now) do current[Key(m)] = m end
     local plan = { back = {}, again = {}, full = {}, same = {} }
     for _, m in ipairs(backup) do

@@ -1196,6 +1196,13 @@ function Sets.Write(id, old, name, icon, body)
             end
         end
     end
+    -- The text it replaced is kept as a version, as for a macro in the game (History.lua). Renamed, its versions go
+    -- along, unless a macro in the game still has the old name.
+    if m.body and ns.char then
+        local store = ns.History.Store("character")
+        if old ~= name and not Index(old) then ns.History.Rename(store, old, name) end
+        if m.body ~= body then ns.History.Add(store, name, m.body, time()) end
+    end
     m.name, m.icon, m.body = name, icon, body
     Log("wrote %s behind the scenes: %s", name, id)
     return true
