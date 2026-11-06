@@ -195,7 +195,8 @@ the status bar names them (hover for the full list, click to go there), and the 
 
 Saving is still allowed: the editor warns, it doesn't block you. In the macro list, a macro with errors
 stands out with a red name and a warning sign (only warnings: a yellow name), so a broken one is easy to
-find among dozens; hover it to see what's wrong.
+find among dozens; hover it to see what's wrong. **With mistakes** checks every macro at once and keeps only
+those in the list.
 
 ![A talent you haven't chosen: the status bar warns](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/talent-editor.png)
 

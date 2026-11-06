@@ -286,7 +286,8 @@ an empty `[]` removes both.
   (`[mod:alt]`), Ctrl+click moves them into the line above, first; without a key it is not clear what the
   macro was meant to do, and nothing is changed.
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
-  yellow name; hover it to see the issues. The marks follow the saved text.
+  yellow name; hover it to see the issues. The marks follow the saved text. **With mistakes** under the search
+  keeps only those, from every macro at once; the tabs say how many each has.
 - Typos in spell and item names: a name close to a known one (`Shadwo Bolt`) gets a warning,
   `did you mean "Shadow Bolt"?`; click it in the status bar to fix the name. Known names: your spells,
   your pets' spells (remembered from every pet you summon), items in your bags and seen before, Retail
