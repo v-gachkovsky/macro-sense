@@ -278,6 +278,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
   or `/use` on an empty line.
 - Undo / redo: **Ctrl+Z**, **Ctrl+Y** (or Ctrl+Shift+Z). Save: **Ctrl+S**.
 - **Search** your macros by name or text (**Ctrl+F**): the tabs show how many match in each.
+- **Find and replace** (**Ctrl+H**): change a word or a spell in many macros at once, in the tabs or sets you
+  choose; each macro's History keeps the text it had.
 - Line, column and a length counter (macros are limited to 255 characters).
 - Asks before discarding unsaved changes.
 - **...** at the end of a macro in the list (or a right click) copies or moves it: a duplicate in the same tab, or

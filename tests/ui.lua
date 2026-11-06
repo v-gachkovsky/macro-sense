@@ -4544,6 +4544,65 @@ do
     NextFrame()
 end
 
+-- Find and replace: in the groups ticked, the game's macros keeping their texts in History; not in combat, not
+-- past 255 characters.
+do
+    local function find(kind, text)
+        for _, o in ipairs(created) do
+            if o.kind == kind and (o.label and o.label.text == text or o.text == text) and o:IsShown() then return o end
+        end
+    end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    check("replace: as typed", ns.Window.ReplaceText("Fear; fear; Fear", "Fear", "Howl") == "Howl; fear; Howl"
+        and select(2, ns.Window.ReplaceText("aaa", "aa", "b")) == 1)
+    CreateMacro("Rep A", 1, "/cast Shadow Bolt\n/cast [mod] Shadow Bolt", false)
+    CreateMacro("Rep B", 1, "/cast Shadow Bolt", true)
+    CreateMacro("Rep Long", 1, "/cast Shadow Bolt" .. string.rep(" ", 230), false)
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.Select(GetMacroIndexByName("Rep A"))
+    NextFrame()
+    Fire(find("Button", "Replace"), "OnClick")
+    check("replace: the window, Find in focus", MacroSenseReplace:IsShown() and focused
+        and focused.parentFrame == MacroSenseReplace)
+    local findBox = focused
+    findBox:SetText("Shadow Bolt")
+    Fire(findBox, "OnTextChanged", true)
+    local withBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.parentFrame == MacroSenseReplace and o ~= findBox then withBox = o end
+    end
+    withBox:SetText("Shadow Bolt(Rank 1) + something longer")
+    Fire(withBox, "OnTextChanged", true)
+    local count = find("FontString", "4 matches in 3 macros")
+    check("replace: how many, where", count ~= nil)
+    -- The Character tab ticked off.
+    Fire(find("Button", "Character"), "OnClick")
+    check("replace: only the groups ticked", find("FontString", "3 matches in 2 macros") ~= nil)
+    withBox:SetText("Drain Life")
+    Fire(withBox, "OnTextChanged", true)
+    InCombatLockdown = function() return true end
+    Fire(find("Button", "Replace all"), "OnClick")
+    check("replace: not in combat", body("Rep A") == "/cast Shadow Bolt\n/cast [mod] Shadow Bolt"
+        and printed[#printed]:find("in combat", 1, true) ~= nil)
+    InCombatLockdown = function() return false end
+    withBox:SetText("Drain Life" .. string.rep("x", 20))
+    Fire(withBox, "OnTextChanged", true)
+    Fire(find("Button", "Replace all"), "OnClick")
+    local new = "Drain Life" .. string.rep("x", 20)
+    check("replace: done, the one open too", body("Rep A") == "/cast " .. new .. "\n/cast [mod] " .. new
+        and body("Rep B") == "/cast Shadow Bolt" and raw():find("Drain Life", 1, true) ~= nil, body("Rep A"))
+    check("replace: too long, left as it is", body("Rep Long"):find("Shadow Bolt", 1, true) ~= nil
+        and printed[#printed]:find("Rep Long", 1, true) ~= nil, printed[#printed])
+    check("replace: History keeps what it had", #ns.History.Versions(ns.History.Store("general"), "Rep A",
+        body("Rep A")) == 1)
+    MacroSenseReplace:Hide()
+    for _, name in ipairs({ "Rep A", "Rep B", "Rep Long" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- Notes: a line of your own on a macro, from its "..." menu, in its tooltip; it follows the macro renamed, moved,
 -- deleted and brought back.
 do

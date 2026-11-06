@@ -527,6 +527,26 @@ ns.locales.uk = {
     ["History"] = "Історія",
     ["The same as the text now."] = "Такий самий, як текст зараз.",
     ["Note on \"%s\""] = "Нотатка до «%s»",
+    ["Replace"] = "Замінити",
+    ["Find and replace"] = "Знайти й замінити",
+    ["Changes a word or a spell in many macros at once, in the groups you choose. Each macro's History keeps the text it had."] =
+        "Змінює слово чи заклинання в багатьох макросах одразу, у вибраних групах. Історія кожного макросу "
+        .. "зберігає текст, який у нього був.",
+    ["Find"] = "Знайти",
+    ["Replace with"] = "Замінити на",
+    ["As typed: big and small letters count."] = "Як набрано: великі й малі літери різні.",
+    ["Where"] = "Де",
+    ["Replace all"] = "Замінити все",
+    ["Type what to find."] = "Наберіть, що знайти.",
+    ["Nothing found."] = "Нічого не знайдено.",
+    ["%d matches"] = { "%d збіг", "%d збіги", "%d збігів" },
+    ["in %d macros"] = { "у %d макросі", "у %d макросах", "у %d макросах" },
+    ["changed %d macros: their History keeps the texts they had"] = {
+        "змінено %d макрос: його історія зберігає текст, який у нього був",
+        "змінено %d макроси: їхня історія зберігає тексти, які в них були",
+        "змінено %d макросів: їхня історія зберігає тексти, які в них були" },
+    ["left as they are, they would be longer than %d characters: %s"] =
+        "лишилися як були, бо стали б довшими за %d символів: %s",
     ["Add a note"] = "Додати нотатку",
     ["Change the note"] = "Змінити нотатку",
     ["If you pick it, the text changes like this:"] = "Якщо вибрати цю версію, текст зміниться так:",

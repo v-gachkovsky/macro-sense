@@ -1520,7 +1520,20 @@ local function Build()
     search = ns.Input(side, 204, 40, "MacroSenseSearch")
     shared.search = search
     search:SetPoint("TOPLEFT", 8, -32)
-    search:SetPoint("TOPRIGHT", -8, -32)
+    search:SetPoint("TOPRIGHT", -78, -32)
+    -- Next to it: find and replace in many macros at once (WindowReplace.lua).
+    local replaceBtn = ns.Button(side, L["Replace"], 64, function() Window.OpenReplace() end)
+    replaceBtn:SetHeight(24)
+    replaceBtn:SetPoint("TOPRIGHT", -8, -32)
+    replaceBtn:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L["Find and replace"], 1, 1, 1)
+        GameTooltip:AddLine(L["Changes a word or a spell in many macros at once, in the groups you choose. Each "
+            .. "macro's History keeps the text it had."], 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine(IsMacClient and IsMacClient() and "Cmd+H" or "Ctrl+H", 0.6, 0.6, 0.6)
+        GameTooltip:Show()
+    end)
+    replaceBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
     search:SetTextInsets(6, 24, 0, 0)
     local placeholder = ns.Text(search, 12, "dim")
     placeholder:SetPoint("LEFT", 6, 0)
@@ -1838,6 +1851,8 @@ local function Build()
         elseif key == "F" then
             search:SetFocus()
             search:HighlightText()
+        elseif key == "H" then
+            Window.OpenReplace()
         end
     end)
 
@@ -1857,6 +1872,7 @@ local function Build()
         ns.IconPicker.Close()
         ns.WizardWindow.Close()
         ns.ShareWindow.Close()
+        if MacroSenseReplace then MacroSenseReplace:Hide() end
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
         shared.notOnBars, shared.mistakes = false, false

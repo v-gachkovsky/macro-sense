@@ -240,8 +240,8 @@ ones, so Caps Lock doesn't get in the way.
 
 Keys: **Tab** / **Enter** accept, **Up / Down** move, **PageUp / PageDown** jump 10, **Esc** closes the list.
 The list shows 10 rows and scrolls (also with the mouse wheel) through the rest. Deleting never opens the list.
-Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo, **Ctrl+F** search the macros
-(Cmd instead of Ctrl on Mac).
+Editor: **Ctrl+S** save, **Ctrl+Z** undo, **Ctrl+Y** / **Ctrl+Shift+Z** redo, **Ctrl+F** search the macros,
+**Ctrl+H** find and replace (Cmd instead of Ctrl on Mac).
 Typing `[` adds the closing `]` with the cursor inside; typing `]` before it steps over it, and Backspace in
 an empty `[]` removes both.
 
@@ -378,6 +378,12 @@ General macros keep theirs for the account, character macros for the character.
 The list shows the General or the Character tab, with how many macros each holds and how many fit.
 **Search** above it keeps the macros whose name or text has what you type, in any case; the tabs then say how
 many match in each (`General  (3)`). Enter opens the first match, Esc clears the search.
+
+**Replace** next to the search (Ctrl+H) changes a word or a spell in many macros at once: what to find, what to
+put instead, and where: General and Character, or with macro sets on each of the sets (in the game and behind the
+scenes). Big and small letters count. It says how many it finds in how many macros before **Replace all**. The
+game's macros keep the texts they had in their History; a macro that would get longer than 255 characters stays
+as it is, and the chat says which. Not in combat.
 
 Each macro in the list has two buttons at its end. **...** (a right click too) copies or moves it: **Duplicate**
 into the same tab, **Copy to Character** / **Copy to General** into the other one, **Move to Character** / **Move
@@ -581,7 +587,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window: the editor, its status bar and how it is built.
   `MacroSense/WindowList.lua`: its macro list; `MacroSense/WindowShare.lua`: the Share menu;
   `MacroSense/WindowTrash.lua`: the Trash and Backups menus; `MacroSense/WindowNotes.lua`: the notes on the
-  macros. They share the window's state and helpers through `ns.WindowShared`.
+  macros; `MacroSense/WindowReplace.lua`: find and replace. They share the window's state and helpers through `ns.WindowShared`.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 - `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
   code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.
