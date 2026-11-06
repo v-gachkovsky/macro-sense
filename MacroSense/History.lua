@@ -102,6 +102,45 @@ function History.Versions(store, name, saved)
     return out
 end
 
+-- Text `from` becoming text `to`, line by line as diff shows it: { text, kind = "same", "gone" (only in `from`)
+-- or "new" (only in `to`) }, in order, a line gone before the one that takes its place.
+function History.Diff(from, to)
+    local function Lines(s)
+        local out = {}
+        for line in (s .. "\n"):gmatch("([^\n]*)\n") do out[#out + 1] = line end
+        return out
+    end
+    local a, b = Lines(from), Lines(to)
+    -- kept[i][j]: the most lines a[i..] and b[j..] have in common, in order.
+    local kept = {}
+    for i = #a + 1, 1, -1 do
+        kept[i] = {}
+        for j = #b + 1, 1, -1 do
+            if i > #a or j > #b then
+                kept[i][j] = 0
+            elseif a[i] == b[j] then
+                kept[i][j] = kept[i + 1][j + 1] + 1
+            else
+                kept[i][j] = math.max(kept[i + 1][j], kept[i][j + 1])
+            end
+        end
+    end
+    local out, i, j = {}, 1, 1
+    while i <= #a or j <= #b do
+        if i <= #a and j <= #b and a[i] == b[j] then
+            out[#out + 1] = { text = a[i], kind = "same" }
+            i, j = i + 1, j + 1
+        elseif i <= #a and (j > #b or kept[i + 1][j] >= kept[i][j + 1]) then
+            out[#out + 1] = { text = a[i], kind = "gone" }
+            i = i + 1
+        else
+            out[#out + 1] = { text = b[j], kind = "new" }
+            j = j + 1
+        end
+    end
+    return out
+end
+
 ------------------------------------------------------------------------
 -- Watching the macros (game API)
 ------------------------------------------------------------------------

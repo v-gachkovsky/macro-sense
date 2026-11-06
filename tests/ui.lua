@@ -2001,6 +2001,13 @@ do
     local shown = rows()
     check("history: the version, when and how long", MacroSenseMenu:IsShown() and #shown == 1
         and shown[1] == "Today, 14:32  14 chars", table.concat(shown, " / "))
+    -- Its tooltip: what picking it changes in the text now, as diff shows it, in color.
+    local tip = {}
+    GameTooltip.AddLine = function(_, text) tip[#tip + 1] = text end
+    Fire(MacroSenseMenu.rows[1], "OnEnter")
+    GameTooltip.AddLine = nil
+    check("history: the tooltip, as a diff", table.concat(tip, " / ") == "Today, 14:32 / If you pick it, the text "
+        .. "changes like this: / |cffcccccc  /cast Fireball|r / |cffff5959- /cast Frostbolt|r", table.concat(tip, " / "))
     Fire(MacroSenseMenu.rows[1], "OnClick")
     NextFrame()
     check("history: a version goes into the editor", raw() == "/cast Fireball" and not MacroSenseMenu:IsShown(), raw())

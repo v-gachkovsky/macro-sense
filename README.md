@@ -368,7 +368,8 @@ brings the old text back.
 The game keeps only the last text of a macro; MacroSense keeps the ones before it. Every change saved to a
 macro, in this editor, in the Blizzard macro window or by another addon, keeps the text it replaced (the last
 10 per macro). **History** in the header lists them with when they were saved and how long they are: hover
-one to read it, click it to put it in the editor. It is an unsaved change then: **Save** keeps it, Ctrl+Z
+one to see what it changes in the text now, as a diff (`- ` red: the line goes, `+ ` green: it comes back),
+click it to put it in the editor. It is an unsaved change then: **Save** keeps it, Ctrl+Z
 (Cmd+Z on Mac) takes it back. The versions follow a macro renamed, here or in the game's macro window.
 General macros keep theirs for the account, character macros for the character.
 

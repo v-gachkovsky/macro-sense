@@ -525,6 +525,8 @@ ns.locales.uk = {
     ["%s brings the old text back."] = "%s повертає попередній текст.",
     ["Nothing to shorten here."] = "Тут нічого скорочувати.",
     ["History"] = "Історія",
+    ["The same as the text now."] = "Такий самий, як текст зараз.",
+    ["If you pick it, the text changes like this:"] = "Якщо вибрати цю версію, текст зміниться так:",
     ["Earlier saved versions of this macro. Pick one, and it goes into the editor. Save keeps it, and %s takes it "
         .. "back."] =
         "Попередні збережені версії цього макроса. Оберіть версію, і вона з'явиться в редакторі. «Зберегти» її "
