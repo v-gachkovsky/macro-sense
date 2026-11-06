@@ -336,13 +336,16 @@ local function Kept(sets, key, name)
     return (Find(ClassList(), name) or Find(sets.character, name) or Find(SpecList(sets, key), name)) ~= nil
 end
 
--- The character macros in the slots: { name, icon, body }, in the game's order.
+-- The character macros in the slots: { name, icon, body }, in the game's order. The body as MacroSense shows it:
+-- with @tank and @heal while the game's macro is as MacroSense wrote it (Roles.lua), so the sets keep the tags.
 local function InSlots()
     local out = {}
     local _, count = GetNumMacros()
     for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + count do
         local name, _, body = GetMacroInfo(index)
-        if name then out[#out + 1] = { name = name, icon = ns.MacroIcon(index), body = body or "" } end
+        body = body or ""
+        if name and ns.Roles then body = ns.Roles.Text("character", name, body) end
+        if name then out[#out + 1] = { name = name, icon = ns.MacroIcon(index), body = body } end
     end
     return out
 end
@@ -407,6 +410,18 @@ end
 
 local function Wrote(name, body) ns.History.Rewritten("character", name, body) end
 
+-- The game's macro of `m`: the names of your group now for @tank and @heal, and kept up to date from then on
+-- (Roles.lua). Too long with them, it has nobody's (@none), and still fits.
+local function Written(m)
+    if not ns.Roles then return m.body end
+    local text = ns.Roles.Fill(m.body)
+    if select(2, text:gsub("[^\128-\191]", "")) > (MAX_MACRO_CHARACTERS or 255) then
+        text = ns.Conditions.Fill(m.body, {})
+    end
+    ns.Roles.Saved("character", nil, m.name, m.body, text)
+    return text
+end
+
 -- A macro out of the slots, or into them with its layer: expected until the game shows it.
 local function Remove(name)
     local index = Index(name)
@@ -419,7 +434,7 @@ end
 local function Make(m, layer)
     expect.made[m.name] = { layer = layer, at = GetTime() }
     touched = true
-    CreateMacro(m.name, m.icon or 134400, m.body, true)
+    CreateMacro(m.name, m.icon or 134400, Written(m), true)
     Log("made %s (%s)", m.name, layer)
 end
 
@@ -516,9 +531,10 @@ local function SyncClass(sets)
     for _, m in ipairs(plan.change) do
         local index = Index(m.name)
         if index then
-            Wrote(m.name, m.body)
+            local text = Written(m)
+            Wrote(m.name, text)
             touched = true
-            EditMacro(index, nil, m.icon, m.body)
+            EditMacro(index, nil, m.icon, text)
         end
     end
     for _, m in ipairs(plan.make) do
@@ -580,9 +596,10 @@ local function Change(sets, key)
         fresh.names[m.name] = true
         local index = edit[m.name] and Index(m.name)
         if index then
-            Wrote(m.name, m.body)
+            local text = Written(m)
+            Wrote(m.name, text)
             touched = true
-            EditMacro(index, nil, m.icon, m.body)
+            EditMacro(index, nil, m.icon, text)
             Log("changed in place: %s", m.name)
         else
             Make(m, "spec")

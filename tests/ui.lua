@@ -8587,6 +8587,61 @@ do
     C_SpecializationInfo.GetActiveSpecGroup = specs
 end
 
+-- @tank behind the scenes: its set keeps the tag, the game's macro gets the tank's name when it comes in, and from
+-- then on the new ones; put away and taken in again, the same.
+do
+    local S = ns.Sets
+    local create, delete = CreateMacro, DeleteMacro
+    CreateMacro = function(...)
+        local index = create(...)
+        Send("UPDATE_MACROS")
+        return index
+    end
+    DeleteMacro = function(index)
+        delete(index)
+        Send("UPDATE_MACROS")
+    end
+    local function regroup(tank)
+        group.members = { { name = tank, role = "TANK" } }
+        Send("GROUP_ROSTER_UPDATE")
+        Wait(1.1)
+        Send("UPDATE_MACROS")
+    end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local function kept() return S.List("character")[#S.List("character")].body end
+    local tagged = "/cast [@tank,help] Flash Heal"
+    regroup("Bob")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    S.Enable()
+    S.Write("character", nil, "Behind", 1, "/cast Flash Heal")
+    ns.Window.SelectStored("character", "Behind")
+    edit.text = tagged
+    Fire(edit, "OnTextChanged", true)
+    ns.Window.Save()
+    check("roles, behind: the set keeps @tank", kept() == tagged, kept())
+
+    S.Park("character", "Behind", false)
+    check("roles, behind: taken in, the tank's name", body("Behind") == "/cast [@Bob,help] Flash Heal", body("Behind"))
+    regroup("Carl")
+    check("roles, behind: then the new tank's", body("Behind") == "/cast [@Carl,help] Flash Heal", body("Behind"))
+
+    S.Park("character", "Behind", true)
+    check("roles, behind: put away, the set keeps @tank", kept() == tagged, kept())
+    regroup("Dee")
+    S.Park("character", "Behind", false)
+    regroup("Eve")
+    check("roles, behind: in again, followed", body("Behind") == "/cast [@Eve,help] Flash Heal", body("Behind"))
+
+    S.Forget("character", "Behind")
+    if GetMacroIndexByName("Behind") > 0 then DeleteMacro(GetMacroIndexByName("Behind")) end
+    CreateMacro, DeleteMacro = create, delete
+    group.members = {}
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+    Send("UPDATE_MACROS")
+    S.Disable()
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)
