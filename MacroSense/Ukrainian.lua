@@ -528,6 +528,18 @@ ns.locales.uk = {
     ["The same as the text now."] = "Такий самий, як текст зараз.",
     ["Note on \"%s\""] = "Нотатка до «%s»",
     ["Replace"] = "Замінити",
+    ["%d picked"] = { "Вибрано %d", "Вибрано %d", "Вибрано %d" },
+    ["Actions"] = "Дії",
+    ["Pick all in the list"] = "Вибрати всі в переліку",
+    ["Clear the picks"] = "Зняти вибір",
+    ["Pick this group"] = "Вибрати всю групу",
+    ["Move %d to %s"] = "Перенести %d у вкладку «%s»",
+    ["Into: %s"] = "У набір: %s",
+    ["moved %d macros"] = { "перенесено %d макрос", "перенесено %d макроси", "перенесено %d макросів" },
+    ["no free slots for %d of them: they stay where they were"] =
+        "для %d з них немає вільних слотів: вони лишилися, де були",
+    ["%d macros put in"] = { "додано %d макрос", "додано %d макроси", "додано %d макросів" },
+    ["Delete %s? Those in the game go into the trash."] = "Видалити %s? Ті, що в грі, потраплять у кошик.",
     ["Find and replace"] = "Знайти й замінити",
     ["Changes a word or a spell in many macros at once, in the groups you choose. Each macro's History keeps the text it had."] =
         "Змінює слово чи заклинання в багатьох макросах одразу, у вибраних групах. Історія кожного макросу "
