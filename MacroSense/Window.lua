@@ -1615,6 +1615,22 @@ local function Build()
     end)
     mistakesCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- At its right: checks before the macros and the groups, to pick many at once (WindowPick.lua).
+    local pickCheck = ns.Check(side, L["Pick"], function() return Window.IsPicking() end, function(on)
+        Window.SetPicking(on)
+    end)
+    pickCheck:SetPoint("TOPRIGHT", -10, -84)
+    shared.pickCheck = pickCheck
+    pickCheck:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L["Pick"], 1, 1, 1)
+        GameTooltip:AddLine(L["A check before each macro and each group: one click picks a macro or a whole group, "
+            .. "another click takes it back. Then share, move, put into a set or delete them all at once."],
+            0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    pickCheck:HookScript("OnLeave", function() GameTooltip:Hide() end)
+
     list = CreateFrame("ScrollFrame", "MacroSenseListScroll", side)
     shared.list = list
     list:SetPoint("TOPLEFT", 0, -108)
@@ -1899,6 +1915,7 @@ local function Build()
         search:SetText("") -- opened again, the list shows every macro
         shared.notOnBars, shared.mistakes = false, false
         Window.ForgetPicks()
+        shared.pickCheck:Refresh()
         barsCheck:Refresh()
         mistakesCheck:Refresh()
     end)

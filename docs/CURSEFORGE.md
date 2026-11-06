@@ -292,8 +292,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
   character.
 - **Favorites and folders** in the General tab: keep the macros you use most at the top, the rest in folders
   of your own.
-- **Many at once**: Ctrl+click picks macros (a right click on a group picks it all), then share, move, put
-  into a set or delete them in one go.
+- **Many at once**: "Pick" puts a check before each macro and each group; one click picks a macro or a whole
+  group, then share, move, put into a set or delete them in one go.
 - **Notes**: a line of your own on a macro, outside its 255 characters, shown in its tooltip in the list.
 - **Move** a macro between the General and Character tabs, which the game's macro window can't do: its buttons on
   your action bars stay, and its history goes along.

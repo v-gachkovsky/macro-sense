@@ -409,10 +409,12 @@ it at the top, under Favorites; **Into a new folder** makes a folder with the na
 right click on its name renames or deletes it (its macros stay). They follow a macro renamed; one moved into the
 Character tab leaves them behind. They are kept for the account, as the General macros are.
 
-**Ctrl+click** (Cmd+click on a Mac) picks a macro, to do the same with many at once; a right click on a group's
-name with macro sets on picks the whole group. A row over the list says how many are picked, and its **Actions**
-share them in one code, move them into the other tab (while it has free slots), put them into a set, delete them
-(those in the game go into the Trash), pick all the list shows or none. **x** on that row clears the picks.
+**Pick** under the search puts a check before each macro and each group, to do the same with many at once: one
+click on a macro's check picks it, one on a group's (a set's group, Favorites, a folder) picks all of it, and one
+more takes it back. **Ctrl+click** (Cmd+click on a Mac) on a macro picks it too, without **Pick**. A row over the
+list says how many are picked: **All** picks every macro the list shows, or none of them; **x** takes back every
+pick. Its **Actions** share them in one code, move them into the other tab (while it has free slots), put them into
+a set or a folder, delete them (those in the game go into the Trash).
 
 **Add a note**, last in **...**, keeps a line of your own about the macro (`For the Onyxia pull`), outside its 255
 characters: the macro's tooltip in the list shows it. The note follows the macro renamed or moved, goes into the
