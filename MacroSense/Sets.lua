@@ -364,6 +364,25 @@ local function Index(name)
     end
 end
 
+-- The game lets two macros have one name, the sets tell them apart by it: one of them would be taken for the other.
+local function Count(name)
+    local n = 0
+    for _, m in ipairs(InSlots()) do
+        if m.name == name then n = n + 1 end
+    end
+    return n
+end
+-- A name two macros in the slots have, one of them the class's or a specialization's; nil when there is none.
+-- Then the sets wait: changing specialization, they would keep one text of the two, and delete both.
+local function Twins(sets)
+    local seen, layer = {}, sets.layer or {}
+    for _, m in ipairs(InSlots()) do
+        if seen[m.name] and (layer[m.name] == "spec" or layer[m.name] == "class") then return m.name end
+        seen[m.name] = true
+    end
+end
+local stalled, told -- the sets wait for twins renamed; the name told of
+
 -- What is on action slot `slot`: nil, "character" and the macro's name, "gone" (a macro the game has no more:
 -- Retail keeps one deleted on the bars of the other specializations) or "other".
 local function At(slot)
@@ -474,6 +493,11 @@ function Sets.Scan()
         end
     end
     seen = now
+    -- One of the twins renamed: the sets go on.
+    if stalled and not Twins(sets) then
+        stalled = false
+        C_Timer.After(0, Sets.Update)
+    end
 end
 
 -- The macros in the slots changed by MacroSense itself: learned, not followed, and no versions or trash for them.
@@ -690,6 +714,17 @@ function Sets.Update()
     pending = false
     ns.History.Scan()
     Sets.Scan()
+    local twin = Twins(sets)
+    if twin then
+        stalled = true
+        if told ~= twin then
+            told = twin
+            ns.Print("two macros in the game are named \"%s\": MacroSense tells macros apart by name, so it won't "
+                .. "change the sets' macros until you rename one of them", twin)
+        end
+        return
+    end
+    stalled, told = false, nil
     local key = ns.ActionBars.Spec()
     local waiting = 0
     busy, touched = true, false
@@ -955,6 +990,7 @@ function Sets.MoveTo(from, name, to, copy)
     if InCombatLockdown() then return false, "combat" end
     if to == "character" and not copy then return Sets.Release(from, name) end
     Sets.Scan()
+    if Count(name) > 1 then return false, "twins" end
     local source, target = ListOf(sets, from), ListOf(sets, to)
     local m, i = Find(source, name)
     if not m then return false end
@@ -1019,6 +1055,7 @@ function Sets.Release(id, name)
     if not sets.enabled or id == "character" then return false end
     if InCombatLockdown() then return false, "combat" end
     Sets.Scan()
+    if Count(name) > 1 then return false, "twins" end
     local source = ListOf(sets, id)
     local m, i = Find(source, name)
     if not m then return false end
@@ -1065,6 +1102,7 @@ function Sets.Park(id, name, on)
     Sets.Scan()
     local m = Find(ListOf(sets, id), name)
     if not m then return false end
+    if Count(name) > 1 then return false, "twins" end
     on = on and true or false
     -- Not put away, yet not in the slots as this set's: taken in, it comes in.
     if on == Parked(sets, id, m) and (on or not Sets.Behind(id, m)) then return true end
@@ -1171,6 +1209,7 @@ function Sets.CanPlace(from, name, to, inGame, copy)
     if copy and from == to then return false, "same" end
     local m = Find(ListOf(sets, from), name)
     if not m then return false end
+    if Count(name) > 1 then return false, "twins" end
     if from ~= to then
         if to == "character" and not copy then
             local same = Find(sets.character, name)

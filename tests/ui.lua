@@ -8514,6 +8514,79 @@ do
     S.Disable()
 end
 
+-- Two macros of one name in the character tab: the sets tell them apart by name, so they don't move one, and don't
+-- change specialization while a set's macro has a twin; both texts stay.
+do
+    local S = ns.Sets
+    local group = 1
+    local specs = C_SpecializationInfo.GetActiveSpecGroup
+    C_SpecializationInfo.GetActiveSpecGroup = function() return group end
+    local create, delete = CreateMacro, DeleteMacro
+    CreateMacro = function(...)
+        local index = create(...)
+        Send("UPDATE_MACROS")
+        return index
+    end
+    DeleteMacro = function(index)
+        delete(index)
+        Send("UPDATE_MACROS")
+    end
+    local function bodies(name)
+        local out = {}
+        local _, count = GetNumMacros()
+        for index = ns.MAX_GENERAL + 1, ns.MAX_GENERAL + count do
+            local n, _, b = GetMacroInfo(index)
+            if n == name then out[#out + 1] = b end
+        end
+        table.sort(out)
+        return table.concat(out, "|")
+    end
+    S.Enable()
+    CreateMacro("Twin", 1, "/say FIRST", true)
+    CreateMacro("Twin", 1, "/say SECOND", true)
+    Send("UPDATE_MACROS")
+    local ok, why = S.MoveTo("character", "Twin", S.Mine().active)
+    check("twins: not moved into a set", not ok and why == "twins", tostring(why))
+    check("twins: the reason told", (ns.Window.Explain(ok, why, { name = "Twin" }) or ""):find("Twin", 1, true) ~= nil)
+    check("twins: not put behind the scenes", select(2, S.Park("character", "Twin", true)) == "twins")
+
+    -- One made a set's before its twin came (in the game's own macro window): the specialization waits.
+    CreateMacro("Solo", 1, "/say ONE", true)
+    Send("UPDATE_MACROS")
+    S.Move("Solo", "spec")
+    CreateMacro("Solo", 1, "/say TWO", true)
+    Send("UPDATE_MACROS")
+    local said = #printed
+    group = 2
+    S.Update()
+    Wait(5)
+    check("twins: the specialization doesn't change", S.Mine().active == "group1"
+        and bodies("Solo") == "/say ONE|/say TWO" and bodies("Twin") == "/say FIRST|/say SECOND", bodies("Solo"))
+    check("twins: it says why", #printed > said and printed[#printed]:find("Solo", 1, true) ~= nil, printed[#printed])
+    -- Renamed, it goes on.
+    EditMacro(GetMacroIndexByName("Solo") + 1, "Solo 2", nil, nil)
+    Send("UPDATE_MACROS")
+    Wait(1)
+    S.Update()
+    Wait(5)
+    check("twins: renamed, the specialization changes", S.Mine().active == "group2"
+        and bodies("Solo") == "" and bodies("Solo 2") == "/say TWO", bodies("Solo 2"))
+    group = 1
+    S.Update()
+    Wait(5)
+    check("twins: back, its macro too", bodies("Solo") == "/say ONE", bodies("Solo"))
+
+    for _, name in ipairs({ "Twin", "Twin", "Solo", "Solo 2" }) do
+        S.Forget("character", name)
+        if GetMacroIndexByName(name) > 0 then DeleteMacro(GetMacroIndexByName(name)) end
+    end
+    for key in pairs(S.Mine().specs) do S.Mine().specs[key] = {} end
+    CreateMacro, DeleteMacro = create, delete
+    Send("UPDATE_MACROS")
+    S.Disable()
+    C_SpecializationInfo.GetActiveSpecGroup = specs
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)

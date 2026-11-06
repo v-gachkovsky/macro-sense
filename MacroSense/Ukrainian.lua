@@ -2041,6 +2041,12 @@ ns.locales.uk = {
         .. "by name. Rename one of them, or put the other one behind the scenes."] =
         "«%s» чекає за лаштунками: у грі вже є макрос із такою назвою, а гра розрізняє макроси за назвами. "
         .. "Перейменуйте один із них або заберіть інший за лаштунки.",
+    ["There are two macros named \"%s\" in the game, and MacroSense tells macros apart by name. Rename one of them "
+        .. "first."] = "У грі два макроси з назвою «%s», а MacroSense розрізняє макроси за назвами. Спершу "
+        .. "перейменуйте один із них.",
+    ["two macros in the game are named \"%s\": MacroSense tells macros apart by name, so it won't change the sets' "
+        .. "macros until you rename one of them"] = "у грі два макроси з назвою «%s»: MacroSense розрізняє макроси за "
+        .. "назвами, тож не змінюватиме макроси наборів, доки ви не перейменуєте один із них",
     ["no free slot for \"%s\": a character has only 30. Put another macro behind the scenes first."] =
         "для «%s» немає вільного слота: у персонажа їх лише 30. Спершу заберіть за лаштунки інший макрос.",
     ["\"%s\" can't come into the game: a macro of this name is there already, and only one of a name can be. Put "
