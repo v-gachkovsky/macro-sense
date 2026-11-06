@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Two macros of one name in the character tab: changing specialization could delete both and keep only one
+  text. The game lets macros share a name, but MacroSense tells them apart by name. Now it doesn't move such a
+  macro into a set or behind the scenes, and while a set's macro has a twin the sets wait and say which name
+  to change. Renamed, they go on.
+
 ## [0.15.0] - 2026-11-06
 
 ### Added

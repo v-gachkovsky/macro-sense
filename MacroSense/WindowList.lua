@@ -778,6 +778,10 @@ function Window.Explain(ok, why, t)
             .. "the game tells macros apart by name. Rename one of them, or put the other one behind the scenes."],
             name)
     end
+    if why == "twins" then
+        return string.format(L["There are two macros named \"%s\" in the game, and MacroSense tells macros apart by "
+            .. "name. Rename one of them first."], name)
+    end
     if why == "room" then
         return string.format(L["no free slot for \"%s\": a character has only 30. Put another macro behind the "
             .. "scenes first."], name)
