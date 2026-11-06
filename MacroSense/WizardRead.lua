@@ -75,7 +75,7 @@ local function Group(conds)
     return g
 end
 
--- "Shadow Bolt(Rank 3)" -> { name = "Shadow Bolt", rank = "Rank 3" }; and true for "!Shoot" (the form's `keep`).
+-- "Shadow Bolt(Rank 3)" -> { name = "Shadow Bolt", rank = "Rank 3" }; and true for "!Shoot" (the form's `keeps`).
 local function Action(text, item)
     local rest = text:match("^!%s*(.+)$")
     local keep = rest ~= nil
@@ -139,15 +139,17 @@ local function ReadCast(spec, rest, item)
         if g.action ~= "" and not g.other and not g.nomounted and not g.place and Keyless(g) then
             if not whenSet then spec.when, whenSet = g.when, true end
             local action, keep = Action(g.action, item)
-            spec.keep = spec.keep or keep or nil
             if g.key then
+                spec.keeps[g.key] = spec.keeps[g.key] or keep or nil
                 local k = spec.keys[g.key]
                 if not k.active then k.active, k.on, k.action = true, {}, action end
                 k.on[#k.on + 1] = g.unit
                 k.reaction = k.reaction or (g.check and g.check ~= "exists" and ONLY[g.check]) or nil
             elseif g.last and g.bare and HasWhen(spec.when) and #main > 0 then
                 spec.otherwise = action
+                spec.keeps.otherwise = keep or nil
             else
+                spec.keeps.main = spec.keeps.main or keep or nil
                 spec.action = spec.action or action
                 main[#main + 1] = g.unit
             end
@@ -159,8 +161,11 @@ local function ReadCast(spec, rest, item)
         local k = spec.keys[key]
         if k.active then
             Pad(k.on, 2)
-            -- The macro's own spell: a key "casts the same".
-            if spec.action and k.action and W.Spelled(k.action) == W.Spelled(spec.action) then k.action = nil end
+            -- The macro's own spell, with its "!" or without as the macro's: a key "casts the same".
+            if spec.action and k.action and W.Spelled(k.action) == W.Spelled(spec.action)
+                and not spec.keeps[key] == not spec.keeps.main then
+                k.action, spec.keeps[key] = nil, nil
+            end
         end
     end
     Checks(spec, read)

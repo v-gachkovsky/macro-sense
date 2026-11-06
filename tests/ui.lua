@@ -3142,7 +3142,7 @@ do
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
     check("steps: no dismount check for a mount", question() == "Would you like to add anything else?"
-        and not C("stepDismount"):IsShown(), question())
+        and not C("stepDismount"):IsShown() and not C("stepKeep"):IsShown(), question())
     for _ = 1, 6 do Fire(C("back"), "OnClick") end
     check("steps: back to the first", question() == "What should the macro do?", question())
 
@@ -3160,6 +3160,13 @@ do
     check("steps: a spell picked from the list stays on the question", question()
         == "Which spell should the macro cast?" and C("stepSpell").text == "Fireball" and C("next"):IsEnabled()
         and ns.Highlight.Strip(C("preview").text):find("Fireball", 1, true) ~= nil, question())
+    -- With the spell: "Don't turn it off" puts "!" before it, and off again takes it away.
+    check("steps: \"!\" with the spell", C("stepKeep"):IsShown() and C("stepKeep").label.text == "Don't turn it off")
+    Fire(C("stepKeep"), "OnClick")
+    check("steps: \"!\" on", ns.Highlight.Strip(C("preview").text):find("!Fireball", 1, true) ~= nil,
+        ns.Highlight.Strip(C("preview").text))
+    Fire(C("stepKeep"), "OnClick")
+    check("steps: \"!\" off", ns.Highlight.Strip(C("preview").text):find("!", 1, true) == nil)
     Fire(C("next"), "OnClick")
     check("steps: a spell with ranks: which one", question() == "Which rank of Fireball?"
         and answers() == "The highest you know, Rank 3, Rank 2, Rank 1" and chosen() == "The highest you know"
@@ -4475,13 +4482,17 @@ do
     ns.db.wizardForm = true
     Fire(open, "OnClick")
     local bolt = "#showtooltip\n/startattack\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
-        .. "[@mouseover,harm,nodead][] !Shadow Bolt"
+        .. "[@mouseover,harm,nodead][] Shadow Bolt"
+    -- "!" by each spell: Shoot's on, Shadow Bolt's off.
     check("open in wizard: none held is the macro's spell", C("cast").text == "Shadow Bolt"
-        and C("altCast").text == "Shoot"
-        and C("keep").shown and C("keep").label.text == "Don't turn it off" and shown() == bolt, shown())
+        and C("altCast").text == "Shoot" and C("keepAlt").shown and C("keepAlt").fill:IsShown()
+        and not C("keepMain").fill:IsShown() and shown() == bolt, shown())
+    Fire(C("keepMain"), "OnClick")
+    check("open in wizard: \"!\" for the macro's spell too", shown():find("[] !Shadow Bolt", 1, true) ~= nil, shown())
+    Fire(C("keepMain"), "OnClick")
     ns.db.wizardForm = nil
     Fire(C("mode"), "OnClick")
-    check("open in wizard: the questions too", C("stepKeep").shown and shown() == bolt, shown())
+    check("open in wizard: the questions too", shown() == bolt, shown())
     Fire(C("mode"), "OnClick")
     ns.Window.Open(GetMacroIndexByName("Wiz Soul"))
     NextFrame()
@@ -4492,7 +4503,7 @@ do
         and shown() == "#showtooltip\n/startattack\n/cast [nochanneling:Drain Soul] Drain Soul", shown())
     Fire(C("command"), "OnClick")
     Fire(menuItem("/castsequence"), "OnClick")
-    check("open in wizard: \"!\" only for /cast and /use", not C("keep").shown)
+    check("open in wizard: \"!\" only for /cast and /use", not C("keepMain").shown and not C("keepAlt").shown)
     ns.WizardWindow.Close()
     DeleteMacro(GetMacroIndexByName("Wiz Bolt"))
     DeleteMacro(GetMacroIndexByName("Wiz Soul"))

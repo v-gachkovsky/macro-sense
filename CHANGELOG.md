@@ -11,8 +11,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   soon as combat ends. The status bar says "Saves when combat ends" meanwhile. A macro behind the scenes
   saves in combat at once.
 - The wizard: "Not while channeling it" and "Not while channeling" under When (`[nochanneling:Drain Soul]`,
-  `[nochanneling]`), and "Don't turn it off" under Also (`!Shoot`), in the form and in the questions. It reads
-  them back from a macro you have.
+  `[nochanneling]`), and "!" by each spell (`!Shoot`: pressed again, it stays on), in the form and in the
+  questions. It reads them back from a macro you have.
 - "With mistakes" under the search: only the macros with a mistake or a warning, every macro checked at once;
   the tabs say how many each has.
 - History: a version's tooltip shows what it changes in the text now, line by line as a diff: the lines that
