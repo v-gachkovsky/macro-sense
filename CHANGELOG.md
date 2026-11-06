@@ -25,7 +25,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Many macros at once: "Pick" puts a check before each macro and each group in the list; one click picks a macro
   or a whole group and one more takes it back, Ctrl+click (Cmd+click on a Mac) picks a macro too. On the row over
   the list "All" picks every macro shown or none, x takes back every pick, and "Actions" shares, moves, puts into a
-  set or deletes them all.
+  set or deletes them all; with macro sets on it also takes them into the game or puts them behind the scenes.
 - Favorites and folders in the General tab: a macro's "..." puts it at the top under Favorites, or into a folder of
   your own; a right click on a folder's name renames or deletes it. Picked macros go into one all at once.
 - "What if" by the live preview: the notes next to the lines for a moment you set up yourself, the keys held,

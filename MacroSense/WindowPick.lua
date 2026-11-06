@@ -240,6 +240,47 @@ local function IntoSet(to)
     Clear()
 end
 
+-- The set of picked macro `p` in the sets: behind the scenes its own; in the game, its layer's.
+local function SetOf(p, now)
+    if p.what == "stored" then return p.set end
+    local layer = ns.Sets.LayerIn(p.name)
+    return layer == "spec" and now or layer or "character"
+end
+
+-- Those behind the scenes into the game (`on` false), or those of the Character tab in the game behind the scenes,
+-- as "Take in" and "Put away" in "..." do each. Into the game while there are free slots; one of a specialization
+-- not chosen now comes in with it. The picks follow them.
+local function Park(on)
+    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
+    local now = ns.ActionBars.Spec()
+    local done, room, taken = 0, 0, 0
+    ns.Sets.Atomic(function()
+        Each(function(p)
+            local wanted = on and p.what == "macro" and p.scope == "character" or not on and p.what == "stored"
+            if not wanted then return end
+            local id = SetOf(p, now)
+            local ok, why = ns.Sets.Park(id, p.name, on)
+            if not ok then
+                if why == "room" then room = room + 1 elseif why == "ingame" then taken = taken + 1 end
+                return
+            end
+            done = done + 1
+            if on then
+                p.what, p.set, p.scope = "stored", id, nil
+            elseif ns.Sets.InGame(id) then
+                p.what, p.scope, p.set = "macro", "character", nil
+            end
+        end)
+    end)
+    ns.Say(on and ns.Plural(done, "put away %d macro", "put away %d macros")
+        or ns.Plural(done, "took in %d macro", "took in %d macros"))
+    if room > 0 then ns.Print("no free slots for %d of them: they stay where they were", room) end
+    if taken > 0 then
+        ns.Print("%d of them stay behind the scenes: the game has a macro of the same name", taken)
+    end
+    Window.RefreshList()
+end
+
 StaticPopupDialogs.MACROSENSE_DELETE_PICKED = {
     text = "Delete %s? Those in the game go into the trash.",
     button1 = "Delete", button2 = "Cancel",
@@ -283,6 +324,16 @@ local function Actions()
         local names = {}
         for i, p in ipairs(picked) do names[i] = p.name end
         for _, item in ipairs(shared.FolderItems(names)) do items[#items + 1] = item end
+    end
+    -- With macro sets on: those behind the scenes into the game, those in the game behind the scenes.
+    if ns.Sets.Mine().enabled then
+        local stored, inGame = Count("stored"), Count("macro", "character")
+        if stored > 0 then
+            items[#items + 1] = { name = string.format(L["Take in %d"], stored), onClick = function() Park(false) end }
+        end
+        if inGame > 0 then
+            items[#items + 1] = { name = string.format(L["Put away %d"], inGame), onClick = function() Park(true) end }
+        end
     end
     if ns.Sets.Mine().enabled and Count("macro", "general") == 0 then
         local sets = { "character", "class" }

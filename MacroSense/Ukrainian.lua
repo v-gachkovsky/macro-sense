@@ -565,6 +565,13 @@ ns.locales.uk = {
     ["Clear the picks"] = "Зняти вибір",
     ["Pick this group"] = "Вибрати всю групу",
     ["Move %d from %s to %s"] = "Перенести %d з «%s» у «%s»",
+    ["Take in %d"] = "Взяти в гру: %d",
+    ["Put away %d"] = "За лаштунки: %d",
+    ["took in %d macros"] = { "взято в гру %d макрос", "взято в гру %d макроси", "взято в гру %d макросів" },
+    ["put away %d macros"] = { "за лаштунки пішов %d макрос", "за лаштунки пішли %d макроси",
+        "за лаштунки пішли %d макросів" },
+    ["%d of them stay behind the scenes: the game has a macro of the same name"] =
+        "%d з них лишилися за лаштунками: у грі вже є макрос із такою назвою",
     ["Into: %s"] = "У набір: %s",
     ["moved %d macros"] = { "перенесено %d макрос", "перенесено %d макроси", "перенесено %d макросів" },
     ["no free slots for %d of them: they stay where they were"] =

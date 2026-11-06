@@ -414,7 +414,8 @@ click on a macro's check picks it, one on a group's (a set's group, Favorites, a
 more takes it back. **Ctrl+click** (Cmd+click on a Mac) on a macro picks it too, without **Pick**. A row over the
 list says how many are picked: **All** picks every macro the list shows, or none of them; **x** takes back every
 pick. Its **Actions** share them in one code, move them into the other tab (while it has free slots), put them into
-a set or a folder, delete them (those in the game go into the Trash).
+a set or a folder, delete them (those in the game go into the Trash); with macro sets on they also take those behind
+the scenes into the game (**Take in**) and put those in the game behind the scenes (**Put away**), all at once.
 
 **Add a note**, last in **...**, keeps a line of your own about the macro (`For the Onyxia pull`), outside its 255
 characters: the macro's tooltip in the list shows it. The note follows the macro renamed or moved, goes into the
