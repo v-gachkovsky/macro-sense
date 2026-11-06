@@ -4544,6 +4544,93 @@ do
     NextFrame()
 end
 
+-- Many at once: Ctrl+click picks macros, the row over the list says how many; its Actions share, move and delete
+-- them all, pick all or none.
+do
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
+        end
+    end
+    local function find(kind, text)
+        for _, o in ipairs(created) do
+            if o.kind == kind and (o.label and o.label.text == text or o.text == text) and o:IsShown() then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    -- The row over the list: shown while some are picked.
+    local function barShown()
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == "Actions" then return o.parentFrame:IsShown() end
+        end
+    end
+    local function act(label)
+        Fire(find("Button", "Actions"), "OnClick")
+        local item = menuItem(label)
+        if item then Fire(item, "OnClick") end
+        return item ~= nil
+    end
+    CreateMacro("Pick A", 1, "/cast Fear", false)
+    CreateMacro("Pick B", 1, "/cast Howl of Terror", false)
+    CreateMacro("Pick C", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    NextFrame()
+    ns.Window.Select(GetMacroIndexByName("Pick C"))
+    NextFrame()
+    check("pick: nothing picked, no row", not barShown())
+    IsControlKeyDown = function() return true end
+    Fire(row("Pick A"), "OnClick", "LeftButton")
+    Fire(row("Pick B"), "OnClick", "LeftButton")
+    IsControlKeyDown = function() return false end
+    check("pick: Ctrl+click picks, the editor stays", find("FontString", "2 picked") ~= nil
+        and row("Pick A").pick:IsShown() and not row("Pick C").pick:IsShown() and raw() == "/cast Fear")
+    -- Share: a code of the two.
+    act("Share")
+    local macros = ns.Share.Decode(ns.ShareWindow.Control("box").text)
+    check("pick: share the picked", MacroSenseShare:IsShown() and macros and #macros == 2
+        and macros[1].name == "Pick A" and macros[2].name == "Pick B")
+    ns.ShareWindow.Close()
+    -- Move them: into the Character tab, still picked there.
+    check("pick: move them", act("Move 2 to Character"))
+    check("pick: moved, still picked", GetMacroIndexByName("Pick A") > SLOTS.MAX_ACCOUNT_MACROS
+        and GetMacroIndexByName("Pick B") > SLOTS.MAX_ACCOUNT_MACROS and find("FontString", "2 picked") ~= nil
+        and printed[#printed]:find("moved 2 macros", 1, true) ~= nil, printed[#printed])
+    -- Ctrl+click again: no longer picked.
+    IsControlKeyDown = function() return true end
+    Fire(row("Pick B"), "OnClick", "LeftButton")
+    IsControlKeyDown = function() return false end
+    check("pick: Ctrl+click again unpicks", find("FontString", "1 picked") ~= nil)
+    -- Delete them: asked, then into the trash.
+    act("Delete")
+    check("pick: deleted, into the trash", GetMacroIndexByName("Pick A") == 0 and GetMacroIndexByName("Pick B") > 0
+        and ns.History.Trash("character")[#ns.History.Trash("character")].name == "Pick A"
+        and not barShown())
+    -- Pick all in the list, then clear.
+    IsControlKeyDown = function() return true end
+    Fire(row("Pick B"), "OnClick", "LeftButton")
+    IsControlKeyDown = function() return false end
+    act("Pick all in the list")
+    local all = 0
+    for _, r in ipairs(created) do
+        if r.kind == "Button" and r.alert and r:IsShown() and r.what == "macro" then all = all + 1 end
+    end
+    check("pick: all in the list", find("FontString", all .. " picked") ~= nil, tostring(all))
+    act("Clear the picks")
+    check("pick: none again", not barShown())
+    DeleteMacro(GetMacroIndexByName("Pick B"))
+    DeleteMacro(GetMacroIndexByName("Pick C"))
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- Find and replace: in the groups ticked, the game's macros keeping their texts in History; not in combat, not
 -- past 255 characters.
 do

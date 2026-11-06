@@ -22,6 +22,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Find and replace: "Replace" next to the search (Ctrl+H) changes a word or a spell in many macros at once, in
   the General and Character tabs or, with macro sets on, in the sets you tick. Each macro's History keeps the
   text it had.
+- Many macros at once: Ctrl+click (Cmd+click on a Mac) picks a macro in the list, a right click on a group's name
+  picks the whole group. "Actions" on the row over the list shares, moves, puts into a set or deletes them all,
+  picks all in the list or none.
 
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at

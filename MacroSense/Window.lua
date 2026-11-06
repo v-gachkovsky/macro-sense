@@ -926,6 +926,23 @@ local function MoveBehind(from, name) return ns.Sets.Atomic(function()
         .. "behind the scenes, then take this one in.", moved)
 end) end
 
+-- Macro `index` made in tab `to` and deleted where it was, as Window.Move does it, inside ns.Sets.Atomic: its name
+-- there, or nil.
+local function MoveOne(index, to)
+    local from = index > MAX_GENERAL and "character" or "general"
+    local name, _, body = GetMacroInfo(index)
+    local icon, slots = ns.MacroIcon(index), ns.ActionBars.SlotsOf(name)
+    local moved = IndexIn(to, name) and FreeName(name) or name
+    local made = CreateMacro(moved, icon or NEW_ICON, body or "", to == "character")
+    if not made or made == 0 then return nil end
+    ns.History.Moved(from, to, name, moved)
+    ns.Roles.Moved(from, to, name, moved)
+    DeleteMacro(IndexIn(from, name))
+    ns.ActionBars.Place(IndexIn(to, moved), slots)
+    return moved
+end
+shared.MoveOne = MoveOne
+
 function Window.Move(index)
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local from = index > MAX_GENERAL and "character" or "general"
@@ -936,15 +953,8 @@ function Window.Move(index)
         return Full(to, function() Guard(function() MoveBehind(from, name) end) end, 1, true)
     end
     Guard(function() ns.Sets.Atomic(function()
-        local name, _, body = GetMacroInfo(index)
-        local icon, slots = ns.MacroIcon(index), ns.ActionBars.SlotsOf(name)
-        local moved = IndexIn(to, name) and FreeName(name) or name
-        local made = CreateMacro(moved, icon or NEW_ICON, body or "", to == "character")
-        if not made or made == 0 then return ns.Print("could not move the macro") end
-        ns.History.Moved(from, to, name, moved)
-        ns.Roles.Moved(from, to, name, moved)
-        DeleteMacro(IndexIn(from, name))
-        ns.ActionBars.Place(IndexIn(to, moved), slots)
+        local moved = MoveOne(index, to)
+        if not moved then return ns.Print("could not move the macro") end
         ns.History.Scan()
         state.scope, ns.db.scope = to, to
         Load(IndexIn(to, moved))
@@ -1487,6 +1497,8 @@ local function Build()
         ns.SetsWindow.AskOff()
     end)
     setsCheck:SetPoint("BOTTOMLEFT", 8, 94)
+    -- Over it, while macros are picked: how many, and what to do with them all.
+    Window.BuildPicks(side)
     setsCheck:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["Macro sets"], 1, 1, 1)
@@ -1876,6 +1888,7 @@ local function Build()
         ns.CloseMenu()
         search:SetText("") -- opened again, the list shows every macro
         shared.notOnBars, shared.mistakes = false, false
+        Window.ForgetPicks()
         barsCheck:Refresh()
         mistakesCheck:Refresh()
     end)

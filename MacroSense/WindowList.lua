@@ -173,6 +173,9 @@ local function Row(i)
     r:SetPoint("TOPRIGHT", 0, -(i - 1) * ROW_H)
     r.bg = r:CreateTexture(nil, "BACKGROUND")
     r.bg:SetAllPoints()
+    r.pick = r:CreateTexture(nil, "BACKGROUND", nil, 1) -- picked with Ctrl+click (WindowPick.lua)
+    r.pick:SetAllPoints()
+    r.pick:Hide()
     r.band = r:CreateTexture(nil, "BACKGROUND", nil, -1) -- a specialization's group not chosen now: red
     r.band:SetAllPoints()
     r.band:Hide()
@@ -273,8 +276,12 @@ local function Row(i)
     r:SetScript("OnClick", function(_, button)
         if button == "RightButton" then
             if r.copy:IsShown() then Window.OpenRowMenu(r, r) end
+            -- A group's name: pick all of it.
+            if r.what == "group" or r.what == "head" then shared.OpenGroupPick(r) end
             return
         end
+        -- Ctrl+click (Cmd on a Mac): picked, or no longer, for many at once.
+        if (r.what == "macro" or r.what == "stored") and ns.CtrlDown() then return shared.TogglePick(r) end
         if r.what == "alt" then
             expanded[r.alt.key] = not expanded[r.alt.key]
             return Window.RefreshList()
@@ -394,6 +401,8 @@ local function UseRow(n, what, tone, depth)
     rows[n] = rows[n] or Row(n)
     local r = rows[n]
     r.what, r.index, r.selected, r.severity, r.issues = what, nil, false, nil, nil
+    r.depth = depth or (what == "altMacro" and 1 or 0)
+    r.pick:Hide()
     r.tone, r.toggle, r.set, r.dropId, r.dropIn = tone, false, nil, nil, nil
     r.icon:SetPoint("LEFT", 6 + 12 * (depth or (what == "altMacro" and 1 or 0)), 0)
     local plain = what == "alt" or what == "group" or what == "head"
@@ -468,6 +477,13 @@ local function FollowRowIcons()
     end
 end
 
+-- A row picked with Ctrl+click: tinted in the scheme's accent.
+local function ShowPick(r)
+    local on = shared.IsPicked(r)
+    r.pick:SetShown(on)
+    if on then r.pick:SetColorTexture(ns.RGB(ns.scheme.accent)); r.pick:SetAlpha(0.3) end
+end
+
 -- Row `n` as macro `index` of the tab open; `tone`, `depth`: see UseRow.
 local function MacroRow(n, index, tone, depth)
     local name, icon, body = GetMacroInfo(index)
@@ -485,6 +501,7 @@ local function MacroRow(n, index, tone, depth)
     r.text:SetPoint("RIGHT", alert and r.alert or r.copy, "LEFT", alert and -4 or -2, 0)
     r:Paint()
     r.bg:SetShown(r.selected)
+    ShowPick(r)
 end
 
 ------------------------------------------------------------------------
@@ -538,6 +555,7 @@ local function StoredRow(n, id, m, tone, depth)
     r.severity, r.issues = MacroIssues(m.body)
     r:Paint()
     r.bg:SetShown(r.selected)
+    ShowPick(r)
 end
 
 -- The macros behind the scenes of set `id` that the search finds.
@@ -989,6 +1007,7 @@ function Window.RefreshList()
         shared.tabs.character.label:SetText(string.format(L["Character  (%d)"], CountMatches("character", q)))
     end
     for scope, tab in pairs(shared.tabs) do tab.active = scope == state.scope; tab:Paint() end
+    shared.RefreshPicks()
 end
 
 shared.rows = rows
