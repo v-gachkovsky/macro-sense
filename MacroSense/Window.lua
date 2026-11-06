@@ -355,8 +355,7 @@ local explainEnv = {
 -- The game's tooltip of a spell or item named in a macro; false when the game knows no such name.
 local function ActionTip(name)
     name = name:gsub("%(.-%)$", "") -- "Fireball(Rank 4)"
-    local spell = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(name)
-    local id = spell and spell.spellID or (GetSpellInfo and select(7, GetSpellInfo(name)))
+    local id = ns.SpellID(name)
     if id and GameTooltip.SetSpellByID then
         GameTooltip:SetOwner(code.scroll, "ANCHOR_CURSOR")
         GameTooltip:SetSpellByID(id)
@@ -1669,8 +1668,7 @@ local function SpellBack(index)
     for s, m in pairs(ns.Spellbook.Journal(ns.char).made) do
         if m.name == name and casts[s:lower()] then spell = s end
     end
-    local info = spell and C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spell)
-    local id = info and info.spellID or (spell and GetSpellInfo and select(7, GetSpellInfo(spell)))
+    local id = spell and ns.SpellID(spell)
     local pickup = C_Spell and C_Spell.PickupSpell or PickupSpell
     if not id or not pickup then return end
     for _, slot in ipairs(ns.ActionBars.SlotsOf(name)) do
@@ -3032,8 +3030,7 @@ local function Build()
         local e = warning.shown
         if not e then return end
         GameTooltip:Hide()
-        local ctrl = IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())
-        if e.fix and ctrl then return ApplyFix(e) end
+        if e.fix and ns.CtrlDown() then return ApplyFix(e) end
         code:SetRawCursor(e.from - 1)
     end)
 
@@ -3085,7 +3082,7 @@ local function Build()
     code.edit:HookScript("OnTextChanged", UpdateStatus)
     code.edit:HookScript("OnCursorChanged", UpdateStatus)
     code.edit:HookScript("OnKeyDown", function(_, key)
-        if not (IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())) then return end
+        if not ns.CtrlDown() then return end
         if key == "S" then
             Window.Save()
         elseif key == "F" then

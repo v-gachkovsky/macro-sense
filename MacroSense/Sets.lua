@@ -299,9 +299,7 @@ local function Regroup(c)
     local sets = c.sets
     if sets.grouped or not ns.SpecsByGroup() or not (IsLoggedIn and IsLoggedIn()) then return end
     sets.grouped = true
-    local S = C_SpecializationInfo or {}
-    local group = "group" .. (S.GetActiveSpecGroup and S.GetActiveSpecGroup()
-        or GetActiveTalentGroup and GetActiveTalentGroup() or 1)
+    local group = "group" .. ns.ActionBars.Group()
     for _, t in ipairs({ sets.specs, sets.bars, sets.spells or {}, c.bars or {} }) do
         local old = {}
         for key in pairs(t) do if key:find("^spec") then old[#old + 1] = key end end

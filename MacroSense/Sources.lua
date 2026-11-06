@@ -168,8 +168,8 @@ function ns.HasExpansion(since)
     return not since or (LE_EXPANSION_LEVEL_CURRENT or since) >= since
 end
 
--- Whether a spell you know starts the global cooldown: the game gives each spell's base cooldown and global one.
-local function SpellID(name)
+-- The ID of a spell you know, by its name, or nil.
+function ns.SpellID(name)
     if C_Spell and C_Spell.GetSpellInfo then
         local ok, info = pcall(C_Spell.GetSpellInfo, name)
         return ok and info and info.spellID or nil
@@ -179,12 +179,13 @@ local function SpellID(name)
         return ok and id or nil
     end
 end
+-- Whether a spell you know starts the global cooldown: the game gives each spell's base cooldown and global one.
 -- Asked as the text is typed: kept by name until the spells change (false: no spell you know).
 local gcdCache = {}
 function ns.Highlight.gcdOf(name)
     if gcdCache[name] == nil then
         local base = C_Spell and C_Spell.GetSpellBaseCooldown or GetSpellBaseCooldown
-        local id = base and SpellID(name)
+        local id = base and ns.SpellID(name)
         local cooldown, gcd
         if id then cooldown, gcd = base(id) end
         gcdCache[name] = gcd and (gcd == 0 and "free" or (cooldown or 0) > 0 and "cooldown" or "gcd") or false
@@ -466,7 +467,7 @@ end
 local function talentName(info) return info.spellID and info.spellID ~= 0 and SpellName(info.spellID) or info.name end
 
 local function rowTalents(add)
-    local group = C_SpecializationInfo.GetActiveSpecGroup and C_SpecializationInfo.GetActiveSpecGroup()
+    local group = ns.ActionBars.Group()
     for tier = 1, MAX_NUM_TALENT_TIERS or 6 do
         for column = 1, 3 do
             local info = TalentInfo({ tier = tier, column = column, groupIndex = group })
@@ -476,7 +477,7 @@ local function rowTalents(add)
 end
 
 local function pointTalents(add)
-    local group = C_SpecializationInfo.GetActiveSpecGroup and C_SpecializationInfo.GetActiveSpecGroup()
+    local group = ns.ActionBars.Group()
     for tab = 1, GetNumTalentTabs and GetNumTalentTabs() or 0 do
         for i = 1, GetNumTalents(tab) do
             local info = TalentInfo({ specializationIndex = tab, talentIndex = i, groupIndex = group })
