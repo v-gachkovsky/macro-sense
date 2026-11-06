@@ -1813,6 +1813,41 @@ do
     game.pet, game.units.mouseover = nil, nil
     Wait(0.2)
     check("preview: no pet, no match", notes() == "icon: ? | conditions not met", notes())
+    -- "What if": the moment set up by hand. The mouse can't be over someone with the editor open: here it is.
+    Blank()
+    Type("#showtooltip\n/cast [mod:alt] Hunter's Mark; [@mouseover,harm,nodead][] Arcane Shot")
+    Key("ESCAPE", "OnEscapePressed")
+    NextFrame()
+    local function control(text, parent)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.label and o.label.text == text and (not parent or o.parentFrame == parent) then
+                return o
+            end
+        end
+    end
+    local whatIf = control("What if")
+    local keys = control("In combat", nil).parentFrame
+    check("what if: by Live preview, off", whatIf and whatIf.parentFrame:IsShown() and not keys:IsShown())
+    Fire(whatIf, "OnClick")
+    NextFrame()
+    check("what if: on, its keys and units", ns.db.whatIf and keys:IsShown()
+        and notes() == "icon: Arcane Shot | Arcane Shot", notes())
+    local moment = ns.Window.WhatIfMoment()
+    moment.units.mouseover = "enemy"
+    ns.Window.RefreshPreview()
+    check("what if: an enemy under the mouse", notes() == "icon: Arcane Shot | Arcane Shot @mouseover", notes())
+    Fire(control("Alt", keys), "OnClick")
+    check("what if: Alt held", notes() == "icon: Hunter's Mark | Hunter's Mark", notes())
+    -- The game's own keys don't count meanwhile.
+    game.mods.alt = nil
+    Wait(0.2)
+    check("what if: not the game's keys", notes() == "icon: Hunter's Mark | Hunter's Mark", notes())
+    Fire(control("Alt", keys), "OnClick")
+    moment.units.mouseover = "none"
+    Fire(whatIf, "OnClick")
+    Wait(0.2)
+    check("what if: off, the game's now again", not ns.db.whatIf and notes() == "icon: Arcane Shot | Arcane Shot",
+        notes())
     -- A note on line 150 only (no line that far had one before); a shorter macro leaves it no trace.
     Blank()
     Type(string.rep("\n", 149) .. "/cast Fireball")
