@@ -266,7 +266,9 @@ function SpellbookWindow.Create()
     SpellbookWindow.Close()
     for _, m in ipairs(behind) do
         local name = ns.Window.MakeBehind(m.name, NEW_ICON, m.body, true)
-        for _, spell in ipairs(m.spells) do made[spell] = { name = name, body = m.body } end
+        for _, spell in ipairs(m.spells) do
+            made[spell] = { name = name, body = m.body, main = spell == m.spells[1] }
+        end
     end
     if #behind > 0 then
         ns.Print("%d macros are made behind the scenes, in \"This character's\": there is no free slot for them.",
@@ -310,7 +312,9 @@ function SpellbookWindow.Create()
         local index = GetMacroIndexByName(name)
         if index and index > 0 then
             names[#names + 1] = { name = name, macro = m }
-            for _, spell in ipairs(m.spells) do made[spell] = { name = name, body = m.body } end
+            for _, spell in ipairs(m.spells) do
+                made[spell] = { name = name, body = m.body, main = spell == m.spells[1] }
+            end
         elseif not again then
             return C_Timer.After(RETRY, function() step(i, name) end)
         else

@@ -7204,6 +7204,25 @@ do
     actions[7] = { "macro", 5782, "spell", text = "Frostbolt" }
     ns.Window.Delete(GetMacroIndexByName("Frostbolt"))
     check("book: not once it casts the spell no more", actions[7] == nil)
+    -- Two spells in one macro (one joined on a key): the one it was made for comes back, the one with no key.
+    C_Spell.GetSpellInfo = function(name)
+        return name == "Frostbolt" and { spellID = 116 } or name == "Counterspell" and { spellID = 2139 } or nil
+    end
+    local journal = ns.Spellbook.Journal(ns.char).made
+    local function joined(base, other, flagged)
+        CreateMacro(base, 1, "#showtooltip\n/cast [mod:shift] " .. other .. "; " .. base, true)
+        journal[base] = { name = base, body = "x", main = flagged or nil }
+        journal[other] = { name = base, body = "x" }
+        actions[7] = { "macro", 116, "spell", text = base }
+        ns.Window.Delete(GetMacroIndexByName(base))
+        journal[base], journal[other] = nil, nil
+        return actions[7] and actions[7][2]
+    end
+    check("book: joined, its own spell back", joined("Frostbolt", "Counterspell", true) == 116)
+    check("book: joined, its own spell back, the other way", joined("Counterspell", "Frostbolt", true) == 2139)
+    check("book: joined, made before it was remembered: the spell with no key", joined("Frostbolt", "Counterspell")
+        == 116 and joined("Counterspell", "Frostbolt") == 2139)
+    actions[7] = nil
     C_Spell.GetSpellInfo, C_Spell.PickupSpell = info, pickup
     for _, name in ipairs(made) do
         if GetMacroIndexByName(name) > 0 then DeleteMacro(GetMacroIndexByName(name)) end
