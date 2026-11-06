@@ -523,6 +523,34 @@ local function Merged(raw, above, info)
         fixTip = L["Ctrl+click to put this line into the line above, first"] }
 end
 
+-- Lines run one after another, but a spell with the global cooldown stops the spells with it after it: those on
+-- the lines after one that always casts such a spell are a warning (Blocking says which and how). `lines`: the
+-- `info` of each line, as lineSpans learned it.
+local function GlobalCooldowns(raw, lines, add)
+    local blocking
+    for _, info in ipairs(lines) do
+        local merged = blocking and Merged(raw, blocking.info, info) or {}
+        for _, sp in ipairs(blocking and info.spells or {}) do
+            local gcd = Highlight.gcdOf(sp.name)
+            local extra = { fix = merged.fix, fixFrom = merged.fixFrom, fixTo = merged.fixTo, fixTip = merged.fixTip }
+            if (gcd == "gcd" or gcd == "cooldown") and blocking.kind == "gcd" then
+                extra.short = L["won't cast"]
+                add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["won't cast: the line above always casts "
+                    .. "%s first, and its global cooldown stops this one. To choose between them, put both into one "
+                    .. "/cast, this part first"], blocking.names), "warning", extra)
+            elseif gcd == "gcd" or gcd == "cooldown" then
+                extra.short = string.format(L["only while %s is on cooldown"], blocking.names)
+                add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only while %s is on cooldown: the "
+                    .. "line above always casts it first, and its global cooldown stops this one. To choose with a "
+                    .. "key, put both into one /cast, this part first"], blocking.names), "warning", extra)
+            end
+        end
+        -- One that never lets the lines after cast is the stronger.
+        local now = Blocking(info)
+        if now and (not blocking or now.kind == "gcd" and blocking.kind ~= "gcd") then blocking = now end
+    end
+end
+
 function Highlight.Spans(raw)
     local spans = {}
     -- extra: { short, fix } for issues that come with a shorter text or a fix.
@@ -531,34 +559,14 @@ function Highlight.Spans(raw)
             spans[#spans + 1] = { from, to, kind, message, message and (severity or "error"), extra }
         end
     end
-    local pos, blocking = 0, nil
+    local pos, lines = 0, {}
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
         local info = { spells = {}, lineFrom = pos + 1, lineTo = pos + #line }
         lineSpans(line, pos, add, info)
-        if Highlight.gcdOf then
-            local merged = blocking and Merged(raw, blocking.info, info) or {}
-            for _, sp in ipairs(blocking and info.spells or {}) do
-                local gcd = Highlight.gcdOf(sp.name)
-                local extra = { fix = merged.fix, fixFrom = merged.fixFrom, fixTo = merged.fixTo,
-                    fixTip = merged.fixTip }
-                if (gcd == "gcd" or gcd == "cooldown") and blocking.kind == "gcd" then
-                    extra.short = L["won't cast"]
-                    add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["won't cast: the line above always "
-                        .. "casts %s first, and its global cooldown stops this one. To choose between them, put both "
-                        .. "into one /cast, this part first"], blocking.names), "warning", extra)
-                elseif gcd == "gcd" or gcd == "cooldown" then
-                    extra.short = string.format(L["only while %s is on cooldown"], blocking.names)
-                    add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only while %s is on cooldown: "
-                        .. "the line above always casts it first, and its global cooldown stops this one. To choose "
-                        .. "with a key, put both into one /cast, this part first"], blocking.names), "warning", extra)
-                end
-            end
-            -- One that never lets the lines after cast is the stronger.
-            local now = Blocking(info)
-            if now and (not blocking or now.kind == "gcd" and blocking.kind ~= "gcd") then blocking = now end
-        end
+        lines[#lines + 1] = info
         pos = pos + #line + 1
     end
+    if Highlight.gcdOf then GlobalCooldowns(raw, lines, add) end
     table.sort(spans, function(a, b) return a[1] < b[1] end)
     return spans
 end
