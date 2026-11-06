@@ -415,11 +415,12 @@ local function UseRow(n, what, tone, depth)
     local indent = 12 * (depth or (what == "altMacro" and 1 or 0))
     local checked = shared.Picking() and (what == "macro" or what == "stored" or what == "group" or what == "head")
     r.check:SetShown(checked)
+    -- Clear of the list's left edge: the game's check art is wider than its box.
     r.check:ClearAllPoints()
-    r.check:SetPoint("LEFT", 4 + indent, 0)
+    r.check:SetPoint("LEFT", 10 + indent, 0)
     r.checked, r.members = false, nil
     r.check:Refresh()
-    r.icon:SetPoint("LEFT", 6 + indent + (checked and 20 or 0), 0)
+    r.icon:SetPoint("LEFT", 6 + indent + (checked and 26 or 0), 0)
     local plain = what == "alt" or what == "group" or what == "head"
     if plain then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
     r.band:Hide()
