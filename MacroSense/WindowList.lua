@@ -176,6 +176,9 @@ local function Row(i)
     r.pick = r:CreateTexture(nil, "BACKGROUND", nil, 1) -- picked with Ctrl+click (WindowPick.lua)
     r.pick:SetAllPoints()
     r.pick:Hide()
+    -- While picking: a check before the icon, a macro's or a whole group's (WindowPick.lua).
+    r.check = ns.Check(r, "", function() return r.checked end, function() shared.CheckRow(r) end)
+    r.check:Hide()
     r.band = r:CreateTexture(nil, "BACKGROUND", nil, -1) -- a specialization's group not chosen now: red
     r.band:SetAllPoints()
     r.band:Hide()
@@ -409,7 +412,14 @@ local function UseRow(n, what, tone, depth)
     r.folder, r.shelf = nil, false
     r.pick:Hide()
     r.tone, r.toggle, r.set, r.dropId, r.dropIn = tone, false, nil, nil, nil
-    r.icon:SetPoint("LEFT", 6 + 12 * (depth or (what == "altMacro" and 1 or 0)), 0)
+    local indent = 12 * (depth or (what == "altMacro" and 1 or 0))
+    local checked = shared.Picking() and (what == "macro" or what == "stored" or what == "group" or what == "head")
+    r.check:SetShown(checked)
+    r.check:ClearAllPoints()
+    r.check:SetPoint("LEFT", 4 + indent, 0)
+    r.checked, r.members = false, nil
+    r.check:Refresh()
+    r.icon:SetPoint("LEFT", 6 + indent + (checked and 20 or 0), 0)
     local plain = what == "alt" or what == "group" or what == "head"
     if plain then r.icon:SetTexCoord(0, 1, 0, 1) else r.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
     r.band:Hide()
@@ -482,11 +492,27 @@ local function FollowRowIcons()
     end
 end
 
--- A row picked with Ctrl+click: tinted in the scheme's accent.
+-- A row picked: tinted in the scheme's accent, its check on.
 local function ShowPick(r)
     local on = shared.IsPicked(r)
     r.pick:SetShown(on)
     if on then r.pick:SetColorTexture(ns.RGB(ns.scheme.accent)); r.pick:SetAlpha(0.3) end
+    r.checked = on
+    r.check:Refresh()
+end
+
+-- The macros a group's check picks, of `items`: indexes in the game, or those of set `id` behind the scenes.
+local function MembersOf(items, id, out)
+    out = out or {}
+    for _, x in ipairs(items) do
+        if type(x) == "number" then
+            local scope = x > MAX_GENERAL and "character" or "general"
+            out[#out + 1] = { what = "macro", scope = scope, name = GetMacroInfo(x) }
+        else
+            out[#out + 1] = { what = "stored", set = id, name = x.name }
+        end
+    end
+    return out
 end
 
 -- Row `n` as macro `index` of the tab open; `tone`, `depth`: see UseRow.
@@ -589,6 +615,7 @@ local function Group(n, key, label, tone, default, items, q, add, kind, id, inGa
     n = n + 1
     GroupRow(n, key, label, #items, tone, open, kind or tone)
     Belongs(rows[n], id, inGame)
+    shared.SetMembers(rows[n], MembersOf(items, id))
     for _, x in ipairs(open and items or {}) do
         n = n + 1
         add(n, x, tone, 2)
@@ -616,6 +643,7 @@ local function SetsRows(n, q)
     HeadRow(n, "in", L["In the game"], string.format(L["These take the character's macro slots: %d of %d."],
         last - first + 1, MAX_CHARACTER), open)
     Belongs(rows[n], "character", true)
+    shared.SetMembers(rows[n], MembersOf(mine, nil, MembersOf(class, nil, MembersOf(root))))
     if open then
         for _, index in ipairs(root) do
             n = n + 1
@@ -633,6 +661,10 @@ local function SetsRows(n, q)
         .. "into the game with their specialization, with \"Take in\" in \"...\", or dragged into \"In the "
         .. "game\"."], open, "other")
     Belongs(rows[n], "character", false)
+    local behind = MembersOf(Behind("character", q), "character")
+    MembersOf(Behind("class", q), "class", behind)
+    for _, spec in ipairs(specs) do MembersOf(Behind(spec.key, q), spec.key, behind) end
+    shared.SetMembers(rows[n], behind)
     if not open then return n end
     for _, m in ipairs(Behind("character", q)) do
         n = n + 1
@@ -975,6 +1007,7 @@ local function ShelfGroup(n, key, label, items, tip, folder, filtered)
     r:Toggle(open)
     r.text:SetText(string.format("%s  |cff%s%d|r", label, ns.scheme.dim, #items))
     r:Paint()
+    shared.SetMembers(r, MembersOf(items))
     for _, index in ipairs(open and items or {}) do
         n = n + 1
         MacroRow(n, index, nil, 2)

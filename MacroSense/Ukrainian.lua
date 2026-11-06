@@ -529,6 +529,11 @@ ns.locales.uk = {
     ["Note on \"%s\""] = "Нотатка до «%s»",
     ["Replace"] = "Замінити",
     ["%d picked"] = { "Вибрано %d", "Вибрано %d", "Вибрано %d" },
+    ["Pick"] = "Вибір",
+    ["A check before each macro and each group: one click picks a macro or a whole group, another click takes it back. Then share, move, put into a set or delete them all at once."] =
+        "Галочка біля кожного макросу й кожної групи: один клік вибирає макрос чи всю групу, ще один — знімає "
+        .. "вибір. Потім ними можна поділитися, перенести їх, додати в набір чи видалити всі одразу.",
+    ["All"] = "Усі",
     ["What if"] = "Що, як...",
     ["The notes next to the lines for a moment you set up: the keys held, combat, and who your target, mouseover and focus are. With the editor open your mouse can't be over someone, so this is how to check a mouseover macro. Anything else the macro checks is as in the game now."] =
         "Підказки біля рядків для моменту, який ви задаєте самі: затиснуті клавіші, бій, і хто ваша ціль, хто "

@@ -4633,6 +4633,14 @@ do
         and order():find("^PvP 1 / Fold A / ") ~= nil, order())
     check("folders: favorites over the folders", menu(row("Fold B"), "Add to favorites")
         and order():find("^Favorites 1 / Fold B / PvP 1 / Fold A / ") ~= nil, order())
+    -- Picking: the folder's check picks all of it with one click, and takes it all back with one more.
+    ns.Window.SetPicking(true)
+    Fire(row("PvP 1").check, "OnClick")
+    check("folders: a group's check picks it all", row("Fold A").pick:IsShown() and not row("Fold B").pick:IsShown()
+        and row("PvP 1").check.fill:IsShown())
+    Fire(row("PvP 1").check, "OnClick")
+    check("folders: and takes it back", not row("Fold A").pick:IsShown() and not row("PvP 1").check.fill:IsShown())
+    ns.Window.SetPicking(false)
     -- The folder's name: renamed; a name taken or empty is asked again.
     check("folders: renamed", menu(row("PvP 1"), "Rename the folder") and MacroSenseNote:IsShown())
     focused:SetText("")
@@ -4742,6 +4750,32 @@ do
     check("pick: all in the list", find("FontString", all .. " picked") ~= nil, tostring(all))
     act("Clear the picks")
     check("pick: none again", not barShown())
+    -- "Pick": a check before each macro, one click picks it and one takes it back; "All" every macro shown, x none.
+    local mode = find("Button", "Pick")
+    Fire(mode, "OnClick")
+    check("pick: the checks, the row with nothing picked", barShown() and row("Pick B").check:IsShown()
+        and find("FontString", "0 picked") ~= nil)
+    Fire(row("Pick B").check, "OnClick")
+    check("pick: one click on its check", find("FontString", "1 picked") ~= nil and row("Pick B").check.fill:IsShown())
+    Fire(row("Pick B").check, "OnClick")
+    check("pick: one more takes it back", find("FontString", "0 picked") ~= nil)
+    local allBox
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "All" and o.parentFrame and o.parentFrame:IsShown()
+            and o.parentFrame == find("Button", "Actions").parentFrame then allBox = o end
+    end
+    Fire(allBox, "OnClick")
+    check("pick: All, every macro shown", find("FontString", all .. " picked") ~= nil and allBox.fill:IsShown())
+    Fire(allBox, "OnClick")
+    check("pick: All again, none", find("FontString", "0 picked") ~= nil)
+    Fire(row("Pick B").check, "OnClick")
+    local pickBar = find("Button", "Actions").parentFrame
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.label and o.label.text == "x" and o.parentFrame == pickBar then Fire(o, "OnClick") end
+    end
+    check("pick: x, none picked, still picking", find("FontString", "0 picked") ~= nil and barShown())
+    Fire(mode, "OnClick")
+    check("pick: Pick off, no checks", not barShown() and not row("Pick B").check:IsShown())
     DeleteMacro(GetMacroIndexByName("Pick B"))
     DeleteMacro(GetMacroIndexByName("Pick C"))
     Send("UPDATE_MACROS")

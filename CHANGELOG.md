@@ -22,9 +22,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Find and replace: "Replace" next to the search (Ctrl+H) changes a word or a spell in many macros at once, in
   the General and Character tabs or, with macro sets on, in the sets you tick. Each macro's History keeps the
   text it had.
-- Many macros at once: Ctrl+click (Cmd+click on a Mac) picks a macro in the list, a right click on a group's name
-  picks the whole group. "Actions" on the row over the list shares, moves, puts into a set or deletes them all,
-  picks all in the list or none.
+- Many macros at once: "Pick" puts a check before each macro and each group in the list; one click picks a macro
+  or a whole group and one more takes it back, Ctrl+click (Cmd+click on a Mac) picks a macro too. On the row over
+  the list "All" picks every macro shown or none, x takes back every pick, and "Actions" shares, moves, puts into a
+  set or deletes them all.
 - Favorites and folders in the General tab: a macro's "..." puts it at the top under Favorites, or into a folder of
   your own; a right click on a folder's name renames or deletes it. Picked macros go into one all at once.
 - "What if" by the live preview: the notes next to the lines for a moment you set up yourself, the keys held,

@@ -1,6 +1,7 @@
--- Many macros at once: Ctrl+click (Cmd+click on a Mac) picks a macro in the list, a right click on a group's name
--- picks the whole group. A row over the list says how many are picked; its "Actions" menu shares, moves, puts into a
--- set or deletes them all, picks all or none.
+-- Many macros at once: "Pick" puts a check before each macro and each group in the list, one click picks a macro or
+-- a whole group and takes it back; Ctrl+click (Cmd+click on a Mac) picks a macro too. A row over the list says how
+-- many are picked: "All" picks every macro the list shows or none, x none; its "Actions" menu shares, moves, puts
+-- into a set or deletes them all.
 local _, ns = ...
 local L = ns.L
 
@@ -11,7 +12,11 @@ local MacroRange, IndexIn, TabName, Guard = shared.MacroRange, shared.IndexIn, s
 -- The macros picked, in the order picked: { what = "macro", scope, name } in the game, { what = "stored", set,
 -- name } behind the scenes. By name: the places in the list change as macros come and go.
 local picked = {}
-local bar, countText
+local bar, countText, allCheck
+local mode = false -- "Pick" on: the checks show with nothing picked yet
+
+-- Whether the list shows its checks: "Pick" on, or some picked.
+function shared.Picking() return mode or #picked > 0 end
 
 local function Key(p) return p.what == "stored" and "stored:" .. p.set .. ":" .. p.name or p.scope .. ":" .. p.name end
 local function Of(r)
@@ -45,13 +50,15 @@ local function Prune()
     end
 end
 
--- The row over the list, shown while some are picked; the list makes room for it.
+-- The row over the list, shown while picking; the list makes room for it.
 function shared.RefreshPicks()
     if not bar then return end
     Prune()
-    bar:SetShown(#picked > 0)
+    local on = shared.Picking()
+    bar:SetShown(on)
     countText:SetText(ns.Plural(#picked, "%d picked", "%d picked"))
-    shared.list:SetPoint("BOTTOMRIGHT", -13, #picked > 0 and 150 or 122)
+    allCheck:Refresh()
+    shared.list:SetPoint("BOTTOMRIGHT", -13, on and 150 or 122)
 end
 
 function shared.TogglePick(r)
@@ -66,6 +73,34 @@ local function Clear()
     Window.RefreshList()
 end
 Window.ClearPicks = Clear
+
+-- A group's row: the macros its check picks (`members`), checked when all of them are.
+function shared.SetMembers(r, members)
+    r.members = members
+    local all = #members > 0
+    for _, p in ipairs(members) do all = all and Find(p) ~= nil end
+    r.checked = all
+    r.check:Refresh()
+end
+
+-- A click on a row's check: the macro picked or no longer; a group's all of it, or none of it when all were.
+function shared.CheckRow(r)
+    if r.what == "macro" or r.what == "stored" then return shared.TogglePick(r) end
+    local members = r.members or {}
+    for _, p in ipairs(members) do
+        local i = Find(p)
+        if r.checked and i then table.remove(picked, i) elseif not r.checked and not i then picked[#picked + 1] = p end
+    end
+    Window.RefreshList()
+end
+
+-- "Pick" on or off; off takes the picks back too.
+function Window.SetPicking(on)
+    mode = on and true or false
+    if not mode then return Clear() end
+    Window.RefreshList()
+end
+function Window.IsPicking() return mode end
 
 -- The macro rows the list shows now, those under row `from` only (deeper than it, up to the next one as deep).
 local function Shown(from)
@@ -93,6 +128,16 @@ local function PickAll(rowsShown)
         if not Find(p) then picked[#picked + 1] = p end
     end
     Window.RefreshList()
+end
+
+-- Whether every macro the list shows is picked (none shown: no).
+local function AllShown()
+    local shown = Shown()
+    if #shown == 0 then return false end
+    for _, r in ipairs(shown) do
+        if not Find(Of(r)) then return false end
+    end
+    return true
 end
 
 -- All the macros of the group of row `r`, opened first if it was closed.
@@ -248,15 +293,27 @@ function Window.BuildPicks(side)
     bar:SetPoint("BOTTOMRIGHT", -8, 124)
     bar:SetHeight(24)
     bar:Hide()
+    -- "All": every macro the list shows, or none of them.
+    allCheck = ns.Check(bar, L["All"], AllShown, function(on)
+        if on then return PickAll(Shown()) end
+        for _, r in ipairs(Shown()) do
+            local i = Find(Of(r))
+            if i then table.remove(picked, i) end
+        end
+        Window.RefreshList()
+    end)
+    allCheck:SetPoint("LEFT", 2, 0)
     countText = ns.Text(bar, 12)
-    countText:SetPoint("LEFT", 2, 0)
+    countText:SetPoint("LEFT", allCheck, "RIGHT", 8, 0)
     local clear = ns.Button(bar, "x", 22, Clear)
     clear:SetPoint("RIGHT")
-    local actions = ns.MenuButton(bar, L["Actions"], 90, Actions, true)
-    actions:SetPoint("RIGHT", clear, "LEFT", -6, 0)
+    -- Narrow: the row is as wide as the list at its narrowest.
+    local actions = ns.Button(bar, L["Actions"], 64, function(self) ns.OpenMenu(self, Actions(), 230, true, true) end)
+    actions:SetPoint("RIGHT", clear, "LEFT", -4, 0)
 end
 
--- Nothing picked when the editor opens again.
+-- Nothing picked when the editor opens again, and "Pick" off.
 function Window.ForgetPicks()
     for i = #picked, 1, -1 do picked[i] = nil end
+    mode = false
 end
