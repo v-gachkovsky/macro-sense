@@ -183,7 +183,9 @@ f:SetScript("OnEvent", function(_, event, name)
     elseif event == "UNIT_AURA" then
         RememberBuffsSoon()
     elseif event == "PLAYER_REGEN_ENABLED" then
-        -- Action buttons and macros can't be changed in combat: what waited for it is done now.
+        -- Action buttons and macros can't be changed in combat: what waited for it is done now. Macros saved in
+        -- combat go in first, so the macro sets see them as they are now.
+        ns.Window.CombatEnded()
         ns.ActionBars.Setup()
         ns.Ranks.Update()
         if ns.Sets.Pending() then ns.Sets.Update() end

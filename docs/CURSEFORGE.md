@@ -314,7 +314,9 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 
 ## Good to know
 
-- Macros can't be created, changed or put on action bars in combat; the game doesn't allow it.
+- In combat the game doesn't let you change macros. "Save" then keeps your change, and the macro is saved as
+  soon as combat ends. Other changes (deleting, copying, the wizard's "Create macro", putting a macro on an
+  action bar) have to wait until combat is over.
 - Action bars of other addons (Bartender, ElvUI, ...) are not checked for the Mac Cmd warning.
 
 ## Support

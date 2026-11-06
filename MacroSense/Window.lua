@@ -20,8 +20,11 @@ ns.Window = Window
 
 -- What is being edited: scope "general" | "character", index (nil = new macro), name/body/savedIcon as saved,
 -- icon = the icon picked now. With macro sets on, `stored`: one behind the scenes, { id = its set, name } (no name:
--- a new one there).
+-- a new one there). `waiting`: saved in combat, it goes into the game when combat ends (one of `waiting` below).
 local state = { scope = "general", icon = NEW_ICON, savedIcon = NEW_ICON }
+-- Saved in combat, in the order saved: the game doesn't let macros change then, so they go in when it ends.
+-- { scope, index (nil: a new one), old = its name in the game, name, icon, body }.
+local waiting = {}
 local frame, list, nameBox, iconTex, code, status, dirtyDot, warning, counter, saveBtn, revertBtn, tabs
 local side -- the sidebar: wider with macro sets on, for the Character tab's count of those behind the scenes
 local sideRows -- its buttons at the bottom, by row: they share its width
@@ -68,7 +71,7 @@ local function IsDirty()
     if not frame then return false end
     local body, name = code:GetRaw(), nameBox:GetText()
     -- A new macro without a name, an icon picked or a text (empty, or only #showtooltip) is nothing to keep.
-    if not state.index and not (state.stored and state.stored.name) then
+    if not state.index and not (state.stored and state.stored.name) and not state.waiting then
         local blank = body:lower():match("^%s*$") or body:lower():match("^%s*#showtooltip%s*$")
         return not (blank and strtrim(name) == "" and state.icon == NEW_ICON)
     end
@@ -243,12 +246,14 @@ local function UpdateStatus()
     warning.errors, warning.message, warning.shown = issues, message, shown
 
     -- The dot is a texture: not every font has a "●" glyph.
-    dirtyDot:SetShown(dirty and letters <= MAX_BODY)
+    dirtyDot:SetShown((dirty or state.waiting) and letters <= MAX_BODY)
     dirtyDot:SetVertexColor(ns.RGB(s.accent))
     if letters > MAX_BODY then
         status:SetText("|cff" .. s.invalid .. string.format(L["Macro is longer than %d characters"], MAX_BODY) .. "|r")
     elseif dirty then
         status:SetText(L["Unsaved changes"])
+    elseif state.waiting then
+        status:SetText(L["Saves when combat ends"])
     else
         status:SetText("")
     end
@@ -464,6 +469,7 @@ local function Load(index, stored)
     -- The wizard had the macro shown before: what it makes is not for this one.
     if ns.WizardWindow.IsEditing() then ns.WizardWindow.Close() end
     state.stored = stored and { id = stored.id, name = stored.name }
+    state.waiting = nil
     local m
     for _, x in ipairs(stored and stored.name and ns.Sets.List(stored.id) or {}) do
         if x.name == stored.name then m = x end
@@ -475,6 +481,12 @@ local function Load(index, stored)
         local name, _, body = GetMacroInfo(index)
         local text = ns.Roles.Text(index > MAX_GENERAL and "character" or "general", name, body or "")
         state.index, state.name, state.icon, state.body = index, name, ns.MacroIcon(index) or NEW_ICON, text
+        -- Saved in combat: as saved, until it goes in.
+        for _, w in ipairs(waiting) do
+            if w.index == index then
+                state.waiting, state.name, state.icon, state.body = w, w.name, w.icon, w.body
+            end
+        end
     else
         state.index, state.name, state.icon, state.body = nil, "", NEW_ICON, NEW_BODY
     end
@@ -609,10 +621,70 @@ function Window.New()
     end)
 end
 
+-- Macro `w` (as in `waiting`) into the game, with its earlier versions and the names for @tank and @heal: its
+-- index, or nil.
+local function Write(w)
+    local renamed = w.old and w.name ~= w.old
+    -- Earlier versions follow a new name.
+    if renamed then ns.History.Renamed(w.scope, w.old, w.name) end
+    -- The game's macro has the names of your group's tank and healer for @tank and @heal.
+    local written = ns.Roles.Fill(w.body)
+    local index
+    if w.index then
+        -- The game keeps macros sorted by name, so the index may change.
+        index = EditMacro(w.index, w.name, w.icon, written)
+    else
+        index = CreateMacro(w.name, w.icon or NEW_ICON, written, w.scope == "character")
+    end
+    if not index or index == 0 then
+        if renamed then ns.History.Renamed(w.scope, w.name, w.old) end
+        return
+    end
+    ns.Roles.Saved(w.scope, w.old, w.name, w.body, select(3, GetMacroInfo(index)))
+    -- The text it replaced is kept now, not only when the game reports the change.
+    ns.History.Scan()
+    return index
+end
+
+-- Saved in combat: kept as saved, it goes in when combat ends. Saved again, it replaces what waits.
+local function Wait(w)
+    local was = state.waiting
+    if was then
+        w.old = was.old
+        for i, x in ipairs(waiting) do if x == was then waiting[i] = w end end
+    else
+        waiting[#waiting + 1] = w
+    end
+    state.waiting, state.name, state.body, state.savedIcon = w, w.name, w.body, w.icon
+    ns.Print("\"%s\" will be saved when combat ends: the game doesn't let you change macros in combat", w.name)
+    UpdateStatus()
+end
+
+-- Combat is over: what was saved in it goes into the game, in the order saved.
+function Window.CombatEnded()
+    if #waiting == 0 then return end
+    local list = waiting
+    waiting = {}
+    for _, w in ipairs(list) do
+        -- Its place in the list moves when one saved before it got another name.
+        if w.index and GetMacroInfo(w.index) ~= w.old then w.index = IndexIn(w.scope, w.old) end
+        local index = (w.index or not w.old) and Write(w)
+        if index then
+            ns.Print("\"%s\" saved after combat", w.name)
+            if state.waiting == w then state.index = index end
+        else
+            ns.Print("could not save \"%s\" after combat", w.name)
+        end
+        if state.waiting == w then state.waiting = nil end
+    end
+    if not frame then return end
+    Window.RefreshList()
+    UpdateStatus()
+end
+
 function Window.Save()
     -- A mistake in the word just typed shows now, not only after the typing pause.
     code:CheckNow()
-    if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
     local name = strtrim(nameBox:GetText())
     local body = code:GetRaw()
     if name == "" then
@@ -636,23 +708,21 @@ function Window.Save()
         Window.RefreshList()
         return UpdateStatus()
     end
-    local index
-    -- Earlier versions follow a new name.
-    local renamed = state.index and name ~= state.name
-    if renamed then ns.History.Renamed(state.scope, state.name, name) end
-    if state.index then
-        -- The game keeps macros sorted by name, so the index may change.
-        index = EditMacro(state.index, name, state.icon, written)
-    else
-        index = CreateMacro(name, state.icon or NEW_ICON, written, state.scope == "character")
+    local scope = state.index and (state.index > MAX_GENERAL and "character" or "general") or state.scope
+    local w = { scope = scope, index = state.index, old = state.index and state.name, name = name, icon = state.icon,
+        body = body }
+    if InCombatLockdown() then
+        -- A new one needs a free slot then too, with those waiting.
+        if not w.index and not state.waiting then
+            local first, last, max = MacroRange(scope)
+            local count = last - first + 1
+            for _, x in ipairs(waiting) do if not x.index and x.scope == scope then count = count + 1 end end
+            if count >= max then return NoRoom(scope) end
+        end
+        return Wait(w)
     end
-    if not index or index == 0 then
-        if renamed then ns.History.Renamed(state.scope, name, state.name) end
-        return ns.Print("could not save the macro")
-    end
-    ns.Roles.Saved(state.scope, state.index and state.name, name, body, select(3, GetMacroInfo(index)))
-    -- The text it replaced is kept now, not only when the game reports the change.
-    ns.History.Scan()
+    local index = Write(w)
+    if not index then return ns.Print("could not save the macro") end
     state.index, state.name, state.body = index, name, body
     state.icon = ns.MacroIcon(index) or state.icon
     state.savedIcon = state.icon

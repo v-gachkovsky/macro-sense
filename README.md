@@ -36,6 +36,9 @@ that macro. Drag the editor's title bar to move it and the dotted corner to resi
 Drag the minimap button to move it along the edge; `/ms minimap` hides it. On Retail, MacroSense is in the
 addon menu by the minimap too.
 
+In combat the game doesn't let addons change macros. **Save** then keeps your change, and the macro is saved
+as soon as combat ends; other changes (deleting, copying, the wizard) wait until combat is over.
+
 **Clients:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever
 (`## Interface: 120105, 50504, 20506, 11509, 16001`).
 
