@@ -234,6 +234,7 @@ local function Build()
 end
 
 local function Open(newMode)
+    ns.Window.Ready() -- its colors: a macro linked in chat opens it before the editor
     if not frame then Build() end
     mode = newMode
     source = nil
