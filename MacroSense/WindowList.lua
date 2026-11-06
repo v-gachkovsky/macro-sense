@@ -276,8 +276,12 @@ local function Row(i)
     r:SetScript("OnClick", function(_, button)
         if button == "RightButton" then
             if r.copy:IsShown() then Window.OpenRowMenu(r, r) end
-            -- A group's name: pick all of it.
-            if r.what == "group" or r.what == "head" then shared.OpenGroupPick(r) end
+            -- A group's name: pick all of it; a folder's, also rename or delete it (WindowFolders.lua).
+            if r.shelf then
+                shared.OpenFolderMenu(r)
+            elseif r.what == "group" or r.what == "head" then
+                shared.OpenGroupPick(r)
+            end
             return
         end
         -- Ctrl+click (Cmd on a Mac): picked, or no longer, for many at once.
@@ -402,6 +406,7 @@ local function UseRow(n, what, tone, depth)
     local r = rows[n]
     r.what, r.index, r.selected, r.severity, r.issues = what, nil, false, nil, nil
     r.depth = depth or (what == "altMacro" and 1 or 0)
+    r.folder, r.shelf = nil, false
     r.pick:Hide()
     r.tone, r.toggle, r.set, r.dropId, r.dropIn = tone, false, nil, nil, nil
     r.icon:SetPoint("LEFT", 6 + 12 * (depth or (what == "altMacro" and 1 or 0)), 0)
@@ -959,6 +964,63 @@ function Window.SideWidth(width)
     end
 end
 
+-- The General tab with favorites or folders of your own (Folders.lua): Favorites first, then each folder, then
+-- the rest. A folder shows empty too, unless the list is searched or filtered.
+local function ShelfGroup(n, key, label, items, tip, folder, filtered)
+    if #items == 0 and filtered then return n end
+    local open = IsOpen(key, true, filtered and "x" or "")
+    n = n + 1
+    local r = UseRow(n, "group", nil, 1)
+    r.group, r.open, r.name, r.tip, r.folder, r.shelf = key, open, label, tip, folder, true
+    r:Toggle(open)
+    r.text:SetText(string.format("%s  |cff%s%d|r", label, ns.scheme.dim, #items))
+    r:Paint()
+    for _, index in ipairs(open and items or {}) do
+        n = n + 1
+        MacroRow(n, index, nil, 2)
+    end
+    return n
+end
+
+local function Shelved()
+    local shelf = ns.Folders.Shelf()
+    return next(shelf.favorites) ~= nil or #shelf.folders > 0
+end
+
+local function GeneralRows(n, q)
+    local F = ns.Folders
+    local first, last = MacroRange("general")
+    local favorites, folders, root = {}, {}, {}
+    for _, f in ipairs(F.List()) do folders[f] = {} end
+    for index = first, last do
+        local name, _, body = GetMacroInfo(index)
+        if name and Shown(q, "general", name, body) then
+            local folder = F.Of(name)
+            if F.IsFavorite(name) then
+                favorites[#favorites + 1] = index
+            elseif folder and folders[folder] then
+                table.insert(folders[folder], index)
+            else
+                root[#root + 1] = index
+            end
+        end
+    end
+    local filtered = q ~= "" or shared.notOnBars or shared.mistakes
+    if #favorites > 0 then
+        n = ShelfGroup(n, "shelf:favorites", L["Favorites"], favorites, L["The macros you marked as favorites: "
+            .. "always at the top."], nil, filtered)
+    end
+    for _, f in ipairs(F.List()) do
+        n = ShelfGroup(n, "shelf:" .. f, f, folders[f], L["A folder of your own. A right click renames or deletes "
+            .. "it; \"...\" on a macro puts it in or takes it out."], f, filtered)
+    end
+    for _, index in ipairs(root) do
+        n = n + 1
+        MacroRow(n, index)
+    end
+    return n
+end
+
 function Window.RefreshList()
     if not shared.frame then return end
     local setsOn = ns.Sets.Mine().enabled
@@ -971,6 +1033,8 @@ function Window.RefreshList()
     local n = 0
     if SetsShown() then
         n = SetsRows(n, q)
+    elseif state.scope == "general" and Shelved() then
+        n = GeneralRows(n, q)
     else
         for index = first, last do
             local name, _, body = GetMacroInfo(index)

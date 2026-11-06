@@ -95,15 +95,19 @@ local function PickAll(rowsShown)
     Window.RefreshList()
 end
 
--- A right click on a group's name: all its macros picked, opened first if it was closed.
+-- All the macros of the group of row `r`, opened first if it was closed.
+function shared.PickGroup(r)
+    if not r.open then
+        shared.groupOpen[r.group] = true
+        Window.RefreshList()
+    end
+    PickAll(Shown(r))
+end
+
+-- A right click on a group's name: that.
 function shared.OpenGroupPick(r)
-    ns.OpenMenu(r, { { name = L["Pick this group"], onClick = function()
-        if not r.open then
-            shared.groupOpen[r.group] = true
-            Window.RefreshList()
-        end
-        PickAll(Shown(r))
-    end } }, 200, false, true)
+    ns.OpenMenu(r, { { name = L["Pick this group"], onClick = function() shared.PickGroup(r) end } }, 200, false,
+        true)
 end
 
 -- The picked macros as Share.Encode takes them.
@@ -216,6 +220,12 @@ local function Actions()
             items[#items + 1] = { name = string.format(L["Move %d to %s"], n, TabName(to)),
                 onClick = function() MoveAll(from) end }
         end
+    end
+    -- General ones: favorites and folders (WindowFolders.lua), when they are all General.
+    if Count("macro", "general") == #picked then
+        local names = {}
+        for i, p in ipairs(picked) do names[i] = p.name end
+        for _, item in ipairs(shared.FolderItems(names)) do items[#items + 1] = item end
     end
     if ns.Sets.Mine().enabled and Count("macro", "general") == 0 then
         local sets = { "character", "class" }

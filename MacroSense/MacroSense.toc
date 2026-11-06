@@ -24,6 +24,7 @@ Editing.lua
 Completion.lua
 Sources.lua
 Shortcuts.lua
+Folders.lua
 History.lua
 Share.lua
 Backups.lua
@@ -55,6 +56,7 @@ WindowTrash.lua
 WindowNotes.lua
 WindowReplace.lua
 WindowPick.lua
+WindowFolders.lua
 MinimapButton.lua
 ActionBars.lua
 Core.lua

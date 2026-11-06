@@ -394,6 +394,12 @@ being edited is copied with what the editor shows (name, icon, text) and keeps i
 copied as saved. **x** deletes the macro, after asking; the macro being edited stays open when another one
 goes.
 
+The General tab can have **favorites** and **folders** of your own: **Add to favorites** in a macro's **...** puts
+it at the top, under Favorites; **Into a new folder** makes a folder with the name you give, **Into the folder:
+...** puts it in one you have, **Out of the folder** takes it out. Each folder opens and closes with a click; a
+right click on its name renames or deletes it (its macros stay). They follow a macro renamed; one moved into the
+Character tab leaves them behind. They are kept for the account, as the General macros are.
+
 **Ctrl+click** (Cmd+click on a Mac) picks a macro, to do the same with many at once; a right click on a group's
 name with macro sets on picks the whole group. A row over the list says how many are picked, and its **Actions**
 share them in one code, move them into the other tab (while it has free slots), put them into a set, delete them
@@ -593,7 +599,8 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
   `MacroSense/WindowList.lua`: its macro list; `MacroSense/WindowShare.lua`: the Share menu;
   `MacroSense/WindowTrash.lua`: the Trash and Backups menus; `MacroSense/WindowNotes.lua`: the notes on the
   macros; `MacroSense/WindowReplace.lua`: find and replace;
-  `MacroSense/WindowPick.lua`: many macros picked at once. They share the window's state and helpers through `ns.WindowShared`.
+  `MacroSense/WindowPick.lua`: many macros picked at once; `MacroSense/WindowFolders.lua`: the General tab's
+  favorites and folders (`MacroSense/Folders.lua` keeps them, pure Lua). They share the window's state and helpers through `ns.WindowShared`.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 - `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
   code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.
