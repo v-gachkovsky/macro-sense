@@ -49,6 +49,9 @@ SetsWindow.lua
 Easter.lua
 Links.lua
 Window.lua
+WindowList.lua
+WindowShare.lua
+WindowTrash.lua
 MinimapButton.lua
 ActionBars.lua
 Core.lua
