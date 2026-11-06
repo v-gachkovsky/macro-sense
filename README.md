@@ -564,7 +564,10 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
   the background.
 - `MacroSense/WizardWindow.lua`: the wizard's window.
 - `MacroSense/SpellbookWindow.lua`: the window of macros from the spellbook.
-- `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window.
+- `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window: the editor, its status bar and how it is built.
+  `MacroSense/WindowList.lua`: its macro list; `MacroSense/WindowShare.lua`: the Share menu;
+  `MacroSense/WindowTrash.lua`: the Trash and Backups menus. They share the window's state and helpers through
+  `ns.WindowShared`.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
 - `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
   code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.
