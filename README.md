@@ -631,10 +631,12 @@ lua tests/run.lua   # parser, completion, highlighting, errors, typos, preview, 
 lua tests/ui.lua    # the whole addon against a fake WoW API
 ```
 
+GitHub runs both on every push and pull request (`.github/workflows/tests.yml`), with Lua 5.4.
+
 ### Release
 
-Push a version tag (`v0.1.0`, or `v0.1.0-beta1` for a pre-release). The GitHub workflow puts the version
-into the TOC, packs the zip, makes a GitHub Release and uploads it to CurseForge, with the notes from
+Push a version tag (`v0.1.0`, or `v0.1.0-beta1` for a pre-release). The GitHub workflow runs the tests
+first and stops if one fails; then it puts the version into the TOC, packs the zip, makes a GitHub Release and uploads it to CurseForge, with the notes from
 `CHANGELOG.md`. CurseForge needs the repository secret `CF_API_KEY` and the variable `CURSEFORGE_PROJECT_ID`.
 The CurseForge description is in `docs/CURSEFORGE.md`.
 

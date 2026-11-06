@@ -27,6 +27,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   seen as casting its spells, as the editor already saw it. The spellbook doesn't offer those spells again,
   and "Sort by spells" knows where such a macro works.
 
+### Changed
+- The tests run on GitHub on every push and pull request, and a release isn't packed or published while
+  one fails.
+
 ## [0.15.0] - 2026-11-06
 
 ### Added

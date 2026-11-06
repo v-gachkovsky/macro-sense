@@ -22,6 +22,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Nothing is packed or published while a test fails.
+      - name: Tests
+        run: |
+          sudo apt-get update -q && sudo apt-get install -yq lua5.4
+          lua5.4 tests/run.lua
+          lua5.4 tests/ui.lua
+
       - name: Read version
         run: |
           VERSION="${GITHUB_REF_NAME#v}"

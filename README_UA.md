@@ -582,7 +582,10 @@ lua tests/run.lua   # парсер, підказки, підсвітка, пом
 lua tests/ui.lua    # увесь аддон на імітації WoW API
 ```
 
-Реліз: тег `v0.1.0` (або `v0.1.0-beta1` для пре-релізу). GitHub Actions підставить версію в TOC, збере zip,
+GitHub запускає обидва набори на кожен push і pull request (`.github/workflows/tests.yml`), на Lua 5.4.
+
+Реліз: тег `v0.1.0` (або `v0.1.0-beta1` для пре-релізу). GitHub Actions спершу запустить тести й зупиниться,
+якщо якийсь упаде; потім підставить версію в TOC, збере zip,
 створить GitHub Release і завантажить файл на CurseForge з нотатками з `CHANGELOG.md`. Для CurseForge
 потрібні секрет `CF_API_KEY` і змінна `CURSEFORGE_PROJECT_ID`. Опис для CurseForge — у `docs/CURSEFORGE.md`.
 
