@@ -2702,7 +2702,7 @@ do
     check("wizard: the tab open now first", C("tab").label.text == "Character", C("tab").label.text)
 
     -- Commands: /use offers the items first and the slots with a use effect; /castsequence and /castrandom take a
-    -- list; the window is as tall as the command's form.
+    -- list; the window is as tall as the command's form (Otherwise, a row under When, is for /cast and /use).
     local function last(label)
         local found
         for _, o in ipairs(created) do
@@ -2734,7 +2734,7 @@ do
         and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", C("command").label.text)
     pick(C("command"), "/castsequence")
     check("wizard: /castsequence takes a list, the spell first", C("list1").text == "Fireball"
-        and C("listTitle").text == "In turn, one per press" and MacroSenseWizard.height == tall + 10,
+        and C("listTitle").text == "In turn, one per press" and MacroSenseWizard.height == tall + 10 - 32,
         MacroSenseWizard.height)
     TypeIn(C("list2"), "frost")
     Fire(C("list2"), "OnEnterPressed")
@@ -2746,7 +2746,7 @@ do
     pick(C("command"), "/castrandom")
     check("wizard: /castrandom: one of them, nothing starts it over", shown()
         == "#showtooltip\n/castrandom [@mouseover,harm,nodead][] Fireball, Frostbolt"
-        and C("listTitle").text == "One of these at random" and MacroSenseWizard.height == tall - 72, shown())
+        and C("listTitle").text == "One of these at random" and MacroSenseWizard.height == tall - 72 - 32, shown())
     pick(C("command"), "/cast")
     check("wizard: back to /cast, its spell kept", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball"
         and MacroSenseWizard.height == tall, shown())
@@ -2775,7 +2775,7 @@ do
     -- /target, /focus, /assist: units only (As usual becomes your target); a key may clear; /target by name.
     pick(C("command"), "/focus")
     check("wizard: /focus on units, no icon line", shown() == "/focus [@mouseover,harm,nodead][@target,harm,nodead]"
-        and C("on2").label.text == "Your target" and MacroSenseWizard.height == tall - 34, shown())
+        and C("on2").label.text == "Your target" and MacroSenseWizard.height == tall - 34 - 32, shown())
     check("wizard: a key's units where the spell was", not C("shiftCast"):IsShown() and C("shiftOn").point[2] == 84,
         C("shiftOn").point[2])
     Fire(C("shift"), "OnClick")
@@ -2784,7 +2784,7 @@ do
         .. "/focus [@mouseover,harm,nodead][@target,harm,nodead]" and C("name").text == "Focus", shown())
     pick(C("command"), "/target")
     check("wizard: /target, not on your target", shown() == "/cleartarget [mod:shift]\n/stopmacro [mod:shift]\n"
-        .. "/target [@mouseover,harm,nodead]" and C("on2").label.text == "-" and MacroSenseWizard.height == tall, shown())
+        .. "/target [@mouseover,harm,nodead]" and C("on2").label.text == "-" and MacroSenseWizard.height == tall - 32, shown())
     TypeIn(C("byName"), "Hogger")
     check("wizard: /target by name", shown() == "/cleartarget [mod:shift]\n/stopmacro [mod:shift]\n"
         .. "/target [@mouseover,harm,nodead][] Hogger" and C("name").text == "Hogger", shown())
@@ -2796,7 +2796,7 @@ do
         shown())
     pick(C("command"), "/assist")
     check("wizard: /assist", shown() == "/assist [mod:shift,@party2,help,nodead][@party1,help,nodead]"
-        and MacroSenseWizard.height == tall - 34, shown())
+        and MacroSenseWizard.height == tall - 34 - 32, shown())
     pick(C("command"), "/cast")
     check("wizard: back to /cast: the spell, the keys in their places", shown()
         == "#showtooltip\n/cast [mod:shift,@party2,help,nodead][@party1,help,nodead] Frostbolt"
@@ -2809,7 +2809,7 @@ do
     pick(C("on2"), "As usual")
     pick(C("command"), "Pet commands")
     check("wizard: the pet attacks the mouseover, then your target", shown()
-        == "/petattack [@mouseover,harm,nodead][]" and MacroSenseWizard.height == tall and C("name").text == "Pet",
+        == "/petattack [@mouseover,harm,nodead][]" and MacroSenseWizard.height == tall - 32 and C("name").text == "Pet",
         shown())
     Fire(C("shift"), "OnClick")
     check("wizard: Shift: the pet follows, no units for that", shown() == "/petattack [nomod:shift,@mouseover,"
@@ -2824,7 +2824,7 @@ do
     pick(C("ctrlPet"), "Move to the cursor")
     check("wizard: no units without an attack", shown() == "/petfollow [nomod:shift/ctrl]\n"
         .. "/petattack [mod:shift,@focus,harm,nodead]\n/petmoveto [mod:ctrl,@cursor]"
-        and MacroSenseWizard.height == tall - 68, shown())
+        and MacroSenseWizard.height == tall - 68 - 32, shown())
     -- Classic Era and TBC have /petmoveto, but their game does nothing with it: not offered there.
     LE_EXPANSION_LEVEL_CURRENT = 1
     Fire(C("pet"), "OnClick")
@@ -4422,6 +4422,38 @@ do
     Fire(open, "OnClick")
     ns.Window.Open(GetMacroIndexByName("Wiz Chat"))
     check("open in wizard: another macro shown closes it", not MacroSenseWizard:IsShown())
+    -- Written by hand: none held ([nomod]) is the macro's own spell, "!" its "Don't turn it off", and
+    -- [nochanneling:Drain Soul] When's "Not while channeling it". In the form and in the questions alike.
+    CreateMacro("Wiz Bolt", 1, "#showtooltip\n/startattack\n/cast [nomod,@mouseover,harm,nodead][nomod] Shadow Bolt; "
+        .. "[mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot", false)
+    CreateMacro("Wiz Soul", 1, "#showtooltip\n/startattack\n/cast [nochanneling:Drain Soul] Drain Soul", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Open(GetMacroIndexByName("Wiz Bolt"))
+    NextFrame()
+    ns.db.wizardForm = true
+    Fire(open, "OnClick")
+    local bolt = "#showtooltip\n/startattack\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
+        .. "[@mouseover,harm,nodead][] !Shadow Bolt"
+    check("open in wizard: none held is the macro's spell", C("cast").text == "Shadow Bolt" and C("altCast").text == "Shoot"
+        and C("keep").shown and C("keep").label.text == "Don't turn it off" and shown() == bolt, shown())
+    ns.db.wizardForm = nil
+    Fire(C("mode"), "OnClick")
+    check("open in wizard: the questions too", C("stepKeep").shown and shown() == bolt, shown())
+    Fire(C("mode"), "OnClick")
+    ns.Window.Open(GetMacroIndexByName("Wiz Soul"))
+    NextFrame()
+    check("open in wizard: [nochanneling:Drain Soul] it reads", open:IsEnabled(), tooltip(open))
+    Fire(open, "OnClick")
+    check("open in wizard: not while channeling it", C("whenChannel").label.text == "Not while channeling it"
+        and C("cast").text == "Drain Soul" and not C("changed").shown
+        and shown() == "#showtooltip\n/startattack\n/cast [nochanneling:Drain Soul] Drain Soul", shown())
+    Fire(C("command"), "OnClick")
+    Fire(menuItem("/castsequence"), "OnClick")
+    check("open in wizard: \"!\" only for /cast and /use", not C("keep").shown)
+    ns.WizardWindow.Close()
+    DeleteMacro(GetMacroIndexByName("Wiz Bolt"))
+    DeleteMacro(GetMacroIndexByName("Wiz Soul"))
+    Send("UPDATE_MACROS")
     ns.WizardWindow.Open("general")
     check("open in wizard: a new macro is a new one again", C("title").text == "New macro (Wizard)"
         and C("create").label.text == "Create macro" and C("tab").shown and not C("changed").shown

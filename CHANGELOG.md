@@ -10,12 +10,20 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Save in combat: the game doesn't let macros change then, so MacroSense keeps the change and saves it as
   soon as combat ends. The status bar says "Saves when combat ends" meanwhile. A macro behind the scenes
   saves in combat at once.
+- The wizard: "Not while channeling it" and "Not while channeling" under When (`[nochanneling:Drain Soul]`,
+  `[nochanneling]`), and "Don't turn it off" under Also (`!Shoot`), in the form and in the questions. It reads
+  them back from a macro you have.
 
 ### Changed
 - Less work when many action buttons change at once (a change of specialization, login): MacroSense looks at
   the bars once, not for each button.
 - The in-game help and the guide tell of the warnings for a part of a macro that never runs, and of Primary and
   Secondary in the older clients.
+
+### Fixed
+- The wizard dropped the spell of a macro written by hand with `[nomod]` (`/cast [nomod] Shadow Bolt; [mod:alt]
+  !Shoot`): the spell field stayed empty and the spell was gone from the text. `[nomod]` is now the macro's own
+  spell, and the wizard writes the keys first.
 
 ## [0.14.0] - 2026-11-05
 

@@ -76,10 +76,10 @@ Or **All options** shows the whole form, where you pick it all at once:
 - **Shift, Ctrl, Alt** (and **Cmd** on a Mac): another spell, or the same one on someone else, with a fallback of its own
 - **gear**: swap weapons, trinkets or rings, always or with a key held, or put on an equipment set
   (`/equipslot [mod:shift] 14 Lucky Charm`, `/equipset PvP`)
-- **when**: only in or out of combat, in stealth, in a group or alone, with your pet out, in a form, and what it
-  casts otherwise (`/cast [stealth] Ambush; Sinister Strike`)
+- **when**: only in or out of combat, in stealth, in a group or alone, with your pet out, not while channeling
+  (`[nochanneling:Drain Soul]`), in a form, and what it casts otherwise (`/cast [stealth] Ambush; Sinister Strike`)
 - **and also**: stop your cast first, your trinkets, auto attack, your pet, the nearest enemy if none is targeted,
-  out of your form or off your mount first, a buff cancelled first, a line in chat (`%t` is your target)
+  out of your form or off your mount first, "Don't turn it off" (`!Shoot`), a buff cancelled first, a line in chat (`%t` is your target)
 
 The macro shows as you choose; **Create macro** saves it and opens it in the editor.
 

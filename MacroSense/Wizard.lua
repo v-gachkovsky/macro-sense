@@ -132,7 +132,9 @@ Wizard.channels = {
     { key = "raid", name = "Raid" }, { key = "emote", name = "Emote" },
 }
 -- When the macro does anything at all: each a choice, "any" for always; `cond` is what the macro checks. The forms
--- are this character's (Wizard.WhenForms). Otherwise (`spec.otherwise`): what /cast or /use does when not.
+-- are this character's (Wizard.WhenForms). A channeled spell stops when you press another one: "own" leaves the
+-- macro's own spell going ([nochanneling:Drain Soul]), "no" any of them. Otherwise (`spec.otherwise`): what /cast
+-- or /use does when not.
 Wizard.whens = {
     { key = "combat", items = { { key = "any", name = "In or out of combat" },
         { key = "yes", name = "In combat", cond = "combat" }, { key = "no", name = "Out of combat", cond = "nocombat" } } },
@@ -143,6 +145,9 @@ Wizard.whens = {
         { key = "no", name = "Alone", cond = "nogroup" } } },
     { key = "pet", items = { { key = "any", name = "With a pet or not" },
         { key = "yes", name = "Your pet is out", cond = "pet" }, { key = "no", name = "No pet out", cond = "nopet" } } },
+    { key = "channel", items = { { key = "any", name = "Channeling: any time" },
+        { key = "own", name = "Not while channeling it" }, { key = "no", name = "Not while channeling", cond = "nochanneling" },
+        { key = "yes", name = "While channeling", cond = "channeling" } } },
     { key = "form" },
 }
 
@@ -165,6 +170,10 @@ local function When(spec)
         if chosen and chosen ~= "any" then
             if w.key == "form" then
                 out[#out + 1] = chosen == "0" and "noform" or "form:" .. chosen
+            elseif chosen == "own" then
+                -- The macro's spell, the first of a list; with none, any.
+                local action = spec.action or spec.list[1]
+                out[#out + 1] = action and "nochanneling:" .. action.name or "nochanneling"
             else
                 for _, item in ipairs(w.items) do
                     if item.key == chosen then out[#out + 1] = item.cond end
@@ -330,7 +339,7 @@ end
 -- both: /cast looks for a spell first, /use for an item.
 
 -- How the macro names an action: "Shadow Bolt(Rank 3)" with a rank picked, "Shadow Bolt" (the highest learned)
--- without.
+-- without. "!" before it (`spec.keep`) is the macro's, not the action's: see CastLine.
 function Wizard.Spelled(action)
     return action.rank and action.name .. "(" .. action.rank .. ")" or action.name
 end
@@ -370,7 +379,9 @@ local function CastLine(spec)
     for i, c in ipairs(clauses) do
         -- A last clause that always holds needs no brackets: "; Frostbolt".
         local groups = (i == #clauses and c.groups == "[]") and "" or (c.groups .. " ")
-        parts[i] = groups .. Wizard.Spelled(c.action)
+        -- "!Shoot": pressed again, the spell stays on (Auto Shot, Stealth, a form); not for items.
+        local keep = spec.keep and not c.action.item and "!" or ""
+        parts[i] = groups .. keep .. Wizard.Spelled(c.action)
     end
     return "/" .. spec.command .. " " .. table.concat(parts, "; ")
 end

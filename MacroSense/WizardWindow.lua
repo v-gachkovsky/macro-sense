@@ -462,8 +462,12 @@ function Arrange()
     end
     blocks.keys.on:SetPoint("TOPLEFT", target and X or X + 158, -8)
     blocks.keys.on:SetShown(not mount)
-    -- A mount macro gets you off a mount its own way.
+    -- A mount macro gets you off a mount its own way. "!" is for /cast and /use.
     controls.dismount:SetShown(not mount)
+    local casts = spec.command == "cast" or spec.command == "use"
+    controls.keep:SetShown(casts)
+    -- The When rows, and Otherwise under them for /cast and /use.
+    blocks.when.height = (casts and 3 or 2) * ROW + 2
     local shown = {}
     for _, b in ipairs(parts) do shown[b] = true end
     for _, b in pairs(blocks) do
@@ -497,6 +501,10 @@ local function BuildWhen(parent, prefix, x)
                 refresh(self)
                 self:SetShown(#ns.sources.forms() > 1)
             end
+        elseif w.key == "channel" then
+            Tip(d, L["Channeling"], L["A channeled spell (Drain Soul, Mind Flay) stops when you press another one. "
+                .. "\"Not while channeling it\": pressed again, the macro doesn't start its spell over. \"Not while "
+                .. "channeling\": the macro does nothing until any of them ends."])
         end
     end
 end
@@ -520,6 +528,8 @@ local function BuildAlso(parent, prefix)
         { "petattack", L["Pet attacks your target"] },
         { "dismount", L["Off your mount first"], L["Gets you off your mount first (/dismount [mounted]), so the "
             .. "spell doesn't fail."] },
+        { "keep", L["Don't turn it off"], L["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn "
+            .. "off what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."] },
     }
     for i, c in ipairs(also) do
         local name = c[1]
@@ -614,6 +624,7 @@ local function ShowStep()
         or asked.slot and L["nothing"] or asked.key and L["same spell"] or L["type a spell or item"])
     if asked.kind == "spell" and not asked.optional and not asked.key and not spec.action then box:SetFocus() end
     controls.stepDismount:SetShown(not mount)
+    controls.stepKeep:SetShown(spec.command == "cast" or spec.command == "use")
     controls.stepGeneral:SetChosen(scope == "general")
     controls.stepCharacter:SetChosen(scope == "character")
     controls.back:SetEnabled(Q.Next(spec, keys, step, true) ~= nil)
@@ -1093,12 +1104,12 @@ local function Build()
     secondsText:SetText(L["seconds without a press"])
 
     -- When it works at all, and for /cast and /use what it casts otherwise (last, after the form).
-    blocks.when = Block(2 * ROW + 2)
+    blocks.when = Block(3 * ROW + 2)
     Text(blocks.when, L["When"], PAD, -5)
     BuildWhen(blocks.when, "", X)
     controls.otherwise = SpellBox(blocks.when, 160, L["otherwise: do nothing"], function() return spec.otherwise end,
         function(action) spec.otherwise = action end)
-    controls.otherwise:SetPoint("TOPLEFT", X + 2 * 168, -ROW)
+    controls.otherwise:SetPoint("TOPLEFT", X, -2 * ROW)
     Tip(controls.otherwise, L["Otherwise"], L["What the macro casts when the conditions on the left aren't met. Leave "
         .. "it empty to do nothing then."])
 

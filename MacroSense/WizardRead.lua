@@ -54,6 +54,8 @@ local function Group(conds)
             g.alive = true
         elseif WHEN_OF[c] then
             g.when[WHEN_OF[c][1]] = WHEN_OF[c][2]
+        elseif c:match("^nochanneling:") then
+            g.when.channel = "own" -- the spell named is the macro's: if not, the line changes (W.Read's `lost`)
         elseif c == "noform" or c == "form:0" then
             g.when.form = "0"
         elseif c:match("^form:%d+$") then
@@ -73,12 +75,18 @@ local function Group(conds)
     return g
 end
 
--- "Shadow Bolt(Rank 3)" -> { name = "Shadow Bolt", rank = "Rank 3" }.
+-- "Shadow Bolt(Rank 3)" -> { name = "Shadow Bolt", rank = "Rank 3" }; and true for "!Shoot" (the form's `keep`).
 local function Action(text, item)
+    local rest = text:match("^!%s*(.+)$")
+    local keep = rest ~= nil
+    text = rest or text
     local name, rank = text:match("^(.-)%s*%((.+)%)$")
-    if name and name ~= "" then return { name = name, rank = rank, item = item or nil } end
-    return { name = text, item = item or nil }
+    if name and name ~= "" then return { name = name, rank = rank, item = item or nil }, keep end
+    return { name = text, item = item or nil }, keep
 end
+
+-- A group the form makes with no key: none held ([nomod]) is that too, for the keys come first in its macro.
+local function Keyless(g) return not g.nomod or g.nomod == "" and not g.key end
 
 local function Pad(units, n)
     for i = #units + 1, n do units[i] = "none" end
@@ -128,9 +136,10 @@ local function ReadCast(spec, rest, item)
     if not groups then return end
     local main, read, whenSet = {}, {}, false
     for _, g in ipairs(groups) do
-        if g.action ~= "" and not g.other and not g.nomounted and not g.place and not g.nomod then
+        if g.action ~= "" and not g.other and not g.nomounted and not g.place and Keyless(g) then
             if not whenSet then spec.when, whenSet = g.when, true end
-            local action = Action(g.action, item)
+            local action, keep = Action(g.action, item)
+            spec.keep = spec.keep or keep or nil
             if g.key then
                 local k = spec.keys[g.key]
                 if not k.active then k.active, k.on, k.action = true, {}, action end
@@ -163,7 +172,7 @@ local function ReadList(spec, rest)
     if not groups then return end
     local units, read = {}, {}
     for _, g in ipairs(groups) do
-        if not g.other and not g.key and not g.nomounted and not g.place and not g.nomod then
+        if not g.other and not g.key and not g.nomounted and not g.place and Keyless(g) then
             if #read == 0 then spec.when = g.when end
             units[#units + 1], read[#read + 1] = g.unit, g
         end
@@ -207,7 +216,7 @@ local function ReadTarget(spec, rest)
             -- The name's own group: only the When row, if anything.
             spec.byName = g.action
             if #read == 0 then spec.when = g.when end
-        elseif not g.other and not g.nomounted and not g.place and not g.nomod then
+        elseif not g.other and not g.nomounted and not g.place and Keyless(g) then
             if #read == 0 then spec.when = g.when end
             if g.key then
                 local k = spec.keys[g.key]
