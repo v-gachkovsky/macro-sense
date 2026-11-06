@@ -712,7 +712,7 @@ function Window.Save()
     if Letters(written) > MAX_BODY then return ns.Print("macro is longer than %d characters", MAX_BODY) end
     -- One behind the scenes: kept in its set.
     if state.stored then
-        local ok, why = ns.Sets.Write(state.stored.id, state.stored.name, name, state.icon, written)
+        local ok, why = ns.Sets.Write(state.stored.id, state.stored.name, name, state.icon, body)
         if not ok then
             if why == "name" then
                 return ns.Print("\"%s\" has a macro named \"%s\" already: a set holds only one macro of a name. "
@@ -878,7 +878,7 @@ function Window.Copy(scope, index)
     -- `body` as MacroSense shows it: @tank and @heal stay in the copy.
     local function make(name, icon, body)
         if full then
-            return Full(scope, function() Guard(function() Window.MakeBehind(name, icon, ns.Roles.Fill(body)) end) end)
+            return Full(scope, function() Guard(function() Window.MakeBehind(name, icon, body) end) end)
         end
         local copy = CreateMacro(FreeName(name), icon or NEW_ICON, ns.Roles.Fill(body), scope == "character")
         if not copy or copy == 0 then return ns.Print("could not copy the macro") end

@@ -11,6 +11,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   text. The game lets macros share a name, but MacroSense tells them apart by name. Now it doesn't move such a
   macro into a set or behind the scenes, and while a set's macro has a twin the sets wait and say which name
   to change. Renamed, they go on.
+- `@tank` and `@heal` behind the scenes: a macro saved there, or put away, kept the name of the tank or
+  healer then, and that name stayed after it came back into the game. Now its set keeps the tags; the
+  macro gets your group's names when it comes in, and the new ones as the group changes.
 
 ## [0.15.0] - 2026-11-06
 

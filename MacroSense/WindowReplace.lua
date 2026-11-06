@@ -111,7 +111,7 @@ local function ReplaceAll()
             if Letters(written) > MAX_BODY then
                 long[#long + 1] = m.name
             elseif m.set then
-                if ns.Sets.Write(m.set, m.name, m.name, m.icon, written) then done = done + 1 end
+                if ns.Sets.Write(m.set, m.name, m.name, m.icon, p.text) then done = done + 1 end
             elseif EditMacro(m.index, nil, nil, written) then
                 ns.Roles.Saved(m.scope, m.name, m.name, p.text, select(3, GetMacroInfo(m.index)))
                 done = done + 1
