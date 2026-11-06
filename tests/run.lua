@@ -2638,6 +2638,21 @@ do
     macros, problems = B.Plan(kit, choices)
     check("book: joined to a spell that is joined itself", problems.Polymorph ~= nil)
     choices.join["Polymorph"] = nil
+    -- An interrupt joined on a key: the cast is stopped only when that key casts it; Frost Nova on Shift comes first.
+    choices.join["Counterspell"] = { into = "Frostbolt", key = "ctrl" }
+    macros = B.Plan(kit, choices)
+    local joined = "#showtooltip\n/stopcasting [mod:ctrl,nomod:shift]\n/cast [mod:shift] Frost Nova; "
+        .. "[mod:ctrl,@mouseover,harm,nodead][mod:ctrl] Counterspell; Frostbolt"
+    check("book: an interrupt joined on a key stops the cast with that key only", body("Frostbolt") == joined,
+        body("Frostbolt"))
+    local back, lost = ns.Wizard.Read(joined)
+    check("book: the wizard reads it back as it is", ns.Wizard.Text(back) == joined and #lost == 0,
+        ns.Wizard.Text(back))
+    choices.stopcasting = false
+    macros = B.Plan(kit, choices)
+    check("book: no /stopcasting when it is off", not body("Frostbolt"):find("stopcasting", 1, true))
+    choices.stopcasting = true
+    choices.join["Counterspell"] = nil
 
     check("book: a macro that commands the pet", B.PetMacro({ { name = "A", body = "/cast X" },
         { name = "P", body = "#showtooltip\n/petattack [@mouseover]" } }) == "P")

@@ -407,8 +407,8 @@ function W.Read(text)
             ReadPet(spec, PET_OF[cmd], rest)
         elseif kind == "equip" and MAIN[cmd] == "equip" then
             ReadEquip(spec, cmd, rest)
-        elseif cmd == "stopcasting" and rest == "" then
-            spec.stopcasting = true
+        elseif cmd == "stopcasting" and (rest == "" or rest:match("^%[[^;]*%]$")) then
+            spec.stopcasting = rest == "" or rest
         elseif cmd == "cancelform" and rest == "" then
             spec.cancelform = true
         elseif cmd == "dismount" and kind == "mount" then
