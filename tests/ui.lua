@@ -4723,8 +4723,13 @@ do
     check("pick: share the picked", MacroSenseShare:IsShown() and macros and #macros == 2
         and macros[1].name == "Pick A" and macros[2].name == "Pick B")
     ns.ShareWindow.Close()
-    -- Move them: into the Character tab, still picked there.
-    check("pick: move them", act("Move 2 to Character"))
+    -- Move them: into the Character tab, still picked there. The game tells the macros changed while CreateMacro and
+    -- DeleteMacro run: each of them moved, none left out half way.
+    local create, delete = CreateMacro, DeleteMacro
+    CreateMacro = function(...) local i = create(...) Send("UPDATE_MACROS") return i end
+    DeleteMacro = function(...) delete(...) Send("UPDATE_MACROS") end
+    check("pick: move them", act("Move 2 from General to Character"))
+    CreateMacro, DeleteMacro = create, delete
     check("pick: moved, still picked", GetMacroIndexByName("Pick A") > SLOTS.MAX_ACCOUNT_MACROS
         and GetMacroIndexByName("Pick B") > SLOTS.MAX_ACCOUNT_MACROS and find("FontString", "2 picked") ~= nil
         and printed[#printed]:find("moved 2 macros", 1, true) ~= nil, printed[#printed])
