@@ -1312,12 +1312,22 @@ do
     -- An equipment set named like the macro, on the W button: not the macro (Cmd+W closes the window).
     actions[2], bindings.ACTIONBUTTON2 = { "equipmentset", "Bar", text = (GetMacroInfo(1)) }, "W"
     Send("ACTIONBAR_SLOT_CHANGED", 2)
+    NextFrame()
     check("only the macro's own buttons", not warningText():find("Cmd%+W"), warningText())
     actions[2], bindings.ACTIONBUTTON2 = nil, nil
     Send("ACTIONBAR_SLOT_CHANGED", 2)
     bindings.ACTIONBUTTON1 = "E"
     Send("UPDATE_BINDINGS")
     check("rebinding to E clears it", warningText() == "", warningText())
+    -- The game changes many slots at once (a specialization: all of them): the bars are looked at once, a frame
+    -- later.
+    local tint, tints = ns.ActionBars.Tint, 0
+    ns.ActionBars.Tint = function() tints = tints + 1 end
+    for slot = 1, 180 do Send("ACTIONBAR_SLOT_CHANGED", slot) end
+    local before = tints
+    NextFrame()
+    check("bars: many slots changed, looked at once", before == 0 and tints == 1, tints)
+    ns.ActionBars.Tint = tint
     bindings.ACTIONBUTTON1 = "Q"
     Send("UPDATE_BINDINGS")
     check("back on Q warns again", warningText() ~= "")
