@@ -349,9 +349,11 @@ local function conflicts(raw, keys)
     for _, c in ipairs(S.Conflicts(raw, keys)) do out[#out + 1] = c.combo end
     return table.concat(out, ",")
 end
-check("cmd on Q", conflicts("/cast [mod:cmd] A; B", { "Q" }) == "Cmd+Q", conflicts("/cast [mod:cmd] A; B", { "Q" }))
-check("no cmd, no warning", conflicts("/cast [mod:shift] A; B", { "Q" }) == "")
-check("nomod:cmd is not cmd", conflicts("/cast [nomod:cmd] A", { "Q" }) == "")
+check("cmd on Tab", conflicts("/cast [mod:cmd] A; B", { "TAB" }) == "Cmd+Tab", conflicts("/cast [mod:cmd] A; B", { "TAB" }))
+check("cmd on Q: the game doesn't quit", conflicts("/cast [mod:cmd] A; B", { "Q" }) == "",
+    conflicts("/cast [mod:cmd] A; B", { "Q" }))
+check("no cmd, no warning", conflicts("/cast [mod:shift] A; B", { "TAB" }) == "")
+check("nomod:cmd is not cmd", conflicts("/cast [nomod:cmd] A", { "TAB" }) == "")
 check("cmd on a free key", conflicts("/cast [mod:cmd] A", { "1", "E" }) == "")
 check("cmd + shift in one group", conflicts("/cast [mod:cmd,mod:shift] A", { "3" }) == "Cmd+Shift+3",
     conflicts("/cast [mod:cmd,mod:shift] A", { "3" }))
@@ -362,11 +364,11 @@ check("alt/cmd list does not add alt", conflicts("/cast [mod:alt/cmd] A", { "H" 
 check("modifier: long form", conflicts("/cast [modifier:CMD] A", { "tab" }) == "Cmd+Tab", conflicts("/cast [modifier:CMD] A", { "tab" }))
 check("option label", conflicts("/cast [mod:cmd,mod:alt] A", { "ESCAPE" }) == "Cmd+Option+Esc",
     conflicts("/cast [mod:cmd,mod:alt] A", { "ESCAPE" }))
-check("unclosed bracket before", conflicts("/cast [@mouse\n/cast [mod:cmd] A", { "Q" }) == "Cmd+Q",
-    conflicts("/cast [@mouse\n/cast [mod:cmd] A", { "Q" }))
-check("several keys", conflicts("/cast [mod:cmd] A", { "Q", "W" }) == "Cmd+Q,Cmd+W")
-check("message one", S.Message(S.Conflicts("/cast [mod:cmd] A", { "Q" })) == "Cmd+Q is a macOS shortcut (quits the game)")
-check("message many", S.Message(S.Conflicts("/cast [mod:cmd] A", { "Q", "W" })) == "Cmd+Q, Cmd+W are macOS shortcuts")
+check("unclosed bracket before", conflicts("/cast [@mouse\n/cast [mod:cmd] A", { "TAB" }) == "Cmd+Tab",
+    conflicts("/cast [@mouse\n/cast [mod:cmd] A", { "TAB" }))
+check("several keys", conflicts("/cast [mod:cmd] A", { "TAB", "W" }) == "Cmd+Tab,Cmd+W")
+check("message one", S.Message(S.Conflicts("/cast [mod:cmd] A", { "TAB" })) == "Cmd+Tab is a macOS shortcut (switches apps)")
+check("message many", S.Message(S.Conflicts("/cast [mod:cmd] A", { "TAB", "W" })) == "Cmd+Tab, Cmd+W are macOS shortcuts")
 check("message none", S.Message({}) == nil)
 check("slot 1", S.slotCommand(1) == "ACTIONBUTTON1")
 check("slot 13 page 2", S.slotCommand(13) == "ACTIONBUTTON1")
@@ -2333,8 +2335,8 @@ do
     check("locale: a code's problem", select(2, ns.Share.Decode("hello")) == "Це не код MacroSense.")
     check("locale: a value's problem, with what is expected", ns.Conditions.CheckValue("bar", "9")
         == "неправильне значення bar «9» (очікується сторінка панелі 1-6)", ns.Conditions.CheckValue("bar", "9"))
-    check("locale: the macOS warning", ns.Shortcuts.Message({ { combo = "Cmd+Q", what = "quits the game" } })
-        == "Cmd+Q — сполучення клавіш macOS (закриває гру)")
+    check("locale: the macOS warning", ns.Shortcuts.Message({ { combo = "Cmd+Tab", what = "switches apps" } })
+        == "Cmd+Tab — сполучення клавіш macOS (перемикає програми)")
     ns.SetLanguage("xx")
     check("locale: another language is English", ns.language == "en" and L["Save"] == "Save")
     check("locale: English counts", ns.Plural(1, "%d macro", "%d macros") == "1 macro"

@@ -1,4 +1,4 @@
--- Warns when a macro with [mod:cmd] sits on a key that macOS itself uses with Cmd (Cmd+Q quits the game).
+-- Warns when a macro with [mod:cmd] sits on a key that macOS itself uses with Cmd (Cmd+Tab switches apps).
 -- The analysis is pure Lua; finding the macro's keys needs the game (bindings, action bars).
 local _, ns = ...
 ns = ns or {}
@@ -7,9 +7,9 @@ local L = ns.L
 local Shortcuts = {}
 ns.Shortcuts = Shortcuts
 
--- macOS shortcuts with Cmd, as "CMD-[CTRL-][ALT-][SHIFT-]KEY" in WoW key names.
+-- macOS shortcuts with Cmd, as "CMD-[CTRL-][ALT-][SHIFT-]KEY" in WoW key names. Not Cmd+Q: the game takes it
+-- as a key, and doesn't quit.
 Shortcuts.MAC = {
-    ["CMD-Q"] = "quits the game",
     ["CMD-W"] = "closes the window",
     ["CMD-H"] = "hides the game",
     ["CMD-M"] = "minimizes the window",
@@ -87,7 +87,7 @@ local function label(id)
     return table.concat(parts, "+")
 end
 
--- raw: macro text; keys: bindings the macro is on ("Q", "SHIFT-3"). Returns { { combo = "Cmd+Q", what = ... } }.
+-- raw: macro text; keys: bindings the macro is on ("Q", "SHIFT-3"). Returns { { combo = "Cmd+Tab", what = ... } }.
 function Shortcuts.Conflicts(raw, keys)
     local out, seen = {}, {}
     for _, group in ipairs(Shortcuts.CmdGroups(raw)) do

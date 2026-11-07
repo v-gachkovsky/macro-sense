@@ -333,7 +333,7 @@ function debugprofilestop() return os.clock() * 1000 end
 function GetInventoryItemLink(_, slot) if slot == 13 then return "|cffa335ee|Hitem:777::|h[Lucky Charm]|h|r" end end
 -- Action slots: kind, ID, sub type and the text the button shows. Macro 1 shows Fireball: the game gives the
 -- slot Fireball's ID, not the macro's.
-local bindings, actions = { ACTIONBUTTON1 = "Q" }, { [1] = { "macro", 133, "spell" } }
+local bindings, actions = { ACTIONBUTTON1 = "TAB" }, { [1] = { "macro", 133, "spell" } }
 function GetBindingKey(command) return bindings[command] end
 local picked
 -- What the mouse holds besides a macro: { "spell", index, book, id } or { "item", id }, set by a test.
@@ -1323,7 +1323,7 @@ do
     check("scroll bar hidden without overflow", not b:IsShown())
 end
 
--- Mac: [mod:cmd] on Q (the macro is on action button 1, bound to Q) warns in the status bar.
+-- Mac: [mod:cmd] on Tab (the macro is on action button 1, bound to Tab) warns in the status bar.
 do
     local function warningText()
         for _, o in ipairs(created) do
@@ -1340,7 +1340,7 @@ do
     edit:SetCursorPosition(#edit.text)
     Type("\n/cast [mod:cmd] Fireball")
     Key("ESCAPE", "OnEscapePressed")
-    check("cmd+Q warning shown", warningText():find("Cmd%+Q is a macOS shortcut") ~= nil, warningText())
+    check("cmd+Tab warning shown", warningText():find("Cmd%+Tab is a macOS shortcut") ~= nil, warningText())
     -- An equipment set named like the macro, on the W button: not the macro (Cmd+W closes the window).
     actions[2], bindings.ACTIONBUTTON2 = { "equipmentset", "Bar", text = (GetMacroInfo(1)) }, "W"
     Send("ACTIONBAR_SLOT_CHANGED", 2)
@@ -1360,9 +1360,9 @@ do
     NextFrame()
     check("bars: many slots changed, looked at once", before == 0 and tints == 1, tints)
     ns.ActionBars.Tint = tint
-    bindings.ACTIONBUTTON1 = "Q"
+    bindings.ACTIONBUTTON1 = "TAB"
     Send("UPDATE_BINDINGS")
-    check("back on Q warns again", warningText() ~= "")
+    check("back on Tab warns again", warningText() ~= "")
     IsMacClient = function() return false end
     Send("UPDATE_BINDINGS")
     check("no warning on Windows", warningText() == "", warningText())
@@ -3589,9 +3589,9 @@ do
     -- On a Mac, Cmd with the macro's key may be a macOS shortcut: its tooltip warns, first, on any button.
     local fear = GetMacroIndexByName("Bar Fear")
     EditMacro(fear, "Bar Fear", 1, "/cast [mod:cmd] Fear")
-    bindings.ACTIONBUTTON2 = "Q" -- the button of slot 2
+    bindings.ACTIONBUTTON2 = "TAB" -- the button of slot 2
     Send("UPDATE_BINDINGS")
-    local warning = "Cmd+Q is a macOS shortcut (quits the game)"
+    local warning = "Cmd+Tab is a macOS shortcut (switches apps)"
     check("action bars: the macOS warning", Tip(startButton, 2) == "  / " .. warning .. " / " .. ns.ActionBars.TIP,
         Tip(startButton, 2))
     check("action bars: in red", colors[warning] == "1.00 0.35 0.35", colors[warning])
@@ -3614,7 +3614,7 @@ do
     end
     startButton.action, refused.action, labButton.action, petButton.action = 2, 6, 100, 2 -- the game keeps .action
     Send("UPDATE_BINDINGS")
-    check("tint: the button of Cmd+Q", Tinted(startButton))
+    check("tint: the button of Cmd+Tab", Tinted(startButton))
     check("tint: not where the macro has no such key", not Tinted(refused))
     check("tint: not on other addons' bars", not Tinted(labButton) and not Tinted(petButton))
     -- Set up again after each combat: still one look per change of the button.
@@ -3629,7 +3629,7 @@ do
     bindings.ACTIONBUTTON2 = "E"
     Send("UPDATE_BINDINGS")
     check("tint: gone with another key", not Tinted(startButton))
-    bindings.ACTIONBUTTON2 = "Q"
+    bindings.ACTIONBUTTON2 = "TAB"
     Send("UPDATE_BINDINGS")
     EditMacro(fear, "Bar Fear", 1, "/cast Fear")
     Send("UPDATE_MACROS")
@@ -5599,7 +5599,7 @@ do
     -- On a Mac, a macOS shortcut on the button's key is worse: red.
     local coil = GetMacroIndexByName("Coil")
     EditMacro(coil, "Coil", 1, "/cast [mod:cmd] Death Coil")
-    bindings.ACTIONBUTTON2 = "Q"
+    bindings.ACTIONBUTTON2 = "TAB"
     Send("UPDATE_BINDINGS")
     labButton.action = 2 -- its key is not that of the game's bar
     Send("UPDATE_BINDINGS")

@@ -303,17 +303,17 @@ Curse of Agony (слова можна пропускати), і `CoA` теж (м
   а зміна, що ламає макроси на ваших панелях, каже про це на екрані, а їхні назви — в чаті.
   Retail і WoW Forever знають ваше дерево талантів, Mists of Pandaria — таланти кожного ряду та спели інших
   спеціалізацій, Classic Era і TBC — таланти без очок.
-- Mac: якщо макрос із `[mod:cmd]` стоїть на клавіші, яку macOS використовує разом із Cmd (Cmd+Q закриває
-  гру, Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), статус-бар попередить, а також підказка макросу на панелі
+- Mac: якщо макрос із `[mod:cmd]` стоїть на клавіші, яку macOS використовує разом із Cmd (Cmd+Tab перемикає
+  програми, Cmd+Space відкриває Spotlight, Cmd+H, ...), статус-бар попередить, а також підказка макросу на панелі
   дій, а кнопка з цією клавішею стане червоною. Перевіряються пряма прив'язка макросу та стандартні панелі;
   панелі Bartender чи ElvUI — ні.
 
 <p align="center"><img src="docs/talent-editor.png" width="720" alt="Талант, якого ви не обрали: попередження в статус-барі"></p>
 <p align="center"><img src="docs/talent-tooltip.png" width="373" alt="Підказка макросу на панелі пояснює чому"></p>
 
-<p align="center"><img src="docs/mac-shortcut-editor.png" width="720" alt="Попередження в статус-барі: Cmd+Q — сполучення macOS"></p>
+<p align="center"><img src="docs/mac-shortcut-editor.png" width="720" alt="Попередження в статус-барі: Cmd із цією клавішею — сполучення macOS"></p>
 <p align="center"><img src="docs/mac-shortcut-tooltip.png" width="340" alt="Попередження в підказці макросу на панелі">
-<img src="docs/mac-shortcut-bar.png" width="177" alt="Кнопка на Q стає червоною"></p>
+<img src="docs/mac-shortcut-bar.png" width="177" alt="Кнопка стає червоною"></p>
 
 ## Живий перегляд
 

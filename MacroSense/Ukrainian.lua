@@ -791,10 +791,11 @@ ns.locales.uk = {
     ["Alive only"] = "Лише живі",
     ["With a key held"] = "З клавішею",
     ["same spell"] = "те саме заклинання",
-    ["macOS uses some keys with Cmd itself: Q quits the game, and W, H, Tab, Space and others do things too. On "
-        .. "those keys macOS acts first, so the editor warns you when the macro is on one."] =
-        "Деякі клавіші з Cmd macOS використовує сама: Q закриває гру, а W, H, Tab, Space та інші теж щось роблять. "
-        .. "На таких клавішах першою спрацьовує macOS, тож редактор попередить, якщо макрос стоїть на одній із них.",
+    ["macOS uses some keys with Cmd itself: Tab switches apps, Space opens Spotlight, and others do things too. "
+        .. "On those keys macOS acts first, so the editor warns you when the macro is on one."] =
+        "Деякі клавіші з Cmd macOS використовує сама: Tab перемикає програми, Space відкриває Spotlight, інші теж "
+        .. "щось роблять. На таких клавішах першою спрацьовує macOS, тож редактор попередить, якщо макрос стоїть "
+        .. "на одній із них.",
     ["Start over"] = "Почати знову",
     ["New target"] = "Нова ціль",
     ["Combat ends"] = "Кінець бою",
@@ -1284,7 +1285,6 @@ ns.locales.uk = {
     -- macOS shortcuts
     ["%s is a macOS shortcut (%s)"] = "%s — сполучення клавіш macOS (%s)",
     ["%s are macOS shortcuts"] = "%s — сполучення клавіш macOS",
-    ["quits the game"] = "закриває гру",
     ["closes the window"] = "закриває вікно",
     ["hides the game"] = "ховає гру",
     ["minimizes the window"] = "згортає вікно",
