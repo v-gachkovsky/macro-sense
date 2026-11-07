@@ -9,6 +9,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Fixed
 - On a Mac, a macro with `[mod:cmd]` on Q no longer warns that Cmd+Q quits the game: WoW doesn't quit on it,
   the key goes to the game as any other.
+- A macro the game lost while MacroSense wasn't looking (the game's macros back as they were at a login) stayed
+  behind the scenes in "This character's", and putting it into "This character's" from another set said it was
+  added but didn't bring it into the game. Now it comes into the game, as "Take in" already brought it.
 
 ## [0.15.2] - 2026-11-07
 

@@ -7935,6 +7935,23 @@ do
         S.Release("group2", name) and has(name) and body(name) == "/say changed"
         and inSet("character", name).body == "/say changed" and not inSet("character", name).parked
         and S.Mine().layer[name] == "character")
+    -- One the game lost (its macros back as they were, at a login, unseen): the character's still has it, not put
+    -- away, yet it isn't in the game. Removed from a set into the character's, it comes back in.
+    table.insert(S.Mine().character, { name = "Lost Pet", icon = 1, body = "/say lost" })
+    S.Write("group1", nil, "Lost Pet", 1, "/say lost")
+    check("sets: the character's one the game lost: back into the game with it", S.Release("group1", "Lost Pet")
+        and has("Lost Pet") and not inSet("group1", "Lost Pet") and S.Mine().layer["Lost Pet"] == "character",
+        tostring(has("Lost Pet")))
+    S.Park("character", "Lost Pet", true)
+    for i, m in ipairs(S.Mine().character) do if m.name == "Lost Pet" then table.remove(S.Mine().character, i) end end
+    -- In the character's only: "Take in" brings it.
+    table.insert(S.Mine().character, { name = "Lost Pet", icon = 1, body = "/say lost" })
+    check("sets: the character's one the game lost: shown behind the scenes", S.Behind("character",
+        inSet("character", "Lost Pet")))
+    check("sets: the character's one the game lost: taken in", S.Park("character", "Lost Pet", false)
+        and has("Lost Pet") and S.Mine().layer["Lost Pet"] == "character")
+    S.Park("character", "Lost Pet", true)
+    for i, m in ipairs(S.Mine().character) do if m.name == "Lost Pet" then table.remove(S.Mine().character, i) end end
     check("sets: moved to the character's: moved, the other specialization's copy stays",
         S.MoveTo("group2", "Chaos Bolt", "character") and not inSet("group2", "Chaos Bolt")
         and inSet("group1", "Chaos Bolt") and inSet("character", "Chaos Bolt") and has("Chaos Bolt"))

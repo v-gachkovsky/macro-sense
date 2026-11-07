@@ -1093,8 +1093,8 @@ function Sets.Release(id, name)
         if wasIn then
             entry.parked = nil
             sets.layer[name] = "character"
-        elseif same and not same.parked then
-            return -- in the game already
+        elseif same and not same.parked and Index(name) then
+            return -- in the game already (one the game lost, not: it comes in)
         elseif Index(name) then
             entry.parked, waits = true, "twin"
         elseif Room() > 0 then
