@@ -1226,6 +1226,23 @@ do
     Send("SPELLS_CHANGED")
     MacroSenseIconPicker:Hide()
 
+    -- A spell the book shows by another name than the game casts it by: Forever names Call Pet after your pet
+    -- ("Call Wiwwiw"), and /cast takes only "Call Pet". A talent's new name (the game knows it) stays.
+    book[#book + 1] = { "Call Wiwwiw", "" }
+    local callPet = 100 + #book
+    gameSpells[callPet] = { 132161, "Call Pet" }
+    local spellInfo = C_Spell.GetSpellInfo
+    C_Spell.GetSpellInfo = function(name) return name == "Call Pet" and { spellID = callPet } or nil end
+    ns.InvalidateSources("spells")
+    local names = {}
+    for _, sp in ipairs(ns.sources.spells()) do names[sp.name] = true end
+    check("book: a spell by the name the game casts it by", names["Call Pet"] and not names["Call Wiwwiw"])
+    local kit = {}
+    for _, sp in ipairs(ns.Spellbook.Kit().spells) do kit[sp.name] = true end
+    check("book: the spellbook window offers it so", kit["Call Pet"] and not kit["Call Wiwwiw"])
+    book[#book], gameSpells[callPet], C_Spell.GetSpellInfo = nil, nil, spellInfo
+    ns.InvalidateSources("spells")
+
     -- What the names match shows up while they are looked up, and more coming in don't move the view. A new
     -- patch's lookup (nothing kept from before), a part of the spells a frame: 100 names early, 30 late.
     ns.db.iconNames = nil
