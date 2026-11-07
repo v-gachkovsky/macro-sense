@@ -217,6 +217,14 @@ end
 local SpellName = C_Spell and C_Spell.GetSpellName or function(id) return GetSpellInfo and (GetSpellInfo(id)) end
 local SpellLevel = C_Spell and C_Spell.GetSpellLevelLearned or GetSpellLevelLearned
 
+-- The name a macro casts spell `id` by. The book may show it by another: Forever names Call Pet after your pet
+-- ("Call Wiwwiw"), and /cast takes only "Call Pet". A name the game knows for that spell stays.
+local function CastName(name, id)
+    local own = id and SpellName(id)
+    if not name or not own or own == name or (ns.SpellID(name) == id and ns.SpellID(own) ~= id) then return name end
+    return own
+end
+
 -- The book also has the spells of your other specializations, each in a skill line of its own (the line's name
 -- is the specialization's), and those you learn later: `later` gets them. A spell a talent replaces (Shadow Bolt
 -- by Drain Soul) is in it by the new name; the macro may still name the old one, which casts the new one.
@@ -233,7 +241,8 @@ local function retailSpells(add, later)
                     local other = spec or (item.isOffSpec and line.name) or nil
                     if item.itemType == Enum.SpellBookItemType.Spell then
                         local base = item.actionID ~= item.spellID and item.actionID and SpellName(item.actionID)
-                        add(item.name, item.iconID, item.subName, other, base, item.spellID or item.actionID, tab == 1)
+                        local id = item.spellID or item.actionID
+                        add(CastName(item.name, id), item.iconID, item.subName, other, base, id, tab == 1)
                     elseif future and item.itemType == future then
                         later(item.name, item.spellID or item.actionID, other)
                     end
@@ -255,7 +264,7 @@ local function classicSpells(add, later)
             if (kind == "SPELL" or kind == "FUTURESPELL") and not IsPassiveSpell(slot, book) then
                 local name, sub = GetSpellBookItemName(slot, book)
                 if kind == "SPELL" then
-                    add(name, GetSpellBookItemTexture(slot, book), sub, spec, nil, id, tab == 1)
+                    add(CastName(name, id), GetSpellBookItemTexture(slot, book), sub, spec, nil, id, tab == 1)
                 else
                     later(name, id, spec)
                 end

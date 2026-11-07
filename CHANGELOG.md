@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- A hunter's macros from the spellbook on Forever: the book names Call Pet after your pet ("Call Wiwwiw"), and
+  the macro was made with that name, which the game doesn't cast, so its buttons kept the spell too. Now the
+  macro casts "Call Pet" and takes the spell's place on the buttons. The editor no longer takes the pet's name
+  for a spell either.
+
 ## [0.15.1] - 2026-11-07
 
 ### Fixed
