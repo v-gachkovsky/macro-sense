@@ -170,8 +170,8 @@ local function Wrap(button)
     wrapped[button] = button:GetScript("OnClick") ~= before
 end
 
--- On a Mac, a red tint over a game button whose own key, with Cmd, is a macOS shortcut its macro uses (Cmd+Q
--- quits the game). The key is a binding of the game's bars, so buttons of other addons' bars get none. A yellow
+-- On a Mac, a red tint over a game button whose own key, with Cmd, is a macOS shortcut its macro uses (Cmd+Tab
+-- switches apps). The key is a binding of the game's bars, so buttons of other addons' bars get none. A yellow
 -- one over a macro with a spell you don't have now, on any button.
 -- tints: button -> its tint; tinted: the buttons that follow their action (true; "lab": LibActionButton's).
 local tints, tinted = {}, {}
@@ -282,8 +282,8 @@ local function Later(button, game)
     end)
 end
 
--- On a Mac: what the editor's status bar says when Cmd with the macro's keys is a macOS shortcut (Cmd+Q quits
--- the game), or nil.
+-- On a Mac: what the editor's status bar says when Cmd with the macro's keys is a macOS shortcut (Cmd+Tab
+-- switches apps), or nil.
 local function MacWarning(slot)
     local index = ns.Shortcuts.Enabled() and ActionBars.MacroAt(slot)
     if not index then return nil end

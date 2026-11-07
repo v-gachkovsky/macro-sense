@@ -303,8 +303,8 @@ an empty `[]` removes both.
   and a change that breaks macros on your bars says so on the screen, their names in chat.
   Retail and WoW Forever know your talent tree, Mists of Pandaria the talents of each row and the other
   specializations' spells, Classic Era and TBC the talents with no points.
-- Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Q quits the game, Cmd+W,
-  Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns, and so does the macro's tooltip on the action bar;
+- Mac: when a macro with `[mod:cmd]` is on a key that macOS uses with Cmd (Cmd+Tab switches apps,
+  Cmd+Space opens Spotlight, Cmd+H, ...), the status bar warns, and so does the macro's tooltip on the action bar;
   the button with that key turns red.
   Keys are found from a direct `MACRO name` binding and the standard action bars; bars of addons (Bartender,
   ElvUI) are not checked.
@@ -312,9 +312,9 @@ an empty `[]` removes both.
 <p align="center"><img src="docs/talent-editor.png" width="720" alt="A talent you haven't chosen: the status bar warns"></p>
 <p align="center"><img src="docs/talent-tooltip.png" width="373" alt="The macro's tooltip on the action bar says why"></p>
 
-<p align="center"><img src="docs/mac-shortcut-editor.png" width="720" alt="The status bar warns: Cmd+Q is a macOS shortcut"></p>
+<p align="center"><img src="docs/mac-shortcut-editor.png" width="720" alt="The status bar warns: Cmd with this key is a macOS shortcut"></p>
 <p align="center"><img src="docs/mac-shortcut-tooltip.png" width="340" alt="The macro's tooltip on the action bar warns too">
-<img src="docs/mac-shortcut-bar.png" width="177" alt="Its button on Q turns red"></p>
+<img src="docs/mac-shortcut-bar.png" width="177" alt="Its button turns red"></p>
 
 ## Live preview
 

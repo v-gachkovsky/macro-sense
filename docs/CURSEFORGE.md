@@ -203,14 +203,14 @@ those in the list.
 
 ![The macro's tooltip on the action bar says why](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/talent-tooltip.png)
 
-**Mac players:** if a macro with `[mod:cmd]` sits on a key macOS itself uses with Cmd (Cmd+Q quits the game,
-Cmd+W, Cmd+H, Cmd+Tab, Cmd+Space, ...), the status bar warns you, and so does the macro's tooltip on your
+**Mac players:** if a macro with `[mod:cmd]` sits on a key macOS itself uses with Cmd (Cmd+Tab switches apps,
+Cmd+Space opens Spotlight, Cmd+H, ...), the status bar warns you, and so does the macro's tooltip on your
 action bar; the button with that key turns red.
 
-![The status bar warns: Cmd+Q is a macOS shortcut](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-editor.png)
+![The status bar warns: Cmd with this key is a macOS shortcut](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-editor.png)
 
 ![The macro's tooltip on the action bar warns too](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-tooltip.png)
-![Its button on Q turns red](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-bar.png)
+![Its button turns red](https://raw.githubusercontent.com/v-gachkovsky/macro-sense/main/docs/mac-shortcut-bar.png)
 
 ## Live preview
 

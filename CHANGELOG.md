@@ -4,6 +4,12 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- On a Mac, a macro with `[mod:cmd]` on Q no longer warns that Cmd+Q quits the game: WoW doesn't quit on it,
+  the key goes to the game as any other.
+
 ## [0.15.2] - 2026-11-07
 
 ### Fixed

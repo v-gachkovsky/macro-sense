@@ -579,7 +579,7 @@ end
 
 -- Cmd on a key macOS keeps for itself: what it does there.
 local function CmdTip(check)
-    Tip(check, "Cmd", L["macOS uses some keys with Cmd itself: Q quits the game, and W, H, Tab, Space and others do "
+    Tip(check, "Cmd", L["macOS uses some keys with Cmd itself: Tab switches apps, Space opens Spotlight, and others do "
         .. "things too. On those keys macOS acts first, so the editor warns you when the macro is on one."])
 end
 
