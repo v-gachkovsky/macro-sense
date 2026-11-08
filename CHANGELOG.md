@@ -36,6 +36,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - In the older game versions, a new rank of a spell had MacroSense save again every macro with its name
   anywhere in the text: a new rank of Heal also touched macros of Flash Heal or Greater Heal, or a chat line
   with the word. Now only the macros that cast or show that very spell are saved again.
+- The wizard's "Not while channeling it" for spells in turn or at random: with the list's first row left empty,
+  the macro waited for any channel to end, not for its own spell's. Now it names the first spell of the list.
 
 ### Changed
 - The names of your specializations, offered after `[spec:` and used to tell what a line does, now come from

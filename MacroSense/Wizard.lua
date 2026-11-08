@@ -171,8 +171,11 @@ local function When(spec)
             if w.key == "form" then
                 out[#out + 1] = chosen == "0" and "noform" or "form:" .. chosen
             elseif chosen == "own" then
-                -- The macro's spell, the first of a list; with none, any.
-                local action = spec.action or spec.list[1]
+                -- The macro's spell, a list's first (rows may be left empty before it); with none, any.
+                local action = spec.action
+                if Wizard.IsList(spec.command) then
+                    for i = Wizard.LIST, 1, -1 do action = spec.list[i] or action end
+                end
                 out[#out + 1] = action and "nochanneling:" .. action.name or "nochanneling"
             else
                 for _, item in ipairs(w.items) do

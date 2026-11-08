@@ -2083,6 +2083,20 @@ do
         .. "/cast [mod:shift,nochanneling:Drain Soul][nochanneling:Drain Soul] !Drain Soul", W.Text(spec))
     read("channeling another spell: the macro's then", "/cast [nochanneling:Mind Flay] Mind Blast",
         "#showtooltip\n/cast [nochanneling:Mind Blast] Mind Blast", "/cast [nochanneling:Mind Flay] Mind Blast")
+    -- A list with its first row left empty: the first spell in it is the macro's.
+    do
+        local list = W.Fresh()
+        W.Switch(list, "castsequence")
+        list.list[2], list.when.channel = { name = "Drain Soul" }, "own"
+        check("wizard: not while channeling it, a list's first spell", W.When(list) == "nochanneling:Drain Soul",
+            W.When(list))
+        -- A cast with no spell of its own: any channel, not a spell of the list it was before.
+        list.list[1] = { name = "Drain Life" }
+        W.Switch(list, "cast")
+        list.action = nil
+        check("wizard: not while channeling it, a cast with no spell: any", W.When(list) == "nochanneling",
+            W.When(list))
+    end
     read("while channeling", "/cast [channeling] Fireball", "#showtooltip\n/cast [channeling] Fireball")
     check("wizard read: nothing it makes", W.Read("/say hi") == nil and W.Read("") == nil
         and W.Read("/run print(1)") == nil)
