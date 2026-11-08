@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.15.4] - 2026-11-08
 
 ### Fixed
 - Two macros with one name in a tab: moving one of them into the other tab could delete the other one, and it
