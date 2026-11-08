@@ -181,7 +181,8 @@ local function Macros()
         else
             local index = IndexIn(p.scope, p.name)
             local _, _, body = GetMacroInfo(index)
-            out[#out + 1] = { scope = p.scope, name = p.name, icon = ns.MacroIcon(index), body = body or "" }
+            out[#out + 1] = { scope = p.scope, name = p.name, icon = ns.MacroIcon(index),
+                body = ns.Roles.Text(p.scope, p.name, body or "") }
         end
     end
     return out

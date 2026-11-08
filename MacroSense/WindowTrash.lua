@@ -8,7 +8,7 @@ local state = shared.state
 local NEW_ICON = shared.NEW_ICON
 local MacroRange, IndexIn, TabName, When = shared.MacroRange, shared.IndexIn, shared.TabName, shared.When
 local Load, Guard, Full, FreeName = shared.Load, shared.Guard, shared.Full, shared.FreeName
-local Macros = shared.Macros
+local Macros, MakeMacro = shared.Macros, shared.MakeMacro
 
 ------------------------------------------------------------------------
 -- Trash: macros deleted anywhere, to bring back (History.lua keeps them)
@@ -57,8 +57,9 @@ function Window.Undelete(scope, entry)
     end
     Guard(function()
         local name = FreeName(entry.name)
-        local index = CreateMacro(name, entry.icon or NEW_ICON, entry.body, scope == "character")
-        if not index or index == 0 then return ns.Print("could not restore the macro") end
+        -- One deleted behind the scenes has @tank and @heal: the game's gets the names.
+        local index = MakeMacro(scope, name, entry.icon, entry.body)
+        if not index then return ns.Print("could not restore the macro") end
         ns.History.TakeOut(ns.History.Trash(scope), entry)
         ns.History.Scan()
         ns.History.SetNote(scope, name, entry.note)

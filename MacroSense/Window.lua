@@ -850,6 +850,19 @@ local function FreeName(name, also, onlyAlso)
     end
 end
 
+-- Macro `name` made in tab `scope` from `body` as MacroSense keeps it, with @tank and @heal: the game's has the names
+-- of your group's tank and healer (too long with them, nobody's: @none, as long as the tags), and gets the new ones
+-- from then on (Roles.lua). Its index, or nil when the game made none.
+local function MakeMacro(scope, name, icon, body)
+    local written = ns.Roles.Fill(body)
+    if Letters(written) > MAX_BODY then written = ns.Conditions.Fill(body, {}) end
+    local index = CreateMacro(name, icon or NEW_ICON, written, scope == "character")
+    if not index or index == 0 then return nil end
+    local made, _, text = GetMacroInfo(index)
+    ns.Roles.Saved(scope, nil, made, body, text)
+    return index
+end
+
 -- With macro sets on and no free slot, a new character macro is kept behind the scenes, in this character's: under a
 -- name free in the game and there. Opened, and told in the chat (`quiet`: neither). Returns its name.
 function Window.MakeBehind(name, icon, body, quiet)
@@ -888,10 +901,8 @@ function Window.Copy(scope, index)
         if full then
             return Full(scope, function() Guard(function() Window.MakeBehind(name, icon, body) end) end)
         end
-        local copy = CreateMacro(FreeName(name), icon or NEW_ICON, ns.Roles.Fill(body), scope == "character")
-        if not copy or copy == 0 then return ns.Print("could not copy the macro") end
-        local made, _, written = GetMacroInfo(copy)
-        ns.Roles.Saved(scope, nil, made, body, written)
+        local copy = MakeMacro(scope, FreeName(name), icon, body)
+        if not copy then return ns.Print("could not copy the macro") end
         ns.History.Scan()
         state.scope, ns.db.scope = scope, scope
         Load(copy)
@@ -933,7 +944,8 @@ end
 local function MoveBehind(from, name, text) return ns.Sets.Atomic(function()
     local index = IndexOf(from, name, text)
     if not index then return end
-    local _, _, body = GetMacroInfo(index)
+    -- As MacroSense shows it: behind the scenes @tank and @heal stay, the names come in with it again.
+    local body = ns.Roles.Text(from, name, select(3, GetMacroInfo(index)) or "")
     local icon = ns.MacroIcon(index)
     for _, slot in ipairs(ns.ActionBars.SlotsOf(name)) do
         if ns.ActionBars.MacroAt(slot) == index then
@@ -1162,8 +1174,8 @@ function Window.StoredToGeneral(id, name, move)
     if not m then return end
     Guard(function() ns.Sets.Atomic(function()
         local general = FreeName(FirstLetters(m.name, MAX_NAME))
-        local made = CreateMacro(general, m.icon or NEW_ICON, m.body or "", false)
-        if not made or made == 0 then return ns.Print(move and "could not move the macro" or "could not copy the macro") end
+        local made = MakeMacro("general", general, m.icon, m.body or "")
+        if not made then return ns.Print(move and "could not move the macro" or "could not copy the macro") end
         if move then
             ns.History.Moved("character", "general", name, general)
             ns.Sets.Forget(id, name, true)
@@ -1177,14 +1189,18 @@ end
 ------------------------------------------------------------------------
 -- Shared with the window's other files: the helpers above (ns.WindowShared).
 ------------------------------------------------------------------------
--- The saved macros of `scope`, or of both tabs, as Share.Encode takes them.
-local function Macros(scope)
+-- The saved macros of `scope`, or of both tabs, as Share.Encode takes them: with the game's text, or as MacroSense
+-- shows it (`shown`: @tank and @heal, for a code to share).
+local function Macros(scope, shown)
     local out = {}
     for _, s in ipairs(scope and { scope } or { "general", "character" }) do
         local first, last = MacroRange(s)
         for index = first, last do
             local name, _, body = GetMacroInfo(index)
-            if name then out[#out + 1] = { scope = s, name = name, icon = ns.MacroIcon(index), body = body or "" } end
+            if name then
+                body = shown and ns.Roles.Text(s, name, body or "") or body or ""
+                out[#out + 1] = { scope = s, name = name, icon = ns.MacroIcon(index), body = body }
+            end
         end
     end
     return out
@@ -1197,6 +1213,7 @@ for key, value in pairs({
     ShowFound = ShowFound, LockMark = LockMark, Locked = Locked,
     MacroRange = MacroRange, IndexIn = IndexIn, Letters = Letters, TabName = TabName, When = When, Load = Load,
     Guard = Guard, Full = Full, FreeName = FreeName, FirstLetters = FirstLetters, Macros = Macros,
+    MakeMacro = MakeMacro,
 }) do shared[key] = value end
 
 ------------------------------------------------------------------------
@@ -1225,15 +1242,13 @@ function Window.CreateFromWizard(name, body, scope)
         return Full(scope, function()
             Guard(function()
                 ns.WizardWindow.Close()
-                Window.MakeBehind(name, NEW_ICON, filled)
+                Window.MakeBehind(name, NEW_ICON, body) -- with @tank and @heal: the names come in with it
             end)
         end)
     end
     Guard(function()
-        local index = CreateMacro(Window.FreeName(name), NEW_ICON, filled, scope == "character")
-        if not index or index == 0 then return ns.Print("could not save the macro") end
-        local saved, _, written = GetMacroInfo(index)
-        ns.Roles.Saved(scope, nil, saved, body, written)
+        local index = MakeMacro(scope, Window.FreeName(name), NEW_ICON, body)
+        if not index then return ns.Print("could not save the macro") end
         ns.History.Scan()
         state.scope, ns.db.scope = scope, scope
         ns.WizardWindow.Close()
