@@ -8413,6 +8413,23 @@ do
     S.Enable()
     check("sets: on again: they go back behind the scenes, as they were", slots() == before and S.Mine().out == nil,
         slots())
+    -- In combat the slots can't change: the sets go neither off nor on, and the chat says so, not "off" or "on".
+    InCombatLockdown = function() return true end
+    SlashCmdList.MACROSENSE("sets off")
+    local saidOff = printed[#printed]
+    InCombatLockdown = function() return false end
+    check("sets: not off in combat, and said so", S.Mine().enabled
+        and saidOff:find("cannot be changed in combat", 1, true) ~= nil, saidOff)
+    S.Disable()
+    local inGame = slots()
+    InCombatLockdown = function() return true end
+    local on, why = S.Enable()
+    SlashCmdList.MACROSENSE("sets on")
+    local saidOn = printed[#printed]
+    InCombatLockdown = function() return false end
+    check("sets: not on in combat, nothing changed, and said so", not on and why == "combat" and not S.Mine().enabled
+        and slots() == inGame and saidOn:find("cannot be changed in combat", 1, true) ~= nil, saidOn)
+    S.Enable()
     -- Broken halfway (the macros made, the sets not off yet): all undone, the error raised.
     local changedBefore, general = ns.MacrosChanged, select(1, GetNumMacros())
     local slot = 77
@@ -8543,6 +8560,12 @@ do
     Fire(setsCheck, "OnClick")
     check("editor: \"Macro sets\" asks first", ns.SetsWindow.IsShown() and not S.Mine().enabled
         and not setsCheck.fill:IsShown())
+    InCombatLockdown = function() return true end
+    Fire(turnOn, "OnClick")
+    InCombatLockdown = function() return false end
+    check("editor: not turned on in combat: the window stays, the chat says why", not S.Mine().enabled
+        and ns.SetsWindow.IsShown() and printed[#printed]:find("cannot be changed in combat", 1, true) ~= nil,
+        printed[#printed])
     Fire(turnOn, "OnClick")
     check("editor: turned on, its check box shows it", S.Mine().enabled and setsCheck.fill:IsShown()
         and not ns.SetsWindow.IsShown())

@@ -219,12 +219,10 @@ local function SetsCommand(args)
         for _, line in ipairs(ns.Sets.Debug()) do print("  " .. line) end
     elseif word == "log" then
         for _, line in ipairs(ns.Sets.Log()) do print("  " .. line) end
-    elseif word == "on" then
-        ns.Sets.Enable()
-        ns.Print("macro sets %s", OnOff(true))
-    elseif word == "off" then
-        ns.Sets.Disable()
-        ns.Print("macro sets %s", OnOff(false))
+    elseif word == "on" or word == "off" then
+        local ok, why = (word == "on" and ns.Sets.Enable or ns.Sets.Disable)()
+        if not ok then return ns.Window.Told(ok, why) end -- in combat
+        ns.Print("macro sets %s", OnOff(word == "on"))
     elseif SETS_LAYERS[word] and rest ~= "" then
         if ns.Sets.Move(rest, SETS_LAYERS[word]) then
             ns.Print("\"%s\" is in this layer now: %s", rest, LayerName(SETS_LAYERS[word]))
