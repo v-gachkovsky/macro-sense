@@ -21,6 +21,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   already did.
 - A text of more than 32 lines in the editor: pointing at the number or note of line 33 or below gave a Lua
   error instead of saying what the line does. Now it says it for every line.
+- Macro sets in combat: "Turn on macro sets" went ahead, though the game doesn't let macros change then, and
+  turned on again the sets could end up with a macro both in the game and behind the scenes. "/ms sets off" in
+  combat said "off" while the sets stayed on. Now both say that macros can't be changed in combat, and nothing
+  changes.
 
 ## [0.15.3] - 2026-11-07
 

@@ -832,10 +832,11 @@ end
 -- Sets on for this character. The first time: the macros in the slots become its own layer (a backup of them
 -- first); the specialization now is the active one, with nothing of its own yet. Again: the sets as they were left,
 -- the macros in the slots as they are now (changed, deleted, a new one the character's). Then the class macros come
--- in.
+-- in. True; false and "combat" in combat, when the slots can't change.
 function Sets.Enable()
     local sets = Sets.Mine()
-    if sets.enabled then return end
+    if sets.enabled then return true end
+    if InCombatLockdown() then return false, "combat" end
     if ns.Window.BackupNow then ns.Window.BackupNow() end
     sets.enabled = true
     if sets.active then
@@ -895,6 +896,7 @@ function Sets.Enable()
     seen = nil
     Sets.Update()
     ns.Window.SetsChanged()
+    return true
 end
 
 

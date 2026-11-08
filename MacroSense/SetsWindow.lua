@@ -254,7 +254,8 @@ local function Build()
         .. "let \"Sort by spells\" do it. A backup of your macros is made first.\n\nSets made on another character "
         .. "of yours come over with \"Share\" > \"Import a code or text...\"."])
     onBtn = ns.Button(frame, L["Turn on macro sets"], 200, function()
-        ns.Sets.Enable()
+        local ok, why = ns.Sets.Enable()
+        if not ok then return ns.Window.Told(ok, why) end -- in combat: the window stays, to try again
         frame:Hide()
     end, true)
     onBtn:SetPoint("BOTTOMLEFT", PAD * 2, PAD * 2)
