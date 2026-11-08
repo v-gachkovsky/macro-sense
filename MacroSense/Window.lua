@@ -368,6 +368,15 @@ function Window.RefreshPreview() UpdatePreview() end
 ------------------------------------------------------------------------
 local explained -- what the tooltip explains now: the line's number and the text
 
+-- Line `n` of `raw`, or nil. One by one: a pattern takes 32 lines at most.
+local function LineOf(raw, n)
+    local i = 0
+    for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
+        i = i + 1
+        if i == n then return line end
+    end
+end
+
 -- The names of forms and specializations and the commands of this client, for Explain.
 local explainEnv = {
     formName = function(n)
@@ -458,7 +467,7 @@ local function UpdateExplain()
     local key = (n and n .. "\1" .. raw) or (pos and "@" .. pos .. "\1" .. raw)
     if key == explained then return end
     explained = key
-    local text = n and select(n, (raw .. "\n"):match(string.rep("([^\n]*)\n", n)))
+    local text = n and LineOf(raw, n)
     local lines = text and ns.Explain.Line(text, explainEnv)
     if not lines then
         local shown, e = WordTip(raw, pos), FixAt(pos)
