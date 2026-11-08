@@ -31,6 +31,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   deleted elsewhere, could switch to the General one. Now it stays on the macro you were editing.
 - "Replace all" with unsaved changes in the editor: if a macro was made or deleted while it asked about them,
   the new text could go into the wrong macro. Now it looks for the text once you answer.
+- After a comma in `/castrandom` and `/userandom`, and in `/castsequence` by its name in another language of the
+  game, no names were suggested for the next spell or item. Now they are.
 
 ### Changed
 - The names of your specializations, offered after `[spec:` and used to tell what a line does, now come from
