@@ -329,6 +329,8 @@ local scheme = { text = "ffffff", command = "111111", action = "222222", operato
 for _, raw in ipairs({
     "/cast [@focus,mod:shift] Polymorph; Fireball",
     "#showtooltip\n/cast [nocombat] A\n/run print(\"a||b\")",
+    -- A typed "|" is "||" in the text box: the "r" or "c" after it is no color code.
+    "/run print(\"||cffff0000red||r\")", "||r",
     "", "plain", "/",
 }) do
     local colored = H.Colorize(raw, scheme)

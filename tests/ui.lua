@@ -770,6 +770,17 @@ Type(" ")
 check("spells after ]", ns.Popup:IsShown())
 Key("ESCAPE", "OnEscapePressed")
 
+-- A "|" typed is "||" in the text box: the "r" after it stays a letter, and the cursor stays after it.
+do
+    local before = raw()
+    edit:SetCursorPosition(#edit.text)
+    Type("\n/run print(\"||r")
+    check("a pipe and an r: the cursor after them", raw():sub(-3) == "||r" and rawCursor() == #raw(),
+        rawCursor() .. " of " .. #raw())
+    ns.Window.Restore(before)
+    Key("ESCAPE", "OnEscapePressed")
+end
+
 -- Syntax errors: underlined and named in the status bar, but not the word being typed.
 do
     local function underlines()
