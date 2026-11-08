@@ -27,6 +27,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   changes.
 - Typing "|" followed by "r" or "c" in the editor, as in a color code inside `/run`, could put the cursor in
   the wrong place. Now it stays where you type.
+- A General and a Character macro with one name: the editor, opened again or after a macro was made or
+  deleted elsewhere, could switch to the General one. Now it stays on the macro you were editing.
 
 ## [0.15.3] - 2026-11-07
 
