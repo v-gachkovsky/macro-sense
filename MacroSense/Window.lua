@@ -909,14 +909,29 @@ function Window.Copy(scope, index)
     make(name ~= "" and name or state.name, state.icon, body)
 end
 
+-- Macro `name` of tab `scope`: of two with that name, the one with text `body`, else the first; nil when none.
+local function IndexOf(scope, name, body)
+    local first, last = MacroRange(scope)
+    local found
+    for index = first, last do
+        local n, _, text = GetMacroInfo(index)
+        if n == name then
+            if text == body then return index end
+            found = found or index
+        end
+    end
+    return found
+end
+
 -- Macro `index` into the other tab, opened there: made under its name (a free one when that tab has it) with its
 -- icon and text, put back on its buttons of the action bars now, its versions taken along, then deleted here. The
 -- bars of your other specializations and, for a general macro, of other characters lose it. Unsaved changes are
 -- asked about first.
--- General macro `name` into the character's, with no free slot there: behind the scenes, off its buttons (one of a
--- macro gone would show the next general macro made in its place). All or nothing, as the moves below.
-local function MoveBehind(from, name) return ns.Sets.Atomic(function()
-    local index = IndexIn(from, name)
+-- General macro `name` (with text `text` as it was asked about) into the character's, with no free slot there:
+-- behind the scenes, off its buttons (one of a macro gone would show the next general macro made in its place).
+-- All or nothing, as the moves below.
+local function MoveBehind(from, name, text) return ns.Sets.Atomic(function()
+    local index = IndexOf(from, name, text)
     if not index then return end
     local _, _, body = GetMacroInfo(index)
     local icon = ns.MacroIcon(index)
@@ -949,7 +964,8 @@ local function MoveOne(index, to)
     if not made or made == 0 then return nil end
     ns.History.Moved(from, to, name, moved)
     ns.Roles.Moved(from, to, name, moved)
-    DeleteMacro(IndexIn(from, name))
+    -- This one, not another of its name: a macro made in the other tab leaves the numbers of this one as they were.
+    DeleteMacro(index)
     ns.ActionBars.Place(IndexIn(to, moved), slots)
     return moved
 end
@@ -961,8 +977,8 @@ function Window.Move(index)
     local to = from == "general" and "character" or "general"
     local first, last, max = MacroRange(to)
     if last - first + 1 >= max then
-        local name = GetMacroInfo(index)
-        return Full(to, function() Guard(function() MoveBehind(from, name) end) end, 1, true)
+        local name, _, body = GetMacroInfo(index)
+        return Full(to, function() Guard(function() MoveBehind(from, name, body) end) end, 1, true)
     end
     Guard(function() ns.Sets.Atomic(function()
         local moved = MoveOne(index, to)

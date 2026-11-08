@@ -5994,6 +5994,35 @@ do
     InCombatLockdown = function() return false end
     check("move: not in combat", GetMacroIndexByName("Bar A") > SLOTS.MAX_ACCOUNT_MACROS
         and printed[#printed]:find("cannot be changed in combat", 1, true) ~= nil)
+    -- Two macros of one name in a tab: the one moved leaves it, the other one stays as it is.
+    do
+        CreateMacro("Twins", 1, "/cast Fear", false)
+        CreateMacro("Twins", 1, "/cast Fireball", false)
+        Send("UPDATE_MACROS")
+        local function texts(first, last)
+            local out = {}
+            for index = first, last do
+                local name, _, text = GetMacroInfo(index)
+                if name == "Twins" then out[#out + 1] = text end
+            end
+            return out
+        end
+        local general = select(1, GetNumMacros())
+        local last
+        for index = 1, general do if GetMacroInfo(index) == "Twins" then last = index end end
+        local moving = select(3, GetMacroInfo(last))
+        ns.Window.Move(last)
+        NextFrame()
+        local here = texts(1, select(1, GetNumMacros()))
+        local there = texts(SLOTS.MAX_ACCOUNT_MACROS + 1, SLOTS.MAX_ACCOUNT_MACROS + select(2, GetNumMacros()))
+        check("move: of two macros with one name, the one moved", #here == 1 and here[1] ~= moving and #there == 1
+            and there[1] == moving, table.concat(here, ", ") .. " | " .. table.concat(there, ", "))
+        for _ = 1, 2 do
+            local index = GetMacroIndexByName("Twins")
+            if index > 0 then DeleteMacro(index) end
+        end
+        Send("UPDATE_MACROS")
+    end
 
     -- Before level 10 the game gives a specialization of its own, with no name: it gets one.
     local info = Spec.GetSpecializationInfo
@@ -8101,6 +8130,27 @@ do
         and actions[60] == nil and printed[#printed]:find("is moved behind the scenes", 1, true) ~= nil,
         printed[#printed])
     ns.Window.Forget("character", "Roaming")
+    -- Of two general macros with one name, the second one into the full Character tab: that one goes behind the
+    -- scenes (under a free name: the other one keeps its own), the other one stays in General.
+    do
+        CreateMacro("Roamers", 1, "/cast Fear", false)
+        CreateMacro("Roamers", 1, "/cast Fireball", false)
+        Send("UPDATE_MACROS")
+        local last
+        for index = 1, (counts()) do if GetMacroInfo(index) == "Roamers" then last = index end end
+        local moving = select(3, GetMacroInfo(last))
+        GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
+        ns.db.noBehindAsk = true
+        ns.Window.Move(last)
+        ns.db.noBehindAsk, GetNumMacros = nil, counts
+        local stayed = select(3, GetMacroInfo(GetMacroIndexByName("Roamers")))
+        local behind = inSet("character", "Roamers 2")
+        check("move: of two macros with one name, the one moved goes behind the scenes", behind
+            and behind.body == moving and stayed ~= moving, tostring(behind and behind.body) .. " | " .. tostring(stayed))
+        ns.Window.Forget("character", "Roamers 2")
+        DeleteMacro(GetMacroIndexByName("Roamers"))
+        Send("UPDATE_MACROS")
+    end
     Fire(listRow("stored", "Spare").remove, "OnClick")
     local trashed = false
     for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Spare" then trashed = true end end
