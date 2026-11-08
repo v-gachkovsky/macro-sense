@@ -2573,6 +2573,14 @@ do
         and not R.Uses("/cast Shadow Bolt (Rank 2)", sb))
     check("ranks: with a rank once and none after", R.Uses("/cast [mod] Shadow Bolt(Rank 1); Shadow Bolt", sb))
     check("ranks: another spell's macro does not", not R.Uses("/cast Immolate", sb))
+    -- The whole name, where a macro casts or shows it: not inside another spell's name, a condition or a chat line.
+    local heal = { "Heal" }
+    check("ranks: not inside another name", not R.Uses("/cast Flash Heal", heal) and not R.Uses("/cast Greater Heal",
+        heal))
+    check("ranks: not in a condition or in chat", not R.Uses("/cast [known:Heal] Renew", heal)
+        and not R.Uses("/say Heal me", heal))
+    check("ranks: in a list, after !, by /use, in #showtooltip", R.Uses("/castsequence reset=3 Renew, Heal", heal)
+        and R.Uses("/cast [mod] !Heal", heal) and R.Uses("/use Heal", heal) and R.Uses("#showtooltip Heal", heal))
 end
 
 -- Macros from the spellbook.

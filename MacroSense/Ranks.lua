@@ -27,19 +27,24 @@ function Ranks.Learned(before, now)
     return out
 end
 
--- Whether `body` names one of `spells` with no rank after it: "Shadow Bolt", not "Shadow Bolt(Rank 2)".
+-- The commands that cast what they name, by their English names (the client's own: Parser.actionCommands).
+local CASTS = { cast = true, use = true, castsequence = true, castrandom = true, userandom = true }
+
+-- Whether `body` casts or shows (#showtooltip) one of `spells` by its whole name with no rank after it: "Shadow
+-- Bolt", not "Shadow Bolt(Rank 2)", nor "Greater Shadow Bolt", a condition or a line said in chat.
 function Ranks.Uses(body, spells)
-    local text = (body or ""):lower()
-    for _, name in ipairs(spells) do
-        local from, last = 1, nil
-        repeat
-            local s, e = text:find(name:lower(), from, true)
-            if s then
-                if not text:sub(e + 1):match("^%s*%(") then return true end
-                from = e + 1
+    local wanted = {}
+    for _, name in ipairs(spells) do wanted[name:lower()] = true end
+    for line in (body or ""):gmatch("[^\n]+") do
+        local options = line:match("^%s*#show%a*(.*)$")
+        local command, rest = line:match("^%s*/(%S+)%s*(.*)$")
+        if command and CASTS[ns.Parser.actionCommands[command:lower()] or ""] then options = rest end
+        for clause in ((options or "") .. ";"):gmatch("([^;]*);") do
+            local names = clause:gsub("%b[]", ""):gsub("reset=%S*", "")
+            for name in (names .. ","):gmatch("([^,]*),") do
+                if wanted[name:match("^[%s!]*(.-)%s*$"):lower()] then return true end
             end
-            last = s
-        until not last
+        end
     end
     return false
 end
