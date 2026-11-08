@@ -634,6 +634,12 @@ function Highlight.Strip(colored)
     return table.concat(out)
 end
 
+-- Raw characters at `i` of colored text, up to `left` of them: 2 for "||", which Strip keeps as it is (the second
+-- "|" starts no code: "||r" is a pipe and an r), else 1.
+local function charsAt(s, i, left)
+    return math.min(s:sub(i, i + 1) == "||" and 2 or 1, left)
+end
+
 -- Cursor (bytes before it) in colored text -> cursor in raw text.
 function Highlight.ToRaw(colored, cursor)
     local raw, i = 0, 1
@@ -642,7 +648,8 @@ function Highlight.ToRaw(colored, cursor)
         if code then
             i = i + code
         else
-            raw, i = raw + 1, i + 1
+            local n = charsAt(colored, i, cursor - i + 1)
+            raw, i = raw + n, i + n
         end
     end
     return raw
@@ -658,7 +665,8 @@ function Highlight.ToColored(colored, rawCursor)
         if code then
             i = i + code
         else
-            raw, i = raw + 1, i + 1
+            local n = charsAt(colored, i, rawCursor - raw)
+            raw, i = raw + n, i + n
             if raw == rawCursor then break end
         end
     end

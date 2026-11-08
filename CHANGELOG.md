@@ -25,6 +25,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   turned on again the sets could end up with a macro both in the game and behind the scenes. "/ms sets off" in
   combat said "off" while the sets stayed on. Now both say that macros can't be changed in combat, and nothing
   changes.
+- Typing "|" followed by "r" or "c" in the editor, as in a color code inside `/run`, could put the cursor in
+  the wrong place. Now it stays where you type.
 
 ## [0.15.3] - 2026-11-07
 
