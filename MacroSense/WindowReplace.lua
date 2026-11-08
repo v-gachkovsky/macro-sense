@@ -102,8 +102,9 @@ end
 -- their sets. One too long then stays as it is, and says so. Not in combat; unsaved changes are asked about first.
 local function ReplaceAll()
     if InCombatLockdown() then return ns.Print("macros cannot be changed in combat") end
-    local plan = Plan()
     Guard(function() ns.Sets.Atomic(function()
+        -- Found once unsaved changes are answered: the macros may have moved meanwhile.
+        local plan = Plan()
         local done, long = 0, {}
         for _, p in ipairs(plan) do
             local m = p.m

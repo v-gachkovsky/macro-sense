@@ -4928,6 +4928,30 @@ do
         and printed[#printed]:find("Rep Long", 1, true) ~= nil, printed[#printed])
     check("replace: History keeps what it had", #ns.History.Versions(ns.History.Store("general"), "Rep A",
         body("Rep A")) == 1)
+    -- The macros may change while it asks about unsaved changes: what it replaces is found once you answer.
+    CreateMacro("Rep C", 1, "/cast Unique Bolt", false)
+    CreateMacro("Rep D", 1, "/cast Fear", false)
+    Send("UPDATE_MACROS")
+    ns.Window.Select(GetMacroIndexByName("Rep D"))
+    NextFrame()
+    ns.Window.Restore("/cast Fear; changed")
+    findBox:SetText("Unique Bolt")
+    Fire(findBox, "OnTextChanged", true)
+    withBox:SetText("Drain Life")
+    Fire(withBox, "OnTextChanged", true)
+    local show, accept = StaticPopup_Show, nil
+    StaticPopup_Show = function(which, _, _, data)
+        accept = function() StaticPopupDialogs[which].OnAccept(nil, data) end
+    end
+    Fire(find("Button", "Replace all"), "OnClick")
+    StaticPopup_Show = show
+    DeleteMacro(GetMacroIndexByName("Rep C"))
+    Send("UPDATE_MACROS")
+    local answered = accept ~= nil and pcall(accept)
+    check("replace: the macros changed while it asked: none changed by mistake", answered
+        and body("Rep D") == "/cast Fear", body("Rep D"))
+    DeleteMacro(GetMacroIndexByName("Rep D"))
+    Send("UPDATE_MACROS")
     MacroSenseReplace:Hide()
     for _, name in ipairs({ "Rep A", "Rep B", "Rep Long" }) do DeleteMacro(GetMacroIndexByName(name)) end
     Send("UPDATE_MACROS")
