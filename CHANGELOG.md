@@ -38,6 +38,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   with the word. Now only the macros that cast or show that very spell are saved again.
 - The wizard's "Not while channeling it" for spells in turn or at random: with the list's first row left empty,
   the macro waited for any channel to end, not for its own spell's. Now it names the first spell of the list.
+- The wizard's "Not while channeling it" with Shift, Ctrl or Alt casting another spell: the key's spell waited for
+  the macro's main spell to end, not for itself (`[mod:alt,nochanneling:Drain Life] Drain Soul`). Now each
+  spell waits for itself: `[mod:alt,nochanneling:Drain Soul] Drain Soul; [nochanneling:Drain Life] Drain Life`.
 - `/ms` with a word it doesn't know listed its commands without `/ms sets`. Now it lists that one too.
 
 ### Changed

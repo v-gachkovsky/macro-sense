@@ -133,8 +133,8 @@ Wizard.channels = {
 }
 -- When the macro does anything at all: each a choice, "any" for always; `cond` is what the macro checks. The forms
 -- are this character's (Wizard.WhenForms). A channeled spell stops when you press another one: "own" leaves the
--- macro's own spell going ([nochanneling:Drain Soul]), "no" any of them. Otherwise (`spec.otherwise`): what /cast
--- or /use does when not.
+-- spell going that the press would cast, the macro's or a key's own ([nochanneling:Drain Soul]), "no" any of them.
+-- Otherwise (`spec.otherwise`): what /cast or /use does when not.
 Wizard.whens = {
     { key = "combat", items = { { key = "any", name = "In or out of combat" },
         { key = "yes", name = "In combat", cond = "combat" }, { key = "no", name = "Out of combat", cond = "nocombat" } } },
@@ -162,8 +162,9 @@ function Wizard.WhenForms(forms)
     return out
 end
 
--- "combat,nostealth": what the macro checks before anything, in the order of Wizard.whens.
-local function When(spec)
+-- "combat,nostealth": what the macro checks before anything, in the order of Wizard.whens. `action`: what the
+-- clause casts (a key's own spell), the macro's if nil.
+local function When(spec, action)
     local out = {}
     for _, w in ipairs(Wizard.whens) do
         local chosen = spec.when[w.key]
@@ -171,10 +172,13 @@ local function When(spec)
             if w.key == "form" then
                 out[#out + 1] = chosen == "0" and "noform" or "form:" .. chosen
             elseif chosen == "own" then
-                -- The macro's spell, a list's first (rows may be left empty before it); with none, any.
-                local action = spec.action
-                if Wizard.IsList(spec.command) then
-                    for i = Wizard.LIST, 1, -1 do action = spec.list[i] or action end
+                -- The clause's spell, else the macro's, a list's first (rows may be left empty before it); with
+                -- none, any.
+                if not action then
+                    action = spec.action
+                    if Wizard.IsList(spec.command) then
+                        for i = Wizard.LIST, 1, -1 do action = spec.list[i] or action end
+                    end
                 end
                 out[#out + 1] = action and "nochanneling:" .. action.name or "nochanneling"
             else
@@ -309,12 +313,12 @@ end
 -- "[mod:shift,combat,@mouseover,help,nodead]": the key (`mod`, "mod:shift" or "nomod:shift/ctrl"), the unit, then
 -- what it must be (`only`: friends or enemies, the form's choice if nil). A unit that may not be there without a
 -- check is asked for ([@focus,exists]), so the cast goes on to the next one. A cast needs no "@target" (it goes to
--- the target anyway); /focus and /assist do (`named`).
-local function Group(spec, unit, mod, named, only)
+-- the target anyway); /focus and /assist do (`named`). `action`: what a key casts, for the When row (When).
+local function Group(spec, unit, mod, named, only, action)
     local conds = {}
     only = only or spec.only
     if mod then conds[#conds + 1] = mod end
-    local when = When(spec)
+    local when = When(spec, action)
     if when ~= "" then conds[#conds + 1] = when end
     if unit ~= "default" and (named or unit ~= "target") then conds[#conds + 1] = "@" .. unit end
     if filtered[unit] then
@@ -370,7 +374,9 @@ local function Clauses(spec)
         if action then
             local only = Wizard.Only(spec, key)
             local keep = keeps[k.action and key or "main"]
-            for _, unit in ipairs(Chain(k.on)) do add(Group(spec, unit, "mod:" .. key, nil, only), action, keep) end
+            for _, unit in ipairs(Chain(k.on)) do
+                add(Group(spec, unit, "mod:" .. key, nil, only, action), action, keep)
+            end
         end
     end
     if spec.action then

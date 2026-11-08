@@ -55,7 +55,7 @@ local function Group(conds)
         elseif WHEN_OF[c] then
             g.when[WHEN_OF[c][1]] = WHEN_OF[c][2]
         elseif c:match("^nochanneling:") then
-            g.when.channel = "own" -- the spell named is the macro's: if not, the line changes (W.Read's `lost`)
+            g.when.channel = "own" -- the spell named is the one cast: if not, the line changes (W.Read's `lost`)
         elseif c == "noform" or c == "form:0" then
             g.when.form = "0"
         elseif c:match("^form:%d+$") then

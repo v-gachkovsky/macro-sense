@@ -2083,6 +2083,15 @@ do
         .. "/cast [mod:shift,nochanneling:Drain Soul][nochanneling:Drain Soul] !Drain Soul", W.Text(spec))
     read("channeling another spell: the macro's then", "/cast [nochanneling:Mind Flay] Mind Blast",
         "#showtooltip\n/cast [nochanneling:Mind Blast] Mind Blast", "/cast [nochanneling:Mind Flay] Mind Blast")
+    -- A key with a spell of its own: that spell named for it, not the macro's.
+    local drains = "#showtooltip\n/cast [mod:alt,nochanneling:Drain Soul,@mouseover,harm,nodead]"
+        .. "[mod:alt,nochanneling:Drain Soul] Drain Soul; [nochanneling:Drain Life,@mouseover,harm,nodead]"
+        .. "[nochanneling:Drain Life] Drain Life"
+    spec = read("not while channeling it, a key's own spell", drains, drains)
+    check("wizard read: not while channeling it, a key's own spell, the answers", spec.when.channel == "own"
+        and spec.action.name == "Drain Life" and spec.keys.alt.action.name == "Drain Soul")
+    local old = drains:gsub("alt,nochanneling:Drain Soul", "alt,nochanneling:Drain Life")
+    read("a key's spell with the macro's channel: its own then", old, drains, old:match("/cast.*"))
     -- A list with its first row left empty: the first spell in it is the macro's.
     do
         local list = W.Fresh()
