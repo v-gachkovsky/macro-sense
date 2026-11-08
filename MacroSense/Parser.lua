@@ -78,7 +78,10 @@ function Parser.GetContext(text, cursor)
     end
     local restStart = lineStart + #head
 
-    -- Find the clause the cursor is in: track brackets, remember the last separator.
+    -- Find the clause the cursor is in: track brackets, remember the last separator. A list of names (a sequence,
+    -- one at random) has "," between them, by any name of its command (/zauberfolge).
+    local listed = Parser.actionCommands[cmd]
+    local list = listed == "castsequence" or listed == "castrandom" or listed == "userandom"
     local inBracket, tokenStart = false, 1
     for i = 1, #rest do
         local c = rest:sub(i, i)
@@ -88,7 +91,7 @@ function Parser.GetContext(text, cursor)
             inBracket, tokenStart = false, i + 1
         elseif inBracket and c == "," then
             tokenStart = i + 1
-        elseif not inBracket and (c == ";" or (c == "," and cmd:find("sequence"))) then
+        elseif not inBracket and (c == ";" or (c == "," and list)) then
             tokenStart = i + 1
         end
     end

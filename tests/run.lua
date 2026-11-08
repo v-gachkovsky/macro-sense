@@ -69,6 +69,12 @@ expect("/cast [mod:shift] Polymorph; [@focus] |", "action", "")
 expect("/cast !Fro|", "action", "Fro")
 expect("/castsequence reset=10 Fireball, Fro|", "action", "Fro")
 expect("/castsequence reset=10 Fire|", "action", "Fire")
+-- Each name of a list after its comma: /castrandom, /userandom, and /castsequence by another name of it.
+expect("/castrandom Fireball, Fro|", "action", "Fro")
+expect("/userandom Hearthstone, Gar|", "action", "Gar")
+ns.Parser.actionCommands.zauberfolge = "castsequence"
+expect("/zauberfolge Feuerball, Fro|", "action", "Fro")
+ns.Parser.actionCommands.zauberfolge = nil
 expect("/target [@|", "unit", "")
 expect("/cast Fireball(Ra|", "rank", "Ra", { spell = "Fireball" })
 expect("/cast [mod] !Fireball(|", "rank", "", { spell = "Fireball" })
