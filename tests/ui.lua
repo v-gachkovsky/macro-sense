@@ -6319,6 +6319,16 @@ do
     check("explained: a command of the client's language", at(102, 5) == "Line 5 / • targets your focus"
         and at(102, 6) == "Line 6 / • gets off your mount", at(102, 6))
     GetNumShapeshiftForms, GetShapeshiftFormInfo, GetNumSpecializations, GetSpecializationInfo = nil, nil, nil, nil
+    -- Retail has the specializations' names in C_SpecializationInfo: its global function is old since 11.2.0.
+    do
+        local info = C_SpecializationInfo.GetSpecializationInfo
+        GetNumSpecializations = function() return 2 end
+        C_SpecializationInfo.GetSpecializationInfo = function(i) return 100 + i, ({ "Balance", "Feral" })[i], "", 1 end
+        local specs = ns.sources.specs()
+        check("specializations: their names from C_SpecializationInfo", #specs == 2 and specs[2].hint == "Feral",
+            specs[2] and specs[2].hint)
+        GetNumSpecializations, C_SpecializationInfo.GetSpecializationInfo = nil, info
+    end
     -- Over the text: the word under the mouse. Letter k of a line is at x = text start + 8 (k - 1).
     local w = math.floor((edit.fontSize or 13) * 0.6 + 0.5)
     local function letter(k) return 100 + 2 * w + 12 + 6 + (k - 1) * w + 2 end

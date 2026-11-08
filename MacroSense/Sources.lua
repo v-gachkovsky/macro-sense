@@ -633,11 +633,14 @@ function ns.sources.forms()
     return out
 end
 
+-- Retail has the specializations in C_SpecializationInfo (its global function is old since 11.2.0), the others
+-- in the global one.
 function ns.sources.specs()
     local out = {}
-    if GetNumSpecializations and GetSpecializationInfo then
+    local Info = C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo or GetSpecializationInfo
+    if GetNumSpecializations and Info then
         for i = 1, GetNumSpecializations() do
-            local _, name, _, icon = GetSpecializationInfo(i)
+            local _, name, _, icon = Info(i)
             out[#out + 1] = { name = tostring(i), hint = name, icon = icon }
         end
     end
