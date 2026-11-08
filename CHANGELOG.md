@@ -32,6 +32,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - "Replace all" with unsaved changes in the editor: if a macro was made or deleted while it asked about them,
   the new text could go into the wrong macro. Now it looks for the text once you answer.
 
+### Changed
+- The names of your specializations, offered after `[spec:` and used to tell what a line does, now come from
+  the game function Retail has for them now. The old one, which Retail marked to go in patch 11.2.0, is used
+  only by the clients that have no other.
+
 ## [0.15.3] - 2026-11-07
 
 ### Fixed
