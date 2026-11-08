@@ -38,6 +38,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
   with the word. Now only the macros that cast or show that very spell are saved again.
 - The wizard's "Not while channeling it" for spells in turn or at random: with the list's first row left empty,
   the macro waited for any channel to end, not for its own spell's. Now it names the first spell of the list.
+- `/ms` with a word it doesn't know listed its commands without `/ms sets`. Now it lists that one too.
 
 ### Changed
 - The names of your specializations, offered after `[spec:` and used to tell what a line does, now come from

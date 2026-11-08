@@ -24,10 +24,11 @@ ns.locales.uk = {
     ["  Please describe what you did, what you expected and what happened; a screenshot helps."] =
         "  Опишіть, що ви робили, чого очікували і що сталося; знімок екрана теж допоможе.",
     ["debug %s"] = "налагодження: %s",
-    ["/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms minimap - hide or show the minimap button; "
-        .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
-        "/ms — відкрити редактор; /ms help — довідка з макросів; /ms book — макроси з книги заклинань; /ms minimap — сховати чи показати кнопку біля "
-        .. "мінікарти; /ms bug — подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
+    ["/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms sets - macro sets; "
+        .. "/ms minimap - hide or show the minimap button; /ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
+        "/ms — відкрити редактор; /ms help — довідка з макросів; /ms book — макроси з книги заклинань; /ms sets — набори "
+        .. "макросів; /ms minimap — сховати чи показати кнопку біля мінікарти; /ms bug — подробиці для звіту про помилку; "
+        .. "/ms autocomplete | debug — увімкнути чи вимкнути",
     ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
         .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
         .. "out of stealth."] =

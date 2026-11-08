@@ -559,6 +559,15 @@ Send("PLAYER_LOGIN")
 check("welcome note only once per version", #printed == count, #printed - count)
 SlashCmdList.MACROSENSE("bug")
 check("/ms bug prints versions", printedWith("MacroSense dev, WoW 12.1.5 (120105), Mac"))
+-- A word /ms doesn't know: the commands it does, /ms sets among them, in the addon's language.
+SlashCmdList.MACROSENSE("what")
+check("/ms: its commands, /ms sets too", printed[#printed]:find("/ms sets - macro sets;", 1, true) ~= nil,
+    printed[#printed])
+ns.SetLanguage("uk")
+SlashCmdList.MACROSENSE("what")
+check("/ms: its commands in Ukrainian", printed[#printed]:find("/ms sets — набори макросів;", 1, true) ~= nil,
+    printed[#printed])
+ns.SetLanguage("en")
 
 -- The MacroSense button sits in the title bar of the Blizzard macro window, left of its close button.
 MacroFrame = New("Frame", "MacroFrame")

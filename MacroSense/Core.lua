@@ -272,7 +272,7 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.db.debug = not ns.db.debug
         ns.Print("debug %s", OnOff(ns.db.debug))
     else
-        ns.Print("/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms minimap - hide or show the minimap button; "
-            .. "/ms bug - details for a bug report; /ms autocomplete | debug - toggle")
+        ns.Print("/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms sets - macro sets; "
+            .. "/ms minimap - hide or show the minimap button; /ms bug - details for a bug report; /ms autocomplete | debug - toggle")
     end
 end
