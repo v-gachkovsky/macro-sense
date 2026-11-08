@@ -4783,6 +4783,22 @@ do
     check("pick: share the picked", MacroSenseShare:IsShown() and macros and #macros == 2
         and macros[1].name == "Pick A" and macros[2].name == "Pick B")
     ns.ShareWindow.Close()
+    -- One MacroSense keeps with @tank (the game's has the tank's name): shared as the editor shows it, the export of
+    -- a tab too; a backup keeps the game's text.
+    ns.db.roleMacros = ns.db.roleMacros or {}
+    ns.db.roleMacros["Pick A"] = { text = "/cast [@tank] Fear", written = "/cast Fear" }
+    act("Share")
+    macros = ns.Share.Decode(ns.ShareWindow.Control("box").text)
+    check("pick: shared as the editor shows it, with @tank", macros and macros[1].body == "/cast [@tank] Fear",
+        macros and macros[1].body)
+    ns.ShareWindow.Close()
+    local function bodyIn(list)
+        for _, m in ipairs(list) do if m.name == "Pick A" then return m.body end end
+    end
+    check("pick: a tab exported with @tank, backed up with the name",
+        bodyIn(ns.WindowShared.Macros("general", true)) == "/cast [@tank] Fear"
+        and bodyIn(ns.WindowShared.Macros("general")) == "/cast Fear", bodyIn(ns.WindowShared.Macros("general", true)))
+    ns.db.roleMacros["Pick A"] = nil
     -- Move them: into the Character tab, still picked there. The game tells the macros changed while CreateMacro and
     -- DeleteMacro run: each of them moved, none left out half way.
     local create, delete = CreateMacro, DeleteMacro
@@ -8749,6 +8765,57 @@ do
     S.Park("character", "Behind", false)
     regroup("Eve")
     check("roles, behind: in again, followed", body("Behind") == "/cast [@Eve,help] Flash Heal", body("Behind"))
+
+    -- Every other way into the game gives the tank's name too, and the new ones from then on; every way behind the
+    -- scenes keeps @tank.
+    local function named(tank) return (tagged:gsub("@tank", "@" .. tank)) end
+    local function inSet(name)
+        for _, m in ipairs(S.List("character")) do if m.name == name then return m end end
+    end
+    ns.Window.Import({ { scope = "general", name = "Shared Heal", icon = 1, body = tagged } })
+    check("roles: a code with @tank imported: the tank's name in the game", body("Shared Heal") == named("Eve"),
+        body("Shared Heal"))
+    S.Write("character", nil, "Stored Heal", 1, tagged)
+    ns.Window.StoredToGeneral("character", "Stored Heal", true)
+    check("roles: from behind the scenes into General: the tank's name", body("Stored Heal") == named("Eve"),
+        body("Stored Heal"))
+    S.Write("character", nil, "Trashed Heal", 1, tagged)
+    S.Forget("character", "Trashed Heal")
+    local entry
+    for _, e in ipairs(ns.History.Trash("character")) do if e.name == "Trashed Heal" then entry = e end end
+    ns.Window.Undelete("character", entry)
+    check("roles: deleted behind the scenes, back from the trash: the tank's name", body("Trashed Heal") == named("Eve"),
+        body("Trashed Heal"))
+    regroup("Fay")
+    check("roles: those follow the new tank", body("Shared Heal") == named("Fay") and body("Stored Heal") == named("Fay")
+        and body("Trashed Heal") == named("Fay"), body("Shared Heal"))
+    -- A link of a macro from the list holds it as the editor shows it: with @tank.
+    local shift = IsShiftKeyDown
+    IsShiftKeyDown = function() return true end
+    ChatFrameUtil = { GetActiveWindow = function() end, OpenChat = function() end }
+    ns.Window.SetScope("general")
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.what == "macro" and o.name == "Shared Heal" and o.shown then
+            Fire(o, "OnClick", "LeftButton")
+        end
+    end
+    IsShiftKeyDown, ChatFrameUtil = shift, nil
+    local linked = ns.db.links and ns.db.links["Shared Heal"] and ns.Share.Decode(ns.db.links["Shared Heal"].code)
+    check("roles: linked from the list, with @tank", linked and linked[1].body == tagged, linked and linked[1].body)
+    -- No free slot in the Character tab: the wizard's macro behind the scenes keeps @tank, so does a general one
+    -- moved there.
+    local counts = GetNumMacros
+    GetNumMacros = function() return (counts()), ns.MAX_CHARACTER end
+    ns.db.noBehindAsk = true
+    ns.Window.CreateFromWizard("Wizard Heal", tagged, "character")
+    check("roles: the wizard's macro behind the scenes keeps @tank", inSet("Wizard Heal")
+        and inSet("Wizard Heal").body == tagged, inSet("Wizard Heal") and inSet("Wizard Heal").body)
+    ns.Window.Move(GetMacroIndexByName("Shared Heal"))
+    check("roles: a general macro moved behind the scenes keeps @tank", inSet("Shared Heal")
+        and inSet("Shared Heal").body == tagged, inSet("Shared Heal") and inSet("Shared Heal").body)
+    GetNumMacros, ns.db.noBehindAsk = counts, nil
+    for _, name in ipairs({ "Wizard Heal", "Shared Heal" }) do S.Forget("character", name) end
+    for _, name in ipairs({ "Stored Heal", "Trashed Heal" }) do DeleteMacro(GetMacroIndexByName(name)) end
 
     S.Forget("character", "Behind")
     if GetMacroIndexByName("Behind") > 0 then DeleteMacro(GetMacroIndexByName("Behind")) end

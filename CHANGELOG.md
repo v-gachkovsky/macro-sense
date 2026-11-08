@@ -10,6 +10,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Two macros with one name in a tab: moving one of them into the other tab could delete the other one, and it
   didn't even go into the trash. Now the macro you move leaves the tab and the other one stays as it is. When
   the character tab has no free slot, the one you picked goes behind the scenes, not the other one.
+- @tank and @heal: a macro imported from a code or a chat link, moved from behind the scenes into General, or
+  deleted behind the scenes and brought back from the trash came into the game with "@tank" itself. The game
+  doesn't know that target, so the macro didn't cast on your tank, and it never got a tank's name later either.
+  Now it gets the names of your group's tank and healer, and the new ones from then on.
+- A macro made behind the scenes for lack of a free slot, by the wizard or moved there from General, kept the
+  names of the tank and healer of that moment instead of @tank and @heal. Now it keeps @tank and @heal.
+- A link from the list and the code of a whole tab or of the picked macros held the names of your tank and
+  healer. Now they hold the macros as the editor shows them, with @tank and @heal, as "Link this macro in chat"
+  already did.
 
 ## [0.15.3] - 2026-11-07
 

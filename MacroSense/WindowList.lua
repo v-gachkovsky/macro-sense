@@ -305,8 +305,10 @@ local function Row(i)
                 return ns.Links.Insert({ scope = "character", name = r.macro.name, icon = r.macro.icon,
                     body = r.macro.body or "" })
             end
+            -- As the editor shows it (@tank and @heal), as "Link this macro in chat" does.
             local name, _, body = GetMacroInfo(r.index)
-            return ns.Links.Insert({ scope = r.scope, name = name, icon = ns.MacroIcon(r.index), body = body or "" })
+            return ns.Links.Insert({ scope = r.scope, name = name, icon = ns.MacroIcon(r.index),
+                body = ns.Roles.Text(r.scope, name, body or "") })
         end
         if r.what == "altMacro" then return OpenAltCopyMenu(r, r.macro) end
         Window.Select(r.index)

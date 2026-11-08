@@ -9,7 +9,7 @@ local MAX_BODY, MAX_NAME, NEW_ICON = shared.MAX_BODY, shared.MAX_NAME, shared.NE
 local MacroRange, Letters, TabName = shared.MacroRange, shared.Letters, shared.TabName
 local Load, Guard, Full, FreeName, FirstLetters = shared.Load, shared.Guard, shared.Full, shared.FreeName,
     shared.FirstLetters
-local Macros = shared.Macros
+local Macros, MakeMacro = shared.Macros, shared.MakeMacro
 
 -- Where each macro of a code goes, in order: { macro, name = a free one } into its own tab, or { macro, full =
 -- true } with no free slot there, or { macro, long = true } for a text longer than the game allows.
@@ -45,8 +45,8 @@ function Window.Import(macros, done)
             -- A text from a guide has no icon: the question mark, so the game shows the spell's.
             local icon = m.icon ~= "" and m.icon or NEW_ICON
             if p.name then
-                CreateMacro(p.name, icon, m.body, m.scope == "character")
-                made, first = made + 1, first or p
+                -- @tank and @heal in it: the names of your group's tank and healer in the game's macro.
+                if MakeMacro(m.scope, p.name, icon, m.body) then made, first = made + 1, first or p end
             elseif p.full and m.scope == "character" and ns.Sets.Mine().enabled then
                 behind[#behind + 1] = { name = m.name, icon = icon, body = m.body }
             end
@@ -202,10 +202,10 @@ local function ShareItems()
             .. "forum or Discord. MacroSense can import it too."] or L["Save the macro first, then copy its text."],
             function() ns.ShareWindow.ExportText({ name = state.name, body = state.body }) end, not state.index),
         item(string.format(L["Export the %s tab (%d)"], tab, here), L["The code of every macro in this tab."],
-            function() ns.ShareWindow.Export(Macros(state.scope)) end, here == 0),
+            function() ns.ShareWindow.Export(Macros(state.scope, true)) end, here == 0),
         item(string.format(L["Export all macros (%d)"], general + character),
             L["The code of every macro in both tabs. On import, each one goes into its own tab."],
-            function() ns.ShareWindow.Export(Macros()) end, general + character == 0),
+            function() ns.ShareWindow.Export(Macros(nil, true)) end, general + character == 0),
         item(L["Export macro sets..."], L["The code of your macro sets: you choose which. Import it on another "
             .. "character, or share it."], function() ns.ShareWindow.ExportSets(Window.SetsData()) end,
             #Window.SetsData().sets == 0),
