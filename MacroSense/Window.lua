@@ -68,6 +68,14 @@ local function NoRoom(scope)
     ns.Print("no free character macro slots")
 end
 
+-- The macro shown, where it is now: in its place while it has its name there, else the one of its name in its tab
+-- (the other tab may have one of that name too); nil when it is gone.
+local function WhereShown()
+    if not state.index then return nil end
+    if GetMacroInfo(state.index) == state.name then return state.index end
+    return IndexIn(state.index > MAX_GENERAL and "character" or "general", state.name)
+end
+
 local function IsDirty()
     if not frame then return false end
     local body, name = code:GetRaw(), nameBox:GetText()
@@ -1275,16 +1283,15 @@ function Window.OnMacrosChanged()
     if stored and stored.name and not IsDirty() then
         local m
         for _, x in ipairs(ns.Sets.List(stored.id)) do if x.name == stored.name then m = x end end
-        local index = GetMacroIndexByName(stored.name)
-        if (not m or not ns.Sets.Behind(stored.id, m)) and index and index > 0 then return Load(index) end
+        local index = IndexIn("character", stored.name)
+        if (not m or not ns.Sets.Behind(stored.id, m)) and index then return Load(index) end
         if not m then return Load(nil) end
     end
     if state.index then
         local name = GetMacroInfo(state.index)
         if name ~= state.name then
             local dirty = IsDirty() -- as it was: without its index it would be a new one
-            local index = GetMacroIndexByName(state.name)
-            state.index = index and index > 0 and index or nil
+            state.index = WhereShown()
             -- Gone from the game into a set behind the scenes (moved to a specialization not chosen, put away):
             -- edited there, not left as a new one.
             local id = not state.index and not dirty and Window.StoredSetOf(state.name)
@@ -1999,8 +2006,8 @@ function Window.Toggle()
     if IsDirty() then return end
     if state.stored and state.stored.name then return Load(nil, state.stored) end
     -- Reload: the macro may have changed in the Blizzard UI while we were closed.
-    local index = state.name and state.name ~= "" and GetMacroIndexByName(state.name)
-    if index and index > 0 then return Load(index) end
+    local index = WhereShown()
+    if index then return Load(index) end
     local first, last = MacroRange(state.scope)
     Load(last >= first and first or nil)
 end

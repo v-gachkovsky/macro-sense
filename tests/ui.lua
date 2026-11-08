@@ -8912,6 +8912,42 @@ do
     S.Disable()
 end
 
+-- A General and a Character macro of one name: the editor stays on the one it shows, opened again or when the
+-- macros before it move.
+do
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    CreateMacro("Same", 1, "/cast Fear", false)
+    CreateMacro("Same", 1, "/cast Fireball", true)
+    Send("UPDATE_MACROS")
+    local mine
+    for index = SLOTS.MAX_ACCOUNT_MACROS + 1, SLOTS.MAX_ACCOUNT_MACROS + select(2, GetNumMacros()) do
+        if GetMacroInfo(index) == "Same" then mine = index end
+    end
+    ns.Window.Open(mine)
+    NextFrame()
+    ns.Window.Toggle()
+    ns.Window.Toggle()
+    NextFrame()
+    check("same name in both tabs: opened again, the one it showed", raw() == "/cast Fireball", raw())
+    ns.Window.Open(mine)
+    NextFrame()
+    CreateMacro("AAA Before", 1, "/cast Agony", true)
+    Send("UPDATE_MACROS")
+    NextFrame()
+    check("same name in both tabs: the macros before it moved, still the one it showed", raw() == "/cast Fireball",
+        raw())
+    for _, scope in ipairs({ "general", "character" }) do
+        local first = scope == "general" and 1 or SLOTS.MAX_ACCOUNT_MACROS + 1
+        local last = scope == "general" and select(1, GetNumMacros())
+            or SLOTS.MAX_ACCOUNT_MACROS + select(2, GetNumMacros())
+        for index = last, first, -1 do
+            local name = GetMacroInfo(index)
+            if name == "Same" or name == "AAA Before" then DeleteMacro(index) end
+        end
+    end
+    Send("UPDATE_MACROS")
+end
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 if failed > 0 then for _, p in ipairs(printed) do io.write("  printed: " .. p .. "\n") end end
 os.exit(failed == 0 and 0 or 1)
