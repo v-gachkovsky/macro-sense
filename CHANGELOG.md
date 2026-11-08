@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Two macros with one name in a tab: moving one of them into the other tab could delete the other one, and it
+  didn't even go into the trash. Now the macro you move leaves the tab and the other one stays as it is. When
+  the character tab has no free slot, the one you picked goes behind the scenes, not the other one.
+
 ## [0.15.3] - 2026-11-07
 
 ### Fixed
