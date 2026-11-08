@@ -19,6 +19,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A link from the list and the code of a whole tab or of the picked macros held the names of your tank and
   healer. Now they hold the macros as the editor shows them, with @tank and @heal, as "Link this macro in chat"
   already did.
+- A text of more than 32 lines in the editor: pointing at the number or note of line 33 or below gave a Lua
+  error instead of saying what the line does. Now it says it for every line.
 
 ## [0.15.3] - 2026-11-07
 

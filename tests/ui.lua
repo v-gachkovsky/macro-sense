@@ -6335,6 +6335,12 @@ do
     check("word: on a wrapped line's second row", at(letter(3), 1):find("^/cast") ~= nil
         and at(letter(3), 2):find("^@focustarget") ~= nil, at(letter(3), 2))
     wrapLines = false
+    -- A text of more lines than one pattern takes at once (32): line 33 is explained too.
+    ns.Window.Restore(string.rep("/startattack\n", 39) .. "/startattack")
+    NextFrame()
+    NextFrame()
+    local ok, said = pcall(at, 102, 33)
+    check("explained: line 33 of a long text", ok and said == "Line 33 / • starts auto attack", said)
     ns.Window.Restore("/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt\n/startattack\n"
         .. "/cast [@mouseover,help][] Heal\n/cast [form:1] Maul; [spec:2] Wrath\n/ziel [@focus]\n/absitzen")
     NextFrame()
