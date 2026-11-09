@@ -145,7 +145,8 @@ They are off until you turn them on: without them, MacroSense works as before.
 | `[@` or `[target=` | units: `mouseover`, `focus`, `party1`, `arena2`, ... and `party1target` style chains |
 | `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys |
 | `[form:` / `[stance:` | your forms with their names |
-| `[spec:`, `[equipped:`, `[group:`, `[bar:`, `[btn:`, `[pet:` | specs, weapon and armor types, party / raid, bar pages, buttons, your pet |
+| `[spec:`, `[equipped:`, `[group:`, `[bar:`, `[btn:` | specs, weapon and armor types, party / raid, bar pages, buttons |
+| `[pet:` | your pets by family (`Imp`, `Voidwalker`): every pet you had out, and in an English game the demons you can summon |
 | `/cast ` or after `]` / `;` | your spells, then usable items |
 | `/use ` | items with a use effect (bags and gear), then spells |
 | `/equip ` / `/equipslot 13 ` | gear from your bags |

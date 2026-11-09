@@ -1759,6 +1759,54 @@ do
     SPELL_CAST_CHANNELED = nil
 end
 
+-- [pet: takes a pet's family: of every pet you had out (kept for each character) and, in an English game, of the
+-- demons you can summon. Not the name of the pet out now: [pet:Imp] holds for any Imp.
+do
+    local family -- of the pet out now; nil: none
+    UnitExists = function(unit) return unit == "pet" and family ~= nil end
+    UnitCreatureFamily = function(unit) return unit == "pet" and family or nil end
+    local function values()
+        local out = {}
+        for _, v in ipairs(ns.Conditions.Values("pet")) do out[#out + 1] = v.name .. " (" .. tostring(v.hint) .. ")" end
+        return table.concat(out, ", ")
+    end
+    family = "Voidwalker"
+    check("pet: the family, not the name", values() == "Voidwalker (with you now)", values())
+    -- Out while the editor is closed: remembered all the same.
+    family = "Imp"
+    Send("UNIT_PET", "player")
+    Wait(1)
+    family = nil
+    check("pet: each pet had out", values() == "Imp (pet family), Voidwalker (pet family)", values())
+    check("pet: kept for each character", ns.char.pets.Imp ~= nil and ns.char.pets.Voidwalker ~= nil)
+    -- The demons you can summon: Summon Felhunter in the book. Not another specialization's.
+    local info, line = C_SpellBook.GetSpellBookItemInfo, C_SpellBook.GetSpellBookSkillLineInfo
+    C_SpellBook.GetSpellBookItemInfo = function(slot, bank)
+        local item = info(slot, bank)
+        if item and item.name == "Summon Felhunter" then item.spellID = 691 end
+        if item and item.name == "Summon Felguard" then item.spellID, item.isOffSpec = 30146, true end
+        return item
+    end
+    C_SpellBook.GetSpellBookSkillLineInfo = function(tab)
+        local l = line(tab)
+        l.name = "Warlock"
+        return l
+    end
+    book[#book + 1] = { "Summon Felhunter", "" }
+    book[#book + 1] = { "Summon Felguard", "" }
+    ns.InvalidateSources("spells")
+    check("pet: the demons you can summon", values() == "Felhunter (pet family), Imp (pet family), Voidwalker (pet family)",
+        values())
+    -- In another language the family is the game's own word: known once the pet was out.
+    GetLocale = function() return "deDE" end
+    check("pet: another language, the pets had out", values() == "Imp (pet family), Voidwalker (pet family)", values())
+    GetLocale = function() return "enUS" end
+    book[#book], book[#book - 1] = nil, nil
+    C_SpellBook.GetSpellBookItemInfo, C_SpellBook.GetSpellBookSkillLineInfo = info, line
+    ns.InvalidateSources("spells")
+    UnitExists, UnitCreatureFamily, ns.char.pets = nil, nil, {}
+end
+
 -- The Classic clients have C_SpellBook with HasPetSpells but not the rest: the pet's spells come from the old
 -- functions. And a source that fails anyway (a game function a client lacks) costs the typo check, not the editor.
 do
@@ -5315,7 +5363,7 @@ do
     -- Sources and Completion, what a condition's value should be, and the wizard's names for a macro.
     for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         "General", "Character", "does nothing", "conditions not met", "not reached", "chat", "equip", "cancel", "no form", "primary",
-        "secondary", "your pet's name", "pet family", "equipped", "item", "extra action", "leave the vehicle",
+        "secondary", "with you now", "pet family", "equipped", "item", "extra action", "leave the vehicle",
         "popup: first button", "popup: second button", "highest", "on you now", "buff",
         "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "a bar page 1-6", "a form number, 0 = no form",

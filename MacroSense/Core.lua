@@ -101,6 +101,7 @@ local function SpellsChangedSoon(talents)
     spellsDue = true
     C_Timer.After(0.5, function()
         spellsDue = false
+        ns.RememberPet() -- for [pet:] later, when it is no longer out
         ns.Window.SpellsChanged()
         ns.ActionBars.Tint()
         ns.ActionBars.TellBroken(talentsChanged)
@@ -161,6 +162,7 @@ f:SetScript("OnEvent", function(_, event, name)
             ns.SetLanguage(ns.db.language)
             MacroSenseCharDB = MacroSenseCharDB or {}
             MacroSenseCharDB.petSpells = MacroSenseCharDB.petSpells or {}
+            MacroSenseCharDB.pets = MacroSenseCharDB.pets or {}
             MacroSenseCharDB.buffs = MacroSenseCharDB.buffs or {}
             ns.char = MacroSenseCharDB
             if IsLoaded("Blizzard_MacroUI") then AddMacroFrameButton() end

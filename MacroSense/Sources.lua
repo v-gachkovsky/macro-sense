@@ -672,15 +672,45 @@ function ns.sources.itemTypes()
     return out
 end
 
--- "pet:" takes your pet's name or family.
+------------------------------------------------------------------------
+-- Your pets: their families for [pet:], kept for each character
+------------------------------------------------------------------------
+-- The family of the pet that is out (Imp, Wolf), or nil: none out, or Retail keeps it from addons now.
+local function PetFamily()
+    if not (UnitExists and UnitExists("pet") and UnitCreatureFamily) then return nil end
+    local family = UnitCreatureFamily("pet")
+    if issecretvalue and issecretvalue(family) then return nil end
+    return type(family) == "string" and family ~= "" and family or nil
+end
+
+-- Remembers the pet that is out, for each character: its family.
+function ns.RememberPet()
+    local family, pets = PetFamily(), ns.char and ns.char.pets
+    if family and pets then pets[family] = pets[family] or {} end
+end
+
+-- A warlock's demons by the spell that summons each: the family, in English. In another language the family is
+-- the game's own word, known once the pet was out.
+local SUMMONS = { [688] = "Imp", [697] = "Voidwalker", [712] = "Succubus", [691] = "Felhunter", [30146] = "Felguard" }
+
+-- "pet:" takes a pet's family or its name. The families of your pets: every pet you had out and, in an English
+-- game, the demons you can summon. Not the name of the one out now: [pet:Imp] holds for any Imp.
 function ns.sources.pets()
-    local out = {}
-    if UnitExists and UnitExists("pet") then
-        local name = UnitName("pet")
-        if name then out[#out + 1] = { name = name, hint = "your pet's name" } end
-        local family = UnitCreatureFamily("pet")
-        if family then out[#out + 1] = { name = family, hint = "pet family" } end
+    ns.RememberPet()
+    local out, seen, now = {}, {}, PetFamily()
+    local function add(family)
+        if family and not seen[family:lower()] then
+            seen[family:lower()] = true
+            out[#out + 1] = { name = family, hint = family == now and "with you now" or "pet family" }
+        end
     end
+    for family in pairs(ns.char and ns.char.pets or {}) do add(family) end
+    if GetLocale and GetLocale():find("^en") then
+        for _, spell in ipairs(ns.sources.spells()) do
+            if not spell.offSpec then add(SUMMONS[spell.id]) end
+        end
+    end
+    table.sort(out, function(a, b) return a.name < b.name end)
     return out
 end
 
