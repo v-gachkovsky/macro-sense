@@ -34,6 +34,21 @@ local function trimLeft(s)
     return s:sub(#spaces + 1), #spaces
 end
 
+-- The pets the brackets of a clause name: "[mod,pet:Imp/Voidwalker]" -> { "Imp", "Voidwalker" }; nil for none.
+local function Pets(clause)
+    local out = {}
+    for group in clause:gmatch("%[([^%]]*)%]") do
+        for cond in (group .. ","):gmatch("([^,]*),") do
+            local name, values = cond:match("^%s*(%a+)%s*:(.*)$")
+            for v in (name and name:lower() == "pet" and values or ""):gmatch("[^/]+") do
+                local pet = v:match("^%s*(.-)%s*$")
+                if pet ~= "" then out[#out + 1] = pet end
+            end
+        end
+    end
+    return #out > 0 and out or nil
+end
+
 -- Context of the word being typed at `cursor` (bytes before the cursor, as EditBox:GetCursorPosition()).
 -- Returns nil or a table:
 --   kind    = "command" | "meta" | "condition" | "unit" | "modifier" | "conditionValue" | "action" | "reset"
@@ -45,6 +60,7 @@ end
 --   start   = 1-based index in `text` where the word begins (replace text[start .. cursor])
 --   command = the slash command of the line (lowercase, without "/"), when there is one
 --   base    = English name of an action command ("/zaubern" -> "cast"), for "action"
+--   pets    = the pets the clause's brackets name ("[pet:Imp/Voidwalker]" -> { "Imp", "Voidwalker" }), for "action"
 --   condition = condition name, for "conditionValue"
 function Parser.GetContext(text, cursor)
     cursor = cursor or #text
@@ -82,7 +98,7 @@ function Parser.GetContext(text, cursor)
     -- one at random) has "," between them, by any name of its command (/zauberfolge).
     local listed = Parser.actionCommands[cmd]
     local list = listed == "castsequence" or listed == "castrandom" or listed == "userandom"
-    local inBracket, tokenStart = false, 1
+    local inBracket, tokenStart, clauseStart = false, 1, 1
     for i = 1, #rest do
         local c = rest:sub(i, i)
         if c == "[" then
@@ -93,6 +109,7 @@ function Parser.GetContext(text, cursor)
             tokenStart = i + 1
         elseif not inBracket and (c == ";" or (c == "," and list)) then
             tokenStart = i + 1
+            if c == ";" then clauseStart = i + 1 end
         end
     end
 
@@ -163,7 +180,8 @@ function Parser.GetContext(text, cursor)
             return { kind = "rank", prefix = rank, start = wordAbs + #spell + 1, spell = spell, command = cmd, base = base }
         end
         if word:find("%(.*%)") then return nil end
-        return { kind = "action", prefix = word, start = wordAbs, command = cmd, base = base }
+        return { kind = "action", prefix = word, start = wordAbs, command = cmd, base = base,
+            pets = Pets(rest:sub(clauseStart, tokenStart - 1)) }
     end
     -- "/click ActionButton1 RightButton true": the button, the mouse button, then a click on key press.
     if Parser.clickCommands[cmd] then

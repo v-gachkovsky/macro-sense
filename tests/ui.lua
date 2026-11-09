@@ -253,6 +253,7 @@ local SLOTS = Constants.MacroConsts
 -- Like the game: the list of secure commands is hidden from addons, IsSecureCmd("/cast") tells.
 SlashCmdList, ChatTypeInfo = {}, { SAY = true }
 SLASH_CAST1, SLASH_USE1, SLASH_TARGET1, SLASH_SAY1 = "/cast", "/use", "/target", "/say"
+PET_ACTION_ATTACK, PET_ACTION_FOLLOW = "Attack", "Follow" -- the pet bar's commands, as the game names them
 SLASH_PET_MOVE_TO1, SLASH_TEAM_QUIT1 = "/petmoveto", "/teamquit" -- this client has no /teamquit
 local secureKeys = { CAST = true, USE = true, TARGET = true, PET_MOVE_TO = true }
 function IsSecureCmd(command)
@@ -267,8 +268,10 @@ function IsSecureCmd(command)
 end
 EMOTE1_TOKEN, EMOTE1_CMD1 = "DANCE", "/dance"
 
-Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1, FutureSpell = 2 } }
-local petBook = {} -- names of the pet's spells; empty = no pet
+Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1, FutureSpell = 2, PetAction = 3 } }
+-- The pet's spells: each its name, or { name, passive = true }; empty = no pet. The game lists them as pet actions,
+-- as it does the commands of the pet's bar (Attack, Follow).
+local petBook = {}
 local book = { -- name, rank: Classic lists every learned rank
     { "Fireball", "Rank 1" }, { "Fireball", "Rank 2" }, { "Fireball", "Rank 3" },
     { "Fire Blast", "" }, { "Frostbolt", "Rank 1" }, { "Polymorph", "" },
@@ -277,8 +280,14 @@ C_SpellBook = {
     GetNumSpellBookSkillLines = function() return 1 end,
     GetSpellBookSkillLineInfo = function() return { itemIndexOffset = 0, numSpellBookItems = #book } end,
     HasPetSpells = function() return #petBook > 0 and #petBook or nil end,
-    GetSpellBookItemName = function(i, bank) if bank == 1 then return petBook[i] end end,
-    GetSpellBookItemInfo = function(slot)
+    GetSpellBookItemName = function(i, bank)
+        if bank == 1 then return type(petBook[i]) == "table" and petBook[i][1] or petBook[i] end
+    end,
+    GetSpellBookItemInfo = function(slot, bank)
+        if bank == 1 then
+            local e = type(petBook[slot]) == "table" and petBook[slot] or { petBook[slot] }
+            return { name = e[1], itemType = 3, isPassive = e.passive == true, iconID = 900 + slot }
+        end
         return { name = book[slot][1], subName = book[slot][2], itemType = 1, isPassive = false, iconID = slot,
             spellID = 100 + slot }
     end,
@@ -1805,6 +1814,61 @@ do
     C_SpellBook.GetSpellBookItemInfo, C_SpellBook.GetSpellBookSkillLineInfo = info, line
     ns.InvalidateSources("spells")
     UnitExists, UnitCreatureFamily, ns.char.pets = nil, nil, {}
+end
+
+-- A cast after a pet's [pet:] offers that pet's spells, as it had them when out (kept for each character): those
+-- to cast, not its passive ones, nor Attack, Follow and the like. With no [pet:] they come after your own.
+do
+    local family -- of the pet out now; nil: none
+    UnitExists = function(unit) return unit == "pet" and family ~= nil end
+    UnitCreatureFamily = function(unit) return unit == "pet" and family or nil end
+    local function names(text)
+        local out = {}
+        for _, item in ipairs(ns.Completion.Get(ns.Parser.GetContext(text, #text))) do
+            out[#out + 1] = item.name .. (item.hint and " (" .. item.hint .. ")" or "")
+        end
+        return table.concat(out, ", ")
+    end
+    family, petBook = "Imp", { "Firebolt", { "Blood Pact", passive = true }, "Attack", "Fire Shield" }
+    Send("UNIT_PET", "player")
+    Wait(1)
+    family, petBook = "Voidwalker", { "Torment", "Sacrifice" }
+    Send("UNIT_PET", "player")
+    check("pet spells: [pet:Imp], the Imp's only", names("/cast [pet:Imp] ") == "Fire Shield (Imp), Firebolt (Imp)",
+        names("/cast [pet:Imp] "))
+    check("pet spells: two pets", names("/cast [pet:imp/Voidwalker] ")
+        == "Fire Shield (Imp), Firebolt (Imp), Sacrifice (Voidwalker), Torment (Voidwalker)",
+        names("/cast [pet:imp/Voidwalker] "))
+    local imp = ns.char.pets.Imp.spells
+    check("pet spells: kept for each character, with icons", imp.Firebolt.icon == 901 and imp["Fire Shield"]
+        and not imp["Blood Pact"] and not imp.Attack)
+    check("pet spells: after yours", names("/cast Fi")
+        == "Fire Blast, Fireball, Fire Shield (Imp), Firebolt (Imp), Sacrifice (Voidwalker)", names("/cast Fi"))
+    check("pet spells: a pet not out yet, all", names("/cast [pet:Felhunter] Fi") == names("/cast Fi"),
+        names("/cast [pet:Felhunter] Fi"))
+    -- Classic: the pet's book by the old functions.
+    local retail = C_SpellBook
+    C_SpellBook = { HasPetSpells = retail.HasPetSpells }
+    GetNumSpellTabs, HasPetSpells = function() return 0 end, retail.HasPetSpells
+    GetSpellBookItemName = function(i, bookType)
+        if bookType == "pet" then return type(petBook[i]) == "table" and petBook[i][1] or petBook[i] end
+    end
+    GetSpellBookItemInfo = function(i, bookType)
+        if bookType == "pet" then return "PETACTION", i end
+    end
+    IsPassiveSpell = function(i, bookType)
+        return bookType == "pet" and type(petBook[i]) == "table" and petBook[i].passive == true
+    end
+    GetSpellBookItemTexture = function(i) return 800 + i end
+    family, petBook = "Succubus", { "Follow", "Lash of Pain", { "Soothing Kiss", passive = true } }
+    Send("UNIT_PET", "player")
+    check("pet spells: classic", names("/cast [pet:Succubus] ") == "Lash of Pain (Succubus)",
+        names("/cast [pet:Succubus] "))
+    C_SpellBook, GetNumSpellTabs, HasPetSpells, GetSpellBookItemName = retail, nil, nil, nil
+    GetSpellBookItemInfo, IsPassiveSpell, GetSpellBookItemTexture = nil, nil, nil
+    UnitExists, UnitCreatureFamily, ns.char.pets, petBook = nil, nil, {}, {}
+    Send("UNIT_PET", "player")
+    Wait(1)
 end
 
 -- The Classic clients have C_SpellBook with HasPetSpells but not the rest: the pet's spells come from the old

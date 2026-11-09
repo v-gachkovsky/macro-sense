@@ -34,11 +34,16 @@ local function concat(a, b)
     return out
 end
 
-local function actions(cmd)
+-- What a cast takes: your spells, your pets' (as each was when out), items. After [pet:Imp] (`pets`) only that pet's
+-- spells, once it was out.
+local function actions(cmd, pets)
     if cmd == "equip" or cmd == "equipslot" then return items("equippable") end
     if cmd == "cancelaura" then return source("buffs") end
-    if cmd == "use" or cmd == "userandom" then return concat(items("usable"), source("spells")) end
-    return concat(source("spells"), items("usable"))
+    local own = pets and ns.sources.petSpells and ns.sources.petSpells(pets) or {}
+    if #own > 0 then return own end
+    local spells = concat(source("spells"), source("petSpells"))
+    if cmd == "use" or cmd == "userandom" then return concat(items("usable"), spells) end
+    return concat(spells, items("usable"))
 end
 
 local function list(kind, ctx)
@@ -55,7 +60,7 @@ local function list(kind, ctx)
     end
     if kind == "unit" then return ns.Conditions.UnitItems(ctx.prefix) end
     if kind == "modifier" then return d.modifiers end
-    if kind == "action" then return actions(ctx.base) end
+    if kind == "action" then return actions(ctx.base, ctx.pets) end
     if kind == "conditionValue" then return ns.Conditions.Values(ctx.condition) end
     if kind == "reset" then return ns.Conditions.ResetItems(ctx.used) end
     if kind == "slot" then return ns.sources.slots and ns.sources.slots() or d.slots end

@@ -147,7 +147,8 @@ They are off until you turn them on: without them, MacroSense works as before.
 | `[form:` / `[stance:` | your forms with their names |
 | `[spec:`, `[equipped:`, `[group:`, `[bar:`, `[btn:` | specs, weapon and armor types, party / raid, bar pages, buttons |
 | `[pet:` | your pets by family (`Imp`, `Voidwalker`): every pet you had out, and in an English game the demons you can summon |
-| `/cast ` or after `]` / `;` | your spells, then usable items |
+| `/cast ` or after `]` / `;` | your spells, your pets' spells, then usable items |
+| `/cast [pet:Imp] ` | only the Imp's spells, once your Imp has been out |
 | `/use ` | items with a use effect (bags and gear), then spells |
 | `/equip ` / `/equipslot 13 ` | gear from your bags |
 | `/castsequence reset=` | `target`, `combat`, `shift`, `ctrl`, `alt` or seconds |

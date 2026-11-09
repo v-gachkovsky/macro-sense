@@ -673,8 +673,10 @@ function ns.sources.itemTypes()
 end
 
 ------------------------------------------------------------------------
--- Your pets: their families for [pet:], kept for each character
+-- Your pets: their families for [pet:] and their spells, kept for each character
 ------------------------------------------------------------------------
+local PetBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet
+
 -- The family of the pet that is out (Imp, Wolf), or nil: none out, or Retail keeps it from addons now.
 local function PetFamily()
     if not (UnitExists and UnitExists("pet") and UnitCreatureFamily) then return nil end
@@ -683,10 +685,47 @@ local function PetFamily()
     return type(family) == "string" and family ~= "" and family or nil
 end
 
--- Remembers the pet that is out, for each character: its family.
+-- The commands of the pet's bar (Attack, Follow...) by their names in the client's language. The game lists a pet's
+-- spells as pet actions, as it does these, so they are told apart by name.
+local PET_COMMANDS = {}
+for _, key in ipairs({ "PET_ACTION_ATTACK", "PET_ACTION_FOLLOW", "PET_ACTION_WAIT", "PET_ACTION_MOVE_TO",
+    "PET_MODE_AGGRESSIVE", "PET_MODE_DEFENSIVE", "PET_MODE_PASSIVE", "PET_MODE_ASSIST", "PET_MODE_DEFENSIVEASSIST" }) do
+    if type(_G[key]) == "string" then PET_COMMANDS[_G[key]] = true end
+end
+
+-- The spells of the pet that is out, to cast: { name, icon }. Not its passive ones, those it learns later, nor the
+-- commands.
+local function PetSpellsNow()
+    local out = {}
+    local function add(name, icon, passive, later)
+        if name and not passive and not later and not PET_COMMANDS[name] then
+            out[#out + 1] = { name = name, icon = icon }
+        end
+    end
+    if C_SpellBook and C_SpellBook.GetSpellBookItemInfo and PetBank then
+        local future = Enum.SpellBookItemType and Enum.SpellBookItemType.FutureSpell
+        for i = 1, C_SpellBook.HasPetSpells() or 0 do
+            local item = C_SpellBook.GetSpellBookItemInfo(i, PetBank)
+            if item then add(item.name, item.iconID, item.isPassive, future and item.itemType == future) end
+        end
+    elseif HasPetSpells and GetSpellBookItemInfo then
+        local book = BOOKTYPE_PET or "pet"
+        for i = 1, HasPetSpells() or 0 do
+            add(GetSpellBookItemName(i, book), GetSpellBookItemTexture(i, book), IsPassiveSpell(i, book),
+                GetSpellBookItemInfo(i, book) == "FUTURESPELL")
+        end
+    end
+    return out
+end
+
+-- Remembers the pet that is out, for each character: its family and its spells. A spell stays once seen: right
+-- after a summon the book may not have them all yet.
 function ns.RememberPet()
     local family, pets = PetFamily(), ns.char and ns.char.pets
-    if family and pets then pets[family] = pets[family] or {} end
+    if not (family and pets) then return end
+    local pet = pets[family] or {}
+    pets[family], pet.spells = pet, pet.spells or {}
+    for _, spell in ipairs(PetSpellsNow()) do pet.spells[spell.name] = { icon = spell.icon } end
 end
 
 -- A warlock's demons by the spell that summons each: the family, in English. In another language the family is
@@ -708,6 +747,33 @@ function ns.sources.pets()
     if GetLocale and GetLocale():find("^en") then
         for _, spell in ipairs(ns.sources.spells()) do
             if not spell.offSpec then add(SUMMONS[spell.id]) end
+        end
+    end
+    table.sort(out, function(a, b) return a.name < b.name end)
+    return out
+end
+
+-- Your pets' spells, as each pet had them when out: { name, icon, hint = its family }, by name. `families`: only
+-- those pets' ({ "Imp" }, in any case).
+function ns.sources.petSpells(families)
+    ns.RememberPet()
+    local wanted
+    for _, family in ipairs(families or {}) do
+        wanted = wanted or {}
+        wanted[family:lower()] = true
+    end
+    local pets, names = ns.char and ns.char.pets or {}, {}
+    for family in pairs(pets) do
+        if not wanted or wanted[family:lower()] then names[#names + 1] = family end
+    end
+    table.sort(names) -- a spell two pets have is the first one's
+    local out, seen = {}, {}
+    for _, family in ipairs(names) do
+        for name, spell in pairs(pets[family].spells or {}) do
+            if not seen[name] then
+                seen[name] = true
+                out[#out + 1] = { name = name, icon = spell.icon, hint = family }
+            end
         end
     end
     table.sort(out, function(a, b) return a.name < b.name end)
@@ -802,8 +868,6 @@ end
 ------------------------------------------------------------------------
 -- Known names for the typo check: your spells, your pets' spells, items, mounts
 ------------------------------------------------------------------------
-local PetBank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet
-
 -- Spells of the pet that is out now. The Classic clients have C_SpellBook too, but only HasPetSpells and
 -- a few others there: the names come from the old functions.
 local function petSpellNames()
