@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- After `[pet:` the list offers your pets by family: Imp, Voidwalker and so on. That is every pet you had out
+  (kept for each character) and, in an English game, every demon you can summon. It no longer offers the name
+  of the pet that is out: `[pet:Imp]` holds for any Imp.
+
 ## [0.15.4] - 2026-11-08
 
 ### Fixed

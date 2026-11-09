@@ -221,7 +221,8 @@ and the history keeps no version of it.
 | `[@` / `[target=` | unit ids, then `...target` / `...pet` after one (`party1target`) |
 | `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys (`lshift`, ...) |
 | `[form:` / `[stance:` | your forms with their names (`1` Bear Form, ...) |
-| `[spec:` / `[equipped:` / `[group:` / `[bar:` / `[btn:` / `[pet:` | specializations, weapon and armor types, `party` / `raid`, bar pages, buttons, your pet |
+| `[spec:` / `[equipped:` / `[group:` / `[bar:` / `[btn:` | specializations, weapon and armor types, `party` / `raid`, bar pages, buttons |
+| `[pet:` | your pets by family (`Imp`, `Voidwalker`): every pet you had out, and in an English game the demons you can summon |
 | `/cast ` or after `]` / `;` | spells (another specialization's with its name), then usable items from bags |
 | a spell with several learned ranks (Classic) | its ranks, highest first: Tab inserts `Fireball(Rank 2)`, Esc keeps `Fireball` |
 | `/use ` | usable items from bags and gear, then spells |
