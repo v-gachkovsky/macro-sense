@@ -35,6 +35,7 @@ function Options.Setup()
     if Options.page then return end
     local page = CreateFrame("Frame", nil, nil, "BackdropTemplate")
     page:Hide()
+    page:SetScript("OnShow", function() ns.Window.Ready() end) -- its colors: the settings may open before the editor
     ns.Backdrop(page, "bg", "border")
     Options.page = page
 

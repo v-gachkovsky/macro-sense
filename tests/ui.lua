@@ -609,6 +609,18 @@ do
         and b.point[3] == "LEFT", b and b.point and table.concat({ tostring(b.point[1]), tostring(b.point[3]) }, " "))
 end
 
+-- MacroSense's page of the game's settings, opened before the editor ever was: in the colors of the scheme, not
+-- white (they come with the editor's window).
+do
+    local page, before = ns.Options.page, ns.scheme
+    page:Show()
+    local s = ns.scheme
+    check("settings: its colors before the editor was opened", before == nil and s ~= nil and page.backdropColor
+        and page.backdropColor[1] == ns.RGB(s.bg), tostring(before))
+    check("settings: the editor stays closed", not (MacroSenseFrame and MacroSenseFrame:IsShown()))
+    page:Hide()
+end
+
 -- A macro linked in chat, clicked before the editor was ever opened: the import window comes in the colors of the
 -- scheme, not white (they come with the editor's window).
 ns.ShareWindow.Import(ns.Share.Encode({ { scope = "general", name = "Fear MO", icon = 1, body = "/cast Fear" } }),
