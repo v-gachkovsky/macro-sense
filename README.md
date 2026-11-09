@@ -223,7 +223,8 @@ and the history keeps no version of it.
 | `[form:` / `[stance:` | your forms with their names (`1` Bear Form, ...) |
 | `[spec:` / `[equipped:` / `[group:` / `[bar:` / `[btn:` | specializations, weapon and armor types, `party` / `raid`, bar pages, buttons |
 | `[pet:` | your pets by family (`Imp`, `Voidwalker`): every pet you had out, and in an English game the demons you can summon |
-| `/cast ` or after `]` / `;` | spells (another specialization's with its name), then usable items from bags |
+| `/cast ` or after `]` / `;` | spells (another specialization's with its name), your pets' spells, then usable items from bags |
+| `/cast [pet:Imp] ` | only the Imp's spells, once your Imp has been out (each pet's spells are kept for each character) |
 | a spell with several learned ranks (Classic) | its ranks, highest first: Tab inserts `Fireball(Rank 2)`, Esc keeps `Fireball` |
 | `/use ` | usable items from bags and gear, then spells |
 | `/equip ` / `/equipslot 13 ` | gear from bags |

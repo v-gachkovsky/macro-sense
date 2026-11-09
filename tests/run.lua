@@ -122,6 +122,46 @@ end
 
 check("spells by prefix", names("/cast Fi|") == "Fireball,Fire Blast", names("/cast Fi|"))
 check("spells substring after prefix", names("/cast bol|") == "Frostbolt", names("/cast bol|"))
+-- Your pets' spells come after yours; after [pet:Imp] only the Imp's, once it was out ([pet:Felhunter]: not yet).
+do
+    local function pets(src)
+        local c = ctx(src)
+        return c and c.pets and table.concat(c.pets, ",") or "-"
+    end
+    check("pets: of the clause's brackets", pets("/cast [mod:alt,pet:Imp/Voidwalker][Pet:Felhunter] Fi|")
+        == "Imp,Voidwalker,Felhunter", pets("/cast [mod:alt,pet:Imp/Voidwalker][Pet:Felhunter] Fi|"))
+    check("pets: this clause's only", pets("/cast [pet:Imp] Firebolt; [pet:Voidwalker] |") == "Voidwalker"
+        and pets("/cast [pet:Imp] Firebolt; |") == "-", pets("/cast [pet:Imp] Firebolt; [pet:Voidwalker] |"))
+    check("pets: a list's", pets("/castsequence [pet:Imp] reset=5 Firebolt, |") == "Imp",
+        pets("/castsequence [pet:Imp] reset=5 Firebolt, |"))
+    check("pets: none named", pets("/cast [pet] |") == "-" and pets("/cast [@pet,nopet:Imp] |") == "-",
+        pets("/cast [@pet,nopet:Imp] |"))
+    local all = { { name = "Firebolt", hint = "Imp" }, { name = "Fire Shield", hint = "Imp" },
+        { name = "Sacrifice", hint = "Voidwalker" } }
+    ns.sources.petSpells = function(families)
+        if not families then return all end
+        local out = {}
+        for _, spell in ipairs(all) do
+            for _, family in ipairs(families) do
+                if family:lower() == spell.hint:lower() then out[#out + 1] = spell end
+            end
+        end
+        return out
+    end
+    check("pet spells: after yours, before items", names("/cast |")
+        == "Fireball,Fire Blast,Frostbolt,Polymorph,Firebolt,Fire Shield,Sacrifice,Healthstone,Hearthstone",
+        names("/cast |"))
+    check("pet spells: /use, after items and yours", names("/use |")
+        == "Healthstone,Hearthstone,Fireball,Fire Blast,Frostbolt,Polymorph,Firebolt,Fire Shield,Sacrifice",
+        names("/use |"))
+    check("pet spells: [pet:Imp], its own only", names("/cast [pet:Imp] |") == "Firebolt,Fire Shield",
+        names("/cast [pet:Imp] |"))
+    check("pet spells: two pets", names("/cast [pet:imp/Voidwalker] |") == "Firebolt,Fire Shield,Sacrifice",
+        names("/cast [pet:imp/Voidwalker] |"))
+    check("pet spells: a pet not out yet, all", names("/cast [pet:Felhunter] Fi|")
+        == "Fireball,Fire Blast,Firebolt,Fire Shield,Sacrifice", names("/cast [pet:Felhunter] Fi|"))
+    ns.sources.petSpells = nil
+end
 check("modifiers", names("/cast [mod:|"):find("^shift,ctrl,alt,lshift") ~= nil, names("/cast [mod:|"))
 check("complete word hides list", names("/cast [mod:shift|") == "", names("/cast [mod:shift|"))
 check("commands first", names("/cas|"):find("^cast,castsequence,castrandom") ~= nil, names("/cas|"))

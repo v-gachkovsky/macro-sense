@@ -6,6 +6,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- The spell list offers your pets' spells too, after your own: the spells of every pet you had out, kept for
+  each character. After `[pet:Imp]` it offers only the Imp's spells, once your Imp has been out.
+
 ### Changed
 - After `[pet:` the list offers your pets by family: Imp, Voidwalker and so on. That is every pet you had out
   (kept for each character) and, in an English game, every demon you can summon. It no longer offers the name
