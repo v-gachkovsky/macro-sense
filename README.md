@@ -546,7 +546,10 @@ corner: the game won't change that icon. To let it, choose the question mark.
 
 Drag a macro from the list, or its icon from the header, onto an action bar. **Shift + right-click** on it
 there opens it in the editor instead of running it, and its tooltip says so: on the game's bars and those of
-Bartender, Dominos and ElvUI. A macro with a spell you don't have now (a talent you haven't chosen, another
+Bartender, Dominos and ElvUI. If your macros use that click, pick another one in the settings (`/ms settings`,
+or MacroSense among the AddOns in the game's settings): Shift, Ctrl, Alt or two of them, with the right,
+middle or left mouse button, or turn it off. It takes just the keys picked: with Shift + right-click, Shift +
+Ctrl + right-click runs the macro. A macro with a spell you don't have now (a talent you haven't chosen, another
 specialization's spell) turns yellow there, and its tooltip says why.
 
 ## Language
@@ -564,6 +567,7 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `/ms help` - the macro guide in game, with ready-made macros and a link to the [full guide](docs/GUIDE.md)
 - `/ms book` - macros from the spellbook
 - `/ms sets` - what macro sets are, and turning them on; `/ms sets log` - what they did, for a bug report
+- `/ms settings` - the settings: the click that opens a macro from an action bar
 - `/ms minimap` - hide / show the minimap button
 - `/ms bug` - print the versions to include in a bug report
 - `/ms autocomplete` - toggle autocomplete
@@ -622,9 +626,10 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
   `MacroSense/WindowPick.lua`: many macros picked at once; `MacroSense/WindowFolders.lua`: the General tab's
   favorites and folders (`MacroSense/Folders.lua` keeps them, pure Lua); `MacroSense/WindowWhatIf.lua`: "What
   if" by the live preview (`MacroSense/WhatIf.lua` reads a macro's options for it, pure Lua). They share the window's state and helpers through `ns.WindowShared`.
+- `MacroSense/Options.lua`: MacroSense's page of the game's settings: the click on a macro on an action bar.
 - `MacroSense/MinimapButton.lua`: the minimap button. Where it sits on the edge is pure Lua.
-- `MacroSense/ActionBars.lua`: Shift + right-click on a macro on an action bar, caught in the game's secure
-  code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.
+- `MacroSense/ActionBars.lua`: Shift + right-click (or the click chosen) on a macro on an action bar, caught in
+  the game's secure code, and the line in its tooltip; the tints: red for a macOS shortcut, yellow for a spell you don't have now.
 
 ### Tests
 

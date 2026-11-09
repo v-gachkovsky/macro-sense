@@ -1,5 +1,6 @@
 -- Shift + right-click on a macro on an action bar opens it in the editor instead of running it, and the
--- button's tooltip says so; on a Mac it also warns when Cmd with the macro's key is a macOS shortcut, as the
+-- button's tooltip says so. The player may choose another click or none (the settings, Options.lua). On a Mac
+-- the tooltip also warns when Cmd with the macro's key is a macOS shortcut, as the
 -- editor's status bar does, and such a button turns red. A macro with a spell you don't have now (a talent not
 -- chosen, another specialization's spell) turns yellow, and its tooltip says which. On the game's own buttons and
 -- those made from them (Dominos), and on the buttons of LibActionButton (Bartender, ElvUI). The click is caught in
@@ -10,7 +11,31 @@ ns = ns or {}
 local ActionBars = {}
 ns.ActionBars = ActionBars
 
-ActionBars.TIP = "Shift + right-click: edit in MacroSense"
+-- The keys a click that opens a macro may take (ns.db.barEditKeys), and its mouse buttons (ns.db.barEditButton).
+ActionBars.KEYS = { "shift", "ctrl", "alt", "shift-ctrl", "shift-alt", "ctrl-alt", "shift-ctrl-alt" }
+ActionBars.BUTTONS = { "RightButton", "MiddleButton", "LeftButton" }
+local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt" }
+
+-- "Shift + Ctrl": keys as the player reads them.
+function ActionBars.KeysText(keys)
+    local out = {}
+    for key in keys:gmatch("[^-]+") do out[#out + 1] = KEY_NAMES[key] end
+    return table.concat(out, " + ")
+end
+
+-- "right-click": a mouse button's click, in the addon's language.
+function ActionBars.ButtonText(button)
+    if button == "MiddleButton" then return ns.L["middle-click"] end
+    if button == "LeftButton" then return ns.L["left-click"] end
+    return ns.L["right-click"]
+end
+
+-- The tooltip's line where the click is ours: "Shift + right-click: edit in MacroSense"; nil when it is off.
+function ActionBars.Tip()
+    if not ns.db.barEdit then return nil end
+    return string.format(ns.L["%s: edit in MacroSense"],
+        ActionBars.KeysText(ns.db.barEditKeys) .. " + " .. ActionBars.ButtonText(ns.db.barEditButton))
+end
 -- The libraries Bartender and ElvUI make their buttons with.
 local LIBRARIES = { "LibActionButton-1.0", "LibActionButton-1.0-ElvUI" }
 
@@ -131,11 +156,14 @@ function ActionBars.Place(index, slots)
 end
 
 -- Runs in the game's secure code before each click on a button (self: the button, control: our frame below).
--- Shift + right-click on an action with a macro goes no further, and the macro opens when the mouse button is
--- let go (a drag doesn't open it). The slot is found as the button finds it
+-- The click chosen (editButton and its keys, set by ApplyClick in our frame's environment; no button when it is
+-- off), with those keys and no other, on an action with a macro goes no further, and the macro opens when the
+-- mouse button is let go (a drag doesn't open it). The slot is found as the button finds it
 -- (SecureActionButtonMixin:CalculateAction): from its ID and the bar's page, or its "action" attribute.
 local PRE_CLICK = [[
-    if button ~= "RightButton" or not IsShiftKeyDown() then return end
+    if button ~= editButton then return end
+    if not IsShiftKeyDown() ~= not editShift or not IsControlKeyDown() ~= not editCtrl
+        or not IsAltKeyDown() ~= not editAlt then return end
     if self:GetEffectiveAttribute("type", button) ~= "action" then return end
     local slot = self:GetID()
     if slot > 0 then
@@ -151,6 +179,16 @@ local PRE_CLICK = [[
 local header -- the secure frame PRE_CLICK belongs to; it opens the editor
 local wrapped = {} -- button -> true when its clicks go through PRE_CLICK, false when they don't
 
+-- The click chosen, for PRE_CLICK: in our frame's environment, which its snippets share. Not in combat, when
+-- the game runs none of ours there: after it (Setup).
+function ActionBars.ApplyClick()
+    if not header or InCombatLockdown() then return end
+    local keys = ns.db.barEditKeys
+    SecureHandlerExecute(header, string.format("editButton, editShift, editCtrl, editAlt = %s, %s, %s, %s",
+        ns.db.barEdit and string.format("%q", ns.db.barEditButton) or "nil", tostring(keys:find("shift") ~= nil),
+        tostring(keys:find("ctrl") ~= nil), tostring(keys:find("alt") ~= nil)))
+end
+
 local function Wrap(button)
     if wrapped[button] ~= nil or InCombatLockdown() then return end -- after combat then
     -- The extra action button and the totem bar find their slots on bars of their own, with no macros.
@@ -164,6 +202,7 @@ local function Wrap(button)
             local index = ActionBars.MacroAt(slot)
             if index then ns.Window.Open(index) end
         end
+        ActionBars.ApplyClick()
     end
     local before = button:GetScript("OnClick")
     pcall(SecureHandlerWrapScript, button, "OnClick", header, PRE_CLICK)
@@ -292,15 +331,16 @@ local function MacWarning(slot)
 end
 
 -- A macro's tooltip: the macOS warning and the spells it can't cast now, on any button, then how to edit it,
--- where the click is ours. A blank line first sets them apart from the game's own lines.
+-- where the click is ours and on. A blank line first sets them apart from the game's own lines.
 local function AddTip(tooltip, slot)
     if GetActionInfo(slot) ~= "macro" then return end
-    local warning, missing, ours = MacWarning(slot), Missing(slot), wrapped[tooltip:GetOwner()]
-    if not (warning or missing or ours) then return end
+    local warning, missing = MacWarning(slot), Missing(slot)
+    local edit = wrapped[tooltip:GetOwner()] and ActionBars.Tip()
+    if not (warning or missing or edit) then return end
     tooltip:AddLine(" ")
     if warning then tooltip:AddLine(warning, 1, 0.35, 0.35, true) end -- red, as errors in the editor's tooltips
     for _, message in ipairs(missing or {}) do tooltip:AddLine(message, 1, 0.82, 0, true) end -- yellow: warnings
-    if ours then tooltip:AddLine(ns.L[ActionBars.TIP], 0.34, 0.61, 0.84) end
+    if edit then tooltip:AddLine(edit, 0.34, 0.61, 0.84) end
     tooltip:Show()
 end
 
@@ -334,6 +374,7 @@ function ActionBars.Setup()
             FollowLab(button)
         end
     end
+    ActionBars.ApplyClick() -- chosen in combat: now
 end
 
 return ActionBars

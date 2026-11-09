@@ -4,6 +4,17 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Settings: MacroSense now has a page in the game's settings, among the AddOns (or `/ms settings`). There you
+  choose the click on a macro on an action bar that opens it in the editor: Shift, Ctrl, Alt or two of them,
+  with the right, middle or left mouse button. Or turn it off, if your macros use that click.
+
+### Changed
+- Shift + right-click on a macro on an action bar opens it only with Shift alone held: Shift + Ctrl + right-click
+  runs the macro, as the click you pick takes just the keys picked.
+
 ## [0.16.0] - 2026-11-09
 
 ### Added
