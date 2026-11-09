@@ -253,6 +253,7 @@ local SLOTS = Constants.MacroConsts
 -- Like the game: the list of secure commands is hidden from addons, IsSecureCmd("/cast") tells.
 SlashCmdList, ChatTypeInfo = {}, { SAY = true }
 SLASH_CAST1, SLASH_USE1, SLASH_TARGET1, SLASH_SAY1 = "/cast", "/use", "/target", "/say"
+PET_ACTION_ATTACK, PET_ACTION_FOLLOW = "Attack", "Follow" -- the pet bar's commands, as the game names them
 SLASH_PET_MOVE_TO1, SLASH_TEAM_QUIT1 = "/petmoveto", "/teamquit" -- this client has no /teamquit
 local secureKeys = { CAST = true, USE = true, TARGET = true, PET_MOVE_TO = true }
 function IsSecureCmd(command)
@@ -268,8 +269,8 @@ end
 EMOTE1_TOKEN, EMOTE1_CMD1 = "DANCE", "/dance"
 
 Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1, FutureSpell = 2, PetAction = 3 } }
--- The pet's spells: each its name, or { name, passive = true } / { name, command = true } (Attack, Follow...);
--- empty = no pet.
+-- The pet's spells: each its name, or { name, passive = true }; empty = no pet. The game lists them as pet actions,
+-- as it does the commands of the pet's bar (Attack, Follow).
 local petBook = {}
 local book = { -- name, rank: Classic lists every learned rank
     { "Fireball", "Rank 1" }, { "Fireball", "Rank 2" }, { "Fireball", "Rank 3" },
@@ -285,7 +286,7 @@ C_SpellBook = {
     GetSpellBookItemInfo = function(slot, bank)
         if bank == 1 then
             local e = type(petBook[slot]) == "table" and petBook[slot] or { petBook[slot] }
-            return { name = e[1], itemType = e.command and 3 or 1, isPassive = e.passive == true, iconID = 900 + slot }
+            return { name = e[1], itemType = 3, isPassive = e.passive == true, iconID = 900 + slot }
         end
         return { name = book[slot][1], subName = book[slot][2], itemType = 1, isPassive = false, iconID = slot,
             spellID = 100 + slot }
@@ -1828,7 +1829,7 @@ do
         end
         return table.concat(out, ", ")
     end
-    family, petBook = "Imp", { "Firebolt", { "Blood Pact", passive = true }, { "Attack", command = true }, "Fire Shield" }
+    family, petBook = "Imp", { "Firebolt", { "Blood Pact", passive = true }, "Attack", "Fire Shield" }
     Send("UNIT_PET", "player")
     Wait(1)
     family, petBook = "Voidwalker", { "Torment", "Sacrifice" }
@@ -1853,13 +1854,13 @@ do
         if bookType == "pet" then return type(petBook[i]) == "table" and petBook[i][1] or petBook[i] end
     end
     GetSpellBookItemInfo = function(i, bookType)
-        if bookType == "pet" then return type(petBook[i]) == "table" and petBook[i].command and "PETACTION" or "SPELL", i end
+        if bookType == "pet" then return "PETACTION", i end
     end
     IsPassiveSpell = function(i, bookType)
         return bookType == "pet" and type(petBook[i]) == "table" and petBook[i].passive == true
     end
     GetSpellBookItemTexture = function(i) return 800 + i end
-    family, petBook = "Succubus", { { "Follow", command = true }, "Lash of Pain", { "Soothing Kiss", passive = true } }
+    family, petBook = "Succubus", { "Follow", "Lash of Pain", { "Soothing Kiss", passive = true } }
     Send("UNIT_PET", "player")
     check("pet spells: classic", names("/cast [pet:Succubus] ") == "Lash of Pain (Succubus)",
         names("/cast [pet:Succubus] "))

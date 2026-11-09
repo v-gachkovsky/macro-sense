@@ -685,24 +685,34 @@ local function PetFamily()
     return type(family) == "string" and family ~= "" and family or nil
 end
 
--- The spells of the pet that is out, to cast: { name, icon }. Not its passive ones, nor Attack, Follow and the like
--- (commands, not spells).
+-- The commands of the pet's bar (Attack, Follow...) by their names in the client's language. The game lists a pet's
+-- spells as pet actions, as it does these, so they are told apart by name.
+local PET_COMMANDS = {}
+for _, key in ipairs({ "PET_ACTION_ATTACK", "PET_ACTION_FOLLOW", "PET_ACTION_WAIT", "PET_ACTION_MOVE_TO",
+    "PET_MODE_AGGRESSIVE", "PET_MODE_DEFENSIVE", "PET_MODE_PASSIVE", "PET_MODE_ASSIST", "PET_MODE_DEFENSIVEASSIST" }) do
+    if type(_G[key]) == "string" then PET_COMMANDS[_G[key]] = true end
+end
+
+-- The spells of the pet that is out, to cast: { name, icon }. Not its passive ones, those it learns later, nor the
+-- commands.
 local function PetSpellsNow()
     local out = {}
-    if C_SpellBook and C_SpellBook.GetSpellBookItemInfo and PetBank and Enum.SpellBookItemType then
+    local function add(name, icon, passive, later)
+        if name and not passive and not later and not PET_COMMANDS[name] then
+            out[#out + 1] = { name = name, icon = icon }
+        end
+    end
+    if C_SpellBook and C_SpellBook.GetSpellBookItemInfo and PetBank then
+        local future = Enum.SpellBookItemType and Enum.SpellBookItemType.FutureSpell
         for i = 1, C_SpellBook.HasPetSpells() or 0 do
             local item = C_SpellBook.GetSpellBookItemInfo(i, PetBank)
-            if item and item.name and item.itemType == Enum.SpellBookItemType.Spell and not item.isPassive then
-                out[#out + 1] = { name = item.name, icon = item.iconID }
-            end
+            if item then add(item.name, item.iconID, item.isPassive, future and item.itemType == future) end
         end
     elseif HasPetSpells and GetSpellBookItemInfo then
         local book = BOOKTYPE_PET or "pet"
         for i = 1, HasPetSpells() or 0 do
-            local name = GetSpellBookItemName(i, book)
-            if name and GetSpellBookItemInfo(i, book) == "SPELL" and not IsPassiveSpell(i, book) then
-                out[#out + 1] = { name = name, icon = GetSpellBookItemTexture(i, book) }
-            end
+            add(GetSpellBookItemName(i, book), GetSpellBookItemTexture(i, book), IsPassiveSpell(i, book),
+                GetSpellBookItemInfo(i, book) == "FUTURESPELL")
         end
     end
     return out
