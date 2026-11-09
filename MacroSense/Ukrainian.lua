@@ -25,10 +25,11 @@ ns.locales.uk = {
         "  Опишіть, що ви робили, чого очікували і що сталося; знімок екрана теж допоможе.",
     ["debug %s"] = "налагодження: %s",
     ["/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms sets - macro sets; "
-        .. "/ms minimap - hide or show the minimap button; /ms bug - details for a bug report; /ms autocomplete | debug - toggle"] =
+        .. "/ms settings - settings; /ms minimap - hide or show the minimap button; /ms bug - details for a bug report; "
+        .. "/ms autocomplete | debug - toggle"] =
         "/ms — відкрити редактор; /ms help — довідка з макросів; /ms book — макроси з книги заклинань; /ms sets — набори "
-        .. "макросів; /ms minimap — сховати чи показати кнопку біля мінікарти; /ms bug — подробиці для звіту про помилку; "
-        .. "/ms autocomplete | debug — увімкнути чи вимкнути",
+        .. "макросів; /ms settings — налаштування; /ms minimap — сховати чи показати кнопку біля мінікарти; /ms bug — "
+        .. "подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
     ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
         .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
         .. "out of stealth."] =
@@ -1304,7 +1305,15 @@ ns.locales.uk = {
     ["opens screenshot tools"] = "відкриває інструменти знімків екрана",
 
     -- Action bars, minimap button, icon picker
-    ["Shift + right-click: edit in MacroSense"] = "Shift + правий клік: редагувати в MacroSense",
+    ["%s: edit in MacroSense"] = "%s: редагувати в MacroSense",
+    ["right-click"] = "правий клік",
+    ["middle-click"] = "середній клік",
+    ["left-click"] = "лівий клік",
+    ["Open a macro in MacroSense with a click on its button"] = "Відкривати макрос у MacroSense кліком по його кнопці",
+    ["Combination:"] = "Комбінація:",
+    ["This click opens the macro instead of running it. Pick one your macros don't use, or turn it off."] =
+        "Цей клік відкриває макрос, а не запускає його. Оберіть такий, якого ваші макроси не використовують, або "
+        .. "вимкніть його.",
     ["Click: open or close the editor"] = "Клацання: відкрити чи закрити редактор",
     ["Drag: move the button"] = "Перетягування: перемістити кнопку",
     ["/ms minimap hides it"] = "/ms minimap ховає її",

@@ -43,6 +43,10 @@ ns.defaults = {
     minimapAngle = 250, -- where on the minimap's edge, in degrees (0 = right, 90 = up)
     language = "en", -- "uk": Ukrainian (Locale.lua)
     wizardForm = nil, -- the wizard opens on its whole form, not its questions one at a time
+    -- The click on a macro on an action bar that opens it in the editor (ActionBars.lua; the settings, Options.lua).
+    barEdit = true,
+    barEditKeys = "shift", -- ActionBars.KEYS
+    barEditButton = "RightButton",
     welcomeSeen = nil, -- version the early-development note was shown for
 }
 
@@ -180,6 +184,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.RememberBuffs()
         ns.MinimapButton.Update()
         ns.ActionBars.Setup()
+        ns.Options.Setup()
         ns.Links.Setup()
         Welcome()
     elseif event == "UNIT_AURA" then
@@ -257,6 +262,8 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.HelpWindow.Open()
     elseif msg == "book" then
         ns.SpellbookWindow.Open()
+    elseif msg == "settings" then
+        ns.Options.Open()
     elseif msg == "sets" or msg:find("^sets ") then
         SetsCommand(raw:match("^%S+%s*(.*)$"))
     elseif msg == "minimap" then
@@ -275,6 +282,7 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.Print("debug %s", OnOff(ns.db.debug))
     else
         ns.Print("/ms - open the editor; /ms help - the macro guide; /ms book - macros from the spellbook; /ms sets - macro sets; "
-            .. "/ms minimap - hide or show the minimap button; /ms bug - details for a bug report; /ms autocomplete | debug - toggle")
+            .. "/ms settings - settings; /ms minimap - hide or show the minimap button; /ms bug - details for a bug report; "
+            .. "/ms autocomplete | debug - toggle")
     end
 end

@@ -234,6 +234,7 @@ local function Wait(seconds)
 end
 function IsControlKeyDown() return false end
 function IsShiftKeyDown() return false end
+function IsAltKeyDown() return false end
 function IsMouseButtonDown() return false end
 function InCombatLockdown() return false end
 local onScreen = {} -- UIErrorsFrame's messages: { text, r, g, b }
@@ -452,13 +453,25 @@ local function Handle(frame)
         end,
     }
 end
-function SecureHandlerWrapScript(frame, script, header, preBody)
-    if frame.forbidden then error("Cannot use SecureHandlers API on forbidden frames") end
-    local env = {
+-- A header's restricted environment: what its snippets may call, and their variables, shared by the scripts it
+-- wraps. The game runs no snippet of an addon's in combat.
+local function Restricted(header)
+    header.env = header.env or {
         IsShiftKeyDown = function() return IsShiftKeyDown() end,
+        IsControlKeyDown = function() return IsControlKeyDown() end,
+        IsAltKeyDown = function() return IsAltKeyDown() end,
         GetActionBarPage = function() return barPage end,
         GetActionInfo = function(slot) return GetActionInfo(slot) end,
     }
+    return header.env
+end
+function SecureHandlerExecute(header, body)
+    if InCombatLockdown() then error("Interface action failed because of an AddOn") end
+    assert(load(body, "=Execute", "t", Restricted(header)))()
+end
+function SecureHandlerWrapScript(frame, script, header, preBody)
+    if frame.forbidden then error("Cannot use SecureHandlers API on forbidden frames") end
+    local env = Restricted(header)
     local body = assert(load("local self, button, down = ...\n" .. preBody, "=PRE_CLICK", "t", env))
     local inner = frame.scripts[script]
     frame.scripts[script] = function(f, button, down, ...)
@@ -545,6 +558,14 @@ local function check(name, cond, detail)
     end
 end
 
+-- The game's settings (Options): the addons' pages, and the one opened last.
+Settings = { pages = {} }
+function Settings.RegisterCanvasLayoutCategory(frame, name)
+    return { frame = frame, name = name, GetID = function() return name end }
+end
+function Settings.RegisterAddOnCategory(category) table.insert(Settings.pages, category) end
+function Settings.OpenToCategory(id) Settings.opened = id end
+
 -- Load the addon in .toc order.
 local ns = {}
 for line in io.lines("MacroSense/MacroSense.toc") do
@@ -570,12 +591,12 @@ SlashCmdList.MACROSENSE("bug")
 check("/ms bug prints versions", printedWith("MacroSense dev, WoW 12.1.5 (120105), Mac"))
 -- A word /ms doesn't know: the commands it does, /ms sets among them, in the addon's language.
 SlashCmdList.MACROSENSE("what")
-check("/ms: its commands, /ms sets too", printed[#printed]:find("/ms sets - macro sets;", 1, true) ~= nil,
-    printed[#printed])
+check("/ms: its commands, /ms sets too", printed[#printed]:find("/ms sets - macro sets;", 1, true) ~= nil
+    and printed[#printed]:find("/ms settings - settings;", 1, true) ~= nil, printed[#printed])
 ns.SetLanguage("uk")
 SlashCmdList.MACROSENSE("what")
-check("/ms: its commands in Ukrainian", printed[#printed]:find("/ms sets — набори макросів;", 1, true) ~= nil,
-    printed[#printed])
+check("/ms: its commands in Ukrainian", printed[#printed]:find("/ms sets — набори макросів;", 1, true) ~= nil
+    and printed[#printed]:find("/ms settings — налаштування;", 1, true) ~= nil, printed[#printed])
 ns.SetLanguage("en")
 
 -- The MacroSense button sits in the title bar of the Blizzard macro window, left of its close button.
@@ -3713,8 +3734,8 @@ do
         return table.concat(tip, " / ")
     end
     -- After a blank line: apart from the game's own lines.
-    check("action bars: a macro's tooltip tells", Tip(startButton, 2) == "  / " .. ns.ActionBars.TIP, Tip(startButton, 2))
-    check("action bars: and on LibActionButton's", Tip(labButton, 100) == "  / " .. ns.ActionBars.TIP, Tip(labButton, 100))
+    check("action bars: a macro's tooltip tells", Tip(startButton, 2) == "  / " .. ns.ActionBars.Tip(), Tip(startButton, 2))
+    check("action bars: and on LibActionButton's", Tip(labButton, 100) == "  / " .. ns.ActionBars.Tip(), Tip(labButton, 100))
     actions[4] = { "spell", 5782 }
     check("action bars: a spell's doesn't", Tip(other, 4) == "", Tip(other, 4))
     check("action bars: nor a button not set up", Tip(refused, 6) == "", Tip(refused, 6))
@@ -3724,7 +3745,7 @@ do
     bindings.ACTIONBUTTON2 = "TAB" -- the button of slot 2
     Send("UPDATE_BINDINGS")
     local warning = "Cmd+Tab is a macOS shortcut (switches apps)"
-    check("action bars: the macOS warning", Tip(startButton, 2) == "  / " .. warning .. " / " .. ns.ActionBars.TIP,
+    check("action bars: the macOS warning", Tip(startButton, 2) == "  / " .. warning .. " / " .. ns.ActionBars.Tip(),
         Tip(startButton, 2))
     check("action bars: in red", colors[warning] == "1.00 0.35 0.35", colors[warning])
     local laidOut
@@ -3734,7 +3755,7 @@ do
     GameTooltip.Show = nil
     check("action bars: not on a spell", Tip(other, 4) == "", Tip(other, 4))
     IsMacClient = function() return false end
-    check("action bars: no macOS warning on Windows", Tip(startButton, 2) == "  / " .. ns.ActionBars.TIP,
+    check("action bars: no macOS warning on Windows", Tip(startButton, 2) == "  / " .. ns.ActionBars.Tip(),
         Tip(startButton, 2))
     IsMacClient = function() return true end
     -- And the button whose own key that is turns red, on the game's bars.
@@ -3783,6 +3804,60 @@ do
     EditMacro(fear, "Bar Fear", 1, "/cast Fear")
     bindings.ACTIONBUTTON2 = nil
     Send("UPDATE_BINDINGS")
+
+    -- The click is the player's to choose, on MacroSense's page of the game's settings: the keys held (those and
+    -- no other) and the mouse button, or none at all. The tooltip says the one chosen. In combat the game keeps
+    -- the buttons as they are: the new click works once it ends.
+    do
+        local function With(b, mouse, keys)
+            local function held(key) return function() return keys:find(key) ~= nil end end
+            IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown = held("shift"), held("ctrl"), held("alt")
+            local ran = b.ran
+            Fire(b, "OnClick", mouse, true)
+            Fire(b, "OnClick", mouse, false)
+            local up = function() return false end
+            IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown = up, up, up
+            return b.ran - ran
+        end
+        local function pick(dropdown, label)
+            Fire(dropdown, "OnClick")
+            for _, r in ipairs(MacroSenseMenu.rows) do
+                if r:IsShown() and r.text.text == label then return Fire(r, "OnClick") end
+            end
+            check("settings: " .. label .. " offered", false)
+        end
+        local o = ns.Options
+        check("settings: a page of the game's settings", Settings.pages[1] and Settings.pages[1].name == "MacroSense"
+            and Settings.pages[1].frame == o.page and #Settings.pages == 1)
+        SlashCmdList.MACROSENSE("settings")
+        check("settings: /ms settings opens it", Settings.opened == "MacroSense")
+        check("click: with those keys only", With(startButton, "RightButton", "shift") == 0
+            and With(startButton, "RightButton", "shift-ctrl") == 2)
+        MacroSenseFrame:Hide()
+        pick(o.keys, "Ctrl + Alt")
+        pick(o.click, "middle-click")
+        check("click: kept", ns.db.barEditKeys == "ctrl-alt" and ns.db.barEditButton == "MiddleButton")
+        check("click: the one chosen opens the macro", With(startButton, "MiddleButton", "ctrl-alt") == 0
+            and MacroSenseFrame:IsShown() and raw() == "/cast Fear", raw())
+        check("click: shift + right-click runs it now", With(startButton, "RightButton", "shift") == 2)
+        check("click: the tooltip says the one chosen", Tip(startButton, 2)
+            == "  / Ctrl + Alt + middle-click: edit in MacroSense", Tip(startButton, 2))
+        Fire(o.on, "OnClick")
+        check("click: none, the macro runs", not ns.db.barEdit and With(startButton, "MiddleButton", "ctrl-alt") == 2)
+        check("click: none, nothing in the tooltip", Tip(startButton, 2) == "", Tip(startButton, 2))
+        InCombatLockdown = function() return true end
+        Fire(o.on, "OnClick")
+        check("click: in combat, the buttons as they were", ns.db.barEdit
+            and With(startButton, "MiddleButton", "ctrl-alt") == 2)
+        InCombatLockdown = function() return false end
+        Send("PLAYER_REGEN_ENABLED")
+        check("click: after combat, the one chosen", With(startButton, "MiddleButton", "ctrl-alt") == 0)
+        pick(o.keys, "Shift")
+        pick(o.click, "right-click")
+        check("click: back to shift + right-click", With(startButton, "RightButton", "shift") == 0
+            and Tip(startButton, 2) == "  / Shift + right-click: edit in MacroSense", Tip(startButton, 2))
+        ns.CloseMenu()
+    end
     GameTooltip.AddLine = nil
 
     -- Unsaved changes: to another macro they are asked about, the macro's own stay.
@@ -5422,7 +5497,6 @@ do
     for _, text in ipairs(ns.Explain.Texts()) do add(text) end
     for _, text in ipairs(ns.Docs.Texts()) do add(text) end
     for _, text in ipairs(ns.WhatIf.Texts()) do add(text) end
-    add(ns.ActionBars.TIP)
     -- Kept in their files' locals: month names, tab names, the preview's quiet notes and verbs, hints made in
     -- Sources and Completion, what a condition's value should be, and the wizard's names for a macro.
     for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -5738,11 +5812,11 @@ do
         return table.concat(tip, " / ")
     end
     local line = "\"Death Coil\": a talent you haven't chosen, the macro can't use it now"
-    check("missing: the tooltip says why", Tip(startButton, 2) == "  / " .. line .. " / " .. ns.ActionBars.TIP,
+    check("missing: the tooltip says why", Tip(startButton, 2) == "  / " .. line .. " / " .. ns.ActionBars.Tip(),
         Tip(startButton, 2))
     check("missing: in yellow", colors[line] == "1.00 0.82 0.00", colors[line])
     check("missing: on LibActionButton's tooltip too", Tip(labButton, 100) == "  / " .. line .. " / "
-        .. ns.ActionBars.TIP, Tip(labButton, 100))
+        .. ns.ActionBars.Tip(), Tip(labButton, 100))
     local laidOut
     GameTooltip.Show = function() laidOut = true end
     check("missing: the tooltip line alone, laid out", Tip(New("Frame"), 2) == "  / " .. line and laidOut)
@@ -5753,7 +5827,7 @@ do
     startButton.action = 8
     Send("UPDATE_MACROS")
     check("missing: not for a typo", not Tinted(startButton, "ffd100") and Tip(startButton, 8) == "  / "
-        .. ns.ActionBars.TIP, Tip(startButton, 8))
+        .. ns.ActionBars.Tip(), Tip(startButton, 8))
     startButton.action, actions[8] = 2, nil
     DeleteMacro(GetMacroIndexByName("Typo"))
     Send("UPDATE_MACROS")
@@ -5789,7 +5863,7 @@ do
     check("missing: not before the game is done", Tinted(startButton, "ffd100"))
     Wait(0.6)
     check("missing: chosen, the tint goes", not Tinted(startButton, "ffd100") and not Tinted(labButton, "ffd100"))
-    check("missing: and the tooltip line", Tip(startButton, 2) == "  / " .. ns.ActionBars.TIP, Tip(startButton, 2))
+    check("missing: and the tooltip line", Tip(startButton, 2) == "  / " .. ns.ActionBars.Tip(), Tip(startButton, 2))
     check("missing: and the status bar", statusText() == "", statusText())
     check("missing: and the list", row("Coil") and row("Coil").severity == nil)
     local talentEvents, refused = false, false

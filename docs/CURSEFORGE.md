@@ -275,7 +275,9 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - An icon you picked, in a macro with `#showtooltip`, has a padlock: the game won't change it.
 - **Drag** a macro from the list, or its icon from the header, straight onto an action bar.
 - **Shift + right-click** a macro on an action bar to edit it: the editor opens on it instead of the macro
-  running, and the tooltip says so. On the game's bars, Bartender, Dominos and ElvUI.
+  running, and the tooltip says so. On the game's bars, Bartender, Dominos and ElvUI. Your macros use that
+  click? Pick another in the settings (`/ms settings`): Shift, Ctrl, Alt or two of them, with any mouse button,
+  or turn it off.
 
 ## Editing comforts
 
@@ -321,6 +323,7 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 | `/ms book` | Macros from the spellbook |
 | `/ms sets` | What macro sets are, and turning them on |
 | `/ms sets log` | What the macro sets did, for a bug report |
+| `/ms settings` | The settings: the click that opens a macro from an action bar |
 | `/ms minimap` | Hide or show the minimap button |
 | `/ms bug` | Print the versions to include in a bug report |
 | `/ms autocomplete` | Turn autocomplete on or off |
