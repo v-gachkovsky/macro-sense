@@ -1,5 +1,6 @@
--- MacroSense's page of the game's settings (AddOns; /ms settings): the click on a macro on an action bar that
--- opens it in the editor (ActionBars.lua), its keys and mouse button, or none; the keys of the tag macro (Tag.lua).
+-- MacroSense's page of the game's settings (AddOns; /ms settings): MacroSense instead of the game's macro window, from
+-- the game menu and with /macro (Core.lua); the click on a macro on an action bar that opens it in the editor
+-- (ActionBars.lua), its keys and mouse button, or none; the keys of the tag macro (Tag.lua).
 local _, ns = ...
 ns = ns or {}
 local L = ns.L
@@ -42,8 +43,20 @@ function Options.Setup()
     local title = ns.Text(page, 16)
     title:SetPoint("TOPLEFT", PAD, -PAD)
     title:SetText("MacroSense")
+
+    -- MacroSense instead of the game's macro window (Core.lua): from "Macros" in the game menu, with /macro.
+    local instead = ns.Text(page, 13, "accent")
+    instead:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -18)
+    instead:SetText(L["Instead of the game's macro window"])
+    Options.menu = ns.Check(page, string.format(L["Open MacroSense with \"%s\" in the game menu"], MACROS or "Macros"),
+        function() return ns.db.gameMenu end, function(on) ns.db.gameMenu = on end)
+    Options.menu:SetPoint("TOPLEFT", instead, "BOTTOMLEFT", 0, -8)
+    Options.command = ns.Check(page, string.format(L["Open MacroSense with the %s command"], SLASH_MACRO1 or "/macro"),
+        function() return ns.db.macroCommand end, function(on) ns.db.macroCommand = on end)
+    Options.command:SetPoint("TOPLEFT", Options.menu, "BOTTOMLEFT", 0, -2)
+
     local bars = ns.Text(page, 13, "accent")
-    bars:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -18)
+    bars:SetPoint("TOPLEFT", Options.command, "BOTTOMLEFT", 0, -24)
     bars:SetText(L["Action bars"])
 
     Options.on = ns.Check(page, L["Open a macro in MacroSense with a click on its button"],
@@ -97,6 +110,8 @@ end
 -- The page as the settings are now: the combination only while the click is on.
 function Options.Refresh()
     if not Options.page then return end
+    Options.menu:Refresh()
+    Options.command:Refresh()
     Options.on:Refresh()
     Options.keys:Refresh()
     Options.click:Refresh()

@@ -48,6 +48,9 @@ ns.defaults = {
     barEditKeys = "shift", -- ActionBars.KEYS
     barEditButton = "RightButton",
     tagKeys = "ctrl-alt", -- held with a click on a creature or player: its name into the tag macro (Tag.lua)
+    -- MacroSense instead of the game's macro window: from "Macros" in the game menu, with /macro (the settings).
+    gameMenu = true,
+    macroCommand = false,
     welcomeSeen = nil, -- version the early-development note was shown for
 }
 
@@ -82,6 +85,29 @@ local function AddMacroFrameButton()
     end
     b:SetScript("OnClick", function() ns.Window.Toggle() end)
     ns.macroFrameButton = b
+end
+
+-- "Macros" in the game menu and /macro open MacroSense instead of the game's macro window, each as chosen in the
+-- settings. Both call the game's ShowMacroFrame: /macro is told apart while it runs. The chat runs a command from
+-- its own table once it was used: /macro there is changed too.
+local function OpenInstead()
+    local show, macro = ShowMacroFrame, SlashCmdList.MACRO
+    if not show then return end
+    local typed = false
+    ShowMacroFrame = function(...)
+        if typed and ns.db.macroCommand or not typed and ns.db.gameMenu then return ns.Window.Show() end
+        return show(...)
+    end
+    if not macro then return end
+    SlashCmdList.MACRO = function(...)
+        typed = true
+        local ok, err = pcall(macro, ...)
+        typed = false
+        if not ok then error(err, 0) end
+    end
+    for command, fn in pairs(hash_SlashCmdList or {}) do
+        if fn == macro then hash_SlashCmdList[command] = SlashCmdList.MACRO end
+    end
 end
 
 -- The buffs on you are kept for /cancelaura a second after they change, at most once a second.
@@ -187,6 +213,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.ActionBars.Setup()
         ns.Options.Setup()
         ns.Links.Setup()
+        OpenInstead()
         Welcome()
     elseif event == "UNIT_AURA" then
         RememberBuffsSoon()

@@ -253,6 +253,12 @@ local SLOTS = Constants.MacroConsts
 
 -- Like the game: the list of secure commands is hidden from addons, IsSecureCmd("/cast") tells.
 SlashCmdList, ChatTypeInfo = {}, { SAY = true }
+-- The game's macro window, opened by the game menu's "Macros" and by /macro. The chat runs /macro from
+-- hash_SlashCmdList once it was used.
+gameMacroWindowShown, MACROS, SLASH_MACRO1 = 0, "Macros", "/macro"
+function ShowMacroFrame() gameMacroWindowShown = gameMacroWindowShown + 1 end
+SlashCmdList.MACRO = function() ShowMacroFrame() end
+hash_SlashCmdList = { ["/MACRO"] = SlashCmdList.MACRO }
 SLASH_CAST1, SLASH_USE1, SLASH_TARGET1, SLASH_SAY1 = "/cast", "/use", "/target", "/say"
 PET_ACTION_ATTACK, PET_ACTION_FOLLOW = "Attack", "Follow" -- the pet bar's commands, as the game names them
 SLASH_PET_MOVE_TO1, SLASH_TEAM_QUIT1 = "/petmoveto", "/teamquit" -- this client has no /teamquit
@@ -5399,6 +5405,37 @@ do
     ns.CloseMenu()
     UnitExists, UnitName, UnitIsUnit = nil, unitName, unitIsUnit
     ns.Window.Select(1)
+    NextFrame()
+end
+
+-- The game menu's "Macros" opens MacroSense instead of the game's macro window; /macro opens the game's. Each one is
+-- a choice in the settings. /macro used already is run from the chat's own table.
+do
+    local before = gameMacroWindowShown
+    check("instead: the settings' texts", ns.Options.menu.label.text == 'Open MacroSense with "Macros" in the game menu'
+        and ns.Options.command.label.text == "Open MacroSense with the /macro command", ns.Options.menu.label.text)
+    MacroSenseFrame:Hide()
+    ShowMacroFrame() -- the game menu's "Macros"
+    check("instead: the game menu opens MacroSense", MacroSenseFrame:IsShown() and gameMacroWindowShown == before)
+    ShowMacroFrame()
+    check("instead: open already, it stays open", MacroSenseFrame:IsShown())
+    MacroSenseFrame:Hide()
+    hash_SlashCmdList["/MACRO"]("")
+    check("instead: /macro opens the game's window",
+        gameMacroWindowShown == before + 1 and not MacroSenseFrame:IsShown())
+    Fire(ns.Options.command, "OnClick")
+    hash_SlashCmdList["/MACRO"]("")
+    check("instead: /macro opens MacroSense, chosen in the settings", ns.db.macroCommand
+        and MacroSenseFrame:IsShown() and gameMacroWindowShown == before + 1)
+    MacroSenseFrame:Hide()
+    Fire(ns.Options.menu, "OnClick")
+    ShowMacroFrame()
+    check("instead: the game menu opens the game's window, chosen in the settings", not ns.db.gameMenu
+        and gameMacroWindowShown == before + 2 and not MacroSenseFrame:IsShown())
+    SlashCmdList.MACRO("")
+    check("instead: /macro still opens MacroSense", MacroSenseFrame:IsShown() and gameMacroWindowShown == before + 2)
+    ns.db.gameMenu, ns.db.macroCommand = true, false
+    ns.Options.Refresh()
     NextFrame()
 end
 
