@@ -129,6 +129,35 @@ local function source(name)
     return ns.sources and ns.sources[name] and ns.sources[name]() or {}
 end
 
+-- The values the game's check is asked with, for the conditions that take one: none of them matches anything.
+local PROBES = { known = "MacroSenseNoSuchSpell", equipped = "MacroSenseNoSuchType", worn = "MacroSenseNoSuchType",
+    talent = "9/9", pvptalent = "MacroSenseNoSuchTalent", spec = "9", bar = "9", actionbar = "9" }
+
+-- Whether the game's condition check `parse` (SecureCmdOptionParse) knows condition `name`: [name] or [noname]
+-- holds. One its check stops at (an error) is not known.
+local function Knows(parse, name)
+    local value = PROBES[name] and ":" .. PROBES[name] or ""
+    for _, text in ipairs({ "[" .. name .. value .. "] x", "[no" .. name .. value .. "] x" }) do
+        local ok, action = pcall(parse, text)
+        if ok and action ~= nil then return true end
+    end
+    return false
+end
+
+-- The conditions MacroSense offers that this game doesn't know, by its own check `parse`: neither [name] nor
+-- [noname] holds for them (/ms conditions). Nil when the game can't tell: a made-up one passes its check too.
+function Conditions.Unknown(parse)
+    if Knows(parse, "macrosensenosuch") then return nil end
+    local out = {}
+    for _, c in ipairs(ns.data.conditions) do
+        local name = c.name
+        if not name:find("^no") and name ~= "@" and name ~= "target=" and not Knows(parse, name) then
+            out[#out + 1] = name
+        end
+    end
+    return out
+end
+
 -- Suggestions after "name:" (and after each "/").
 function Conditions.Values(name)
     local base = Conditions.Base(name)

@@ -590,6 +590,12 @@ Send("PLAYER_LOGIN")
 check("welcome note only once per version", #printed == count, #printed - count)
 SlashCmdList.MACROSENSE("bug")
 check("/ms bug prints versions", printedWith("MacroSense dev, WoW 12.1.5 (120105), Mac"))
+-- /ms conditions: the conditions MacroSense offers that this game's own check doesn't know (this test game knows a
+-- few: tests/fakeparse.lua).
+SlashCmdList.MACROSENSE("conditions")
+check("/ms conditions: those this game doesn't know", printed[#printed]:find("conditions this game doesn't know: ",
+    1, true) ~= nil and printed[#printed]:find("[flying]", 1, true) ~= nil
+    and printed[#printed]:find("[combat]", 1, true) == nil, printed[#printed])
 -- A word /ms doesn't know: the commands it does, /ms sets among them, in the addon's language.
 SlashCmdList.MACROSENSE("what")
 check("/ms: its commands, /ms sets too", printed[#printed]:find("/ms sets - macro sets;", 1, true) ~= nil

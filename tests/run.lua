@@ -473,6 +473,27 @@ for _, bad in ipairs({ { "mod", "shfit" }, { "btn", "7" }, { "button", "Left" },
 end
 check("invalid message", C.CheckValue("btn", "7") == 'invalid btn value "7" (expected 1-5 or a button name)',
     C.CheckValue("btn", "7"))
+-- The conditions MacroSense offers that this game doesn't know, by its own check: neither [name] nor [noname]
+-- holds. One that takes a value is asked with one that matches nothing. A game where a made-up one holds can't tell.
+do
+    local knows, asked = { combat = true, mod = true, known = true }, {}
+    local function parse(options) -- a game where none of these holds now, so its "no" form does
+        asked[options] = true
+        local name = options:match("^%[no(%a+)")
+        return name and knows[name] and "x" or nil
+    end
+    local unknown = {}
+    for _, name in ipairs(C.Unknown(parse)) do unknown[name] = true end
+    check("conditions: those the game doesn't know", unknown.flying and unknown.stealth and not unknown.combat
+        and not unknown.mod and not unknown.known and not unknown["@"] and not unknown.nocombat)
+    check("conditions: one with a value asked with one", asked["[known:MacroSenseNoSuchSpell] x"]
+        and asked["[noknown:MacroSenseNoSuchSpell] x"])
+    check("conditions: a game where a made-up one holds can't tell", C.Unknown(function() return "x" end) == nil)
+    check("conditions: an error is a condition not known", C.Unknown(function(options)
+        if options:find("flying") then error("bad") end
+        return parse(options)
+    end) ~= nil)
+end
 
 ns.sources.forms = function() return { { name = "0", hint = "no form" }, { name = "1", hint = "Bear Form" } } end
 ns.sources.specs = function() return { { name = "1", hint = "Affliction" }, { name = "2", hint = "Demonology" } } end

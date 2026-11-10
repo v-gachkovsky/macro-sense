@@ -329,6 +329,7 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 | `/ms settings` | The settings: the click that opens a macro from an action bar |
 | `/ms minimap` | Hide or show the minimap button |
 | `/ms bug` | Print the versions to include in a bug report |
+| `/ms conditions` | The macro conditions your game client doesn't know, by the game's own check |
 | `/ms autocomplete` | Turn autocomplete on or off |
 | `/ms debug` | Print the editor's key events (helps me with key bugs) |
 

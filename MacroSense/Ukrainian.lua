@@ -1312,6 +1312,9 @@ ns.locales.uk = {
     ["Open a macro in MacroSense with a click on its button"] = "Відкривати макрос у MacroSense кліком по його кнопці",
     ["Combination:"] = "Комбінація:",
     ["Tag macro"] = "Тег-макрос",
+    ["this game doesn't tell which conditions it knows"] = "ця гра не каже, які умови вона знає",
+    ["this game knows every condition MacroSense offers"] = "ця гра знає всі умови, які пропонує MacroSense",
+    ["conditions this game doesn't know: %s"] = "умови, яких ця гра не знає: %s",
     ["Keys:"] = "Клавіші:",
     ["Hold them and click a creature or player: its name goes into your tag macro, which then targets it. A click on "
         .. "yourself takes the name out. A macro becomes the tag macro in its \"...\" menu."] =

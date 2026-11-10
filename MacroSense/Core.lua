@@ -265,6 +265,16 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.SpellbookWindow.Open()
     elseif msg == "settings" then
         ns.Options.Open()
+    elseif msg == "conditions" then
+        -- Which conditions this game client doesn't know, by its own check: for a bug report, or a new client.
+        local unknown = SecureCmdOptionParse and ns.Conditions.Unknown(SecureCmdOptionParse)
+        if not unknown then
+            ns.Print("this game doesn't tell which conditions it knows")
+        elseif #unknown == 0 then
+            ns.Print("this game knows every condition MacroSense offers")
+        else
+            ns.Print("conditions this game doesn't know: %s", "[" .. table.concat(unknown, "], [") .. "]")
+        end
     elseif msg == "sets" or msg:find("^sets ") then
         SetsCommand(raw:match("^%S+%s*(.*)$"))
     elseif msg == "minimap" then

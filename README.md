@@ -580,6 +580,8 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `/ms settings` - the settings: the click that opens a macro from an action bar
 - `/ms minimap` - hide / show the minimap button
 - `/ms bug` - print the versions to include in a bug report
+- `/ms conditions` - the macro conditions MacroSense offers that your game client doesn't know, by the game's own
+  check
 - `/ms autocomplete` - toggle autocomplete
 - `/ms debug` - print the editor's key events and underline positions
 
