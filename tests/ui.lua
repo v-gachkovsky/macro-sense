@@ -5255,6 +5255,8 @@ end
 -- The tag macro: picked in a macro's "..." menu; a creature or player clicked with Ctrl + Alt held (those keys and
 -- no other) goes into it by name, in its /targetexact line; yourself takes the name out. In combat: once it ends.
 -- It follows the macro renamed, and is let go when the macro is deleted.
+-- The unit under the mouse is the one clicked: a click on a unit frame takes no target in Retail's clients with keys
+-- held (no click binding for them), your own portrait among them.
 do
     local function row(name)
         for _, o in ipairs(created) do
@@ -5266,24 +5268,31 @@ do
             if r:IsShown() and r.text.text == label then return r end
         end
     end
-    local target, realm, me -- the target now: its name and realm, or yourself
+    local ME = {} -- yourself under the mouse
+    local over, realm -- under the mouse: a name (and realm), ME, or nil: no unit
+    local target -- the target's name
     local unitName, unitIsUnit = UnitName, UnitIsUnit
-    UnitExists = function(unit) return unit == "target" and (target ~= nil or me) end
+    UnitExists = function(unit) return unit == "mouseover" and over ~= nil or unit == "target" and target ~= nil end
     UnitName = function(unit)
-        if unit == "target" then return target, realm end
+        if unit == "mouseover" and over ~= ME then return over, realm end
+        if unit == "target" then return target end
         return unitName(unit)
     end
     UnitIsUnit = function(a, b)
-        if a == "target" and b == "player" then return me == true end
+        if a == "mouseover" and b == "player" then return over == ME end
+        if a == "target" and b == "player" then return false end
         return unitIsUnit(a, b)
     end
-    local function Click(name, keys, from)
-        target, realm, me = name, from, name == nil
+    local function Holding(keys, event, ...)
         local function held(key) return function() return (keys or ""):find(key) ~= nil end end
         IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown = held("shift"), held("ctrl"), held("alt")
-        Send("PLAYER_TARGET_CHANGED")
+        Send(event, ...)
         local up = function() return false end
         IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown = up, up, up
+    end
+    local function Click(who, keys, from, button)
+        over, realm = who, from
+        Holding(keys, "GLOBAL_MOUSE_UP", button or "LeftButton")
     end
     local function body() return select(3, GetMacroInfo(GetMacroIndexByName("Tag Rare"))) end
     CreateMacro("Tag Rare", 1, "#showtooltip\n/cast Shoot", false)
@@ -5306,7 +5315,14 @@ do
     Click("Mor'Ladim")
     check("tag: not without those keys, nor with more", body() == "#showtooltip\n/targetexact Bob-Silvermoon\n/cast Shoot",
         body())
+    Click("Mor'Ladim", "ctrl-alt", nil, "RightButton")
     Click(nil, "ctrl-alt")
+    target = "Mor'Ladim"
+    Holding("ctrl-alt", "PLAYER_TARGET_CHANGED") -- taken with a key, no click
+    target = nil
+    check("tag: not with the right button, nor a click on no one, nor a target taken with a key",
+        body() == "#showtooltip\n/targetexact Bob-Silvermoon\n/cast Shoot", body())
+    Click(ME, "ctrl-alt")
     check("tag: yourself takes the name out", body() == "#showtooltip\n/cast Shoot", body())
     InCombatLockdown = function() return true end
     Click("Hogger", "ctrl-alt")

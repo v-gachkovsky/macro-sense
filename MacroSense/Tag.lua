@@ -137,29 +137,32 @@ local function Held(keys)
         and not IsAltKeyDown() == not keys:find("alt")
 end
 
--- The target's name ("Bob-Silvermoon" from another realm), or nil: none, or Retail keeps it from addons now.
-local function TargetName()
-    if not UnitExists("target") then return nil end
-    local name, realm = UnitName("target")
+-- The name of the unit under the mouse ("Bob-Silvermoon" from another realm), or nil: none, or Retail keeps it from
+-- addons now.
+local function MouseoverName()
+    local name, realm = UnitName("mouseover")
     if issecretvalue and (issecretvalue(name) or issecretvalue(realm)) then return nil end
     if type(name) ~= "string" or name == "" then return nil end
     return realm and realm ~= "" and name .. "-" .. realm or name
 end
 
--- A click that takes a target with the keys held: its name in the tag macro; on yourself, the name out.
+-- A left click with the keys held on a creature or player, in the world, on its frame or its nameplate: its name in
+-- the tag macro; on yourself, the name out. The unit under the mouse, not the target: a click on a unit frame takes
+-- no target in Retail's clients with keys held (no click binding for them), your own portrait among them.
 local events = CreateFrame("Frame")
-events:RegisterEvent("PLAYER_TARGET_CHANGED")
+pcall(events.RegisterEvent, events, "GLOBAL_MOUSE_UP")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
-events:SetScript("OnEvent", function(_, event)
+events:SetScript("OnEvent", function(_, event, button)
     if event == "PLAYER_REGEN_ENABLED" then
         if pending == nil then return end
         local name = pending or nil
         pending = nil
         return Write(name)
     end
-    if not Tag.Get() or not ns.db or not Held(ns.db.tagKeys) then return end
-    if UnitIsUnit("target", "player") then return Tag.Take(nil) end
-    local name = TargetName()
+    if event ~= "GLOBAL_MOUSE_UP" or button ~= "LeftButton" then return end
+    if not Tag.Get() or not ns.db or not Held(ns.db.tagKeys) or not UnitExists("mouseover") then return end
+    if UnitIsUnit("mouseover", "player") then return Tag.Take(nil) end
+    local name = MouseoverName()
     if name then Tag.Take(name) end
 end)
 
