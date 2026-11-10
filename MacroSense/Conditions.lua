@@ -129,31 +129,71 @@ local function source(name)
     return ns.sources and ns.sources[name] and ns.sources[name]() or {}
 end
 
+-- /ms conditions: the game's own check is asked about each condition MacroSense offers, and names in the chat each
+-- one it doesn't know ("Unknown macro option: flying"), whether it holds or not. A made-up one is asked first: the
+-- game's line about it shows how the game says that, in its language.
+local MADE_UP = "macrosensenosuch"
+
 -- The values the game's check is asked with, for the conditions that take one: none of them matches anything.
 local PROBES = { known = "MacroSenseNoSuchSpell", equipped = "MacroSenseNoSuchType", worn = "MacroSenseNoSuchType",
     talent = "9/9", pvptalent = "MacroSenseNoSuchTalent", spec = "9", bar = "9", actionbar = "9" }
 
--- Whether the game's condition check `parse` (SecureCmdOptionParse) knows condition `name`: [name] or [noname]
--- holds. One its check stops at (an error) is not known.
-local function Knows(parse, name)
-    local value = PROBES[name] and ":" .. PROBES[name] or ""
-    for _, text in ipairs({ "[" .. name .. value .. "] x", "[no" .. name .. value .. "] x" }) do
-        local ok, action = pcall(parse, text)
-        if ok and action ~= nil then return true end
+-- The conditions asked about: the made-up one, then those MacroSense offers.
+local function Asked()
+    local out = { MADE_UP }
+    for _, c in ipairs(ns.data.conditions) do
+        if not c.name:find("^no") and c.name ~= "@" and c.name ~= "target=" then out[#out + 1] = c.name end
+    end
+    return out
+end
+
+-- Asks the game's condition check `parse` (SecureCmdOptionParse) about each condition. One its check stops at (an
+-- error) doesn't stop the others.
+function Conditions.Ask(parse)
+    for _, name in ipairs(Asked()) do
+        pcall(parse, "[" .. name .. (PROBES[name] and ":" .. PROBES[name] or "") .. "] x")
+    end
+end
+
+-- What the game says just before the name of an option it doesn't know, by its line about the made-up one in
+-- `lines`: "unknown macro option: ". Nil when no line is about it.
+local function Before(lines)
+    for _, line in ipairs(lines) do
+        local at = line:lower():find(MADE_UP, 1, true)
+        if at and at > 1 then return line:sub(math.max(1, at - 16), at - 1):lower() end
+    end
+end
+
+-- The option `line` names as one the game doesn't know, by `before`, or nil: "flying" from "... option: flying".
+local function Named(line, before)
+    local _, last = line:lower():find(before, 1, true)
+    return last and line:sub(last + 1):match("^%w+") or nil
+end
+
+-- Whether `line` is one of the game's answers among `lines`: about the made-up one, or one asked about.
+function Conditions.Answer(lines, line)
+    local before = Before(lines)
+    local name = before and Named(line, before)
+    if not name then return false end
+    for _, asked in ipairs(Asked()) do
+        if asked == name:lower() then return true end
     end
     return false
 end
 
--- The conditions MacroSense offers that this game doesn't know, by its own check `parse`: neither [name] nor
--- [noname] holds for them (/ms conditions). Nil when the game can't tell: a made-up one passes its check too.
-function Conditions.Unknown(parse)
-    if Knows(parse, "macrosensenosuch") then return nil end
+-- The conditions MacroSense offers that the game doesn't know, by the `lines` it said in the chat while asked. Nil
+-- when it said nothing of the made-up one: it doesn't tell.
+function Conditions.Unknown(lines)
+    local before = Before(lines)
+    if not before then return nil end
+    local named = {}
+    for _, line in ipairs(lines) do
+        local name = Named(line, before)
+        if name then named[name:lower()] = true end
+    end
     local out = {}
-    for _, c in ipairs(ns.data.conditions) do
-        local name = c.name
-        if not name:find("^no") and name ~= "@" and name ~= "target=" and not Knows(parse, name) then
-            out[#out + 1] = name
-        end
+    for _, name in ipairs(Asked()) do
+        if name ~= MADE_UP and named[name] then out[#out + 1] = name end
     end
     return out
 end
