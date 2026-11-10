@@ -25,6 +25,13 @@ Parser.luaCommands = { run = true, script = true, dump = true }
 Parser.stopCommands = { stopmacro = true }
 -- "/click Name [mouse button] [down]"; Sources adds localized aliases.
 Parser.clickCommands = { click = true }
+-- Commands that take a pet's spell, an action bar page (two for /swapactionbar) or a world marker: what they take.
+-- Sources adds localized aliases.
+Parser.argCommands = {
+    petautocaston = "petSpell", petautocastoff = "petSpell", petautocasttoggle = "petSpell",
+    changeactionbar = "barPage", swapactionbar = "barPages", worldmarker = "worldMarker",
+    clearworldmarker = "clearMarker",
+}
 
 -- Conditions whose value is a modifier key list (mod:shift/ctrl).
 local MODIFIER_CONDS = { mod = true, modifier = true, nomod = true, nomodifier = true }
@@ -52,7 +59,8 @@ end
 -- Context of the word being typed at `cursor` (bytes before the cursor, as EditBox:GetCursorPosition()).
 -- Returns nil or a table:
 --   kind    = "command" | "meta" | "condition" | "unit" | "modifier" | "conditionValue" | "action" | "reset"
---             | "slot" | "bagSlot" | "clickButton" | "clickMouse" | "clickDown"
+--             | "slot" | "bagSlot" | "clickButton" | "clickMouse" | "clickDown" | "petSpell" | "barPage"
+--             | "worldMarker" | "clearMarker"
 --             ("action" = a spell or item name, "rank" = inside "Spell(" -> `spell`, "reset" = a value after
 --             "/castsequence reset=", with `used` = the values before it, "slot" = an equipment slot number,
 --             "bagSlot" = the slot after a bag number: "/use 0 1" -> `bag` 0, "click..." = the words of /click)
@@ -192,6 +200,18 @@ function Parser.GetContext(text, cursor)
         if not kind then return nil end
         local last = words[#words]
         return { kind = kind, prefix = last, start = tokenAbs + #token - #last, command = cmd }
+    end
+    -- "/petautocaston Fire Shield": a pet's spell, spaces and all; the others take one word (/swapactionbar two).
+    local arg = Parser.argCommands[cmd]
+    if arg == "petSpell" then return { kind = arg, prefix = token, start = tokenAbs, command = cmd } end
+    if arg then
+        local words = {}
+        for w in token:gmatch("%S+") do words[#words + 1] = w end
+        if token:find("%s$") or token == "" then words[#words + 1] = "" end
+        if #words > (arg == "barPages" and 2 or 1) then return nil end
+        local last = words[#words]
+        return { kind = arg == "barPages" and "barPage" or arg, prefix = last, start = tokenAbs + #token - #last,
+            command = cmd }
     end
     return nil
 end

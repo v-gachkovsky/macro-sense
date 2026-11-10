@@ -201,6 +201,13 @@ ns.data = {
     houses = { { name = "inside", hint = "inside a house" }, { name = "plot", hint = "on its plot" },
         { name = "editor", hint = "in the house editor" }, { name = "neighborhood", hint = "in a neighborhood" } },
     bars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" }, { name = "6" } },
+    -- /worldmarker and /clearworldmarker: the markers by their numbers.
+    worldMarkers = {
+        { name = "1", hint = "blue square" }, { name = "2", hint = "green triangle" },
+        { name = "3", hint = "purple diamond" }, { name = "4", hint = "red cross" },
+        { name = "5", hint = "yellow star" }, { name = "6", hint = "orange circle" },
+        { name = "7", hint = "silver moon" }, { name = "8", hint = "white skull" },
+    },
     bonusbars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" } },
 
     units = {

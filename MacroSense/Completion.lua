@@ -68,6 +68,12 @@ local function list(kind, ctx)
     if kind == "clickButton" then return source("clickButtons") end
     if kind == "clickMouse" then return d.mouseButtons end
     if kind == "clickDown" then return d.clickDown end
+    if kind == "petSpell" then return source("petSpells") end
+    if kind == "barPage" then return d.bars end
+    if kind == "worldMarker" then return d.worldMarkers end
+    if kind == "clearMarker" then
+        return concat(d.worldMarkers, { { name = (ALL or "all"):lower(), hint = "every marker" } })
+    end
     return {}
 end
 

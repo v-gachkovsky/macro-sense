@@ -5722,7 +5722,7 @@ do
     for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         "General", "Character", "does nothing", "conditions not met", "not reached", "chat", "equip", "cancel", "no form", "primary",
         "secondary", "with you now", "pet family", "equipped", "item", "extra action", "leave the vehicle",
-        "popup: first button", "popup: second button", "highest", "on you now", "buff",
+        "popup: first button", "popup: second button", "highest", "on you now", "buff", "every marker",
         "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "inside, plot, editor or neighborhood", "a bar page 1-6",
         "a form number, 0 = no form",

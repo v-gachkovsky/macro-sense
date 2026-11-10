@@ -30,12 +30,21 @@ local ACTION_KEYS = {
     CAST = "cast", USE = "use", CASTSEQUENCE = "castsequence", CASTRANDOM = "castrandom",
     USERANDOM = "userandom", CANCELAURA = "cancelaura", EQUIP = "equip", EQUIP_TO_SLOT = "equipslot",
 }
+-- And those that take a pet's spell, an action bar page or a world marker (Parser.argCommands).
+local ARG_KEYS = {
+    PET_AUTOCASTON = "petSpell", PET_AUTOCASTOFF = "petSpell", PET_AUTOCASTTOGGLE = "petSpell",
+    CHANGEACTIONBAR = "barPage", SWAPACTIONBAR = "barPages", WORLD_MARKER = "worldMarker",
+    CLEAR_WORLD_MARKER = "clearMarker",
+}
 function ns.RegisterActionCommands()
     for key, base in pairs(ACTION_KEYS) do
         for _, name in ipairs(aliases(key)) do ns.Parser.actionCommands[name] = base end
     end
     for _, name in ipairs(aliases("STOPMACRO")) do ns.Parser.stopCommands[name] = true end
     for _, name in ipairs(aliases("CLICK")) do ns.Parser.clickCommands[name] = true end
+    for key, kind in pairs(ARG_KEYS) do
+        for _, name in ipairs(aliases(key)) do ns.Parser.argCommands[name] = kind end
+    end
 end
 
 -- The game's own condition check for the live preview: SecureCmdOptionParse is what macros run with.

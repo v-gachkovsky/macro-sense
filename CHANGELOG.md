@@ -21,6 +21,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - More of what macros take is suggested: the raid's pets (`@raidpet1`), arena enemies' pets (`@arenapet1`), the
   quest giver you talk to (`@questnpc`), bosses 6 to 8 in Retail; `mod:SELFCAST` and `mod:FOCUSCAST`, the keys set
   in the game's settings; `nomodifier`, `nobutton` and `noactionbar`. `@questnpc` is no longer marked as an error.
+- What more commands take is suggested and explained: your pet's spells after `/petautocaston`, `/petautocastoff`
+  and `/petautocasttoggle`, the pages after `/changeactionbar` and `/swapactionbar`, the markers by number and color
+  after `/worldmarker` and `/clearworldmarker` (`all` too). Each has its hover help.
 
 ### Changed
 - `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight.
