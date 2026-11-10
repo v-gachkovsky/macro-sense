@@ -330,14 +330,23 @@ local function MacWarning(slot)
     return ns.Shortcuts.Message(ns.Shortcuts.Conflicts(body or "", ns.Shortcuts.KeysFor(index, name)))
 end
 
--- A macro's tooltip: the macOS warning and the spells it can't cast now, on any button, then how to edit it,
--- where the click is ours and on. A blank line first sets them apart from the game's own lines.
+-- The note on the macro of action slot `slot` (WindowNotes.lua), or nil.
+local function Note(slot)
+    local index = ActionBars.MacroAt(slot)
+    if not index then return nil end
+    return ns.History.Note(index > ns.MAX_GENERAL and "character" or "general", (GetMacroInfo(index)))
+end
+
+-- A macro's tooltip: its note, the macOS warning and the spells it can't cast now, on any button, then how to edit
+-- it, where the click is ours and on. A blank line first sets them apart from the game's own lines.
 local function AddTip(tooltip, slot)
     if GetActionInfo(slot) ~= "macro" then return end
-    local warning, missing = MacWarning(slot), Missing(slot)
+    local note, warning, missing = Note(slot), MacWarning(slot), Missing(slot)
     local edit = wrapped[tooltip:GetOwner()] and ActionBars.Tip()
-    if not (warning or missing or edit) then return end
+    if not (note or warning or missing or edit) then return end
     tooltip:AddLine(" ")
+    -- Yellow, written into the text too, as in the list's tooltip.
+    if note then tooltip:AddLine("|cffffd100" .. note:gsub("|", "||") .. "|r", 1, 0.82, 0, true) end
     if warning then tooltip:AddLine(warning, 1, 0.35, 0.35, true) end -- red, as errors in the editor's tooltips
     for _, message in ipairs(missing or {}) do tooltip:AddLine(message, 1, 0.82, 0, true) end -- yellow: warnings
     if edit then tooltip:AddLine(edit, 0.34, 0.61, 0.84) end

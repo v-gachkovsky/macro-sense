@@ -298,7 +298,8 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
   of your own.
 - **Many at once**: "Pick" puts a check before each macro and each group; one click picks a macro or a whole
   group, then share, move, put into a set or delete them in one go.
-- **Notes**: a line of your own on a macro, outside its 255 characters, shown in its tooltip in the list.
+- **Notes**: a line of your own on a macro, outside its 255 characters, shown in its tooltip in the list and on
+  its action bar button.
 - **Move** a macro between the General and Character tabs, which the game's macro window can't do: its buttons on
   your action bars stay, and its history goes along.
 - **Not on action bars** shows only the macros on no bar, to free slots when a tab is full. Hover a macro to see
