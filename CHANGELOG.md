@@ -17,6 +17,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - **Macros** in the game menu opens MacroSense instead of the game's macro window. `/macro` can open it too. Each
   is a choice in the settings (`/ms settings`); the menu's is on from the start.
 
+### Changed
+- The minimap button shows the new round logo, whole, with its gold ring for a border. It stays whole in minimap
+  button collectors too.
+
 ## [0.17.0] - 2026-11-09
 
 ### Added
