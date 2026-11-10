@@ -41,8 +41,8 @@ end
 ------------------------------------------------------------------------
 local SINGLE = {
     player = true, target = true, focus = true, mouseover = true, pet = true, vehicle = true,
-    cursor = true, none = true, npc = true, anyenemy = true, anyfriend = true, anyinteract = true,
-    softenemy = true, softfriend = true, softinteract = true,
+    cursor = true, none = true, npc = true, questnpc = true, anyenemy = true, anyfriend = true, anyinteract = true,
+    anyleftinteract = true, softenemy = true, softfriend = true, softinteract = true,
 }
 local NUMBERED = { party = 4, partypet = 4, raid = 40, raidpet = 40, arena = 5, arenapet = 5, boss = 8, nameplate = 40 }
 
@@ -247,10 +247,13 @@ function Conditions.ResetItems(used)
     return out
 end
 
--- Unit suggestions: the list, plus "...target" / "...pet" after a unit id ("party1" -> "party1target").
+-- Unit suggestions: the list (those of this client's expansion), plus "...target" / "...pet" after a unit id
+-- ("party1" -> "party1target").
 function Conditions.UnitItems(prefix)
     local out = {}
-    for _, u in ipairs(ns.data.units) do out[#out + 1] = u end
+    for _, u in ipairs(ns.data.units) do
+        if not ns.HasExpansion or ns.HasExpansion(u.since, u.gone) then out[#out + 1] = u end
+    end
     local p = prefix:lower()
     for k = #p, 1, -1 do
         local base = p:sub(1, k)

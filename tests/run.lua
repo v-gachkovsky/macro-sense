@@ -268,8 +268,9 @@ do
     check("small: names that start with it before a later word", #out == 2 and out[1].name == "Fireball",
         out[1] and out[1].name)
 end
-check("conditions by the letters of a word", names("/cast [nmd|") == "nomod,nomounted", names("/cast [nmd|"))
-check("letters inside before letters apart", names("/cast [nd|"):find("^indoors,noindoors,nomod,nodead") ~= nil,
+check("conditions by the letters of a word", names("/cast [nmd|") == "nomod,nomodifier,nomounted", names("/cast [nmd|"))
+check("letters inside before letters apart", names("/cast [nd|"):find("^indoors,noindoors,nomod,nomodifier,nodead")
+    ~= nil,
     names("/cast [nd|"))
 
 -- Items: /equip wants gear, /use puts items first, /cast puts spells first.
@@ -479,7 +480,7 @@ expectKey("/cast ", "/cast a|", "/cast a|")
 local C = ns.Conditions
 for _, u in ipairs({ "player", "target", "focus", "mouseover", "party1", "party4", "raid40", "arena5", "boss8",
     "partypet2", "targettarget", "focustargettarget", "party1target", "arena1pet", "pettarget", "Mouseover",
-    "nameplate12", "none", "cursor", "softenemy" }) do
+    "nameplate12", "none", "cursor", "softenemy", "questnpc", "anyleftinteract", "raidpet40", "arenapet5" }) do
     check("unit " .. u, C.IsUnit(u))
 end
 for _, u in ipairs({ "mousover", "party5", "party0", "raid41", "raid01", "Thrall", "targettarg", "boss", "party" }) do
@@ -546,6 +547,31 @@ check("second value after /", names("/cast [btn:1/|"):find("^1,2,3") ~= nil)
 check("unit suffixes", names("/cast [@party1|"):find("party1target") ~= nil, names("/cast [@party1|"))
 check("unit suffix filtered", names("/cast [@party1t|") == "party1target", names("/cast [@party1t|"))
 check("chained suffix", names("/cast [@focustarget|"):find("focustargettarget") ~= nil, names("/cast [@focustarget|"))
+-- Every unit a macro can name: the pets of the raid and of arena enemies, the quest giver you talk to; bosses 6 to 8
+-- in Retail. Nameplates can't be cast on: not suggested.
+do
+    local raidpets = names("/cast [@raidpe|")
+    check("units: the raid's pets", raidpets:find("^raidpet1,raidpet2,") ~= nil and raidpets:find("raidpet40") ~= nil,
+        raidpets)
+    check("units: arena enemies' pets", names("/cast [@arenap|") == "arenapet1,arenapet2,arenapet3,arenapet4,arenapet5",
+        names("/cast [@arenap|"))
+    check("units: the quest giver, Retail's left interact", names("/cast [@questn|") == "questnpc"
+        and names("/cast [@anyleft|") == "anyleftinteract", names("/cast [@questn|"))
+    check("units: no nameplates", names("/cast [@namep|") == "", names("/cast [@namep|"))
+    ns.HasExpansion = function(since) return not since or since <= 11 end
+    check("units: bosses 6-8 in Retail", names("/cast [@boss|"):find("boss5,boss6,boss7,boss8") ~= nil,
+        names("/cast [@boss|"))
+    ns.HasExpansion = function(since) return not since or since <= 0 end
+    check("units: 5 bosses in older clients", names("/cast [@boss|"):find("boss5") ~= nil
+        and names("/cast [@boss|"):find("boss6") == nil, names("/cast [@boss|"))
+    ns.HasExpansion = nil
+end
+-- mod: takes the keys the game's settings name: your self-cast key (Alt at first), your focus-cast key.
+check("modifiers: the self-cast and focus-cast keys", names("/cast [mod:SEL|") == "SELFCAST"
+    and names("/cast [mod:FOCUS|") == "FOCUSCAST", names("/cast [mod:SEL|"))
+-- The other way round, each name of a condition: nomodifier, nobutton, noactionbar.
+check("aliases the other way round", names("/cast [nomodi|") == "nomodifier" and names("/cast [nobutt|") == "nobutton"
+    and names("/cast [noactionb|") == "noactionbar", names("/cast [nomodi|") .. " | " .. names("/cast [nobutt|"))
 check("exact word hides inner matches", names("/cast [mod:shift|") == "")
 check("reset values", names("/castsequence reset=|") == "target,combat,shift,ctrl,alt,5,10,30",
     names("/castsequence reset=|"))
@@ -1004,6 +1030,9 @@ do
         { "/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal", "Flash Heal on the unit under the mouse, "
             .. "if it is a friend and alive |   if not, on your target, if it is a friend and alive |   if not, on yourself" },
         { "/cast [combat] Shield Wall; Battle Shout", "in combat: Shield Wall | otherwise: Battle Shout" },
+        { "/cast [mod:SELFCAST,@player][] Flash Heal", "Flash Heal on yourself, with your self-cast key held |   if "
+            .. "not, on your target" },
+        { "/target [@questnpc]", "targets the quest giver you are talking to" },
         { "/cast [pvpcombat] Gladiator's Medallion; Every Man for Himself", "where PvP talents work: Gladiator's "
             .. "Medallion | otherwise: Every Man for Himself" },
         { "/use [house:inside/plot] Hearthstone; [nohouse] Garrison Hearthstone", "inside a house or on a house's "

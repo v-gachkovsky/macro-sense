@@ -48,6 +48,7 @@ local UNITS = {
     target = "your target", focus = "your focus", mouseover = "the unit under the mouse", player = "yourself",
     pet = "your pet", vehicle = "your vehicle", targettarget = "your target's target", none = "whoever you click",
     npc = "the one you are talking to", tank = "your group's tank", heal = "your group's healer",
+    questnpc = "the quest giver you are talking to",
 }
 local NUMBERED = {
     party = "party member %d", partypet = "the pet of party member %d", raid = "raid member %d",
@@ -112,6 +113,11 @@ local STATES = {
     talent = { value = { "with the talent of %s", "without the talent of %s" } },
     btn = { value = { "clicked with %s", "not clicked with %s" } },
 }
+-- mod: with the key set in the game's settings for an action. { yes, no }
+local ACTIONS = {
+    SELFCAST = { "with your self-cast key held", "without your self-cast key held" },
+    FOCUSCAST = { "with your focus-cast key held", "without your focus-cast key held" },
+}
 local ALIASES = { modifier = "mod", stance = "form", worn = "equipped", button = "btn", actionbar = "bar" }
 local KEYS = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
 local SIDES = { l = "left %s", r = "right %s" }
@@ -160,6 +166,7 @@ end
 local function State(name, no, value, env)
     if name == "mod" then
         if not value then return no and L["with no key held"] or L["with Shift, Ctrl or Alt held"] end
+        if ACTIONS[value:upper()] then return L[ACTIONS[value:upper()][no and 2 or 1]] end
         return string.format(no and L["without %s held"] or L["with %s held"], Alternatives(value, Key))
     elseif name == "group" then
         if value == "raid" then return no and L["not in a raid"] or L["in a raid"] end
@@ -447,7 +454,7 @@ function Explain.Texts()
     for _, t in ipairs({ UNITS, NUMBERED, BUTTONS, SIDES, HOUSE }) do
         for _, s in pairs(t) do out[#out + 1] = s end
     end
-    for _, t in ipairs({ CHECKS, STATES }) do
+    for _, t in ipairs({ CHECKS, STATES, ACTIONS }) do
         for _, s in pairs(t) do
             for _, text in ipairs(s) do out[#out + 1] = text end
             for _, text in ipairs(s.value or {}) do out[#out + 1] = text end
