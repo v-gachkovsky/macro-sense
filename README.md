@@ -552,6 +552,16 @@ middle or left mouse button, or turn it off. It takes just the keys picked: with
 Ctrl + right-click runs the macro. A macro with a spell you don't have now (a talent you haven't chosen, another
 specialization's spell) turns yellow there, and its tooltip says why.
 
+## Tag macro
+
+**Make it the tag macro**, in a macro's **...** menu, picks it as your tag macro. Then hold Ctrl + Alt and click
+a creature or a player, in the world, on a nameplate or on a unit frame: its name goes into the macro, in a
+`/targetexact Hogger` line after `#showtooltip`, or in place of the name in its own `/targetexact` line. Pressed,
+the macro targets that one: a rare or a quest mob in a crowd, to hit it first, or a player in PvP. A click on
+yourself takes the name out. In combat the game doesn't let macros change, so the name goes in once it ends. The
+keys can be others, in the settings (`/ms settings`); the tag macro follows its macro renamed or moved, and each
+character has its own.
+
 ## Language
 
 MacroSense speaks English and Ukrainian: pick one in the list in the editor's header, left of the color

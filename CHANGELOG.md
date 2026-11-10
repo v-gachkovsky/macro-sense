@@ -8,6 +8,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 - A macro's note now shows in its button's tooltip on an action bar too, not only in the list.
+- The tag macro: pick one of your macros in its "..." menu, then hold Ctrl + Alt and click a creature or player.
+  Its name goes into the macro's `/targetexact` line, so a press targets that one: a rare or a quest mob in a
+  crowd, a player in PvP. A click on yourself takes the name out; in combat, the name goes in once it ends. The
+  keys are yours to choose in the settings.
 
 ## [0.17.0] - 2026-11-09
 

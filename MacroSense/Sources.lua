@@ -1142,7 +1142,7 @@ function ns.sources.buffs()
 end
 
 function ns.InvalidateSources(what)
-    if not what or what == "commands" then commandCache = nil end
+    if not what or what == "commands" then commandCache, commandKeys = nil, nil end
     if not what or what == "spells" then spellCache, gcdCache = nil, {} end
     if not what or what == "items" then itemCache = nil end
     if what ~= "commands" then knownCache = nil end

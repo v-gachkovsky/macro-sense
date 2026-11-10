@@ -1311,6 +1311,26 @@ ns.locales.uk = {
     ["left-click"] = "лівий клік",
     ["Open a macro in MacroSense with a click on its button"] = "Відкривати макрос у MacroSense кліком по його кнопці",
     ["Combination:"] = "Комбінація:",
+    ["Tag macro"] = "Тег-макрос",
+    ["Keys:"] = "Клавіші:",
+    ["Hold them and click a creature or player: its name goes into your tag macro, which then targets it. A click on "
+        .. "yourself takes the name out. A macro becomes the tag macro in its \"...\" menu."] =
+        "Затисніть їх і клацніть по істоті чи гравцю: її ім'я потрапить у ваш тег-макрос, і він братиме її в ціль. "
+        .. "Клік по собі прибирає ім'я. Тег-макросом макрос стає в його меню «...».",
+    ["Make it the tag macro"] = "Зробити тег-макросом",
+    ["Not the tag macro"] = "Більше не тег-макрос",
+    ["Tag macro: %s + click on a creature or player puts its name in"] =
+        "Тег-макрос: %s + клік по істоті чи гравцю вписує сюди її ім'я",
+    ["tag macro \"%s\": hold %s and click a creature or player to put its name in"] =
+        "тег-макрос «%s»: затисніть %s і клацніть по істоті чи гравцю, щоб вписати її ім'я",
+    ["tag macro \"%s\": %s"] = "тег-макрос «%s»: %s",
+    ["tag macro \"%s\": no name"] = "тег-макрос «%s»: без імені",
+    ["tag macro \"%s\": %s, once combat ends"] = "тег-макрос «%s»: %s, щойно скінчиться бій",
+    ["tag macro \"%s\": no name, once combat ends"] = "тег-макрос «%s»: без імені, щойно скінчиться бій",
+    ["tag macro \"%s\": %s doesn't fit, the macro would be longer than %d characters"] =
+        "тег-макрос «%s»: %s не вміщається, макрос був би довшим за %d символів",
+    ["the tag macro \"%s\" is gone: pick another one in a macro's \"...\" menu"] =
+        "тег-макросу «%s» більше немає: оберіть інший у меню «...» макросу",
     ["This click opens the macro instead of running it. Pick one your macros don't use, or turn it off."] =
         "Цей клік відкриває макрос, а не запускає його. Оберіть такий, якого ваші макроси не використовують, або "
         .. "вимкніть його.",

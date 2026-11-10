@@ -170,6 +170,7 @@ local function MoveNote(from, old, to, new)
     local a, b = Saved(from, "notes"), Saved(to, "notes")
     if a[old] then b[new], a[old] = a[old], nil end
     if ns.Folders then ns.Folders.Moved(from, old, to, new) end
+    if ns.Tag then ns.Tag.Moved(from, old, to, new) end
 end
 History.MoveNote = MoveNote
 
@@ -214,6 +215,7 @@ function History.Scan()
                     History.Discard(History.Trash(scope), name, before[name], time(), notes[name])
                     notes[name] = nil
                     if ns.Folders then ns.Folders.Moved(scope, name, nil, nil) end
+                    if ns.Tag then ns.Tag.Moved(scope, name, nil, nil) end
                 end
             end
         end

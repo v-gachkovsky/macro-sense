@@ -61,5 +61,6 @@ WindowFolders.lua
 WindowWhatIf.lua
 MinimapButton.lua
 ActionBars.lua
+Tag.lua
 Options.lua
 Core.lua

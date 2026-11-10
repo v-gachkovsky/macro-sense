@@ -47,6 +47,7 @@ ns.defaults = {
     barEdit = true,
     barEditKeys = "shift", -- ActionBars.KEYS
     barEditButton = "RightButton",
+    tagKeys = "ctrl-alt", -- held with a click on a creature or player: its name into the tag macro (Tag.lua)
     welcomeSeen = nil, -- version the early-development note was shown for
 }
 

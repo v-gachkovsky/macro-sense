@@ -263,6 +263,7 @@ local function Row(i)
         else
             GameTooltip:AddLine(r.text:GetText(), 1, 1, 1)
             shared.AddNoteLine(r.scope, r.name)
+            if ns.Tag.Is(r.scope, r.name) then GameTooltip:AddLine(ns.Tag.Hint(), 0.34, 0.61, 0.84, true) end
             AddIssueLines(r.issues or {})
             AddBarsLines(r.scope, r.name)
             Window.AddSetsNote(r)
