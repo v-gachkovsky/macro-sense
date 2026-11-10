@@ -54,7 +54,8 @@ ns.data = {
     conditions = {
         -- Every condition has a "no" form, the other way round. Those that need a value ([noknown:Name]) insert
         -- ":" through `insert`: an `arg` on a "no" name would hide it from Conditions.Base. `since`: the expansion
-        -- that brought it (LE_EXPANSION_LEVEL_CURRENT), not suggested in older clients.
+        -- that brought it (LE_EXPANSION_LEVEL_CURRENT), not suggested in older clients; `gone`: the one that took it
+        -- away, not suggested from then on.
         { name = "combat",           hint = "in combat" },
         { name = "nocombat",         hint = "out of combat" },
         { name = "mod",              hint = "modifier held", arg = true },
@@ -110,10 +111,15 @@ ns.data = {
         { name = "nospec",           hint = "another specialization", insert = "nospec:" },
         { name = "known",            hint = "spell is known", arg = true },
         { name = "noknown",          hint = "spell is not known", insert = "noknown:" },
-        { name = "talent",           hint = "talent row/column", arg = true },
-        { name = "notalent",         hint = "talent not chosen", insert = "notalent:" },
+        { name = "talent",           hint = "talent row/column", arg = true, gone = 9 },
+        { name = "notalent",         hint = "talent not chosen", insert = "notalent:", gone = 9 },
         { name = "pvptalent",        hint = "pvp talent", arg = true, since = 6 },
         { name = "nopvptalent",      hint = "pvp talent not chosen", insert = "nopvptalent:", since = 6 },
+        { name = "pvpcombat",        hint = "PvP talents active", since = 6 },
+        { name = "nopvpcombat",      hint = "PvP talents not active", since = 6 },
+        -- [house] alone: inside a house or on its plot. [nohouse] alone too, as nomod.
+        { name = "house",            hint = "in a house or on its plot", arg = true, since = 10 },
+        { name = "nohouse",          hint = "not at a house", since = 10 },
         { name = "equipped",         hint = "item type equipped", arg = true },
         { name = "noequipped",       hint = "item type not equipped", insert = "noequipped:" },
         { name = "worn",             hint = "item type equipped", arg = true },
@@ -187,6 +193,8 @@ ns.data = {
     },
 
     groups = { { name = "party" }, { name = "raid" } },
+    houses = { { name = "inside", hint = "inside a house" }, { name = "plot", hint = "on its plot" },
+        { name = "editor", hint = "in the house editor" }, { name = "neighborhood", hint = "in a neighborhood" } },
     bars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" }, { name = "6" } },
     bonusbars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" } },
 

@@ -184,6 +184,31 @@ check("skyriding, pet battles, PvP talents not in Classic Era", names("/cast [ad
     and names("/cast [petba|") == "" and names("/cast [pvpta|") == "" and names("/cast [flyab|") == "flyable,noflyable",
     names("/cast [advfl|") .. " | " .. names("/cast [flyab|"))
 ns.HasExpansion = nil
+-- Retail's own: [pvpcombat] (PvP talents at work, since Legion) and [house] (11.2.7) with where you are: inside, on
+-- the plot, in the editor, in the neighborhood. Retail let go of [talent] in Dragonflight; older clients still offer
+-- it.
+do
+    local function At(level)
+        ns.HasExpansion = function(since, gone) return (not since or since <= level) and (not gone or level < gone) end
+    end
+    At(11)
+    check("retail: PvP combat and the house", names("/cast [pvpco|") == "pvpcombat,nopvpcombat"
+        and names("/cast [hou|") == "house,nohouse", names("/cast [pvpco|") .. " | " .. names("/cast [hou|"))
+    check("retail: where in the house", names("/cast [house:|") == "inside,plot,editor,neighborhood"
+        and names("/cast [nohouse:|") == "inside,plot,editor,neighborhood", names("/cast [house:|"))
+    check("retail: no [talent]", names("/cast [talen|") == "pvptalent,nopvptalent", names("/cast [talen|"))
+    local function about(raw, word)
+        local at = ns.Docs.At(raw, raw:find(word, 1, true))
+        return at and at.lines[1] or "-"
+    end
+    check("retail: what they mean, on the mouse", about("/use [nopvpcombat] X", "nopvp")
+        == "Your PvP talents don't work here." and about("/use [house:editor] X", "editor"):find("^You are at a house")
+        ~= nil, about("/use [house:editor] X", "editor"))
+    At(0)
+    check("classic era: [talent], no house", names("/cast [talen|") == "talent,notalent"
+        and names("/cast [hou|") == "" and names("/cast [pvpco|") == "", names("/cast [talen|"))
+    ns.HasExpansion = nil
+end
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
 
@@ -322,6 +347,9 @@ end
 expectErrs("/cast [@mouseover, harm, nodead] Spell", "")     -- spaces after commas are fine (checked in game)
 expectErrs("/cast [@mouseover,harm,nodead][] Spell", "")
 expectErrs("/cast [harmm] Spell", 'harmm=unknown condition "harmm"@1')
+expectErrs("/cast [pvpcombat] A; [house] B; [nohouse:plot/editor] C; [house:neighborhood] D", "")
+expectErrs("/cast [house:garden] A", 'garden=invalid house value "garden" (expected inside, plot, editor or '
+    .. 'neighborhood)@1')
 expectErrs("/cast [harm Spell", "[=[ is not closed with ]@1")
 expectErrs("/cast harm] Spell", "]=] without [@1")
 -- One click fixes these: the text after the first issue's fix, and what its tooltip says.
@@ -976,6 +1004,11 @@ do
         { "/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal", "Flash Heal on the unit under the mouse, "
             .. "if it is a friend and alive |   if not, on your target, if it is a friend and alive |   if not, on yourself" },
         { "/cast [combat] Shield Wall; Battle Shout", "in combat: Shield Wall | otherwise: Battle Shout" },
+        { "/cast [pvpcombat] Gladiator's Medallion; Every Man for Himself", "where PvP talents work: Gladiator's "
+            .. "Medallion | otherwise: Every Man for Himself" },
+        { "/use [house:inside/plot] Hearthstone; [nohouse] Garrison Hearthstone", "inside a house or on a house's "
+            .. "plot: Hearthstone | otherwise, away from a house: Garrison Hearthstone" },
+        { "/use [nohouse:editor] Hearthstone", "not in the house editor: Hearthstone" },
         { "/cast Frostbolt", "Frostbolt" },
         { "/cast [harm] Fireball", "Fireball on your target, if it is an enemy" },
         { "/cast [@cursor] Blizzard", "Blizzard at the cursor" },

@@ -5724,7 +5724,8 @@ do
         "secondary", "with you now", "pet family", "equipped", "item", "extra action", "leave the vehicle",
         "popup: first button", "popup: second button", "highest", "on you now", "buff",
         "shift, ctrl, alt or a key action like SELFCAST",
-        "1-5 or a button name", "party or raid", "a bar page 1-6", "a form number, 0 = no form",
+        "1-5 or a button name", "party or raid", "inside, plot, editor or neighborhood", "a bar page 1-6",
+        "a form number, 0 = no form",
         "a specialization number", "Target", "Focus", "Assist", "Pet" }) do add(text) end
     local SAME = { Mac = true, Retail = true, Monokai = true, ["-"] = true, ["1-5"] = true } -- the same in Ukrainian
     local missing, unused, notForms = {}, {}, {}

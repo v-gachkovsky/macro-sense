@@ -112,6 +112,10 @@ local RULES = {
     },
     btn = { check = function(v) return names(ns.data.buttons)[v:lower()] end, expect = "1-5 or a button name" },
     group = { check = function(v) return names(ns.data.groups)[v:lower()] end, expect = "party or raid" },
+    house = {
+        check = function(v) return names(ns.data.houses)[v:lower()] end,
+        expect = "inside, plot, editor or neighborhood",
+    },
     bar = { check = inRange(1, 6), expect = "a bar page 1-6" },
     bonusbar = { check = inRange(1, 5), expect = "1-5" },
     form = { check = inRange(0, 10), expect = "a form number, 0 = no form" },
@@ -205,6 +209,7 @@ function Conditions.Values(name)
     if base == "mod" then return d.modifiers end
     if base == "btn" then return d.buttons end
     if base == "group" then return d.groups end
+    if base == "house" then return d.houses end
     if base == "bar" then return d.bars end
     if base == "bonusbar" then return d.bonusbars end
     if base == "form" then return source("forms") end

@@ -51,10 +51,10 @@ local function list(kind, ctx)
     if kind == "command" then return ns.sources.commands and ns.sources.commands() or d.commands end
     if kind == "meta" then return d.meta end
     if kind == "condition" then
-        -- Not those that came with a later expansion than this client's.
+        -- Not those that came with a later expansion than this client's, nor those gone by its own.
         local out = {}
         for _, c in ipairs(d.conditions) do
-            if not ns.HasExpansion or ns.HasExpansion(c.since) then out[#out + 1] = c end
+            if not ns.HasExpansion or ns.HasExpansion(c.since, c.gone) then out[#out + 1] = c end
         end
         return out
     end

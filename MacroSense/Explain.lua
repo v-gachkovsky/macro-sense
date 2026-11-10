@@ -91,6 +91,8 @@ local STATES = {
     resting = { "resting, in a city or an inn", "not resting" },
     cursor = { "with something on the cursor", "with nothing on the cursor" },
     petbattle = { "in a pet battle", "not in a pet battle" },
+    pvpcombat = { "where PvP talents work", "where PvP talents don't work" },
+    house = { "in a house or on its plot", "away from a house", value = { "%s", "not %s" } },
     vehicleui = { "in a vehicle", "not in a vehicle" },
     canexitvehicle = { "when you can leave the vehicle", "when you can't leave the vehicle" },
     possessbar = { "while you control another creature", "while you control no other creature" },
@@ -113,6 +115,8 @@ local STATES = {
 local ALIASES = { modifier = "mod", stance = "form", worn = "equipped", button = "btn", actionbar = "bar" }
 local KEYS = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
 local SIDES = { l = "left %s", r = "right %s" }
+local HOUSE = { inside = "inside a house", plot = "on a house's plot", editor = "in the house editor",
+    neighborhood = "in a neighborhood" }
 local BUTTONS = { ["1"] = "the left mouse button", ["2"] = "the right mouse button", ["3"] = "the middle mouse button",
     LeftButton = "the left mouse button", RightButton = "the right mouse button", MiddleButton = "the middle mouse button" }
 
@@ -143,6 +147,8 @@ local function Value(name, v, env)
     elseif name == "talent" then
         local row, column = v:match("^(%d+)/(%d+)$")
         if row then return string.format(L["row %s, column %s"], row, column) end
+    elseif name == "house" then
+        if HOUSE[v:lower()] then return L[HOUSE[v:lower()]] end
     elseif name == "btn" then
         if BUTTONS[v] then return L[BUTTONS[v]] end
         if v:find("^%d$") then return string.format(L["mouse button %s"], v) end
@@ -438,7 +444,7 @@ end
 -- Every text this file shows, for the translation check: the tables' words.
 function Explain.Texts()
     local out = {}
-    for _, t in ipairs({ UNITS, NUMBERED, BUTTONS, SIDES }) do
+    for _, t in ipairs({ UNITS, NUMBERED, BUTTONS, SIDES, HOUSE }) do
         for _, s in pairs(t) do out[#out + 1] = s end
     end
     for _, t in ipairs({ CHECKS, STATES }) do
