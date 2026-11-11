@@ -1019,6 +1019,31 @@ ns.locales.uk = {
     ["Defensive"] = "Захисний",
     ["Aggressive"] = "Агресивний",
     ["Dismiss"] = "Відпустити",
+    ["Turn autocast on"] = "Увімкнути автокаст",
+    ["Turn autocast off"] = "Вимкнути автокаст",
+    ["Toggle autocast"] = "Перемкнути автокаст",
+    ["the pet's spell"] = "заклинання улюбленця",
+    ["The pet's spell"] = "Заклинання улюбленця",
+    ["The spell your pet casts by itself, or stops casting, as with a right click on its action bar. The list has "
+        .. "the spells of every pet you had out."] =
+        "Заклинання, яке улюбленець застосовує сам або перестає застосовувати, як після правого кліку по ньому на "
+        .. "панелі улюбленця. У списку заклинання всіх улюбленців, яких ви вже викликали.",
+    ["Which of your pet's spells?"] = "Яке заклинання улюбленця?",
+    ["Leave it empty for the same one."] = "Залиште порожнім, щоб було те саме.",
+    ["The list has the spells of every pet you had out. Start typing its name, or pick it from the list."] =
+        "У списку заклинання всіх улюбленців, яких ви вже викликали. Почніть вводити назву або оберіть зі списку.",
+    ["And the rest of the time?"] = "А решту часу?",
+    ["For example, your pet uses Growl by itself when you're alone, but not in a group."] =
+        "Наприклад, улюбленець сам застосовує Growl, коли ви самі, але не в групі.",
+    ["Leave it as it is"] = "Лишити як є",
+    ["Otherwise: leave it as it is"] = "Інакше: лишити як є",
+    ["Otherwise: turn autocast on"] = "Інакше: увімкнути автокаст",
+    ["Otherwise: turn autocast off"] = "Інакше: вимкнути автокаст",
+    ["What the macro does with autocast the rest of the time, when the conditions you chose aren't met: leaves it as "
+        .. "it is, or turns it the other way. For example, your pet uses Growl by itself when you're alone, but not "
+        .. "in a group."] =
+        "Що макрос робить з автокастом решту часу, коли обрані умови не виконуються: лишає як є або перемикає "
+        .. "навпаки. Наприклад, улюбленець сам застосовує Growl, коли ви самі, але не в групі.",
     ["Say"] = "Сказати",
     ["Yell"] = "Крикнути",
     ["Party"] = "Група",
@@ -1806,7 +1831,10 @@ ns.locales.uk = {
     ["Otherwise"] = "Інакше",
     ["otherwise: do nothing"] = "інакше: нічого",
     ["nothing"] = "нічого",
-    ["What the macro casts when the conditions on the left aren't met. Leave it empty to do nothing then."] = "Що макрос застосовує, коли умови ліворуч не виконуються. Залиште порожнім, щоб тоді нічого не робити.",
+    ["What the macro casts the rest of the time, when the conditions you chose aren't met. Leave it empty to do "
+        .. "nothing then."] =
+        "Що макрос застосовує решту часу, коли обрані умови не виконуються. Залиште порожнім, щоб тоді нічого не "
+        .. "робити.",
     ["Should the macro work only at certain times?"] = "Макрос має працювати лише за певних умов?",
     ["Leave everything as is to make it always work. The rest of the time the macro does nothing, unless you choose something for it next."] = "Лишіть усе як є, щоб макрос працював завжди. Решту часу він нічого не робить, якщо далі ви не виберете, що робити.",
     ["And what should it cast the rest of the time?"] = "А що застосовувати в решті випадків?",

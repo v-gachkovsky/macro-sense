@@ -19,6 +19,7 @@ local STEP_TOP = 124 -- where the answers start, under a question and a hint of 
 local ANSWERS, ANSWER_W = 18, 280 -- the answers a question shows: two columns of nine at most
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
 local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
+local PET_W = 180 -- a list of the pet's commands: "Перемкнути автокаст" is long
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
 local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd", shiftctrl = "Shift + Ctrl",
     right = "Right click" }
@@ -89,8 +90,9 @@ end
 ------------------------------------------------------------------------
 -- What a box offers: your spells and the items you can use. /use offers the items first, with the equipment
 -- slots whose item has a use effect ("13", Trinket 1); a mount macro only your mounts (none: you type the
--- name), a gear macro only gear, worn or in the bags.
+-- name), a gear macro only gear, worn or in the bags, a pet macro your pets' spells (for autocast).
 local function Candidates()
+    if spec.command == "pet" then return ns.sources.petSpells() end
     local spells, items = {}, {}
     for _, spell in ipairs(ns.sources.spells()) do
         spells[#spells + 1] = { name = spell.name, icon = spell.icon, hint = L["spell"], ranks = spell.ranks }
@@ -474,22 +476,29 @@ function Arrange()
     blocks.equip.height = (W.EQUIP + (sets and 1 or 0)) * ROW + 2
     if not mount then parts[#parts + 1] = blocks.when end
     -- A key casts something (or tells the pet something) in the first column and has its units in the On row's
-    -- last ones; for /target, /focus and /assist it only has units, in the first ones.
+    -- last ones; for /target, /focus and /assist it only has units, in the first ones. The pet's commands are
+    -- wider (autocast), with its units or the spell to autocast after them.
+    local unitsX = target and X or pet and X + PET_W + 8 or X + 158
+    local anyUnits = not pet
+    local spell = W.PetTakesSpell(spec.pet)
+    controls.petSpell:SetShown(pet and spell)
     for key, row in pairs(keyRows) do
-        local x = target and X or X + 158
         local units = not mount and (not pet or spec.keys[key].pet == "attack")
         row.box:SetShown(not target and not pet)
         row.box.placeholder:SetText(mount and L["a mount"] or L["same spell"])
         row.pet:SetShown(pet)
-        row.on:SetPoint("TOPLEFT", x, row.y - 1)
-        row["then"]:SetPoint("TOPLEFT", x + 158, row.y - 1)
-        row.word:SetPoint("TOPLEFT", x + 126, row.y - 5)
+        row.petSpell:SetShown(pet and W.PetTakesSpell(spec.keys[key].pet))
+        row.petSpell.placeholder:SetText(spell and L["same spell"] or L["the pet's spell"])
+        row.on:SetPoint("TOPLEFT", unitsX, row.y - 1)
+        row["then"]:SetPoint("TOPLEFT", unitsX + 158, row.y - 1)
+        row.word:SetPoint("TOPLEFT", unitsX + 126, row.y - 5)
         row.on:SetShown(units)
         row["then"]:SetShown(units)
         row.word:SetShown(units)
+        anyUnits = anyUnits or units
     end
-    blocks.keys.on:SetPoint("TOPLEFT", target and X or X + 158, -8)
-    blocks.keys.on:SetShown(not mount)
+    blocks.keys.on:SetPoint("TOPLEFT", unitsX, -8)
+    blocks.keys.on:SetShown(not mount and anyUnits)
     -- A mount macro gets you off a mount its own way. "!" is for /cast and /use.
     controls.dismount:SetShown(not mount)
     local casts = spec.command == "cast" or spec.command == "use"
@@ -505,10 +514,14 @@ function Arrange()
         local parts = { controls[key], row.box, row.on, row["then"], row.word, controls["keep" .. KeyId(key)] }
         for _, part in ipairs(parts) do part:SetShown(more) end
         row.pet:Hide()
+        row.petSpell:Hide()
     end
     blocks.keys.height = 8 + 22 + (#keys + (more and #W.MORE or 0)) * ROW
-    -- The When rows, and Otherwise under them for /cast and /use.
-    blocks.when.height = (casts and 4 or 3) * ROW + 2
+    -- The When rows, and Otherwise under them for /cast and /use, and for autocast on or off.
+    local petOtherwise = pet and W.PetOpposite(spec.pet) ~= nil
+    controls.petOtherwise:SetShown(petOtherwise)
+    if petOtherwise then controls.petOtherwise:Refresh() end
+    blocks.when.height = ((casts or petOtherwise) and 4 or 3) * ROW + 2
     local shown = {}
     for _, b in ipairs(parts) do shown[b] = true end
     for _, b in pairs(blocks) do
@@ -624,9 +637,15 @@ function Answered()
     local kind = asked and asked.kind
     local function typed(box) return strtrim(box:GetText() or "") ~= "" end
     if kind == "spell" then
-        return asked.optional or (asked.mount and spec.mounts[asked.mount]
-            or asked.slot == "equip" and spec.equip[asked.index].item or spec.action) ~= nil
-            or typed(controls.stepSpell)
+        local has = spec.action
+        if asked.mount then
+            has = spec.mounts[asked.mount]
+        elseif asked.slot == "equip" then
+            has = spec.equip[asked.index].item
+        elseif asked.slot == "pet" then
+            has = asked.key and spec.keys[asked.key].petSpell or (not asked.key and spec.petSpell or nil)
+        end
+        return asked.optional or has ~= nil or typed(controls.stepSpell)
     end
     if kind == "list" then
         for i = 1, W.LIST do
@@ -673,6 +692,7 @@ local function ShowStep()
     local mount = spec.command == "mount"
     box.placeholder:SetText(mount and (asked.optional and L["none"] or L["type a mount"])
         or asked.slot == "equip" and (asked.optional and L["none"] or L["type an item"])
+        or asked.slot == "pet" and (asked.optional and L["same spell"] or L["the pet's spell"])
         or asked.slot and L["nothing"] or asked.key and L["same spell"] or L["type a spell or item"])
     if asked.kind == "spell" and not asked.optional and not asked.key and not spec.action then box:SetFocus() end
     controls.stepDismount:SetShown(not mount)
@@ -748,8 +768,10 @@ local function BuildSteps()
     local function keyOf() return asked and asked.key end
     local function placeOf() return asked and asked.mount end
     local function otherwise() return asked and asked.slot == "otherwise" end
+    local function petSlot() return asked and asked.slot == "pet" end
     local box = SpellBox(panels.spell, 400, L["type a spell or item"], function()
         local key, place = keyOf(), placeOf()
+        if petSlot() then return key and spec.keys[key].petSpell or not key and spec.petSpell or nil end
         if key then return spec.keys[key].action end
         if place then return spec.mounts[place] end
         if otherwise() then return spec.otherwise end
@@ -757,7 +779,11 @@ local function BuildSteps()
         return spec.action
     end, function(action)
         local key, place = keyOf(), placeOf()
-        if otherwise() then
+        if petSlot() and key then
+            spec.keys[key].petSpell = action
+        elseif petSlot() then
+            spec.petSpell = action
+        elseif otherwise() then
             spec.otherwise = action
         elseif asked and asked.slot == "equip" then
             spec.equip[asked.index].item = action
@@ -1078,15 +1104,20 @@ local function Build()
     Tip(controls.byName, L["By name"], L["If none of the units above is there, the macro targets the nearest one "
         .. "with this name. Set On to - to target by name only."])
 
-    -- What the pet does without a key.
+    -- What the pet does without a key, and the spell it autocasts.
     blocks.pet = Block(34)
     Text(blocks.pet, L["Pet"], PAD, -5)
     -- Only what this game has (no Move To before Cataclysm).
     local function petActions() return W.PetActions(ns.CommandsExpansion()) end
-    Choice(blocks.pet, "pet", 150, petActions, function() return spec.pet end, function(action)
+    Choice(blocks.pet, "pet", PET_W, petActions, function() return spec.pet end, function(action)
         spec.pet = action
         Arrange()
     end):SetPoint("TOPLEFT", X, -1)
+    controls.petSpell = SpellBox(blocks.pet, 200, L["the pet's spell"], function() return spec.petSpell end,
+        function(action) spec.petSpell = action end)
+    controls.petSpell:SetPoint("TOPLEFT", X + PET_W + 8, 0)
+    Tip(controls.petSpell, L["The pet's spell"], L["The spell your pet casts by itself, or stops casting, as with a "
+        .. "right click on its action bar. The list has the spells of every pet you had out."])
 
     -- On whom, and who: for every command (the units a command takes, Wizard.Units).
     blocks.on = Block(2 * 34)
@@ -1147,12 +1178,17 @@ local function Build()
         controls[key .. "Cast"] = box
         KeepCheck(box, "keep" .. KeyId(key), function() return key end)
         local row = { y = y, box = box, word = Text(blocks.keys, L["then"], X + 284, y - 5, "dim") }
-        row.pet = Choice(blocks.keys, key .. "Pet", 150, petActions, function() return spec.keys[key].pet end,
+        row.pet = Choice(blocks.keys, key .. "Pet", PET_W, petActions, function() return spec.keys[key].pet end,
             function(action)
                 spec.keys[key].pet = action
                 Arrange()
             end)
         row.pet:SetPoint("TOPLEFT", X, y - 1)
+        -- The spell the key's autocast names: empty, the macro's.
+        row.petSpell = SpellBox(blocks.keys, 200, L["same spell"], function() return spec.keys[key].petSpell end,
+            function(action) spec.keys[key].petSpell = action end)
+        row.petSpell:SetPoint("TOPLEFT", X + PET_W + 8, y)
+        controls[key .. "PetSpell"] = row.petSpell
         for j, suffix in ipairs({ "On", "Then" }) do
             row[j == 1 and "on" or "then"] = Choice(blocks.keys, key .. suffix, 120,
                 function() return W.Units(spec.command, j == 1 and "key" or "then") end,
@@ -1197,8 +1233,18 @@ local function Build()
         function(action) spec.otherwise = action end)
     controls.otherwise:SetPoint("TOPLEFT", X, -3 * ROW)
     KeepCheck(controls.otherwise, "keepOtherwise", function() return "otherwise" end)
-    Tip(controls.otherwise, L["Otherwise"], L["What the macro casts when the conditions on the left aren't met. Leave "
-        .. "it empty to do nothing then."])
+    Tip(controls.otherwise, L["Otherwise"], L["What the macro casts the rest of the time, when the conditions you "
+        .. "chose aren't met. Leave it empty to do nothing then."])
+    -- Autocast on or off: the other way the rest of the time, in the same place.
+    controls.petOtherwise = Choice(blocks.when, "petOtherwise", 250, function()
+        return { { key = "no", name = "Otherwise: leave it as it is" }, { key = "yes", name = spec.pet == "autocastoff"
+            and "Otherwise: turn autocast on" or "Otherwise: turn autocast off" } }
+    end, function() return spec.petOtherwise and "yes" or "no" end,
+        function(key) spec.petOtherwise = key == "yes" or nil end)
+    controls.petOtherwise:SetPoint("TOPLEFT", X, -3 * ROW - 1)
+    Tip(controls.petOtherwise, L["Otherwise"], L["What the macro does with autocast the rest of the time, when the "
+        .. "conditions you chose aren't met: leaves it as it is, or turns it the other way. For example, your pet uses "
+        .. "Growl by itself when you're alone, but not in a group."])
 
     -- Also, the macro, the buttons: at the bottom, from the bottom up.
     local function Low(region, x, y) region:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", x, y) end

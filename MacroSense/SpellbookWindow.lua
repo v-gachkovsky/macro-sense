@@ -517,8 +517,9 @@ local function Build()
     local function actions(none)
         return function()
             local items = none and {} or { { key = "", name = L["Nothing"] } }
+            -- Not autocast: it needs a spell, which only the wizard asks for.
             for _, a in ipairs(ns.Wizard.PetActions(ns.CommandsExpansion())) do
-                items[#items + 1] = { key = a.key, name = L[a.name] }
+                if not a.spell then items[#items + 1] = { key = a.key, name = L[a.name] } end
             end
             return items
         end

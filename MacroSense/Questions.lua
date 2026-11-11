@@ -35,14 +35,15 @@ end
 local KEY_CONTEXT = { shiftctrl = "With Shift and Ctrl held", right = "On a right click" }
 
 -- The questions for the form as it is, in order: "what" the macro does; "spell" (/cast, /use; "rank" when it has
--- ranks to pick from), "list" (and "reset" for /castsequence) or "pet"; on whom, "on1" to "on3", each while the one
--- before may not be there, then "byName" when /target goes by name; "keys", and for each key held "shiftCast" (and
--- "shiftRank") or "shiftPet", "shiftOn1", "shiftOn2"; "also"; "finish". Friends or enemies ("only") comes after the
--- first unit checked for it, unless the game says what the spell is for (a key's own spell too); the pet attacks
--- enemies. "when" asks when the macro works at all, and for /cast and /use "otherwise" what it casts the rest of the
--- time. A spell that goes to nobody but you (Demon Armor) asks for no units. A mount macro asks "mountGround",
--- "mountFly" (where there is flying), "mountSwim", "offMount", then "keys" and for each key held "shiftCast", with
--- no units. `keys`: the keys of this client (Cmd on a Mac).
+-- ranks to pick from), "list" (and "reset" for /castsequence) or "pet" (and "petSpell" for autocast); on whom, "on1"
+-- to "on3", each while the one before may not be there, then "byName" when /target goes by name; "keys", and for
+-- each key held "shiftCast" (and "shiftRank") or "shiftPet" (and "shiftPetSpell"), "shiftOn1", "shiftOn2"; "also";
+-- "finish". Friends or enemies ("only") comes after the first unit checked for it, unless the game says what the
+-- spell is for (a key's own spell too); the pet attacks enemies. "when" asks when the macro works at all, and for
+-- /cast and /use "otherwise" what it casts the rest of the time, for autocast on or off "petOtherwise" whether it
+-- turns it the other way then. A spell that goes to nobody but you (Demon Armor) asks for no units. A mount macro
+-- asks "mountGround", "mountFly" (where there is flying), "mountSwim", "offMount", then "keys" and for each key held
+-- "shiftCast", with no units. `keys`: the keys of this client (Cmd on a Mac).
 function Questions.Steps(spec, keys)
     local command = spec.command
     -- Gear: an equipment set when you have them, then a piece at a time (its slot and key once it is picked), up to
@@ -93,6 +94,7 @@ function Questions.Steps(spec, keys)
         if command == "castsequence" then add("reset") end
     elseif pet then
         add("pet")
+        if W.PetTakesSpell(spec.pet) then add("petSpell") end
     elseif not target then
         add("spell")
         if Ranked(spec.action) then add("rank") end
@@ -111,6 +113,7 @@ function Questions.Steps(spec, keys)
             if k.active then
                 if pet then
                     add(key .. "Pet")
+                    if W.PetTakesSpell(k.pet) then add(key .. "PetSpell") end
                 elseif not target then
                     add(key .. "Cast")
                     if Ranked(k.action) then add(key .. "Rank") end
@@ -125,6 +128,7 @@ function Questions.Steps(spec, keys)
     if only then table.insert(out, only + 1, "only") end
     add("when")
     if (command == "cast" or command == "use") and W.When(spec) ~= "" then add("otherwise") end
+    if pet and W.PetOpposite(spec.pet) and W.When(spec) ~= "" then add("petOtherwise") end
     add("also")
     add("finish")
     return out
@@ -396,6 +400,21 @@ function Questions.Ask(spec, step, keys)
     elseif step == "otherwise" then
         return { kind = "spell", slot = "otherwise", optional = true,
             text = L["And what should it cast the rest of the time?"], hint = L["Leave it empty to do nothing then."] }
+    elseif step == "petOtherwise" then
+        local on = spec.pet == "autocastoff"
+        return { kind = "choice", text = L["And the rest of the time?"],
+            hint = L["For example, your pet uses Growl by itself when you're alone, but not in a group."],
+            answers = { { key = "yes", name = on and L["Turn autocast on"] or L["Turn autocast off"],
+                hint = on and "/petautocaston" or "/petautocastoff" },
+                { key = "no", name = L["Leave it as it is"] } },
+            chosen = spec.petOtherwise and "yes" or "no" }
+    elseif step == "petSpell" or rest == "PetSpell" then
+        -- A key's may stay empty when the macro's own command names a spell too: the same one.
+        local same = key ~= nil and W.PetTakesSpell(spec.pet)
+        return { kind = "spell", slot = "pet", key = key, context = context, optional = same,
+            text = L["Which of your pet's spells?"],
+            hint = same and L["Leave it empty for the same one."] or L["The list has the spells of every pet you had "
+                .. "out. Start typing its name, or pick it from the list."] }
     elseif rest == "Cast" and spec.command == "mount" then
         return { kind = "spell", key = key, context = context, optional = true, text = L["Which mount instead?"],
             hint = L["For example, a ground mount in a flying zone. Leave it empty to skip this key."] }
@@ -467,6 +486,8 @@ function Questions.Choose(spec, step, answer)
         spec.offMount = answer
     elseif step == "equipSet" then
         spec.equipSet = answer ~= "" and answer or nil
+    elseif step == "petOtherwise" then
+        spec.petOtherwise = answer == "yes" or nil
     elseif step:match("^equipSlot%d$") then
         spec.equip[tonumber(step:sub(-1))].slot = answer
     elseif step:match("^equipKey%d$") then

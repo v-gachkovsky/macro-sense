@@ -68,7 +68,8 @@ questions; the wizard opens as you left it.
   target someone, set your focus, take someone's target, command your pet, ride a mount.
 - Then what that needs: the spell or item (type a few letters, or pick it from the list) and
   its rank when it has several (Classic),
-  the spells of a list in their order and what starts a sequence over, what the pet does.
+  the spells of a list in their order and what starts a sequence over, what the pet does (and which of its
+  spells, for autocast).
 - **Where should Flash Heal go?** On your target as usual, on whoever is under the mouse, on the ground under
   the cursor, on yourself, your focus, a party member... Each answer shows the macro's words for it
   (`@mouseover`), and its tooltip says what it is. When that one may not be there, the next question asks
@@ -86,7 +87,8 @@ questions; the wizard opens as you left it.
 - **Put on gear**: which item, the slot it goes to (the default one, or a trinket, ring or hand slot) and when (always,
   or only with a key held), then another one, up to four; first an equipment set, when you have some.
 - **Should the macro work only at certain times?** In or out of combat, in stealth, in a group, with your pet out,
-  while channeling a spell or not, in a form; then, for a spell or item, what it casts the rest of the time.
+  while channeling a spell or not, in a form; then, for a spell or item, what it casts the rest of the time, and
+  for the pet's autocast on or off, whether the macro turns it the other way then.
 - **Would you like to add anything else?** The same as the form's Also.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
   the name, saves it and opens it in the editor.
@@ -128,7 +130,9 @@ is set.
   (`13`, `14`). `/target`, `/focus` and `/assist` take only units, party members among them: a key can take
   other units or clear the target / focus, and `/target` can also go by name (a rare, say). **Pet commands**:
   what the pet does without a key (attack, on units in order, follow, stay, move to the cursor, passive,
-  defensive, aggressive, dismiss), and with each key held. **Mount**: a mount for anywhere, one where you can fly
+  defensive, aggressive, dismiss, or autocast of one of its spells: on, off, or the other way each press), and
+  with each key held. The spell comes from your pets' spells; a key's autocast with none of its own takes the
+  macro's. **Mount**: a mount for anywhere, one where you can fly
   (from TBC on) and one for water, picked from your mounts only, and **On a mount**: what a press does there
   (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`,
   `/dismount [mounted,noflying]`). A key held calls another mount (a ground one where you could fly). **Put on
@@ -162,6 +166,8 @@ is set.
   channeled spell (Drain Soul) stops when you press another one: **Not while channeling it** keeps a press of the
   macro from starting its own spell over (`[nochanneling:Drain Soul]`), **Not while channeling** waits for any of
   them (`[nochanneling]`). For `/cast` and `/use` the box under them says what it casts otherwise (`; Frostbolt`).
+  For the pet's autocast on or off, the list there turns it the other way the rest of the time: Growl on when
+  you're alone, off in a group (`/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl`).
 - **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
   none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
   first, cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
@@ -182,6 +188,7 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | /focus on Mouseover, then Your target; Shift: Clear focus | `/clearfocus [mod:shift]`, `/stopmacro [mod:shift]`, `/focus [@mouseover,exists,nodead][@target,exists,nodead]` |
 | /target Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/target [mod:shift,@party2,help,nodead]...[@party1,help,nodead]` |
 | Pet: Attack on Mouseover, then As usual; Shift: Follow; Ctrl: Move to the cursor | `/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]`, `/petfollow [mod:shift]`, `/petmoveto [mod:ctrl,@cursor]` |
+| Pet: Turn autocast on, Growl; When: Alone; Otherwise: turn autocast off | `/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl` |
 | Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Macros from the spellbook
