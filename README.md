@@ -170,8 +170,9 @@ is set.
   you're alone, off in a group (`/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl`).
 - **Also**: stop your cast first, use trinket 1 / 2 (named by what is in the slot), the nearest enemy if
   none is targeted, start auto attack, leave your form first, your pet attacks your target, get off your mount
-  first, cancel a buff first (it offers the buffs on you now, then those you have had), and say something in
-  chat last (`%t` is your target's name).
+  first, cancel a buff first (it offers the buffs on you now, then those you have had), click a button with the
+  trinkets (`/click ExtraActionButton1`: it offers the buttons there are now, with what is on them), and say
+  something in chat last (`%t` is your target's name).
 - **Name** and **Tab**: the name follows the spell until you type your own; the tab is the one open first.
 
 The macro shows under the form as you choose, with its colors and length. **Create macro** saves it under a

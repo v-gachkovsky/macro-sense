@@ -85,7 +85,8 @@ Or **All options** shows the whole form, where you pick it all at once:
   (`/cast [stealth] Ambush; Sinister Strike`), or the pet's autocast the other way (Growl on alone, off in a
   group)
 - **and also**: stop your cast first, your trinkets, auto attack, your pet, the nearest enemy if none is targeted,
-  out of your form or off your mount first, a buff cancelled first, a line in chat (`%t` is your target)
+  out of your form or off your mount first, a buff cancelled first, a button clicked (`/click
+  ExtraActionButton1`), a line in chat (`%t` is your target)
 - **!** by each spell (`!Shoot`): pressed again, the macro doesn't turn off Auto Shot, Stealth or a form
 
 The macro shows as you choose; **Create macro** saves it and opens it in the editor.

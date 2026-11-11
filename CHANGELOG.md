@@ -45,6 +45,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   your pets' spells. With the When row, autocast on or off can go the other way the rest of the time: Growl on
   when you're alone, off in a group (`/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl`). Step
   by step too, and such a macro opens in the wizard.
+- The wizard's **Also** clicks a button with the trinkets, before the spell (`/click ExtraActionButton1`). The
+  list offers the buttons there are now, with what is on them: your action bars, the pet's, the extra action
+  button, Bartender's, Dominos' and ElvUI's; any other name works too.
 
 - The icon search finds an icon by its file name or file ID, as Wowhead shows them: `inv_misc_book_09`,
   `Interface\Icons\INV_Misc_Book_09.blp` or `133741`. That icon comes first, and a click picks it.

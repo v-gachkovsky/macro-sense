@@ -3407,6 +3407,22 @@ do
     TypeIn(C("say"), "")
     check("wizard: and all of it taken back", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt",
         shown())
+    -- A button clicked: the buttons there are now, with what is on them; any other name too.
+    local extra = CreateFrame("Button", "ExtraActionButton1")
+    TypeIn(C("click"), "extra")
+    check("wizard: the buttons to click", offered(C("click")) == "ExtraActionButton1"
+        and C("click").list.point[1] == "TOPRIGHT", offered(C("click")))
+    Fire(C("click"), "OnEnterPressed")
+    check("wizard: a button clicked before the spell", shown() == "#showtooltip\n/click ExtraActionButton1\n"
+        .. "/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    TypeIn(C("click"), "MyAddonButton")
+    Fire(C("click"), "OnEnterPressed")
+    check("wizard: another addon's button", shown():find("\n/click MyAddonButton\n", 1, true) ~= nil, shown())
+    TypeIn(C("click"), "")
+    Fire(C("click"), "OnEnterPressed")
+    ExtraActionButton1 = nil
+    check("wizard: no button clicked", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
+        and extra ~= nil, shown())
 
     -- Not in combat, not into a full tab: the form stays.
     TypeIn(C("cast"), "frost")

@@ -1600,6 +1600,13 @@ do
         == "Growl" and W.Name(form({ command = "pet", pet = "follow", petSpell = growl })) == "Pet")
     check("wizard name: the pet's", W.Name(form({ command = "pet" })) == "Pet")
     -- Also: out of the form, off the mount, a buff cancelled first; something said in chat last.
+    -- A button clicked: with the trinkets, before the spell; alone, a macro with nothing to show.
+    expectText("also: a button clicked after the trinkets", text({ action = bolt, on = usual, trinket1 = true,
+        click = { name = "ExtraActionButton1" }, startattack = true }),
+        "#showtooltip Frostbolt\n/use 13\n/click ExtraActionButton1\n/startattack\n/cast Frostbolt")
+    expectText("also: a button clicked alone", text({ click = { name = " PetActionButton5 RightButton " } }),
+        "/click PetActionButton5 RightButton")
+    check("wizard: a button's name empty, no macro", W.Text(form({ click = { name = " " } })) == nil)
     expectText("also: what goes first and what is said", text({ action = bolt, on = usual, cancelform = true,
         dismount = true, cancelaura = { name = "Ice Block" }, say = " Casting on %t ", channel = "party",
         startattack = true }), "#showtooltip\n/cancelform\n/dismount [mounted]\n/cancelaura Ice Block\n"
@@ -2482,6 +2489,10 @@ do
     read("in water: a list", "/castsequence [swimming] Corruption, Immolate",
         "#showtooltip\n/castsequence [swimming] Corruption, Immolate")
     read("the pet", "/petattack", "/petattack")
+    read("a button clicked", "#showtooltip\n/use 13\n/click ExtraActionButton1\n/cast Frostbolt",
+        "#showtooltip Frostbolt\n/use 13\n/click ExtraActionButton1\n/cast Frostbolt")
+    read("a button clicked with conditions: not the form's", "/click [combat] ExtraActionButton1\n/cast Frostbolt",
+        "#showtooltip\n/cast Frostbolt", "/click [combat] ExtraActionButton1")
     -- /petdismiss after a /stopmacro: whom it is for. With conditions of its own (the game ignores them), it moves.
     spec = read("the pet: Shift dismisses", "/petfollow [nomod:shift]\n/stopmacro [nomod:shift]\n/petdismiss",
         "/petfollow [nomod:shift]\n/stopmacro [nomod:shift]\n/petdismiss")

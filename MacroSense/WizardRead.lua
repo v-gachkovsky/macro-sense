@@ -462,6 +462,8 @@ local function ReadAs(lines, kind)
             spec.startattack = true
         elseif cmd == "petattack" and rest == "" then
             spec.petattack = true
+        elseif cmd == "click" and rest ~= "" and not rest:find("^%[") and not spec.click then
+            spec.click = { name = rest } -- with its mouse button, if any: "PetActionButton5 RightButton"
         elseif CHAT[cmd] and rest ~= "" then
             spec.channel, spec.say = cmd, rest
         end
@@ -494,7 +496,7 @@ end
 
 -- The form's answers for the macro `text`, and its lines the wizard's text has not (written otherwise or left
 -- out; the empty ones and #showtooltip don't count). nil when the wizard can't make it: nothing in it casts,
--- uses, targets, tells the pet, calls a mount or puts on gear.
+-- uses, targets, tells the pet, calls a mount, puts on gear or clicks a button.
 function W.Read(text)
     local lines = {}
     for line in (text .. "\n"):gmatch("([^\n]*)\n") do
