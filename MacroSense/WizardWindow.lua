@@ -90,9 +90,13 @@ end
 ------------------------------------------------------------------------
 -- What a box offers: your spells and the items you can use. /use offers the items first, with the equipment
 -- slots whose item has a use effect ("13", Trinket 1); a mount macro only your mounts (none: you type the
--- name), a gear macro only gear, worn or in the bags, a pet macro your pets' spells (for autocast).
+-- name), a gear macro only gear, worn or in the bags, a pet macro your pets' spells (for autocast): of the pet the
+-- When row asks for, when it does.
 local function Candidates()
-    if spec.command == "pet" then return ns.sources.petSpells() end
+    if spec.command == "pet" then
+        local family = W.PetFamily(spec)
+        return ns.sources.petSpells(family and { family })
+    end
     local spells, items = {}, {}
     for _, spell in ipairs(ns.sources.spells()) do
         spells[#spells + 1] = { name = spell.name, icon = spell.icon, hint = L["spell"], ranks = spell.ranks }
@@ -541,9 +545,10 @@ function Arrange()
 end
 
 -- The choices of the When rows that are this character's or this client's: its forms, specializations, the gear
--- types its items have, the places its game has.
+-- types its items have, its pets, the places its game has.
 local WHEN_CHOICES = {
     form = function() return W.WhenForms(ns.sources.forms()) end,
+    pet = function() return W.WhenPets(ns.sources.pets()) end,
     place = function() return W.WhenPlaces() end,
     spec = function() return W.WhenSpecs(ns.sources.specs()) end,
     equipped = function() return W.WhenGear(ns.sources.itemTypes()) end,
@@ -1129,7 +1134,8 @@ local function Build()
         function(action) spec.petSpell = action end)
     controls.petSpell:SetPoint("TOPLEFT", X + PET_W + 8, 0)
     Tip(controls.petSpell, L["The pet's spell"], L["The spell your pet casts by itself, or stops casting, as with a "
-        .. "right click on its action bar. The list has the spells of every pet you had out."])
+        .. "right click on its action bar. The list has the spells of every pet you had out. With one of your pets "
+        .. "chosen in When, only that pet's."])
 
     -- On whom, and who: for every command (the units a command takes, Wizard.Units).
     blocks.on = Block(2 * 34)

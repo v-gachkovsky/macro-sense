@@ -3240,6 +3240,19 @@ do
     Fire(C("shiftPetSpell"), "OnEnterPressed")
     check("wizard: a key's own spell", shown():find("\n/petautocastoff [mod:shift,nogroup] Furious Howl", 1, true)
         ~= nil, shown())
+    -- One of your pets in the When row: [pet:Cat] on every line, the lists only its spells.
+    ns.char.pets.Cat = { spells = { Prowl = { icon = 3 }, Growl = { icon = 1 } } }
+    TypeIn(C("petSpell"), "")
+    local all = offered(C("petSpell"))
+    pick(C("whenPet"), "Your Cat is out")
+    TypeIn(C("petSpell"), "")
+    check("wizard: one of your pets, its spells only", all == "Furious Howl, Growl, Prowl"
+        and offered(C("petSpell")) == "Growl, Prowl" and C("whenPet").label.text == "Your Cat is out"
+        and shown():find("/petautocasttoggle [nomod:shift,nogroup,pet:Cat] Growl", 1, true) ~= nil,
+        offered(C("petSpell")))
+    TypeIn(C("petSpell"), "Growl")
+    Fire(C("petSpell"), "OnEnterPressed")
+    pick(C("whenPet"), "With a pet or not")
     pick(C("pet"), "Follow")
     check("wizard: the same spell needs the macro's", not C("petSpell"):IsShown()
         and C("shiftPetSpell").placeholder.text == "the pet's spell", C("shiftPetSpell").placeholder.text)
@@ -3565,15 +3578,26 @@ do
 
     -- The pet's autocast: the spell next, a must; on or off, what it does the rest of the time after When.
     local pets = ns.char.pets
-    ns.char.pets = { Wolf = { spells = { Growl = { icon = 1 } } } }
+    ns.char.pets = { Wolf = { spells = { Growl = { icon = 1 } } }, Cat = { spells = { Prowl = { icon = 2 } } } }
     Pick("Command your pet")
     Pick("Turn autocast on")
+    check("steps: which pet, with two of them", question() == "Which pet is it for?"
+        and answers() == "Any pet, Cat, Wolf" and chosen() == "Any pet", answers())
+    Pick("Wolf")
     check("steps: autocast asks for the pet's spell", question() == "Which of your pet's spells?"
-        and not C("next"):IsEnabled() and C("stepSpell").placeholder.text == "the pet's spell", question())
+        and not C("next"):IsEnabled() and C("stepSpell").placeholder.text == "the pet's spell"
+        and C("hint").text == "The list has your Wolf's spells. Start typing its name, or pick it from the list.",
+        question())
+    TypeIn(C("stepSpell"), "")
+    local listed = {}
+    for _, r in ipairs(C("stepSpell").list.rows) do
+        if r:IsShown() then listed[#listed + 1] = r.text.text end
+    end
+    check("steps: the Wolf's spells only", table.concat(listed, ", ") == "Growl", table.concat(listed, ", "))
     TypeIn(C("stepSpell"), "gr")
     Fire(C("stepSpell"), "OnEnterPressed")
     check("steps: the pet's spell picked", C("stepSpell").text == "Growl" and C("next"):IsEnabled()
-        and shown() == "/petautocaston Growl", shown())
+        and shown() == "/petautocaston [pet:Wolf] Growl", shown())
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
     pick(C("stepWhenGroup"), "Alone")
@@ -3582,11 +3606,13 @@ do
         and answers() == "Turn autocast off, Leave it as it is" and chosen() == "Leave it as it is", answers())
     Pick("Turn autocast off")
     check("steps: Growl on alone, off in a group", question() == "Would you like to add anything else?"
-        and shown() == "/petautocaston [nogroup] Growl\n/petautocastoff [group] Growl", shown())
+        and shown() == "/petautocaston [nogroup,pet:Wolf] Growl\n/petautocastoff [pet:Wolf,group] Growl", shown())
     Fire(C("back"), "OnClick")
     Fire(C("back"), "OnClick")
     pick(C("stepWhenGroup"), "In a group or alone")
     for _ = 1, 3 do Fire(C("back"), "OnClick") end
+    Fire(answer("Any pet"), "OnClick")
+    Fire(C("back"), "OnClick")
     Fire(answer("Attack"), "OnClick")
     Fire(C("back"), "OnClick")
     ns.char.pets = pets

@@ -18,6 +18,11 @@ local function EquipSets()
     return ns.sources and ns.sources.equipSets and ns.sources.equipSets() or {}
 end
 
+-- The families of your pets (Sources.pets; none without the game).
+local function PetFamilies()
+    return ns.sources and ns.sources.pets and ns.sources.pets() or {}
+end
+
 -- Whether a spell has ranks to pick from: two learned at least (Classic; Retail has none).
 local function Ranked(action) return action ~= nil and action.ranks ~= nil and #action.ranks > 1 end
 
@@ -35,7 +40,8 @@ end
 local KEY_CONTEXT = { shiftctrl = "With Shift and Ctrl held", right = "On a right click" }
 
 -- The questions for the form as it is, in order: "what" the macro does; "spell" (/cast, /use; "rank" when it has
--- ranks to pick from), "list" (and "reset" for /castsequence) or "pet" (and "petSpell" for autocast); on whom, "on1"
+-- ranks to pick from), "list" (and "reset" for /castsequence) or "pet" (and "petSpell" for autocast, after
+-- "petFamily": which of your pets, when you have had more than one); on whom, "on1"
 -- to "on3", each while the one before may not be there, then "byName" when /target goes by name; "keys", and for
 -- each key held "shiftCast" (and "shiftRank") or "shiftPet" (and "shiftPetSpell"), "shiftOn1", "shiftOn2"; "also";
 -- "finish". Friends or enemies ("only") comes after the first unit checked for it, unless the game says what the
@@ -80,6 +86,13 @@ function Questions.Steps(spec, keys)
     local out, only = { "what" }, nil
     local ask = not pet and (target or not spec.reaction)
     local function add(step) out[#out + 1] = step end
+    -- Which of your pets, before the first spell of a pet's (autocast), when you have had more than one.
+    local family = pet and #PetFamilies() > 1
+    local function petSpell(step)
+        if family then add("petFamily") end
+        family = false
+        add(step)
+    end
     -- `own`: a key's own spell the game says what it is for: its units are checked for that.
     local function units(prefix, on, n, own)
         for i = 1, n do
@@ -94,7 +107,7 @@ function Questions.Steps(spec, keys)
         if command == "castsequence" then add("reset") end
     elseif pet then
         add("pet")
-        if W.PetTakesSpell(spec.pet) then add("petSpell") end
+        if W.PetTakesSpell(spec.pet) then petSpell("petSpell") end
     elseif not target then
         add("spell")
         if Ranked(spec.action) then add("rank") end
@@ -113,7 +126,7 @@ function Questions.Steps(spec, keys)
             if k.active then
                 if pet then
                     add(key .. "Pet")
-                    if W.PetTakesSpell(k.pet) then add(key .. "PetSpell") end
+                    if W.PetTakesSpell(k.pet) then petSpell(key .. "PetSpell") end
                 elseif not target then
                     add(key .. "Cast")
                     if Ranked(k.action) then add(key .. "Rank") end
@@ -408,13 +421,25 @@ function Questions.Ask(spec, step, keys)
                 hint = on and "/petautocaston" or "/petautocastoff" },
                 { key = "no", name = L["Leave it as it is"] } },
             chosen = spec.petOtherwise and "yes" or "no" }
+    elseif step == "petFamily" then
+        local answers = { { key = "any", name = L["Any pet"] } }
+        for _, p in ipairs(PetFamilies()) do
+            answers[#answers + 1] = { key = p.name, name = p.name, hint = "[pet:" .. p.name .. "]" }
+        end
+        return { kind = "choice", text = L["Which pet is it for?"],
+            hint = L["If you pick one, the macro works only while that pet is out, and the list has only its spells."],
+            answers = answers, chosen = W.PetFamily(spec) or "any" }
     elseif step == "petSpell" or rest == "PetSpell" then
-        -- A key's may stay empty when the macro's own command names a spell too: the same one.
-        local same = key ~= nil and W.PetTakesSpell(spec.pet)
+        -- A key's may stay empty when the macro's own command names a spell too: the same one. The list has the
+        -- spells of the pet chosen, else of all your pets.
+        local same, family = key ~= nil and W.PetTakesSpell(spec.pet), W.PetFamily(spec)
         return { kind = "spell", slot = "pet", key = key, context = context, optional = same,
             text = L["Which of your pet's spells?"],
-            hint = same and L["Leave it empty for the same one."] or L["The list has the spells of every pet you had "
-                .. "out. Start typing its name, or pick it from the list."] }
+            hint = same and L["Leave it empty for the same one."]
+                or family and string.format(L["The list has your %s's spells. Start typing its name, or pick it from "
+                    .. "the list."], family)
+                or L["The list has the spells of every pet you had out. Start typing its name, or pick it from the "
+                    .. "list."] }
     elseif rest == "Cast" and spec.command == "mount" then
         return { kind = "spell", key = key, context = context, optional = true, text = L["Which mount instead?"],
             hint = L["For example, a ground mount in a flying zone. Leave it empty to skip this key."] }
@@ -488,6 +513,9 @@ function Questions.Choose(spec, step, answer)
         spec.equipSet = answer ~= "" and answer or nil
     elseif step == "petOtherwise" then
         spec.petOtherwise = answer == "yes" or nil
+    elseif step == "petFamily" then
+        -- Any: no pet of yours asked for, but "Your pet is out" stays.
+        if answer ~= "any" or W.PetFamily(spec) then spec.when.pet = answer end
     elseif step:match("^equipSlot%d$") then
         spec.equip[tonumber(step:sub(-1))].slot = answer
     elseif step:match("^equipKey%d$") then

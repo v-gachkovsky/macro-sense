@@ -45,6 +45,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   your pets' spells. With the When row, autocast on or off can go the other way the rest of the time: Growl on
   when you're alone, off in a group (`/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl`). Step
   by step too, and such a macro opens in the wizard.
+- The wizard's When row offers each of your pets too: **Your Voidwalker is out** (`[pet:Voidwalker]`). With one
+  chosen, the autocast lists have only that pet's spells, and the other way the rest of the time is still that
+  pet's. Step by step asks **Which pet is it for?** before the pet's spell, when you have had more than one. A
+  macro with `[pet:...]` opens in the wizard with it.
 - The wizard's **Also** clicks a button with the trinkets, before the spell (`/click ExtraActionButton1`). The
   list offers the buttons there are now, with what is on them: your action bars, the pet's, the extra action
   button, Bartender's, Dominos' and ElvUI's; any other name works too.

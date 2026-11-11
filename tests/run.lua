@@ -1596,6 +1596,27 @@ do
     check("wizard: a key's autocast, no spell when the macro's command names none", W.Text(form({ command = "pet",
         pet = "follow", petSpell = growl, keys = { shift = { pet = "autocasttoggle" } } }))
         == "/petfollow [nomod:shift]")
+    -- One of your pets in the When row: [pet:Voidwalker], for every line; the other way the rest of the time is
+    -- still that pet's, a dismiss only that pet's.
+    local torment = { name = "Torment" }
+    expectText("when: one of your pets", text({ command = "pet", pet = "autocasttoggle", petSpell = torment,
+        when = { pet = "Voidwalker" } }), "/petautocasttoggle [pet:Voidwalker] Torment")
+    expectText("pet: autocast alone, off in a group, the Voidwalker's", text({ command = "pet", pet = "autocaston",
+        petSpell = torment, petOtherwise = true, when = { group = "no", pet = "Voidwalker" } }),
+        "/petautocaston [nogroup,pet:Voidwalker] Torment\n/petautocastoff [pet:Voidwalker,group] Torment")
+    expectText("pet: the other way not for the pet alone", text({ command = "pet", pet = "autocaston",
+        petSpell = torment, petOtherwise = true, when = { pet = "Voidwalker" } }),
+        "/petautocaston [pet:Voidwalker] Torment")
+    expectText("pet: only the Voidwalker dismissed", text({ command = "pet", pet = "dismiss",
+        when = { pet = "Voidwalker" } }), "/stopmacro [nopet:Voidwalker]\n/petdismiss")
+    expectText("when: a cast with one of your pets", text({ action = { name = "Spell Lock" }, only = "enemies",
+        on = { "focus", "default", "none" }, when = { pet = "Felhunter" } }),
+        "#showtooltip\n/cast [pet:Felhunter,@focus,harm,nodead][pet:Felhunter] Spell Lock")
+    local pets = W.WhenPets({ { name = "Imp" } })
+    check("when: your pets", #pets == 4 and pets[2].cond == "pet" and pets[4].key == "Imp" and pets[4].cond == "pet:Imp"
+        and pets[4].name == "Your Imp is out" and #W.WhenPets() == 3)
+    check("when: the pet's family", W.PetFamily(form({ when = { pet = "Imp" } })) == "Imp"
+        and W.PetFamily(form({ when = { pet = "yes" } })) == nil and W.PetFamily(form({})) == nil)
     check("wizard name: the pet's spell", W.Name(form({ command = "pet", pet = "autocasttoggle", petSpell = growl }))
         == "Growl" and W.Name(form({ command = "pet", pet = "follow", petSpell = growl })) == "Pet")
     check("wizard name: the pet's", W.Name(form({ command = "pet" })) == "Pet")
@@ -2251,6 +2272,31 @@ do
     Q.Choose(spec, "pet", "autocasttoggle")
     check("questions: no rest of the time for a toggle", not steps(spec):find("petOtherwise")
         and ask(spec, "shiftPetSpell").optional, steps(spec))
+    -- Which of your pets, before the first spell of a pet's, when you have had more than one: the When row's.
+    local sources = ns.sources.pets
+    ns.sources.pets = function() return { { name = "Imp" }, { name = "Voidwalker" } } end
+    local which = ask(spec, "petFamily")
+    check("questions: which pet, before its spell", steps(spec)
+        == "what,pet,petFamily,petSpell,keys,shiftPet,shiftPetSpell,when,also,finish" and which.kind == "choice"
+        and keys(spec, "petFamily") == "any,Imp,Voidwalker" and which.chosen == "any"
+        and find(spec, "petFamily", "Imp").hint == "[pet:Imp]", steps(spec))
+    Q.Choose(spec, "petFamily", "Voidwalker")
+    check("questions: the pet chosen, in the When row", spec.when.pet == "Voidwalker"
+        and ask(spec, "petFamily").chosen == "Voidwalker" and ask(spec, "petSpell").hint
+        == "The list has your Voidwalker's spells. Start typing its name, or pick it from the list.",
+        ask(spec, "petSpell").hint)
+    Q.Choose(spec, "petFamily", "any")
+    check("questions: any pet again", spec.when.pet == "any", spec.when.pet)
+    spec.when.pet = "yes"
+    Q.Choose(spec, "petFamily", "any")
+    check("questions: any pet, but one out still", spec.when.pet == "yes", spec.when.pet)
+    Q.Choose(spec, "pet", "follow")
+    check("questions: which pet before a key's spell", steps(spec)
+        == "what,pet,keys,shiftPet,petFamily,shiftPetSpell,when,also,finish", steps(spec))
+    ns.sources.pets = function() return { { name = "Imp" } } end
+    check("questions: no question with one pet", not steps(spec):find("petFamily"), steps(spec))
+    ns.sources.pets = sources
+    spec.when.pet = nil
     Q.Choose(spec, "pet", "follow")
     check("questions: a key's spell its own when the macro's names none", steps(spec)
         == "what,pet,keys,shiftPet,shiftPetSpell,when,also,finish" and not ask(spec, "shiftPetSpell").optional,
@@ -2517,6 +2563,11 @@ do
         and spec.keys.shift.petSpell == nil and not spec.petOtherwise)
     read("autocast the other way, but not when the When row doesn't hold", "/petautocaston [nogroup] Growl\n"
         .. "/petautocastoff [combat] Growl", growl, "/petautocastoff [combat] Growl")
+    spec = read("one of your pets", "/petautocasttoggle [pet:Voidwalker] Torment",
+        "/petautocasttoggle [pet:Voidwalker] Torment")
+    check("wizard read: one of your pets, the When row", spec.when.pet == "Voidwalker")
+    read("a cast with one of your pets", "/cast [@focus,pet:Felhunter,harm] Spell Lock",
+        "#showtooltip\n/cast [pet:Felhunter,@focus,harm] Spell Lock")
     read("autocast the other way, another spell", "/petautocaston [nogroup] Growl\n/petautocastoff [group] Cower",
         "/petautocastoff [group] Cower", "/petautocaston [nogroup] Growl")
     read("trinkets and the rest", "#showtooltip\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n"

@@ -161,10 +161,14 @@ local PLACES = {
     { key = "house", name = "In a house or on its plot", cond = "house" },
 }
 
+-- With a pet out or not, for the When row; then each pet of yours (Wizard.WhenPets).
+local PET_OUT = { { key = "any", name = "With a pet or not" }, { key = "yes", name = "Your pet is out", cond = "pet" },
+    { key = "no", name = "No pet out", cond = "nopet" } }
+
 -- When the macro does anything at all: each a choice, "any" for always; `cond` is what the macro checks, `value`
--- makes it of a choice that is the character's own (Wizard.WhenForms, WhenSpecs, WhenGear). A channeled spell stops
--- when you press another one: "own" leaves the spell going that the press would cast, the macro's or a key's own
--- ([nochanneling:Drain Soul]), "no" any of them. Where you are: one place, those this client's game has
+-- makes it of a choice that is the character's own (Wizard.WhenForms, WhenSpecs, WhenGear, WhenPets). A channeled
+-- spell stops when you press another one: "own" leaves the spell going that the press would cast, the macro's or a
+-- key's own ([nochanneling:Drain Soul]), "no" any of them. Where you are: one place, those this client's game has
 -- (Wizard.WhenPlaces). Otherwise (`spec.otherwise`): what /cast or /use does when not.
 Wizard.whens = {
     { key = "combat", items = { { key = "any", name = "In or out of combat" },
@@ -174,8 +178,7 @@ Wizard.whens = {
     { key = "group", items = { { key = "any", name = "In a group or alone" },
         { key = "party", name = "In a group", cond = "group" }, { key = "raid", name = "In a raid", cond = "group:raid" },
         { key = "no", name = "Alone", cond = "nogroup" } } },
-    { key = "pet", items = { { key = "any", name = "With a pet or not" },
-        { key = "yes", name = "Your pet is out", cond = "pet" }, { key = "no", name = "No pet out", cond = "nopet" } } },
+    { key = "pet", items = PET_OUT, value = function(key) return "pet:" .. key end },
     { key = "channel", items = { { key = "any", name = "Channeling or not" },
         { key = "own", name = "Not while channeling it" }, { key = "no", name = "Not while channeling", cond = "nochanneling" },
         { key = "yes", name = "While channeling", cond = "channeling" } } },
@@ -219,6 +222,26 @@ function Wizard.WhenSpecs(specs)
     return out
 end
 
+-- The choices of a pet: with one or not, then each of `pets` (Sources.pets: the families of the pets you had out, in
+-- an English game the demons you can summon): "Your Imp is out", [pet:Imp].
+function Wizard.WhenPets(pets)
+    local out = {}
+    for i, item in ipairs(PET_OUT) do out[i] = item end
+    for _, p in ipairs(pets or {}) do
+        out[#out + 1] = { key = p.name, cond = "pet:" .. p.name, name = string.format(ns.L["Your %s is out"], p.name) }
+    end
+    return out
+end
+
+-- The family of the pet the When row asks for ("Imp", [pet:Imp]), nil for any pet.
+function Wizard.PetFamily(spec)
+    local pet = spec.when.pet
+    for _, item in ipairs(PET_OUT) do
+        if item.key == pet then return nil end
+    end
+    return pet
+end
+
 -- The choices of gear: any, then each weapon and armor type of `types` (Sources.itemTypes), not "Weapon" or "Armor"
 -- themselves.
 function Wizard.WhenGear(types)
@@ -232,32 +255,31 @@ function Wizard.WhenGear(types)
     return out
 end
 
--- { "combat", "nostealth" }: what the macro checks before anything, in the order of Wizard.whens. `action`: what
--- the clause casts (a key's own spell), the macro's if nil.
-local function WhenConds(spec, action)
-    local out = {}
-    for _, w in ipairs(Wizard.whens) do
-        local chosen = spec.when[w.key]
-        if chosen and chosen ~= "any" then
-            if w.value then
-                out[#out + 1] = w.value(chosen)
-            elseif chosen == "own" then
-                -- The clause's spell, else the macro's, a list's first (rows may be left empty before it); with
-                -- none, any.
-                if not action then
-                    action = spec.action
-                    if Wizard.IsList(spec.command) then
-                        for i = Wizard.LIST, 1, -1 do action = spec.list[i] or action end
-                    end
-                end
-                out[#out + 1] = action and "nochanneling:" .. action.name or "nochanneling"
-            else
-                for _, item in ipairs(w.items) do
-                    if item.key == chosen then out[#out + 1] = item.cond end
-                end
+-- What the macro checks for the When row's choice `w` ("combat", "pet:Imp"), nil for any. `action`: what the
+-- clause casts (a key's own spell), the macro's if nil.
+local function WhenCond(spec, w, action)
+    local chosen = spec.when[w.key]
+    if not chosen or chosen == "any" then return nil end
+    if chosen == "own" then
+        -- The clause's spell, else the macro's, a list's first (rows may be left empty before it); with none, any.
+        if not action then
+            action = spec.action
+            if Wizard.IsList(spec.command) then
+                for i = Wizard.LIST, 1, -1 do action = spec.list[i] or action end
             end
         end
+        return action and "nochanneling:" .. action.name or "nochanneling"
     end
+    for _, item in ipairs(w.items or {}) do
+        if item.key == chosen then return item.cond end
+    end
+    return w.value and w.value(chosen)
+end
+
+-- { "combat", "nostealth" }: what the macro checks before anything, in the order of Wizard.whens.
+local function WhenConds(spec, action)
+    local out = {}
+    for _, w in ipairs(Wizard.whens) do out[#out + 1] = WhenCond(spec, w, action) end
     return out
 end
 
@@ -267,11 +289,22 @@ Wizard.When = When
 
 -- When the When row doesn't hold: each of its conditions the other way round, a group each, so any of them will
 -- do ("[nocombat][group]" for "combat,nogroup"); "" when it always holds. Every condition has its "no" form.
--- `mod`: what each group checks first as well ("[nomod:shift,group]").
-local function Unless(spec, mod)
-    local out = {}
-    for _, c in ipairs(WhenConds(spec)) do
-        out[#out + 1] = "[" .. (mod and mod .. "," or "") .. (c:match("^no(.+)$") or "no" .. c) .. "]"
+-- `mod`: what each group checks first as well ("[nomod:shift,group]"); `keep`: the When row's choices each group
+-- checks as they are ({ pet = true }: still the pet the macro is for).
+local function Unless(spec, mod, keep)
+    keep = keep or {}
+    local first, out = { mod }, {}
+    for _, w in ipairs(Wizard.whens) do
+        if keep[w.key] then first[#first + 1] = WhenCond(spec, w) end
+    end
+    for _, w in ipairs(Wizard.whens) do
+        local c = not keep[w.key] and WhenCond(spec, w)
+        if c then
+            local conds = {}
+            for i, f in ipairs(first) do conds[i] = f end
+            conds[#conds + 1] = c:match("^no(.+)$") or "no" .. c
+            out[#out + 1] = "[" .. table.concat(conds, ",") .. "]"
+        end
     end
     return table.concat(out)
 end
@@ -619,9 +652,10 @@ end
 
 -- Autocast on (or off) only when the When row holds, and the other way the rest of the time (`spec.petOtherwise`):
 -- "/petautocastoff [group] Growl" after "/petautocaston [nogroup] Growl". `mod`: the keys not held, as for the line.
+-- The pet it is for stays: "[pet:Voidwalker,group]", its spell is that pet's.
 local function OtherwiseLine(spec, mod)
     local other, spell = spec.petOtherwise and PET_OPPOSITE[spec.pet], Wizard.PetSpell(spec)
-    local unless = other and spell and Unless(spec, mod) or ""
+    local unless = other and spell and Unless(spec, mod, { pet = true }) or ""
     if unless == "" then return nil end
     return PET_COMMANDS[other] .. " " .. unless .. " " .. Wizard.Spelled(spell)
 end
