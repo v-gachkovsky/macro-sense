@@ -638,9 +638,13 @@ do
     check("args: all markers to clear", names("/clearworldmarker |") == "1,2,3,4,5,6,7,8,all",
         names("/clearworldmarker |"))
 end
--- mod: takes the keys the game's settings name: your self-cast key (Alt at first), your focus-cast key.
+-- mod: takes the keys the game's settings name: your self-cast key (Alt at first), your focus-cast key, your
+-- mouseover-cast key, the key that picks up actions from the bars, the auto-loot key. Every client has these five.
 check("modifiers: the self-cast and focus-cast keys", names("/cast [mod:SEL|") == "SELFCAST"
     and names("/cast [mod:FOCUS|") == "FOCUSCAST", names("/cast [mod:SEL|"))
+check("modifiers: every key the settings name", names("/cast [mod:MOUSE|") == "MOUSEOVERCAST"
+    and names("/cast [mod:PICK|") == "PICKUPACTION" and names("/cast [mod:AUTO|") == "AUTOLOOTTOGGLE",
+    names("/cast [mod:MOUSE|") .. " | " .. names("/cast [mod:PICK|") .. " | " .. names("/cast [mod:AUTO|"))
 -- The other way round, each name of a condition: nomodifier, nobutton, noactionbar.
 check("aliases the other way round", names("/cast [nomodi|") == "nomodifier" and names("/cast [nobutt|") == "nobutton"
     and names("/cast [noactionb|") == "noactionbar", names("/cast [nomodi|") .. " | " .. names("/cast [nobutt|"))
@@ -1104,6 +1108,9 @@ do
         { "/cast [combat] Shield Wall; Battle Shout", "in combat: Shield Wall | otherwise: Battle Shout" },
         { "/cast [mod:SELFCAST,@player][] Flash Heal", "Flash Heal on yourself, with your self-cast key held |   if "
             .. "not, on your target" },
+        { "/cast [mod:MOUSEOVERCAST,@mouseover][] Flash Heal", "Flash Heal on the unit under the mouse, with your "
+            .. "mouseover-cast key held |   if not, on your target" },
+        { "/cast [nomod:PICKUPACTION] Fireball", "without your action pick-up key held: Fireball" },
         { "/target [@questnpc]", "targets the quest giver you are talking to" },
         { "/swapactionbar 1 2", "switches the action bar between pages 1 and 2" },
         { "/worldmarker [@cursor] 5", "places the yellow star marker at the cursor" },

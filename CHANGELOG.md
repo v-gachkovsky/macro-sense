@@ -37,6 +37,15 @@ and the project uses [Semantic Versioning](https://semver.org/).
   `[flying]`, `[advflyable]`), PvP talents (`[pvptalent]`, `[pvpcombat]`), the extra action bar (`[extrabar]`),
   housing (`[house]`) and talents in rows (`[talent]`).
 - Classic Era: `[flyable]` and `[flying]` aren't suggested, there is no flying there.
+- After `mod:` the list also offers `MOUSEOVERCAST`, `PICKUPACTION` and `AUTOLOOTTOGGLE`: with `SELFCAST` and
+  `FOCUSCAST`, every key the game's settings let you set. Each is explained.
+- After `[known:` the list offers every talent of your class, chosen or not, and the spells you learn later, not
+  only the spells you have now.
+- After `[spec:` outside Retail the list offers the talent groups `1` and `2` (primary and secondary). Mists of
+  Pandaria offered its specializations there, WoW Forever its one.
+- After `[equipped:` the list offers only the weapon and armor types your game has items of: no Bear Claws, Cat
+  Claws or Spears anywhere, Warglaives only in Retail, Thrown and the relics (Librams, Idols, Totems) only in
+  Classic Era, TBC and WoW Forever.
 - The minimap button shows the new round logo, whole, with its gold ring for a border. It stays whole in minimap
   button collectors too.
 

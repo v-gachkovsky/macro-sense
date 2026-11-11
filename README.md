@@ -221,9 +221,10 @@ and the history keeps no version of it.
 | `/` | slash commands, emotes, chat commands (Blizzard and addons) |
 | `/cast [` | macro conditions |
 | `[@` / `[target=` | unit ids, then `...target` / `...pet` after one (`party1target`) |
-| `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys (`lshift`, ...) |
+| `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys (`lshift`, ...), and the keys you set in the game's settings (`SELFCAST`, `FOCUSCAST`, `MOUSEOVERCAST`, `PICKUPACTION`, `AUTOLOOTTOGGLE`) |
 | `[form:` / `[stance:` | your forms with their names (`1` Bear Form, ...) |
-| `[spec:` / `[equipped:` / `[group:` / `[bar:` / `[btn:` | specializations, weapon and armor types, `party` / `raid`, bar pages, buttons |
+| `[spec:` / `[equipped:` / `[group:` / `[bar:` / `[btn:` | specializations in Retail (talent groups `1` and `2` in the other versions), the weapon and armor types your game has items of, `party` / `raid`, bar pages, buttons |
+| `[known:` | your spells, every talent of your class (chosen or not), and the spells you learn later |
 | `[pet:` | your pets by family (`Imp`, `Voidwalker`): every pet you had out, and in an English game the demons you can summon |
 | `/cast ` or after `]` / `;` | spells (another specialization's with its name), your pets' spells, then usable items from bags |
 | `/cast [pet:Imp] ` | only the Imp's spells, once your Imp has been out (each pet's spells are kept for each character) |

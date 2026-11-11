@@ -117,6 +117,9 @@ local STATES = {
 local ACTIONS = {
     SELFCAST = { "with your self-cast key held", "without your self-cast key held" },
     FOCUSCAST = { "with your focus-cast key held", "without your focus-cast key held" },
+    MOUSEOVERCAST = { "with your mouseover-cast key held", "without your mouseover-cast key held" },
+    PICKUPACTION = { "with your action pick-up key held", "without your action pick-up key held" },
+    AUTOLOOTTOGGLE = { "with your auto-loot key held", "without your auto-loot key held" },
 }
 local ALIASES = { modifier = "mod", stance = "form", worn = "equipped", button = "btn", actionbar = "bar" }
 local KEYS = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
