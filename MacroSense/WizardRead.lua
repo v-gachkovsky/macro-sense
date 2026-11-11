@@ -28,6 +28,13 @@ for _, p in ipairs(W.mountPlaces) do
 end
 local UNIT = {}
 for _, u in ipairs(W.units) do UNIT[u.key] = true end
+local EXTRA_OF = {} -- "mod:shift" -> "shift", "combat" -> "combat", "nomod" -> "none": a line of more spells
+for _, w in ipairs(W.ExtraWhens(W.KEYS)) do
+    if w.cond then EXTRA_OF[w.cond] = w.key end
+end
+
+-- A bare "/use 13" or "/use 14": a trinket, not the form's line.
+local function Trinket(l) return l.cmd == "use" and (l.rest == "13" or l.rest == "14") end
 
 -- A condition as the wizard writes it: "target=focus" -> "@focus", "modifier:shift" -> "mod:shift".
 local function Cond(c)
@@ -196,6 +203,30 @@ local function ReadCast(spec, rest, item)
         end
     end
     Checks(spec, read)
+end
+
+-- "/cast [combat] Berserking" before the form's line: one more spell cast with it, always or at a time of its own
+-- (in or out of combat, with a key held or none), the When row's as the form's line has them. Not one line of the
+-- kind: another branch, a unit, more conditions.
+local function ReadExtra(spec, cmd, rest)
+    local branches = ns.Explain.Branches(rest)
+    if not branches or #branches ~= 1 or #branches[1].groups > 1 or branches[1].action == "" then return end
+    local slot
+    for i = W.EXTRA, 1, -1 do
+        if not (spec.extra[i] and spec.extra[i].action) then slot = i end
+    end
+    if not slot then return end
+    local whens, own = {}, "always"
+    for c in W.When(spec):gmatch("[^,]+") do whens[Cond(c)] = true end
+    for _, raw in ipairs(branches[1].groups[1] or {}) do
+        local c = Cond(raw)
+        local mine = c:match("^nochanneling:") and spec.when.channel == "own" -- not while channeling it: its own
+        if not whens[c] and not mine then
+            if not EXTRA_OF[c] or own ~= "always" then return end
+            own = EXTRA_OF[c]
+        end
+    end
+    spec.extra[slot] = { action = (Action(branches[1].action, cmd == "use")), when = own }
 end
 
 -- "/castsequence [@focus,harm,nodead][] reset=10/target Corruption, Immolate".
@@ -417,14 +448,22 @@ local function ReadAs(lines, kind)
     local done = false -- the line of a /cast, a list or /target is read; more of them are not the form's
     local stop -- a pet macro's last /stopmacro: whom the /petdismiss after it is for
     local pet = {} -- what of a pet macro was read (ReadPet)
-    for _, l in ipairs(lines) do
+    -- /cast and /use: the last of their lines is the form's, read first (its When row is the more spells' too); the
+    -- ones before it are more spells cast with it, those after it not the form's.
+    local main
+    if kind == "cast" or kind == "use" then
+        for i, l in ipairs(lines) do
+            if (l.cmd == "cast" or l.cmd == "use") and not Trinket(l) then main = i end
+        end
+        if main then ReadCast(spec, lines[main].rest, kind == "use") end
+    end
+    for i, l in ipairs(lines) do
         local cmd, rest = l.cmd, l.rest
-        local trinket = cmd == "use" and (rest == "13" or rest == "14")
-        if not cmd then
-            -- #showtooltip, empty lines, text: nothing of the form
-        elseif (kind == "cast" or kind == "use") and cmd == kind and not done and not trinket then
-            ReadCast(spec, rest, kind == "use")
-            done = true
+        local trinket = Trinket(l)
+        if not cmd or i == main then
+            -- #showtooltip, empty lines, text: nothing of the form; the form's line, read
+        elseif main and (cmd == "cast" or cmd == "use") and not trinket then
+            if i < main then ReadExtra(spec, cmd, rest) end
         elseif kind == "mount" and cmd == "cast" and not done then
             ReadMount(spec, rest)
             done = true
@@ -523,6 +562,12 @@ function W.Read(text)
     if not kind then
         for _, l in ipairs(lines) do
             if l.cmd == "petattack" then kind = "pet" end
+        end
+    end
+    -- More spells before the form's line: the last /cast or /use is the macro's own, and says which it is.
+    if kind == "cast" or kind == "use" then
+        for _, l in ipairs(lines) do
+            if (l.cmd == "cast" or l.cmd == "use") and not Trinket(l) then kind = l.cmd end
         end
     end
     if kind ~= "mount" then return ReadAs(lines, kind) end

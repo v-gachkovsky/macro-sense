@@ -87,7 +87,8 @@
 - **Макрос має працювати лише за певних умов?** У бою чи поза ним, у стелсі, у групі, з улюбленцем, під час
   потокового заклинання чи ні, у формі; потім, для заклинання чи предмета, що застосовувати в решті випадків,
   а для автокасту пета (увімкнути чи вимкнути) — чи перемикати його навпаки решту часу.
-- **Бажаєте додати ще щось?** Те саме, що Also у формі.
+- **Бажаєте додати ще щось?** Те саме, що Also у формі, а для заклинання чи предмета ще й інші заклинання разом
+  із ним.
 - Наостанок назва і для кого макрос: для всіх ваших персонажів чи лише для цього. **Create macro** або Enter у
   назві зберігає його й відкриває в редакторі.
 
@@ -141,6 +142,9 @@
   ваші спели й предмети, які можна використати; підійде й будь-яка інша назва. Спел із кількома вивченими рангами
   (Classic) потім показує їх: спершу сам спел (найвищий ранг, і після вивчення нового), далі кожен ранг
   (`Fireball(Rank 3)`).
+- **Also cast**: заклинання чи предмети, які макрос застосовує теж, до трьох, кожне окремим рядком перед спелом:
+  без глобального кулдауну (Presence of Mind, Berserking), зілля. Кожне спрацьовує завжди, у бою чи поза ним або
+  із затиснутою клавішею (`/cast [combat] Berserking`), і умови When діють і на нього.
 - **On**: на кого, по черзі, до трьох: As usual (ваша ціль, або ви, коли гра кастує на вас сама), Your target,
   Mouseover, Focus, Group's tank, Group's healer (`@tank`, `@heal`), Yourself, Your pet, Party member 1–4,
   Target's target, Arena enemy 1–3, At the cursor.
@@ -190,6 +194,7 @@
 | /target Party member 1; Shift на 2, Ctrl на 3, Alt на 4 | `/target [mod:shift,@party2,help,nodead]...[@party1,help,nodead]` |
 | Пет: Attack на Mouseover, потім As usual; Shift: Follow; Ctrl: Move to the cursor | `/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]`, `/petfollow [mod:shift]`, `/petmoveto [mod:ctrl,@cursor]` |
 | Пет: Turn autocast on, Growl; When: Alone; Otherwise: turn autocast off | `/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl` |
+| Pyroblast як зазвичай; Also cast: Presence of Mind, у бою | `#showtooltip Pyroblast`, `/cast [combat] Presence of Mind`, `/cast Pyroblast` |
 | Frostbolt як зазвичай; Shift: Polymorph на Focus; трінкет 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Макроси з книги заклинань

@@ -40,6 +40,14 @@ Wizard.equipKeys = {
     { key = "none", name = "Without a key", cond = "nomod" },
 }
 
+-- More spells or items /cast and /use cast with their own, before it, a line each: up to EXTRA, each always or at a
+-- time of its own (Wizard.ExtraWhens), the When row's too.
+Wizard.EXTRA = 3
+local EXTRA_COMBAT = { { key = "combat", name = "In combat", cond = "combat" },
+    { key = "nocombat", name = "Out of combat", cond = "nocombat" } }
+local EXTRA_CONDS = { combat = "combat", nocombat = "nocombat" }
+for _, k in ipairs(Wizard.equipKeys) do EXTRA_CONDS[k.key] = k.cond end
+
 -- The slots an item can go to, by where the game says it goes (Sources.items' equipLoc): two for a trinket, a ring
 -- or a one-hand weapon, its own only for the rest. An item the game says nothing of (a name typed) gets them all.
 local SLOTS_OF = {
@@ -74,6 +82,26 @@ function Wizard.EquipKeys(keys)
         if k.key ~= "cmd" or mac then out[#out + 1] = k end
     end
     return out
+end
+
+-- When a line of more spells goes: always, in or out of combat, with a key held or none (`keys`: Cmd on a Mac).
+function Wizard.ExtraWhens(keys)
+    local out = {}
+    for _, k in ipairs(Wizard.EquipKeys(keys)) do
+        out[#out + 1] = k
+        if k.key == "always" then
+            for _, c in ipairs(EXTRA_COMBAT) do out[#out + 1] = c end
+        end
+    end
+    return out
+end
+
+-- Whether the form has more spells to cast with its own.
+function Wizard.HasExtra(spec)
+    for i = 1, Wizard.EXTRA do
+        if spec.extra and spec.extra[i] and spec.extra[i].action then return true end
+    end
+    return false
 end
 
 -- Where a mount macro calls which mount, as the form lists them; the macro tries water first, then flying, then the
@@ -418,7 +446,7 @@ end
 function Wizard.Fresh()
     local spec = { command = "cast", on = { "mouseover", "default", "none" }, only = "any", alive = true, keys = {},
         list = {}, reset = { seconds = 10 }, pet = "attack", channel = "party", mounts = {}, offMount = "safe",
-        when = {}, equip = {}, keeps = {} }
+        when = {}, equip = {}, keeps = {}, extra = {} }
     for i = 1, Wizard.EQUIP do spec.equip[i] = { slot = "", key = "always" } end
     for _, key in ipairs(Wizard.KEYS) do
         spec.keys[key] = { active = false, on = { "default", "none" }, pet = PET_KEYS[key] }
@@ -532,6 +560,23 @@ local function CastLine(spec)
         parts[i] = groups .. (c.keep and "!" or "") .. Wizard.Spelled(c.action)
     end
     return "/" .. spec.command .. " " .. table.concat(parts, "; ")
+end
+
+-- "/cast [combat] Berserking": the more spells, before the macro's own line, each its own condition, then the When
+-- row's (not while channeling it: its own spell); /use for an item.
+local function ExtraLines(spec)
+    local out = {}
+    for i = 1, Wizard.EXTRA do
+        local e = spec.extra and spec.extra[i]
+        if e and e.action then
+            local conds = { EXTRA_CONDS[e.when] }
+            local when = When(spec, e.action)
+            if when ~= "" then conds[#conds + 1] = when end
+            local groups = #conds > 0 and "[" .. table.concat(conds, ",") .. "] " or ""
+            out[#out + 1] = (e.action.item and "/use " or "/cast ") .. groups .. Wizard.Spelled(e.action)
+        end
+    end
+    return out
 end
 
 -- The names of a list in order, the rows left empty skipped.
@@ -818,21 +863,22 @@ function Wizard.Text(spec)
     else
         line = CastLine(spec)
     end
+    local extra = (spec.command == "cast" or spec.command == "use") and ExtraLines(spec) or {}
     local uses = {}
     if spec.trinket1 then uses[#uses + 1] = "/use 13" end
     if spec.trinket2 then uses[#uses + 1] = "/use 14" end
     -- A button to click (/click ExtraActionButton1): with the trinkets, before the spell.
     local click = spec.click and Trim(spec.click.name) ~= "" and "/click " .. Trim(spec.click.name) or nil
-    local bare = not line and #before == 0 and #uses == 0 and #last == 0
+    local bare = not line and #before == 0 and #uses == 0 and #last == 0 and #extra == 0
     if bare and not click then return nil end
     -- The icon and tooltip of the spell (a /target or pet macro has none to show, but trinkets have; a click alone
-    -- has nothing to show either). With trinkets first, a bare #showtooltip would show the first trinket: it names
-    -- the spell.
+    -- has nothing to show either). With trinkets or more spells first, a bare #showtooltip would show the first of
+    -- them: it names the spell.
     local lines = {}
     if (not target or #uses > 0) and not bare then
         local first = First(spec)
         lines[1] = icon and ("#showtooltip " .. icon)
-            or #uses > 0 and first and ("#showtooltip " .. Wizard.Spelled(first)) or "#showtooltip"
+            or (#uses > 0 or #extra > 0) and first and ("#showtooltip " .. Wizard.Spelled(first)) or "#showtooltip"
     end
     local pet = spec.command == "pet"
     if not pet then
@@ -848,6 +894,7 @@ function Wizard.Text(spec)
     if spec.nearest then lines[#lines + 1] = "/targetenemy [noharm][dead]" end
     for _, use in ipairs(uses) do lines[#lines + 1] = use end
     lines[#lines + 1] = click
+    for _, l in ipairs(extra) do lines[#lines + 1] = l end
     -- Auto attack right before the spell: on the target the lines before it may have changed (the nearest enemy).
     if spec.startattack then lines[#lines + 1] = "/startattack" end
     if pet then
