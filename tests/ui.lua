@@ -258,6 +258,8 @@ SlashCmdList, ChatTypeInfo = {}, { SAY = true }
 -- hash_SlashCmdList once it was used.
 gameMacroWindowShown, MACROS, SLASH_MACRO1 = 0, "Macros", "/macro"
 function ShowMacroFrame() gameMacroWindowShown = gameMacroWindowShown + 1 end
+function ShowUIPanel(f) f:Show() end
+function HideUIPanel(f) f:Hide() end
 SlashCmdList.MACRO = function() ShowMacroFrame() end
 hash_SlashCmdList = { ["/MACRO"] = SlashCmdList.MACRO }
 SLASH_CAST1, SLASH_USE1, SLASH_TARGET1, SLASH_SAY1 = "/cast", "/use", "/target", "/say"
@@ -3699,6 +3701,45 @@ do
 
     check("steps: one macro made", GetNumMacros() == count, GetNumMacros())
     DeleteMacro(GetMacroIndexByName("Burst"))
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(1)
+    NextFrame()
+end
+
+-- "MacroSense" in the game's macro window: the macro chosen there opens in MacroSense, in front, and the game's
+-- window closes (its macros and buttons are drawn above other windows). MacroSense open already stays open.
+do
+    local a = CreateMacro("Game A", 1, "/cast Fear")
+    local b = CreateMacro("Game B", 1, "/cast Heal")
+    Send("UPDATE_MACROS")
+    local chosen
+    MacroFrame.macroBase = 0
+    MacroFrame.GetSelectedIndex = function() return chosen end
+    MacroFrame.GetMacroDataIndex = function(self, i) return self.macroBase + i end
+    local button = ns.macroFrameButton
+    MacroSenseFrame:Hide()
+    ShowUIPanel(MacroFrame)
+    chosen = b
+    Fire(button, "OnClick", "LeftButton")
+    check("macro window button: opens the macro chosen there", MacroSenseFrame:IsShown() and raw() == "/cast Heal",
+        raw())
+    check("macro window button: the game's window closes", not MacroFrame:IsShown())
+    local raised = MacroSenseFrame.raised or 0
+    ShowUIPanel(MacroFrame)
+    chosen = nil
+    Fire(button, "OnClick", "LeftButton")
+    check("macro window button: open already, it stays open, in front", MacroSenseFrame:IsShown()
+        and (MacroSenseFrame.raised or 0) > raised and raw() == "/cast Heal", raw())
+    MacroSenseFrame:Hide()
+    ShowUIPanel(MacroFrame)
+    chosen = a
+    MacroFrame.GetMacroDataIndex = function() error("not loaded yet") end
+    Fire(button, "OnClick", "LeftButton")
+    check("macro window button: opens as it was when the game can't tell", MacroSenseFrame:IsShown()
+        and not MacroFrame:IsShown())
+    DeleteMacro(GetMacroIndexByName("Game B"))
+    DeleteMacro(GetMacroIndexByName("Game A"))
     Send("UPDATE_MACROS")
     ns.Window.SetScope("general")
     ns.Window.Select(1)
