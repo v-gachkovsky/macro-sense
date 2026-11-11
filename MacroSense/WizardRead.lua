@@ -296,6 +296,30 @@ local function ReadPet(spec, command, rest)
     if command == "attack" then Checks(spec, read) end
 end
 
+-- "/stopmacro [mod:shift,nomod:ctrl][nocombat]", then "/petdismiss": who dismisses the pet, as Wizard.lua writes
+-- it (the game's /petdismiss takes no conditions). "mod:" is the keys that tell the pet something else, so the macro
+-- without a key dismisses it; "nomod:" the keys that dismiss it; a condition alone the When row the other way
+-- round, when no line before had it.
+local function ReadDismiss(spec, stop)
+    local main, own, when = true, {}, {}
+    for group in (stop or ""):gmatch("%[([^%]]*)%]") do
+        local conds = {}
+        for c in group:gmatch("[^,]+") do conds[#conds + 1] = Cond(c) end
+        local mods, nomods = (conds[1] or ""):match("^mod:(.+)$"), (conds[#conds] or ""):match("^nomod:(.+)$")
+        if mods or (nomods and #conds == 1) then
+            main = mods ~= nil
+            for key in (nomods or ""):gmatch("[^/]+") do own[#own + 1] = key end
+        elseif #conds == 1 then
+            when[#when + 1] = conds[1]:match("^no(.+)$") or "no" .. conds[1]
+        end
+    end
+    if main then spec.pet = "dismiss" end
+    for _, key in ipairs(own) do
+        if spec.keys[key] then spec.keys[key].active, spec.keys[key].pet = true, "dismiss" end
+    end
+    if not HasWhen(spec.when) then spec.when = Group(when).when end
+end
+
 -- "/equipset [nocombat] PvP", "/equip [mod:shift] Shield", "/equipslot 14 Charm".
 local function ReadEquip(spec, command, rest)
     local groups = Groups(rest)
@@ -380,6 +404,7 @@ local function ReadAs(lines, kind)
     local spec = W.Fresh()
     spec.command = kind == "list" and "castsequence" or kind == "target" and "target" or kind or "cast"
     local done = false -- the line of a /cast, a list or /target is read; more of them are not the form's
+    local stop -- a pet macro's last /stopmacro: whom the /petdismiss after it is for
     for _, l in ipairs(lines) do
         local cmd, rest = l.cmd, l.rest
         local trinket = cmd == "use" and (rest == "13" or rest == "14")
@@ -401,6 +426,10 @@ local function ReadAs(lines, kind)
             done = true
         elseif kind == "target" and (cmd == "cleartarget" or cmd == "clearfocus") then
             ReadClear(spec, rest)
+        elseif kind == "pet" and cmd == "stopmacro" then
+            stop = rest
+        elseif kind == "pet" and cmd == "petdismiss" and rest == "" then
+            ReadDismiss(spec, stop)
         elseif kind == "pet" and PET_OF[cmd] then
             ReadPet(spec, PET_OF[cmd], rest)
         elseif kind == "equip" and MAIN[cmd] == "equip" then

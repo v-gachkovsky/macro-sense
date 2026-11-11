@@ -221,9 +221,9 @@ function Wizard.WhenGear(types)
     return out
 end
 
--- "combat,nostealth": what the macro checks before anything, in the order of Wizard.whens. `action`: what the
--- clause casts (a key's own spell), the macro's if nil.
-local function When(spec, action)
+-- { "combat", "nostealth" }: what the macro checks before anything, in the order of Wizard.whens. `action`: what
+-- the clause casts (a key's own spell), the macro's if nil.
+local function WhenConds(spec, action)
     local out = {}
     for _, w in ipairs(Wizard.whens) do
         local chosen = spec.when[w.key]
@@ -247,9 +247,20 @@ local function When(spec, action)
             end
         end
     end
-    return table.concat(out, ",")
+    return out
 end
+
+-- The same as one group's conditions: "combat,nostealth".
+local function When(spec, action) return table.concat(WhenConds(spec, action), ",") end
 Wizard.When = When
+
+-- When the When row doesn't hold: each of its conditions the other way round, a group each, so any of them will
+-- do ("[nocombat][group]" for "combat,nogroup"); "" when it always holds. Every condition has its "no" form.
+local function Unless(spec)
+    local out = {}
+    for _, c in ipairs(WhenConds(spec)) do out[#out + 1] = "[" .. (c:match("^no(.+)$") or "no" .. c) .. "]" end
+    return table.concat(out)
+end
 
 Wizard.LIST = 6 -- names a list takes in the form
 Wizard.RESETS = { "target", "combat", "shift", "ctrl", "alt" } -- what starts a sequence over, besides seconds
@@ -581,17 +592,45 @@ local function PetLine(spec, action, units, mod)
     return PET_COMMANDS[action] .. (groups ~= "" and groups ~= "[]" and " " .. groups or "")
 end
 
+-- The game's /petdismiss takes no conditions: with [mod:shift] or without, it dismisses the pet. So it comes last,
+-- after a /stopmacro for when it shouldn't: a key held that tells the pet something else ("[mod:shift]"), none of
+-- the keys that dismiss held ("[nomod:ctrl]"), the When row not holding ("[nocombat]"). `held`: the keys in use.
+local function DismissLines(spec, held)
+    local others, own = {}, {}
+    for _, key in ipairs(held) do
+        local list = spec.keys[key].pet == "dismiss" and own or others
+        list[#list + 1] = key
+    end
+    local main = spec.pet == "dismiss"
+    if not main and #own == 0 then return {} end
+    local stop = ""
+    if not main then
+        stop = "[nomod:" .. table.concat(own, "/") .. "]"
+    elseif #others > 0 then
+        stop = "[mod:" .. table.concat(others, "/") .. (#own > 0 and ",nomod:" .. table.concat(own, "/") or "") .. "]"
+    end
+    stop = stop .. Unless(spec)
+    local out = {}
+    if stop ~= "" then out[1] = "/stopmacro " .. stop end
+    out[#out + 1] = "/petdismiss"
+    return out
+end
+
+-- The lines of the pet's commands, and those that dismiss it, to go last.
 local function PetLines(spec)
     local held = {}
     for _, key in ipairs(Wizard.KEYS) do
         if spec.keys[key].active then held[#held + 1] = key end
     end
-    local lines = { PetLine(spec, spec.pet, spec.on, #held > 0 and ("nomod:" .. table.concat(held, "/")) or nil) }
+    local lines = {}
+    if spec.pet ~= "dismiss" then
+        lines[1] = PetLine(spec, spec.pet, spec.on, #held > 0 and ("nomod:" .. table.concat(held, "/")) or nil)
+    end
     for _, key in ipairs(held) do
         local k = spec.keys[key]
-        lines[#lines + 1] = PetLine(spec, k.pet, k.on, "mod:" .. key)
+        if k.pet ~= "dismiss" then lines[#lines + 1] = PetLine(spec, k.pet, k.on, "mod:" .. key) end
     end
-    return lines
+    return lines, DismissLines(spec, held)
 end
 
 -- "[nomounted,mod:shift] Ground; [nomounted,swimming] Water; [nomounted,flyable] Flying; [nomounted] Ground": the
@@ -688,7 +727,7 @@ end
 -- The macro, or nil while there is nothing to cast, use or target.
 function Wizard.Text(spec)
     local target = Wizard.IsTarget(spec.command) or spec.command == "pet" -- no spell, no icon of its own
-    local before, line, after, icon = {}, nil, nil, nil
+    local before, line, after, icon, last = {}, nil, nil, nil, {}
     if spec.command == "equip" then
         -- The icon of the first piece; an equipment set alone has none to show.
         before = EquipLines(spec)
@@ -699,7 +738,7 @@ function Wizard.Text(spec)
         lines, icon = MountLines(spec)
         line, after = lines and lines[1], lines and lines[2]
     elseif spec.command == "pet" then
-        before = PetLines(spec)
+        before, last = PetLines(spec)
     elseif target then
         before, line = TargetLines(spec)
     elseif Wizard.IsList(spec.command) then
@@ -710,7 +749,7 @@ function Wizard.Text(spec)
     local uses = {}
     if spec.trinket1 then uses[#uses + 1] = "/use 13" end
     if spec.trinket2 then uses[#uses + 1] = "/use 14" end
-    if not line and #before == 0 and #uses == 0 then return nil end
+    if not line and #before == 0 and #uses == 0 and #last == 0 then return nil end
     -- The icon and tooltip of the spell (a /target or pet macro has none to show, but trinkets have). With
     -- trinkets first, a bare #showtooltip would show the first trinket: it names the spell.
     local lines = {}
@@ -742,6 +781,8 @@ function Wizard.Text(spec)
     if spec.petattack then lines[#lines + 1] = "/petattack" end
     local say = spec.say and Trim(spec.say) or ""
     if say ~= "" then lines[#lines + 1] = "/" .. spec.channel .. " " .. say end
+    -- After a /stopmacro nothing else would happen.
+    for _, l in ipairs(last) do lines[#lines + 1] = l end
     return table.concat(lines, "\n")
 end
 
