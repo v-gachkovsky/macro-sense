@@ -3207,6 +3207,25 @@ do
     check("wizard: smaller to fit the screen", small and small < 1 and math.abs(small * MacroSenseWizard.height - 752)
         < 0.01 and MacroSenseWizard.scale == 1, tostring(small))
     UIParent.GetHeight = nil
+    -- Shift and Ctrl together and a right click: rows of their own when asked for, two rows taller; turned off, they
+    -- cast nothing. Not for /target.
+    local short = MacroSenseWizard.height
+    check("wizard: two keys and a right click hidden at first", C("moreKeys"):IsShown() and not C("right"):IsShown()
+        and not C("rightCast"):IsShown())
+    Fire(C("moreKeys"), "OnClick")
+    check("wizard: two keys and a right click asked for", C("right"):IsShown() and C("shiftctrl"):IsShown()
+        and C("rightOn"):IsShown() and MacroSenseWizard.height == short + 64, MacroSenseWizard.height)
+    Fire(C("right"), "OnClick")
+    pick(C("rightOn"), "Yourself")
+    check("wizard: a right click on yourself",
+        shown() == "#showtooltip\n/cast [btn:2,@player][@mouseover,harm,nodead][] Frostbolt", shown())
+    pick(C("command"), "/target")
+    check("wizard: no right click for /target", not C("moreKeys"):IsShown() and not C("right"):IsShown())
+    pick(C("command"), "/cast")
+    pick(C("on2"), "As usual")
+    Fire(C("moreKeys"), "OnClick")
+    check("wizard: turned off, it casts nothing", not C("right"):IsShown() and MacroSenseWizard.height == short
+        and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
 
     -- A mount: your mounts offered first, one for each place; a key's own; no units; off it on a press.
     local journal = C_MountJournal
@@ -5823,7 +5842,8 @@ do
         "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "inside, plot, editor or neighborhood", "a bar page 1-6",
         "a form number, 0 = no form", "In any specialization", "In the primary specialization",
-        "In the secondary specialization", "With any gear", "Alive only", "Dead only", "Dead or alive",
+        "In the secondary specialization", "With any gear", "Alive only", "Dead only", "Dead or alive", "Right click",
+        "With Shift and Ctrl held", "On a right click",
         "a specialization number", "Target", "Focus", "Assist", "Pet" }) do add(text) end
     local SAME = { Mac = true, Retail = true, Monokai = true, ["-"] = true, ["1-5"] = true } -- the same in Ukrainian
     local missing, unused, notForms = {}, {}, {}

@@ -147,7 +147,9 @@ is set.
   alive**. It follows the spell you pick, when the game knows what it is for; a key's own spell is checked for what
   it is for.
 - **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
-  fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
+  fallback of their own (Alt: Frostbolt on Mouseover, then Your target). For `/cast` and `/use`, **Two keys, right
+  click** adds two more rows: Shift and Ctrl held together (`[mod:shift,mod:ctrl]`, tried before the keys), and a
+  right click on the macro's button (`[btn:2]`, tried after them).
 - **!** at the end of each spell's box, for `/cast` and `/use`: `!` before that spell (`!Shoot`). Pressed again,
   the macro doesn't turn off what it turned on: Auto Shot, Stealth, a form or an aura. Each spell has its own, the
   macro's, each key's and the one it casts otherwise; in the questions it is **Don't turn it off** under the

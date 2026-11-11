@@ -32,7 +32,7 @@ for _, u in ipairs(W.units) do UNIT[u.key] = true end
 -- A condition as the wizard writes it: "target=focus" -> "@focus", "modifier:shift" -> "mod:shift".
 local function Cond(c)
     c = Trim(c):lower():gsub("%s+", "")
-    c = c:gsub("^target=", "@"):gsub("^modifier", "mod"):gsub("^nomodifier", "nomod")
+    c = c:gsub("^target=", "@"):gsub("^modifier", "mod"):gsub("^nomodifier", "nomod"):gsub("^button", "btn")
     c = c:gsub("^stance", "form"):gsub("^nostance", "noform"):gsub("^worn", "equipped"):gsub("^noworn", "noequipped")
     return c
 end
@@ -49,7 +49,10 @@ local function Group(conds)
         if unit then
             g.unit = unit
         elseif KEY_OF[c] then
-            g.key = KEY_OF[c]
+            g.mods = g.mods or {}
+            g.mods[#g.mods + 1] = KEY_OF[c]
+        elseif c == "btn:2" or c == "btn:rightbutton" then
+            g.right = true
         elseif c == "help" or c == "harm" or c == "exists" then
             g.check = c
         elseif c == "nodead" then
@@ -77,6 +80,16 @@ local function Group(conds)
         else
             g.other = true
         end
+    end
+    -- A key; Shift and Ctrl together; a right click. Other keys together, or a key and a click: not the form's.
+    local mods = g.mods or {}
+    table.sort(mods)
+    if #mods == 2 and mods[1] == "ctrl" and mods[2] == "shift" and not g.right then
+        g.key = "shiftctrl"
+    elseif #mods > 1 or (#mods == 1 and g.right) then
+        g.other = true
+    else
+        g.key = mods[1] or (g.right and "right") or nil
     end
     if g.unit == "default" and g.check then g.unit = "target" end
     if not UNIT[g.unit] then g.other = true end
@@ -169,7 +182,7 @@ local function ReadCast(spec, rest, item)
         end
     end
     spec.on = Pad(#main > 0 and main or { "default" }, 3)
-    for _, key in ipairs(W.KEYS) do
+    for _, key in ipairs(W.CAST_KEYS) do
         local k = spec.keys[key]
         if k.active then
             Pad(k.on, 2)

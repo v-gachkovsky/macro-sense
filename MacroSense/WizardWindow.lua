@@ -20,12 +20,17 @@ local ANSWERS, ANSWER_W = 18, 280 -- the answers a question shows: two columns o
 local MATCHES, MATCH_H = 6, 20 -- names shown under a spell box at a time; the wheel scrolls through the rest
 local LIST_W = 260 -- the list under a spell box is at least this wide, so long names fit under a narrow box
 local MAX_BODY = MAX_MACRO_CHARACTERS or 255
-local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd" }
+local KEY_NAMES = { shift = "Shift", ctrl = "Ctrl", alt = "Alt", cmd = "Cmd", shiftctrl = "Shift + Ctrl",
+    right = "Right click" }
+-- A key's name in the form, in the chosen language; and in the names of its controls ("keepShiftctrl").
+local function KeyName(key) return ns.L[KEY_NAMES[key]] end
+local function KeyId(key) return (key:gsub("^%l", string.upper)) end
 
 local frame, preview, counter, createBtn
 local form, steps -- the form's parts and the questions': one of them is shown
 local blocks = {} -- parts of the form, one under another: what (one / list / name / pet), on whom, the rest
 local keyRows = {} -- per key: its spell box, pet command and unit lists, placed by Arrange
+local moreKeys = false -- Shift + Ctrl and a right click asked for (Wizard.MORE), shown while in use too
 local panels = {} -- the answers of a question, by its kind (Questions.Ask): a choice, a spell box, checks...
 local controls = {} -- by name: what the tests drive and what starts over with each new form
 local spec -- the answers so far
@@ -492,6 +497,16 @@ function Arrange()
     for _, name in ipairs({ "keepMain", "keepOtherwise", "keepShift", "keepCtrl", "keepAlt", "keepCmd" }) do
         if controls[name] then controls[name]:SetShown(casts) end
     end
+    -- Shift and Ctrl together and a right click, for /cast and /use: asked for, or in use.
+    local more = casts and (moreKeys or spec.keys.shiftctrl.active or spec.keys.right.active)
+    controls.moreKeys:SetShown(casts)
+    for _, key in ipairs(W.MORE) do
+        local row = keyRows[key]
+        local parts = { controls[key], row.box, row.on, row["then"], row.word, controls["keep" .. KeyId(key)] }
+        for _, part in ipairs(parts) do part:SetShown(more) end
+        row.pet:Hide()
+    end
+    blocks.keys.height = 8 + 22 + (#keys + (more and #W.MORE or 0)) * ROW
     -- The When rows, and Otherwise under them for /cast and /use.
     blocks.when.height = (casts and 4 or 3) * ROW + 2
     local shown = {}
@@ -636,6 +651,10 @@ local function ShowStep()
     controls.question:SetText(asked.text or "")
     controls.hint:SetText(asked.hint or "")
     for kind, panel in pairs(panels) do panel:SetShown(kind == asked.kind) end
+    -- Shift and Ctrl together and a right click are for /cast and /use.
+    for _, key in ipairs(W.MORE) do
+        controls["step" .. KeyId(key)]:SetShown(spec.command == "cast" or spec.command == "use")
+    end
     for i = 1, ANSWERS do
         local b, answer = controls["answer" .. i], asked.answers and asked.answers[i]
         b:SetShown(answer ~= nil)
@@ -822,9 +841,13 @@ local function BuildSteps()
     function name:Refresh() self:SetText(spec.byName or "") end
     controls.stepByName = name
 
-    -- The keys held: what each one does comes next.
-    for i, key in ipairs(keys) do
-        Check(panels.keys, "step" .. KEY_NAMES[key], KEY_NAMES[key], function() return spec.keys[key].active end,
+    -- The keys held, and for /cast and /use Shift and Ctrl together and a right click: what each one does comes
+    -- next.
+    local stepKeys = {}
+    for _, key in ipairs(keys) do stepKeys[#stepKeys + 1] = key end
+    for _, key in ipairs(W.MORE) do stepKeys[#stepKeys + 1] = key end
+    for i, key in ipairs(stepKeys) do
+        Check(panels.keys, "step" .. KeyId(key), KeyName(key), function() return spec.keys[key].active end,
             function(on) spec.keys[key].active = on end):SetPoint("TOPLEFT", PAD, -(i - 1) * 26)
     end
     if controls.stepCmd then CmdTip(controls.stepCmd) end
@@ -1099,15 +1122,30 @@ local function Build()
     blocks.keys = Block(8 + 22 + #keys * ROW)
     Text(blocks.keys, L["With a key held"], PAD, -8, "dim")
     blocks.keys.on = Text(blocks.keys, L["on"], X + 158, -8, "dim")
-    for i, key in ipairs(keys) do
+    -- Shift and Ctrl together and a right click: rows of their own under the keys, when asked for. Turned off,
+    -- they cast nothing.
+    local more = Check(blocks.keys, "moreKeys", L["Two keys, right click"], function()
+        return moreKeys or spec.keys.shiftctrl.active or spec.keys.right.active
+    end, function(on)
+        moreKeys = on
+        for _, key in ipairs(W.MORE) do spec.keys[key].active = spec.keys[key].active and on end
+        Arrange()
+    end)
+    more:SetPoint("TOPLEFT", X + 316, -6)
+    Tip(more, L["Two keys, right click"], L["Rows for Shift and Ctrl held together ([mod:shift,mod:ctrl]) and for a "
+        .. "right click on the macro's button ([btn:2]), each with its own spell or units, as a key."])
+    local rowKeys = {}
+    for _, key in ipairs(keys) do rowKeys[#rowKeys + 1] = key end
+    for _, key in ipairs(W.MORE) do rowKeys[#rowKeys + 1] = key end
+    for i, key in ipairs(rowKeys) do
         local y = -30 - (i - 1) * ROW
-        Check(blocks.keys, key, KEY_NAMES[key], function() return spec.keys[key].active end,
+        Check(blocks.keys, key, KeyName(key), function() return spec.keys[key].active end,
             function(on) spec.keys[key].active = on end):SetPoint("TOPLEFT", PAD, y - 1)
         local box = SpellBox(blocks.keys, 150, L["same spell"], function() return spec.keys[key].action end,
             function(action) SetKeyAction(key, action) end)
         box:SetPoint("TOPLEFT", X, y)
         controls[key .. "Cast"] = box
-        KeepCheck(box, "keep" .. KEY_NAMES[key], function() return key end)
+        KeepCheck(box, "keep" .. KeyId(key), function() return key end)
         local row = { y = y, box = box, word = Text(blocks.keys, L["then"], X + 284, y - 5, "dim") }
         row.pet = Choice(blocks.keys, key .. "Pet", 150, petActions, function() return spec.keys[key].pet end,
             function(action)
@@ -1278,6 +1316,7 @@ end
 -- A fresh form, for a macro in `tab`: the questions from the first, or the form.
 function WizardWindow.Open(tab)
     spec, scope, suggested, editing = W.Fresh(), tab or "general", nil, nil -- before the form: its controls read them
+    moreKeys = false
     if not frame then Build() end
     controls.name:SetText("")
     controls.stepName:SetText("")
