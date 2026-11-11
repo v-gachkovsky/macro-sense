@@ -188,19 +188,22 @@ check("every condition the other way round too", names("/cast [nomou|") == "nomo
     names("/cast [nomou|") .. " | " .. names("/cast [nostea|") .. " | " .. names("/cast [nopar|"))
 local noknown = ns.Completion.Get(ctx("/cast [noknow|"))[1]
 check("a \"no\" form that needs a value gets ':'", noknown and noknown.insert == "noknown:", noknown and noknown.insert)
--- A client of an older expansion (Classic Era: 0) is not offered what came later.
-ns.HasExpansion = function(since) return not since or since <= 0 end
+-- A client of an older expansion (Classic Era: 0) is not offered what came later: no flying before The Burning
+-- Crusade.
+LE_EXPANSION_LEVEL_CURRENT = 0
 check("skyriding, pet battles, PvP talents not in Classic Era", names("/cast [advfl|") == ""
-    and names("/cast [petba|") == "" and names("/cast [pvpta|") == "" and names("/cast [flyab|") == "flyable,noflyable",
-    names("/cast [advfl|") .. " | " .. names("/cast [flyab|"))
-ns.HasExpansion = nil
+    and names("/cast [petba|") == "" and names("/cast [pvpta|") == "", names("/cast [advfl|"))
+check("no flying in Classic Era", names("/cast [flyab|") == "" and names("/cast [flyi|") == "",
+    names("/cast [flyab|") .. " | " .. names("/cast [flyi|"))
+LE_EXPANSION_LEVEL_CURRENT = 1
+check("flying from The Burning Crusade on", names("/cast [flyab|") == "flyable,noflyable"
+    and names("/cast [flyi|") == "flying,noflying", names("/cast [flyab|") .. " | " .. names("/cast [flyi|"))
+LE_EXPANSION_LEVEL_CURRENT = nil
 -- Retail's own: [pvpcombat] (PvP talents at work, since Legion) and [house] (11.2.7) with where you are: inside, on
--- the plot, in the editor, in the neighborhood. Retail let go of [talent] in Dragonflight; older clients still offer
--- it.
+-- the plot, in the editor, in the neighborhood. [talent] goes by talents in rows: Mists of Pandaria has them,
+-- Retail let go of them in Dragonflight, Classic Era and TBC have points in talents.
 do
-    local function At(level)
-        ns.HasExpansion = function(since, gone) return (not since or since <= level) and (not gone or level < gone) end
-    end
+    local function At(level) LE_EXPANSION_LEVEL_CURRENT = level end
     At(11)
     check("retail: PvP combat and the house", names("/cast [pvpco|") == "pvpcombat,nopvpcombat"
         and names("/cast [hou|") == "house,nohouse", names("/cast [pvpco|") .. " | " .. names("/cast [hou|"))
@@ -214,10 +217,57 @@ do
     check("retail: what they mean, on the mouse", about("/use [nopvpcombat] X", "nopvp")
         == "Your PvP talents don't work here." and about("/use [house:editor] X", "editor"):find("^You are at a house")
         ~= nil, about("/use [house:editor] X", "editor"))
+    At(4)
+    check("mists of pandaria: [talent]", names("/cast [talen|") == "talent,notalent", names("/cast [talen|"))
     At(0)
-    check("classic era: [talent], no house", names("/cast [talen|") == "talent,notalent"
-        and names("/cast [hou|") == "" and names("/cast [pvpco|") == "", names("/cast [talen|"))
-    ns.HasExpansion = nil
+    check("classic era: no [talent], no house", names("/cast [talen|") == "" and names("/cast [hou|") == ""
+        and names("/cast [pvpco|") == "", names("/cast [talen|"))
+    LE_EXPANSION_LEVEL_CURRENT = nil
+end
+-- WoW Forever tells the expansion of Classic Era, but its game is Retail's: it knows every condition but
+-- [pvptalent] (/ms conditions there). It has no flying, no PvP talents, no extra action bar, no housing, and
+-- Retail's talent tree (its interface's code): those aren't offered. Pet battles are.
+do
+    LE_EXPANSION_LEVEL_CURRENT, WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = 0, 18, 18
+    local gone = {}
+    for _, prefix in ipairs({ "pvpta", "pvpco", "extrab", "hou", "flyab", "flyi", "advfl", "talen" }) do
+        if names("/cast [" .. prefix .. "|") ~= "" then gone[#gone + 1] = names("/cast [" .. prefix .. "|") end
+    end
+    check("forever: not what it doesn't have", #gone == 0, table.concat(gone, " | "))
+    check("forever: pet battles, vehicles, bosses 6-8", names("/cast [petba|") == "petbattle,nopetbattle"
+        and names("/cast [vehic|"):find("^vehicleui,novehicleui") ~= nil
+        and names("/cast [@boss|"):find("boss8") ~= nil, names("/cast [petba|") .. " | " .. names("/cast [vehic|"))
+    LE_EXPANSION_LEVEL_CURRENT, WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = nil, nil, nil
+end
+-- A condition this version of the game doesn't know, or that has nothing to go by in it, is a warning: WoW Forever
+-- takes [pvptalent] as met and says in the chat it doesn't know it.
+do
+    local function warned(raw)
+        local out = {}
+        for _, e in ipairs(ns.Highlight.Errors(raw)) do
+            out[#out + 1] = e.severity .. ":" .. raw:sub(e.from, e.to) .. "=" .. e.message .. "/" .. (e.short or "")
+        end
+        return table.concat(out, " | ")
+    end
+    LE_EXPANSION_LEVEL_CURRENT, WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = 0, 18, 18
+    check("forever: [pvptalent] warned", warned("/cast [pvptalent:Medallion] A; B") == "warning:pvptalent="
+        .. 'condition "pvptalent" doesn\'t work in this version of the game/not in this game version',
+        warned("/cast [pvptalent:Medallion] A; B"))
+    check("forever: its \"no\" form, [house] too", warned("/cast [nopvptalent:X,nohouse] A") == "warning:nopvptalent="
+        .. 'condition "nopvptalent" doesn\'t work in this version of the game/not in this game version | '
+        .. 'warning:nohouse=condition "nohouse" doesn\'t work in this version of the game/not in this game version',
+        warned("/cast [nopvptalent:X,nohouse] A"))
+    check("forever: pet battles and [known] are fine", warned("/cast [petbattle] A; [known:B] B") == "",
+        warned("/cast [petbattle] A; [known:B] B"))
+    WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = nil, nil
+    check("classic era: [flying] warned", warned("/cast [flying] A"):find("^warning:flying=") ~= nil,
+        warned("/cast [flying] A"))
+    LE_EXPANSION_LEVEL_CURRENT = 11
+    check("retail: [talent] warned, [house] fine", warned("/cast [talent:1/2] A; [house] B")
+        :find("^warning:talent=[^|]*$") ~= nil, warned("/cast [talent:1/2] A; [house] B"))
+    LE_EXPANSION_LEVEL_CURRENT = nil
+    check("an unknown client: no warning", warned("/cast [talent:1/2,pvptalent:X,house,flying] A") == "",
+        warned("/cast [talent:1/2,pvptalent:X,house,flying] A"))
 end
 local castItem = ns.Completion.Get(ctx("/cas|"))[1]
 check("command inserts space", castItem and castItem.insert == "cast ", castItem and castItem.insert)
@@ -568,13 +618,13 @@ do
     check("units: the quest giver, Retail's left interact", names("/cast [@questn|") == "questnpc"
         and names("/cast [@anyleft|") == "anyleftinteract", names("/cast [@questn|"))
     check("units: no nameplates", names("/cast [@namep|") == "", names("/cast [@namep|"))
-    ns.HasExpansion = function(since) return not since or since <= 11 end
+    LE_EXPANSION_LEVEL_CURRENT = 11
     check("units: bosses 6-8 in Retail", names("/cast [@boss|"):find("boss5,boss6,boss7,boss8") ~= nil,
         names("/cast [@boss|"))
-    ns.HasExpansion = function(since) return not since or since <= 0 end
+    LE_EXPANSION_LEVEL_CURRENT = 0
     check("units: 5 bosses in older clients", names("/cast [@boss|"):find("boss5") ~= nil
         and names("/cast [@boss|"):find("boss6") == nil, names("/cast [@boss|"))
-    ns.HasExpansion = nil
+    LE_EXPANSION_LEVEL_CURRENT = nil
 end
 -- The words those commands take.
 do

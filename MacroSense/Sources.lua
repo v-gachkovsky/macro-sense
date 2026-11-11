@@ -172,13 +172,6 @@ function ns.CommandSince(name)
     end
 end
 
--- Whether this client's game carries out what came with `since` (unknown clients do).
-function ns.HasExpansion(since, gone)
-    local level = LE_EXPANSION_LEVEL_CURRENT
-    if not level then return true end
-    return (not since or level >= since) and (not gone or level < gone)
-end
-
 -- The ID of a spell you know, by its name, or nil.
 function ns.SpellID(name)
     if C_Spell and C_Spell.GetSpellInfo then

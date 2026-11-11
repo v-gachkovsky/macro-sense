@@ -25,8 +25,18 @@ and the project uses [Semantic Versioning](https://semver.org/).
   and `/petautocasttoggle`, the pages after `/changeactionbar` and `/swapactionbar`, the markers by number and color
   after `/worldmarker` and `/clearworldmarker` (`all` too). Each has its hover help.
 
+- A condition your version of the game doesn't have is marked with a warning: "condition "talent" doesn't work in
+  this version of the game". In WoW Forever that is `[pvptalent]`: the game doesn't know it, takes it as met and
+  says so in the chat.
+
 ### Changed
-- `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight.
+- `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight. Nor in Classic Era and TBC,
+  whose talents have no rows.
+- WoW Forever gets the conditions of its game, Retail's, not those of Classic Era: `[petbattle]`, `@boss6` to
+  `@boss8` are suggested there now. Not suggested there: what Forever doesn't have, which is flying (`[flyable]`,
+  `[flying]`, `[advflyable]`), PvP talents (`[pvptalent]`, `[pvpcombat]`), the extra action bar (`[extrabar]`),
+  housing (`[house]`) and talents in rows (`[talent]`).
+- Classic Era: `[flyable]` and `[flying]` aren't suggested, there is no flying there.
 - The minimap button shows the new round logo, whole, with its gold ring for a border. It stays whole in minimap
   button collectors too.
 
