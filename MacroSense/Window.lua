@@ -2013,10 +2013,11 @@ function Window.Toggle()
     Load(last >= first and first or nil)
 end
 
--- The editor opened as Toggle opens it ("Macros" in the game menu, /macro); open already, it comes to the front.
+-- The editor opened as Toggle opens it ("Macros" in the game menu, /macro), and in front, open already or not: a
+-- window the click raised (the game's macro window) stays behind it.
 function Window.Show()
-    if frame and frame:IsShown() then return frame:Raise() end
-    Window.Toggle()
+    if not (frame and frame:IsShown()) then Window.Toggle() end
+    frame:Raise()
 end
 
 -- The editor on macro `index`, opened if it is closed (Shift + right-click on an action bar). Unsaved changes

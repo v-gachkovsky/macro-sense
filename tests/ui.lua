@@ -3731,6 +3731,25 @@ do
     Fire(button, "OnClick", "LeftButton")
     check("macro window button: open already, it stays open, in front", MacroSenseFrame:IsShown()
         and (MacroSenseFrame.raised or 0) > raised and raw() == "/cast Heal", raw())
+    -- Closed, with no macro chosen there (right after login, say): it opens in front of the game's window, which the
+    -- click raised.
+    MacroSenseFrame:Hide()
+    ShowUIPanel(MacroFrame)
+    raised = MacroSenseFrame.raised or 0
+    Fire(button, "OnClick", "LeftButton")
+    check("macro window button: closed, it opens in front", MacroSenseFrame:IsShown()
+        and (MacroSenseFrame.raised or 0) > raised and not MacroFrame:IsShown())
+    -- Broken: the game's window stays open, and the chat says so, with the error to send. The game gets it too.
+    MacroSenseFrame:Hide()
+    ShowUIPanel(MacroFrame)
+    local show = ns.Window.Show
+    ns.Window.Show = function() error("Window.lua:1: broken on purpose", 0) end
+    local okClick, errClick = pcall(Fire, button, "OnClick", "LeftButton")
+    ns.Window.Show = show
+    check("macro window button: broken, the game's window stays", MacroFrame:IsShown() and not okClick
+        and tostring(errClick):find("broken on purpose") ~= nil, tostring(errClick))
+    check("macro window button: broken, the chat says why", printed[#printed]:find("the editor couldn't open because "
+        .. "of an error: Window.lua:1: broken on purpose. Please send this line", 1, true) ~= nil, printed[#printed])
     MacroSenseFrame:Hide()
     ShowUIPanel(MacroFrame)
     chosen = a

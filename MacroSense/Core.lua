@@ -94,7 +94,13 @@ local function AddMacroFrameButton()
     b:SetScript("OnClick", function()
         local index = ChosenInMacroFrame()
         HideUIPanel(MacroFrame)
-        if index then ns.Window.Open(index) else ns.Window.Show() end
+        local ok, err = pcall(function() if index then ns.Window.Open(index) else ns.Window.Show() end end)
+        if ok then return end
+        -- The game shows no one its errors at first: the game's window comes back, and the chat tells.
+        ShowUIPanel(MacroFrame)
+        ns.Print("the editor couldn't open because of an error: %s. Please send this line and what /ms bug shows",
+            tostring(err))
+        error(err, 0)
     end)
     ns.macroFrameButton = b
 end

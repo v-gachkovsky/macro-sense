@@ -50,9 +50,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   button collectors too.
 
 ### Fixed
-- The **MacroSense** button in the game's macro window opens the macro chosen there and brings MacroSense to the
-  front, and the game's window closes. Before, when MacroSense was open already, the button closed it, and the
-  game's window, open on top, covered part of it.
+- The **MacroSense** button in the game's macro window: MacroSense opens in front, on the macro chosen there, and
+  the game's window closes. A click no longer closes MacroSense when it is open already. If MacroSense can't open,
+  the game's window stays and the chat says why, with the error to send.
 
 ## [0.17.0] - 2026-11-09
 
