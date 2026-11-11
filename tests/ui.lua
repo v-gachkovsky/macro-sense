@@ -1317,6 +1317,28 @@ do
     MacroSenseIconPicker:Hide()
     Fire(MacroSenseIconButton, "OnClick")
     check("icon names: once a session", Found("death") == "1051", Found("death"))
+    -- An icon's file name or file ID, as Wowhead shows them, finds that icon, first. The game has no names for its
+    -- icons, but finds one by its path.
+    GetFileIDFromPath = function(path) return ({ ["interface\\icons\\inv_misc_book_09"] = 133741 })[path:lower()] end
+    check("icon by its file name", Found("inv_misc_book_09") == "133741"
+        and Found("Interface/Icons/INV_Misc_Book_09.blp") == "133741", Found("inv_misc_book_09"))
+    check("icon by its file ID", Found("133741") == "133741", Found("133741"))
+    check("icon by file: not a word the game has no file of, nor a short number", Found("book") == ""
+        and Found("12") ~= "12", Found("book"))
+    Found("inv_misc_book_09")
+    local typedTip, picked = {}, nil
+    GameTooltip.SetText = function(_, text) typedTip = { text } end
+    for _, o in ipairs(created) do
+        if o.kind == "Button" and o.entry and o.entry.icon == 133741 and o:IsShown() then
+            Fire(o, "OnEnter")
+            Fire(o, "OnClick")
+            picked = o.selected:IsShown()
+        end
+    end
+    GameTooltip.SetText = nil
+    check("icon by file: its name as typed, and a click picks it", typedTip[1] == "inv_misc_book_09" and picked,
+        tostring(typedTip[1]))
+    GetFileIDFromPath = nil
     -- Your own icons from Interface\Icons: before the game's, by their file name, saved by their path.
     local order = {}
     Found("")

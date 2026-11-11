@@ -1,7 +1,7 @@
 -- Icon grid for macros: the question mark first (#showtooltip picks the icon), then icons of your spells
 -- and items, then every macro icon the game offers, with icons you put in Interface\Icons yourself. Search
 -- matches the names of your spells and items, of any spell or achievement that uses an icon (IconNames.lua),
--- and icon file names where the game gives them.
+-- and icon file names where the game gives them. An icon's file name or file ID typed in finds that icon.
 local _, ns = ...
 
 local MIN_COLS, MIN_ROWS, SIZE, GAP, PAD = 10, 7, 34, 4, 10
@@ -112,6 +112,19 @@ local function SetOffset(v)
     Refresh()
 end
 
+-- The icon `q` names by its file name or file ID, as Wowhead shows them ("inv_misc_book_09",
+-- "Interface\Icons\INV_Misc_Book_09.blp", "133741"), or nil. The game has no names for its icons, but finds one by
+-- its path. Icon file IDs have six digits or seven.
+local function Typed(q)
+    if q:find("%s") then return nil end
+    if q:find("^%d+$") then return #q >= 6 and #q <= 7 and tonumber(q) or nil end
+    if not GetFileIDFromPath then return nil end
+    local path = q:gsub("%.blp$", ""):gsub("/", "\\")
+    if not path:find("\\") then path = "Interface\\Icons\\" .. path end
+    local ok, id = pcall(GetFileIDFromPath, path)
+    return ok and type(id) == "number" and id > 0 and id or nil
+end
+
 local function Matches(entry, q)
     if entry.name and ns.Completion.Lower(entry.name):find(q, 1, true) then return true end
     local names = ns.IconNames.For(entry.icon)
@@ -125,8 +138,11 @@ local function Filter(keep)
         shown = all
     else
         shown = {}
+        -- An icon typed by its file name or ID comes first, by the name typed.
+        local typed = Typed(q)
+        if typed then shown[1] = { icon = typed, name = strtrim(search:GetText()) } end
         for _, entry in ipairs(all) do
-            if Matches(entry, q) then shown[#shown + 1] = entry end
+            if entry.icon ~= typed and Matches(entry, q) then shown[#shown + 1] = entry end
         end
     end
     slider:SetRange(MaxOffset(), rows)
@@ -154,7 +170,16 @@ local function Create()
     search:SetScript("OnTextChanged", function() Filter() end)
     local hint = ns.Text(frame, 11, "dim")
     hint:SetPoint("LEFT", search, "RIGHT", 8, 0)
-    hint:SetText(ns.L["Search by name"])
+    hint:SetText(ns.L["Name, file name or ID"])
+    search:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOMLEFT")
+        GameTooltip:AddLine(ns.L["Search by name"], 1, 1, 1)
+        GameTooltip:AddLine(ns.L["Finds icons by the names of spells, items and achievements that use them. An "
+            .. "icon's file name or file ID, as Wowhead shows them (inv_misc_book_09, 133741), finds that icon."],
+            0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    search:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
     local close = ns.Button(frame, "x", 24, function() frame:Hide() end)
     close:SetPoint("TOPRIGHT", -PAD, -PAD)

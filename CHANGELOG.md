@@ -41,6 +41,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   **Dead friends** among the answers step by step. A macro with `[dead]` opens in the wizard too. **Alive only**
   and **Dead or alive** stay.
 
+- The icon search finds an icon by its file name or file ID, as Wowhead shows them: `inv_misc_book_09`,
+  `Interface\Icons\INV_Misc_Book_09.blp` or `133741`. That icon comes first, and a click picks it.
+
 ### Changed
 - `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight. Nor in Classic Era and TBC,
   whose talents have no rows.

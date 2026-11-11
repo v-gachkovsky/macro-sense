@@ -1421,6 +1421,11 @@ ns.locales.uk = {
     ["%d icons"] = { "%d іконка", "%d іконки", "%d іконок" },
     ["%s (looking up names: %d%%)"] = "%s (шукаю назви: %d%%)",
     ["Search by name"] = "Пошук за назвою",
+    ["Name, file name or ID"] = "Назва, ім'я файлу чи ID",
+    ["Finds icons by the names of spells, items and achievements that use them. An icon's file name or file ID, as "
+        .. "Wowhead shows them (inv_misc_book_09, 133741), finds that icon."] = "Шукає іконки за назвами "
+        .. "заклинань, предметів і досягнень, у яких вони є. Ім'я файлу іконки чи її ID, як їх показує Wowhead "
+        .. "(inv_misc_book_09, 133741), знаходить саме цю іконку.",
 
     -- Autocomplete: what each suggestion is (Data.lua, Sources.lua)
     ["icon + tooltip of a spell"] = "іконка й підказка заклинання",
