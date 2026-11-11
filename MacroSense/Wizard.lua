@@ -370,7 +370,8 @@ function Wizard.Only(spec, key)
 end
 
 -- "[mod:shift,combat,@mouseover,help,nodead]": the key (`mod`, "mod:shift" or "nomod:shift/ctrl"), the unit, then
--- what it must be (`only`: friends or enemies, the form's choice if nil). A unit that may not be there without a
+-- what it must be (`only`: friends or enemies, the form's choice if nil), alive (`spec.alive`) or dead (`spec.dead`,
+-- for a resurrection). A unit that may not be there without a
 -- check is asked for ([@focus,exists]), so the cast goes on to the next one. A cast needs no "@target" (it goes to
 -- the target anyway); /focus and /assist do (`named`). `action`: what a key casts, for the When row (When).
 local function Group(spec, unit, mod, named, only, action)
@@ -382,7 +383,11 @@ local function Group(spec, unit, mod, named, only, action)
     if unit ~= "default" and (named or unit ~= "target") then conds[#conds + 1] = "@" .. unit end
     if filtered[unit] then
         conds[#conds + 1] = only == "friends" and "help" or only == "enemies" and "harm" or "exists"
-        if spec.alive then conds[#conds + 1] = "nodead" end
+        if spec.alive then
+            conds[#conds + 1] = "nodead"
+        elseif spec.dead then
+            conds[#conds + 1] = "dead"
+        end
     end
     return "[" .. table.concat(conds, ",") .. "]"
 end

@@ -54,6 +54,8 @@ local function Group(conds)
             g.check = c
         elseif c == "nodead" then
             g.alive = true
+        elseif c == "dead" then
+            g.dead = true
         elseif c == "nomounted" then
             g.nomounted, g.when.place = true, c
         elseif PLACE_OF[c] then
@@ -114,8 +116,12 @@ local function Checks(spec, groups)
         end
         if spec.only ~= "any" then break end
     end
-    spec.alive = false
-    for _, g in ipairs(groups) do spec.alive = spec.alive or g.alive == true end
+    spec.alive, spec.dead = false, nil
+    for _, g in ipairs(groups) do
+        spec.alive = spec.alive or g.alive == true
+        spec.dead = spec.dead or g.dead or nil
+    end
+    if spec.alive then spec.dead = nil end
 end
 
 -- The groups of a line's branches, each with its branch's action and whether it is the last branch.

@@ -1087,8 +1087,13 @@ local function Build()
     Tip(only, L["Only"], L["Who the units above must be: friends, enemies or anyone. Yourself, As usual and At the "
         .. "cursor aren't checked. When the game knows who a spell is for, this follows the spell you pick. A key's "
         .. "own spell is checked for who it is for."])
-    Check(blocks.on, "alive", L["Alive only"], function() return spec.alive end, function(on) spec.alive = on end)
-        :SetPoint("TOPLEFT", X + 136, -35)
+    local life = Choice(blocks.on, "life", 120, { { key = "alive", name = "Alive only" },
+        { key = "dead", name = "Dead only" }, { key = "any", name = "Dead or alive" } },
+        function() return spec.dead and "dead" or spec.alive and "alive" or "any" end,
+        function(key) spec.alive, spec.dead = key == "alive", key == "dead" end)
+    life:SetPoint("TOPLEFT", X + 158, -35)
+    Tip(life, L["Alive or dead"], L["Dead only is for a resurrection: the macro skips those alive. Yourself, As usual "
+        .. "and At the cursor aren't checked."])
 
     -- Keys held (/cast, /use): another spell or the same one, on units of their own, in the On row's columns.
     blocks.keys = Block(8 + 22 + #keys * ROW)
