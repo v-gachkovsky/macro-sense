@@ -429,6 +429,14 @@ local function SwitchTo(command)
     Arrange()
 end
 
+-- The window `h` high: taller than the screen (the game's interface is 768 high at first, and the form for /cast on
+-- a Mac, with Cmd, is taller), it comes smaller, to fit whole.
+local function SetHeight(h)
+    frame:SetHeight(h)
+    local screen = UIParent:GetHeight()
+    frame:SetScale(type(screen) == "number" and screen > 0 and math.min(1, (screen - 16) / h) or 1)
+end
+
 -- The parts the command asks for, one under another, and the window as tall as they are.
 function Arrange()
     local list, target, pet = W.IsList(spec.command), W.IsTarget(spec.command), spec.command == "pet"
@@ -485,7 +493,7 @@ function Arrange()
         if controls[name] then controls[name]:SetShown(casts) end
     end
     -- The When rows, and Otherwise under them for /cast and /use.
-    blocks.when.height = (casts and 3 or 2) * ROW + 2
+    blocks.when.height = (casts and 4 or 3) * ROW + 2
     local shown = {}
     for _, b in ipairs(parts) do shown[b] = true end
     for _, b in pairs(blocks) do
@@ -498,18 +506,27 @@ function Arrange()
         b:Show()
         y = y - b.height
     end
-    if not stepsShown then frame:SetHeight(-y + BOTTOM) end
+    if not stepsShown then SetHeight(-y + BOTTOM) end
     controls.castLabel:SetText(spec.command == "use" and L["Use"] or L["Cast"])
     controls.listTitle:SetText(spec.command == "castsequence" and L["In turn, one per press"]
         or spec.command == "castrandom" and L["One of these at random"] or "")
 end
 
--- When the macro works at all (Wizard.whens), two rows of three from `x`: in the form, and as a question. `prefix`
+-- The choices of the When rows that are this character's or this client's: its forms, specializations, the gear
+-- types its items have, the places its game has.
+local WHEN_CHOICES = {
+    form = function() return W.WhenForms(ns.sources.forms()) end,
+    place = function() return W.WhenPlaces() end,
+    spec = function() return W.WhenSpecs(ns.sources.specs()) end,
+    equipped = function() return W.WhenGear(ns.sources.itemTypes()) end,
+}
+
+-- When the macro works at all (Wizard.whens), three rows of three from `x`: in the form, and as a question. `prefix`
 -- names the controls as for BuildAlso: "whenCombat", "stepWhenCombat". The forms are this character's: none, no list.
 local function BuildWhen(parent, prefix, x)
     for i, w in ipairs(W.whens) do
         local name = "when" .. w.key:gsub("^%l", string.upper)
-        local items = w.items or function() return W.WhenForms(ns.sources.forms()) end
+        local items = WHEN_CHOICES[w.key] or w.items
         local d = Choice(parent, prefix == "" and name or prefix .. name:gsub("^%l", string.upper), 160, items,
             function() return spec.when[w.key] or "any" end, function(key) spec.when[w.key] = key end)
         d:SetPoint("TOPLEFT", x + (i - 1) % 3 * 168, -math.floor((i - 1) / 3) * ROW)
@@ -847,7 +864,7 @@ local function ShowMode()
     controls.back:SetShown(stepsShown)
     if stepsShown then
         step = "what"
-        frame:SetHeight(STEPS_H)
+        SetHeight(STEPS_H)
         return ShowStep()
     end
     asked = nil
@@ -1130,12 +1147,12 @@ local function Build()
     secondsText:SetText(L["seconds without a press"])
 
     -- When it works at all, and for /cast and /use what it casts otherwise (last, after the form).
-    blocks.when = Block(3 * ROW + 2)
+    blocks.when = Block(4 * ROW + 2)
     Text(blocks.when, L["When"], PAD, -5)
     BuildWhen(blocks.when, "", X)
     controls.otherwise = SpellBox(blocks.when, 160, L["otherwise: do nothing"], function() return spec.otherwise end,
         function(action) spec.otherwise = action end)
-    controls.otherwise:SetPoint("TOPLEFT", X, -2 * ROW)
+    controls.otherwise:SetPoint("TOPLEFT", X, -3 * ROW)
     KeepCheck(controls.otherwise, "keepOtherwise", function() return "otherwise" end)
     Tip(controls.otherwise, L["Otherwise"], L["What the macro casts when the conditions on the left aren't met. Leave "
         .. "it empty to do nothing then."])

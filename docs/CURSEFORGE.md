@@ -79,7 +79,9 @@ Or **All options** shows the whole form, where you pick it all at once:
 - **gear**: swap weapons, trinkets or rings, always or with a key held, or put on an equipment set
   (`/equipslot [mod:shift] 14 Lucky Charm`, `/equipset PvP`)
 - **when**: only in or out of combat, in stealth, in a group or alone, with your pet out, not while channeling
-  (`[nochanneling:Drain Soul]`), in a form, and what it casts otherwise (`/cast [stealth] Ambush; Sinister Strike`)
+  (`[nochanneling:Drain Soul]`), in a form, where you are (on a mount, in water, indoors, resting...), in a
+  specialization, with a shield or another type of gear on, and what it casts otherwise
+  (`/cast [stealth] Ambush; Sinister Strike`)
 - **and also**: stop your cast first, your trinkets, auto attack, your pet, the nearest enemy if none is targeted,
   out of your form or off your mount first, a buff cancelled first, a line in chat (`%t` is your target)
 - **!** by each spell (`!Shoot`): pressed again, the macro doesn't turn off Auto Shot, Stealth or a form

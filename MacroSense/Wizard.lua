@@ -131,10 +131,30 @@ Wizard.channels = {
     { key = "say", name = "Say" }, { key = "yell", name = "Yell" }, { key = "party", name = "Party" },
     { key = "raid", name = "Raid" }, { key = "emote", name = "Emote" },
 }
--- When the macro does anything at all: each a choice, "any" for always; `cond` is what the macro checks. The forms
--- are this character's (Wizard.WhenForms). A channeled spell stops when you press another one: "own" leaves the
--- spell going that the press would cast, the macro's or a key's own ([nochanneling:Drain Soul]), "no" any of them.
--- Otherwise (`spec.otherwise`): what /cast or /use does when not.
+-- Where you are, for the When row: one place at a time.
+local PLACES = {
+    { key = "any", name = "Anywhere" },
+    { key = "mounted", name = "On a mount", cond = "mounted" },
+    { key = "nomounted", name = "Not on a mount", cond = "nomounted" },
+    { key = "flying", name = "In flight", cond = "flying" },
+    { key = "noflying", name = "Not in flight", cond = "noflying" },
+    { key = "flyable", name = "Where you can fly", cond = "flyable" },
+    { key = "noflyable", name = "Where you can't fly", cond = "noflyable" },
+    { key = "advflyable", name = "Where you can skyride", cond = "advflyable" },
+    { key = "swimming", name = "In water", cond = "swimming" },
+    { key = "noswimming", name = "Not in water", cond = "noswimming" },
+    { key = "indoors", name = "Indoors", cond = "indoors" },
+    { key = "outdoors", name = "Outdoors", cond = "outdoors" },
+    { key = "resting", name = "Resting, in a city or an inn", cond = "resting" },
+    { key = "noresting", name = "Not resting", cond = "noresting" },
+    { key = "house", name = "In a house or on its plot", cond = "house" },
+}
+
+-- When the macro does anything at all: each a choice, "any" for always; `cond` is what the macro checks, `value`
+-- makes it of a choice that is the character's own (Wizard.WhenForms, WhenSpecs, WhenGear). A channeled spell stops
+-- when you press another one: "own" leaves the spell going that the press would cast, the macro's or a key's own
+-- ([nochanneling:Drain Soul]), "no" any of them. Where you are: one place, those this client's game has
+-- (Wizard.WhenPlaces). Otherwise (`spec.otherwise`): what /cast or /use does when not.
 Wizard.whens = {
     { key = "combat", items = { { key = "any", name = "In or out of combat" },
         { key = "yes", name = "In combat", cond = "combat" }, { key = "no", name = "Out of combat", cond = "nocombat" } } },
@@ -148,7 +168,10 @@ Wizard.whens = {
     { key = "channel", items = { { key = "any", name = "Channeling or not" },
         { key = "own", name = "Not while channeling it" }, { key = "no", name = "Not while channeling", cond = "nochanneling" },
         { key = "yes", name = "While channeling", cond = "channeling" } } },
-    { key = "form" },
+    { key = "form", value = function(key) return key == "0" and "noform" or "form:" .. key end },
+    { key = "place", items = PLACES },
+    { key = "spec", value = function(key) return "spec:" .. key end },
+    { key = "equipped", value = function(key) return "equipped:" .. key end },
 }
 
 -- The choices of a form: any, none, then each of `forms` ({ name = "1", hint = "Bear Form" }, Sources.forms).
@@ -162,6 +185,42 @@ function Wizard.WhenForms(forms)
     return out
 end
 
+-- The places this client's game has (ns.Knows): no flying in Classic Era nor in WoW Forever, houses in Retail.
+function Wizard.WhenPlaces()
+    local known = {}
+    for _, c in ipairs(ns.data.conditions) do known[c.name] = ns.Knows(c) end
+    local out = {}
+    for _, item in ipairs(PLACES) do
+        if not item.cond or known[item.cond] ~= false then out[#out + 1] = item end
+    end
+    return out
+end
+
+-- The choices of a specialization: any, then each of `specs` (Sources.specs): Retail's by name, the other clients'
+-- talent groups (primary, secondary).
+local GROUPS = { primary = "In the primary specialization", secondary = "In the secondary specialization" }
+function Wizard.WhenSpecs(specs)
+    local out = { { key = "any", name = "In any specialization" } }
+    for _, s in ipairs(specs or {}) do
+        out[#out + 1] = { key = s.name, cond = "spec:" .. s.name,
+            name = GROUPS[s.hint] or string.format(ns.L["In specialization %s"], s.hint or s.name) }
+    end
+    return out
+end
+
+-- The choices of gear: any, then each weapon and armor type of `types` (Sources.itemTypes), not "Weapon" or "Armor"
+-- themselves.
+function Wizard.WhenGear(types)
+    local out = { { key = "any", name = "With any gear" } }
+    for _, t in ipairs(types or {}) do
+        if t.hint then
+            out[#out + 1] = { key = t.name, name = string.format(ns.L["With %s equipped"], t.name),
+                cond = "equipped:" .. t.name }
+        end
+    end
+    return out
+end
+
 -- "combat,nostealth": what the macro checks before anything, in the order of Wizard.whens. `action`: what the
 -- clause casts (a key's own spell), the macro's if nil.
 local function When(spec, action)
@@ -169,8 +228,8 @@ local function When(spec, action)
     for _, w in ipairs(Wizard.whens) do
         local chosen = spec.when[w.key]
         if chosen and chosen ~= "any" then
-            if w.key == "form" then
-                out[#out + 1] = chosen == "0" and "noform" or "form:" .. chosen
+            if w.value then
+                out[#out + 1] = w.value(chosen)
             elseif chosen == "own" then
                 -- The clause's spell, else the macro's, a list's first (rows may be left empty before it); with
                 -- none, any.
