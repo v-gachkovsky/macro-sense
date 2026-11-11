@@ -136,6 +136,7 @@ end
 -- FontString measuring: 8 px per character, 14 px high; one row unless wrapLines is on.
 local wrapLines = false
 function Frame:SetWidth(w) self.width = w end
+function Frame:SetSize(w, h) self.width, self.height = w, h end
 function Frame:SetHeight(h) self.height = h end
 function Frame:GetUnboundedStringWidth() return #tostring(self.text) * charWidth(self) end
 function Frame:GetStringWidth() return #tostring(self.text) * charWidth(self) end
@@ -2994,7 +2995,7 @@ do
         .. "Polymorph; [mod:ctrl,@player][@mouseover,harm,nodead][] Frostbolt", shown())
     Fire(C("ctrl"), "OnClick")
     check("wizard: the list under a narrow box is wide enough for long names", C("shiftCast").list.width == 260
-        and C("cast").list.width == 330, C("shiftCast").list.width)
+        and C("cast").list.width == 442, C("shiftCast").list.width)
     pick(C("shiftThen"), "Your target")
     check("wizard: a key falls back too", shown() == "#showtooltip\n/cast [mod:shift,@focus,harm,nodead]"
         .. "[mod:shift,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Frostbolt", shown())
@@ -3015,7 +3016,7 @@ do
     end
     Fire(wizardBtn, "OnClick")
     Fire(wizardBtn, "OnClick")
-    check("wizard: a long trinket name cut", C("trinket2").label.text == "Trinket 2: Unbound Chang...",
+    check("wizard: a long trinket name cut", C("trinket2").label.text == "Trinket 2: Unbound Changeling of...",
         C("trinket2").label.text)
     GetInventoryItemLink = equipped
     TypeIn(cast, "frost")
@@ -3099,7 +3100,7 @@ do
         and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball", C("command").label.text)
     pick(C("command"), "/castsequence")
     check("wizard: /castsequence takes a list, the spell first", C("list1").text == "Fireball"
-        and C("listTitle").text == "In turn, one per press" and MacroSenseWizard.height == tall + 10 - 32,
+        and C("listTitle").text == "In turn, one per press" and MacroSenseWizard.height == tall + 10 - 64,
         MacroSenseWizard.height)
     TypeIn(C("list2"), "frost")
     Fire(C("list2"), "OnEnterPressed")
@@ -3111,7 +3112,7 @@ do
     pick(C("command"), "/castrandom")
     check("wizard: /castrandom: one of them, nothing starts it over", shown()
         == "#showtooltip\n/castrandom [@mouseover,harm,nodead][] Fireball, Frostbolt"
-        and C("listTitle").text == "One of these at random" and MacroSenseWizard.height == tall - 72 - 32, shown())
+        and C("listTitle").text == "One of these at random" and MacroSenseWizard.height == tall - 72 - 64, shown())
     pick(C("command"), "/cast")
     check("wizard: back to /cast, its spell kept", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Fireball"
         and MacroSenseWizard.height == tall, shown())
@@ -3141,7 +3142,7 @@ do
     pick(C("command"), "/focus")
     check("wizard: /focus on units, no icon line", shown() == "/focus [@mouseover,harm,nodead][@target,harm,nodead]"
         and C("on2").label.text == "Your target" and MacroSenseWizard.height == tall - 34 - 32, shown())
-    check("wizard: a key's units where the spell was", not C("shiftCast"):IsShown() and C("shiftOn").point[2] == 84,
+    check("wizard: a key's units where the spell was", not C("shiftCast"):IsShown() and C("shiftOn").point[2] == 110,
         C("shiftOn").point[2])
     Fire(C("shift"), "OnClick")
     pick(C("shiftOn"), "Clear focus")
@@ -3165,7 +3166,7 @@ do
     pick(C("command"), "/cast")
     check("wizard: back to /cast: the spell, the keys in their places", shown()
         == "#showtooltip\n/cast [mod:shift,@party2,help,nodead][@party1,help,nodead] Frostbolt"
-        and C("shiftCast"):IsShown() and C("shiftOn").point[2] == 242, shown())
+        and C("shiftCast"):IsShown() and C("shiftOn").point[2] == 335, shown())
     Fire(C("shift"), "OnClick")
 
     -- Pet commands: what it does without a key, a command per key; units only for Attack.
@@ -3289,6 +3290,11 @@ do
     check("wizard: the When row's third row", C("whenPlace").point[3] == -64 and C("whenSpec").point[3] == -64
         and C("whenEquipped").point[3] == -64 and C("otherwise").point[3] == -96 and C("whenPlace"):IsShown(),
         tostring(C("whenPlace").point[3]))
+    -- Wide enough for their names ("In the secondary specialization"), on the grid of On and the keys' units.
+    check("wizard: one grid, wide enough", MacroSenseWizard.width == 800 and C("whenSpec").width == 217
+        and C("whenEquipped").point[2] == 560 and C("whenSpec").point[2] == C("on2").point[2]
+        and C("on2").point[2] == C("shiftOn").point[2] and C("on3").point[2] == C("shiftThen").point[2]
+        and C("cast").width == 442 and C("otherwise").width == 217, tostring(C("whenSpec").width))
     pick(C("whenPlace"), "Outdoors")
     pick(C("whenSpec"), "In the secondary specialization")
     check("wizard: where and the specialization", shown() == "#showtooltip\n/cast [outdoors,spec:2,@mouseover,harm,"
