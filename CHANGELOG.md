@@ -43,6 +43,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 - The icon search finds an icon by its file name or file ID, as Wowhead shows them: `inv_misc_book_09`,
   `Interface\Icons\INV_Misc_Book_09.blp` or `133741`. That icon comes first, and a click picks it.
+- The icon search matches the icons' file names too, as Wowhead does: `book` finds INV_Misc_Book_09 and the other
+  books, `sword` the swords. An icon's tooltip shows its file name. The names come from the community's list of
+  WoW's file names (wowdev/wow-listfile); the game has none for its icons.
 
 ### Changed
 - `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight. Nor in Classic Era and TBC,

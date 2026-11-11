@@ -534,8 +534,9 @@ then icons of your spells and items, then every macro icon of the game, with the
 spells and items, and of any spell in the game that uses an icon (achievements too, on Retail and Mists of
 Pandaria). The game has no names for its icons, so the first time the grid opens they are looked up in the
 background for a few seconds; its bottom line shows how far. MacroSense keeps them, so after that they are there
-at once, until the next patch of the game. Point at an icon to see its names. An icon's file name or file ID, as
-Wowhead shows them (`inv_misc_book_09`, `133741`), finds that icon too.
+at once, until the next patch of the game. Search matches the icons' file names too, as Wowhead does: `book` finds
+`INV_Misc_Book_09` and the other books. Point at an icon to see its names and its file name. An icon's file name or
+file ID, as Wowhead shows them (`inv_misc_book_09`, `133741`), finds that icon.
 Drag its dotted corner to show more icons at once. It sits next to the editor; drag it by an empty spot to
 move it away, and drop it next to the editor's right edge to dock it again (its border lights up).
 
@@ -640,6 +641,8 @@ no Cyrillic letters it writes with the game's own Friz Quadrata that has them.
 - `MacroSense/IconPicker.lua`: icon grid.
 - `MacroSense/IconNames.lua`: names for the game's icons from its spells and achievements, looked up in
   the background.
+- `MacroSense/IconFiles.lua`: the icons' file names by file ID. Made by `tools/icon-files.py` from the community's
+  list of WoW's file names: run it after a game patch.
 - `MacroSense/WizardWindow.lua`: the wizard's window.
 - `MacroSense/SpellbookWindow.lua`: the window of macros from the spellbook.
 - `MacroSense/Widgets.lua`, `MacroSense/Window.lua`: the window: the editor, its status bar and how it is built.
@@ -687,7 +690,9 @@ Found a bug or have an idea? Tell me any way you like:
 
 Code: MIT, see `LICENSE`; so are the icons, drawn for MacroSense (`MacroSense/Media/*.tga`). Fonts
 keep their own free licenses: DejaVu (Bitstream Vera license), JetBrains Mono, Fira Mono, Source Code Pro
-and Inconsolata (SIL OFL 1.1); the texts are in `MacroSense/Media/Fonts/`.
+and Inconsolata (SIL OFL 1.1); the texts are in `MacroSense/Media/Fonts/`. The icons' file names
+(`MacroSense/IconFiles.lua`) come from the community's list of WoW's file names,
+[wowdev/wow-listfile](https://github.com/wowdev/wow-listfile).
 
 ---
 

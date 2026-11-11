@@ -1339,6 +1339,30 @@ do
     check("icon by file: its name as typed, and a click picks it", typedTip[1] == "inv_misc_book_09" and picked,
         tostring(typedTip[1]))
     GetFileIDFromPath = nil
+    -- The icons' file names, from the community's list (IconFiles.lua): a word of one finds the icon, as on Wowhead,
+    -- and its tooltip shows it.
+    check("icon files: the list has the game's names", ns.IconNames.File(133741) == "inv_misc_book_09"
+        and ns.IconNames.File(132089) == "ability_ambush", tostring(ns.IconNames.File(133741)))
+    local list = ns.ICON_FILES
+    ns.ICON_FILES = "1001 inv_misc_book_01\n1050 spell_shadow_possession\n"
+    check("icon files: a word of a file name", Found("book") == "1001" and Found("misc_bo") == "1001", Found("book"))
+    local fileTip = {}
+    GameTooltip.SetText = function(_, text) fileTip = { text } end
+    GameTooltip.AddLine = function(_, text) fileTip[#fileTip + 1] = text end
+    local function Point(icon)
+        fileTip = {}
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.entry and o.entry.icon == icon and o:IsShown() then Fire(o, "OnEnter") end
+        end
+        return table.concat(fileTip, ", ")
+    end
+    local alone = Point(1001)
+    Found("possession")
+    local named = Point(1050)
+    GameTooltip.SetText, GameTooltip.AddLine = nil, nil
+    check("icon files: the tooltip shows the file name", alone == "inv_misc_book_01"
+        and named == "Howl of Terror, Fear, spell_shadow_possession", alone .. " | " .. named)
+    ns.ICON_FILES = list
     -- Your own icons from Interface\Icons: before the game's, by their file name, saved by their path.
     local order = {}
     Found("")
