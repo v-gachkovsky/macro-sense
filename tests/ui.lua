@@ -3142,7 +3142,7 @@ do
     pick(C("command"), "/focus")
     check("wizard: /focus on units, no icon line", shown() == "/focus [@mouseover,harm,nodead][@target,harm,nodead]"
         and C("on2").label.text == "Your target" and MacroSenseWizard.height == tall - 34 - 32, shown())
-    check("wizard: a key's units where the spell was", not C("shiftCast"):IsShown() and C("shiftOn").point[2] == 110,
+    check("wizard: a key's units where the spell was", not C("shiftCast"):IsShown() and C("shiftOn").point[2] == 118,
         C("shiftOn").point[2])
     Fire(C("shift"), "OnClick")
     pick(C("shiftOn"), "Clear focus")
@@ -3166,7 +3166,7 @@ do
     pick(C("command"), "/cast")
     check("wizard: back to /cast: the spell, the keys in their places", shown()
         == "#showtooltip\n/cast [mod:shift,@party2,help,nodead][@party1,help,nodead] Frostbolt"
-        and C("shiftCast"):IsShown() and C("shiftOn").point[2] == 335, shown())
+        and C("shiftCast"):IsShown() and C("shiftOn").point[2] == 343, shown())
     Fire(C("shift"), "OnClick")
 
     -- Pet commands: what it does without a key, a command per key; units only for Attack.
@@ -3290,11 +3290,17 @@ do
     check("wizard: the When row's third row", C("whenPlace").point[3] == -64 and C("whenSpec").point[3] == -64
         and C("whenEquipped").point[3] == -64 and C("otherwise").point[3] == -96 and C("whenPlace"):IsShown(),
         tostring(C("whenPlace").point[3]))
-    -- Wide enough for their names ("In the secondary specialization"), on the grid of On and the keys' units.
+    -- Every row on three equal columns to the right edge, wide enough for the names ("In the secondary
+    -- specialization"); a list of units with "then" after it in its column.
+    local function right(c) return c.point[2] + c.width end
     check("wizard: one grid, wide enough", MacroSenseWizard.width == 800 and C("whenSpec").width == 217
-        and C("whenEquipped").point[2] == 560 and C("whenSpec").point[2] == C("on2").point[2]
+        and C("whenEquipped").point[2] == 568 and C("whenSpec").point[2] == C("on2").point[2]
         and C("on2").point[2] == C("shiftOn").point[2] and C("on3").point[2] == C("shiftThen").point[2]
-        and C("cast").width == 442 and C("otherwise").width == 217, tostring(C("whenSpec").width))
+        and right(C("on3")) == 785 and right(C("shiftThen")) == 785 and right(C("whenEquipped")) == 785
+        and right(C("tab")) == 785 and right(C("click")) == 785 and right(C("say")) == 785
+        and right(C("cast")) == right(C("whenSpec")) and right(C("on1")) + 37 == right(C("whenCombat"))
+        and C("otherwise").width == 217 and C("cancelaura").width == 217,
+        right(C("on3")) .. " " .. right(C("tab")) .. " " .. right(C("click")) .. " " .. right(C("say")))
     pick(C("whenPlace"), "Outdoors")
     pick(C("whenSpec"), "In the secondary specialization")
     check("wizard: where and the specialization", shown() == "#showtooltip\n/cast [outdoors,spec:2,@mouseover,harm,"

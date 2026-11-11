@@ -79,8 +79,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The minimap button shows the new round logo, whole, with its gold ring for a border. It stays whole in minimap
   button collectors too.
 - The wizard's window is wider, so the long names fit whole, in Ukrainian too: **Shift + Ctrl**, **Right click**,
-  the specializations and the types of gear in When. Its rows line up on one grid, and a sequence's six spells take
-  two rows instead of three, so its window is lower.
+  the specializations and the types of gear in When. Its fields line up on three equal columns, from the command
+  to Also, and a sequence's six spells take two rows instead of three, so its window is lower.
 
 ### Fixed
 - The **MacroSense** button in the game's macro window: MacroSense opens in front, on the macro chosen there, and

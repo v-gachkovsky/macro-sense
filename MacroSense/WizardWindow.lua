@@ -10,12 +10,12 @@ local WizardWindow = {}
 ns.WizardWindow = WizardWindow
 
 local W, Q = ns.Wizard, ns.Questions
-local WIDTH, PAD, LABEL, ROW = 800, 14, 96, 32
-local X = PAD + LABEL -- where the controls of a row start: after a name as long as "Shift + Ctrl" or "Правий клік"
--- The rows of three (On, a key's spell and units, When) share columns COL apart: CELL is as wide as one of them can
--- be ("In the secondary specialization", "With Two-Handed Swords equipped"), UNIT_W a list of units, "then" after it.
-local COL, CELL, UNIT_W = 225, 217, 180
-local ALSO_COL = math.floor((WIDTH - 2 * PAD) / 3) -- Also's columns of yes / no
+local WIDTH, PAD, LABEL, ROW = 800, 14, 104, 32
+local X = PAD + LABEL -- where the controls of a row start: after a name as long as "Where you can fly"
+-- Every row's controls share three columns, COL apart, from X to the right edge. A CELL is a control in one of them
+-- ("In the secondary specialization" fits), a list of units UNIT_W, with "then" after it in the same column.
+local CELL = math.floor((WIDTH - PAD - X - 16) / 3)
+local COL, UNIT_W = CELL + 8, CELL - 37
 local TOP = 84 -- the title bar and the command row
 local BOTTOM = 322 -- Also, the macro and the buttons, at the bottom whatever the command
 local STEPS_H = 538 -- the window step by step, whatever the question
@@ -604,20 +604,21 @@ local function BuildAlso(parent, prefix)
         local name = c[1]
         local check = Check(parent, named(name), c[2], function() return spec[name] end,
             function(on) spec[name] = on end)
-        check:SetPoint("TOPLEFT", PAD + (i - 1) % 3 * ALSO_COL, -math.floor((i - 1) / 3) * 24)
+        local column = (i - 1) % 3
+        check:SetPoint("TOPLEFT", column == 0 and PAD or X + column * COL, -math.floor((i - 1) / 3) * 24)
         if c[3] then Tip(check, c[2], c[3]) end
     end
     Text(parent, L["Cancel a buff"], PAD, -78)
-    local buff = SpellBox(parent, 2 * ALSO_COL - 220, L["the buff's name"], function() return spec.cancelaura end,
+    local buff = SpellBox(parent, CELL, L["the buff's name"], function() return spec.cancelaura end,
         function(action) spec.cancelaura = action end, ns.sources.buffs)
-    buff:SetPoint("TOPLEFT", PAD + 120, -74)
+    buff:SetPoint("TOPLEFT", X, -74)
     controls[named("cancelaura")] = buff
     Tip(buff, L["Cancel a buff first"], L["Removes this buff before anything else (/cancelaura Ice Block). Leave it "
         .. "empty to keep your buffs. The list shows the buffs you have now and the ones you had before."])
     -- A button to click, in the third column, its name right before it.
-    local click = SpellBox(parent, WIDTH - 2 * PAD - 2 * ALSO_COL, L["a button's name"],
+    local click = SpellBox(parent, CELL, L["a button's name"],
         function() return spec.click end, function(action) spec.click = action end, ns.sources.clickButtons)
-    click:SetPoint("TOPLEFT", PAD + 2 * ALSO_COL, -74)
+    click:SetPoint("TOPLEFT", X + 2 * COL, -74)
     local clickName = ns.Text(parent, 12)
     clickName:SetPoint("RIGHT", click, "LEFT", -8, 0)
     clickName:SetText(L["Click"])
@@ -629,10 +630,10 @@ local function BuildAlso(parent, prefix)
         .. "one on your action bars or your pet's, the extra action button, another addon's. The list shows the "
         .. "buttons there are now, with what is on them. Leave it empty to click nothing."])
     Text(parent, L["Say in chat"], PAD, -110)
-    Choice(parent, named("channel"), 100, W.channels, function() return spec.channel end,
-        function(key) spec.channel = key end):SetPoint("TOPLEFT", PAD + 120, -107)
-    local say = ns.Input(parent, WIDTH - 2 * PAD - 228, 255)
-    say:SetPoint("TOPLEFT", PAD + 228, -106)
+    Choice(parent, named("channel"), CELL, W.channels, function() return spec.channel end,
+        function(key) spec.channel = key end):SetPoint("TOPLEFT", X, -107)
+    local say = ns.Input(parent, COL + CELL, 255)
+    say:SetPoint("TOPLEFT", X + COL, -106)
     say:SetScript("OnTextChanged", function(self, userInput)
         if not userInput then return end
         spec.say = self:GetText()
@@ -844,7 +845,7 @@ local function BuildSteps()
     for i = 1, W.LIST do
         local x, y = PAD + 16 + (i - 1) % 3 * COL, -math.floor((i - 1) / 3) * ROW
         Text(panels.list, tostring(i), x - 16, y - 5, "dim")
-        local item = SpellBox(panels.list, COL - 25, L["spell or item"], function() return spec.list[i] end,
+        local item = SpellBox(panels.list, CELL - 16, L["spell or item"], function() return spec.list[i] end,
             function(action)
                 spec.list[i] = action
                 if i == 1 then FollowReaction(action) end
@@ -1013,17 +1014,14 @@ local function Build()
     form:SetAllPoints()
     -- The command, the name, the tab.
     Text(form, L["Command"], PAD, -55)
-    Choice(form, "command", UNIT_W, W.commands, function() return spec.command end, SwitchTo)
+    Choice(form, "command", CELL, W.commands, function() return spec.command end, SwitchTo)
         :SetPoint("TOPLEFT", X, -51)
-    Text(form, L["Name"], X + UNIT_W + 14, -55)
-    controls.name = ns.Input(form, 200, 16)
-    controls.name:SetPoint("TOPLEFT", X + UNIT_W + 64, -50)
-    local tab = Choice(form, "tab", 150, { { key = "general", name = "General" },
-        { key = "character", name = "Character" } }, function() return scope end, function(key) scope = key end)
-    tab:SetPoint("TOPLEFT", X + 2 * COL + CELL - 150, -51)
-    controls.tabLabel = ns.Text(form, 12)
-    controls.tabLabel:SetPoint("RIGHT", tab, "LEFT", -8, 0)
-    controls.tabLabel:SetText(L["Tab"])
+    Text(form, L["Name"], X + COL, -55)
+    controls.name = ns.Input(form, CELL - 56, 16)
+    controls.name:SetPoint("TOPLEFT", X + COL + 56, -50)
+    controls.tabLabel = Text(form, L["Tab"], X + 2 * COL, -55)
+    Choice(form, "tab", CELL - 56, { { key = "general", name = "General" }, { key = "character", name = "Character" } },
+        function() return scope end, function(key) scope = key end):SetPoint("TOPLEFT", X + 2 * COL + 56, -51)
 
     -- One spell or item: /cast, /use.
     blocks.one = Block(34)
@@ -1038,13 +1036,13 @@ local function Build()
     controls.cast:SetPoint("TOPLEFT", X, 0)
     KeepCheck(controls.cast, "keepMain", function() return "main" end)
 
-    -- A list: /castsequence, /castrandom. Three columns, read across; its number before each.
+    -- A list: /castsequence, /castrandom. Three columns, read across; its number before each, in its column.
     blocks.list = Block(22 + math.ceil(W.LIST / 3) * ROW + 2)
     controls.listTitle = Text(blocks.list, "", PAD, 0, "dim")
     for i = 1, W.LIST do
-        local x, y = X + (i - 1) % 3 * COL, -22 - math.floor((i - 1) / 3) * ROW
+        local x, y = X + 16 + (i - 1) % 3 * COL, -22 - math.floor((i - 1) / 3) * ROW
         Text(blocks.list, tostring(i), x - 16, y - 5, "dim")
-        local box = SpellBox(blocks.list, COL - 25, L["spell or item"], function() return spec.list[i] end,
+        local box = SpellBox(blocks.list, CELL - 16, L["spell or item"], function() return spec.list[i] end,
             function(action)
                 spec.list[i] = action
                 if i == 1 then FollowReaction(action) end
@@ -1075,7 +1073,7 @@ local function Build()
         local y = -(i - 1) * ROW
         local piece = function() return spec.equip[i] end
         -- The slots the item can go to; none to choose for a chest piece.
-        local slot = Choice(rows, "equipSlot" .. i, UNIT_W, function() return W.EquipSlots(piece().item) end,
+        local slot = Choice(rows, "equipSlot" .. i, CELL, function() return W.EquipSlots(piece().item) end,
             function() return piece().slot end, function(key) piece().slot = key end)
         slot:SetPoint("TOPLEFT", X + COL, y - 1)
         local refresh = slot.Refresh
@@ -1091,7 +1089,7 @@ local function Build()
             end)
         item:SetPoint("TOPLEFT", X, y)
         controls["equip" .. i] = item
-        Choice(rows, "equipKey" .. i, UNIT_W, function() return W.EquipKeys(keys) end,
+        Choice(rows, "equipKey" .. i, CELL, function() return W.EquipKeys(keys) end,
             function() return piece().key end, function(key) piece().key = key end)
             :SetPoint("TOPLEFT", X + 2 * COL, y - 1)
     end
@@ -1106,21 +1104,21 @@ local function Build()
     for i, p in ipairs(places) do
         local y = -(i - 1) * ROW
         Text(blocks.mount, L[p.name], PAD, y - 5)
-        local box = SpellBox(blocks.mount, 236, p.key == "ground" and L["type a mount"] or L["the same one"],
+        local box = SpellBox(blocks.mount, COL + CELL, p.key == "ground" and L["type a mount"] or L["the same one"],
             function() return spec.mounts[p.key] end, function(action) spec.mounts[p.key] = action end)
-        box:SetPoint("TOPLEFT", X + 70, y)
+        box:SetPoint("TOPLEFT", X, y)
         controls["mount" .. p.key:gsub("^%l", string.upper)] = box
     end
     Text(blocks.mount, L["When mounted"], PAD, -#places * ROW - 5)
-    local offMount = Choice(blocks.mount, "offMount", 236, W.offMount, function() return spec.offMount end,
+    local offMount = Choice(blocks.mount, "offMount", CELL, W.offMount, function() return spec.offMount end,
         function(key) spec.offMount = key end)
-    offMount:SetPoint("TOPLEFT", X + 70, -#places * ROW - 1)
+    offMount:SetPoint("TOPLEFT", X, -#places * ROW - 1)
     Tip(offMount, L["When mounted"], L["What pressing the macro does while you're mounted. Dismounting in the air means falling."])
 
     -- /target by name: a rare, say.
     blocks.name = Block(34)
     Text(blocks.name, L["By name"], PAD, -5)
-    controls.byName = ns.Input(blocks.name, 240, 60)
+    controls.byName = ns.Input(blocks.name, CELL, 60)
     controls.byName:SetPoint("TOPLEFT", X, 0)
     controls.byName:SetScript("OnTextChanged", function(self, userInput)
         if not userInput then return end
@@ -1151,7 +1149,7 @@ local function Build()
     blocks.on = Block(2 * 34)
     Text(blocks.on, L["On"], PAD, -5)
     for i = 1, 3 do
-        local d = Choice(blocks.on, "on" .. i, UNIT_W,
+        local d = Choice(blocks.on, "on" .. i, i < 3 and UNIT_W or CELL,
             function() return W.Units(spec.command, i == 1 and "first" or "then") end,
             function() return spec.on[i] end, function(key) spec.on[i] = key end)
         d:SetPoint("TOPLEFT", X + (i - 1) * COL, -1)
@@ -1219,7 +1217,7 @@ local function Build()
         row.petSpell:SetPoint("TOPLEFT", X + COL, y)
         controls[key .. "PetSpell"] = row.petSpell
         for j, suffix in ipairs({ "On", "Then" }) do
-            row[j == 1 and "on" or "then"] = Choice(blocks.keys, key .. suffix, UNIT_W,
+            row[j == 1 and "on" or "then"] = Choice(blocks.keys, key .. suffix, j == 1 and UNIT_W or CELL,
                 function() return W.Units(spec.command, j == 1 and "key" or "then") end,
                 function() return spec.keys[key].on[j] end, function(unit) spec.keys[key].on[j] = unit end)
         end
