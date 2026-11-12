@@ -534,7 +534,8 @@ then icons of your spells and items, then every macro icon of the game, with the
 spells and items, and of any spell in the game that uses an icon (achievements too, on Retail and Mists of
 Pandaria). The game has no names for its icons, so the first time the grid opens they are looked up in the
 background for a few seconds; its bottom line shows how far. MacroSense keeps them, so after that they are there
-at once, until the next patch of the game. Point at an icon to see its names.
+at once, until the next patch of the game. Point at an icon to see its names. An icon's file name or file ID, as
+Wowhead shows them (`inv_misc_book_09`, `133741`), finds that icon too.
 Drag its dotted corner to show more icons at once. It sits next to the editor; drag it by an empty spot to
 move it away, and drop it next to the editor's right edge to dock it again (its border lights up).
 

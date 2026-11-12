@@ -269,7 +269,7 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 - Click the macro's icon to pick a new one: the question mark (so `#showtooltip` chooses), your spells and
   items first, then all 27,000+ game icons and your own from `Interface\Icons`. **Search** by the name of
   any spell that uses an icon, known to you or not, or of your items (achievements too, on Retail and Mists
-  of Pandaria).
+  of Pandaria). An icon's file name or file ID from Wowhead (`inv_misc_book_09`, `133741`) finds that icon.
 - The icon grid can be resized, moved away from the editor and docked back.
 - A new macro starts with `#showtooltip`, the cursor already on the second line.
 - A macro without a chosen icon keeps the question mark, so the game changes its icon as `#showtooltip` does.
