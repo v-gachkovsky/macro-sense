@@ -81,6 +81,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The wizard's window is wider, so the long names fit whole, in Ukrainian too: **Shift + Ctrl**, **Right click**,
   the specializations and the types of gear in When. Its fields line up on three equal columns, from the command
   to Also, and a sequence's six spells take two rows instead of three, so its window is lower.
+- In the In-game look, the wizard's background is solid: the editor's text behind it no longer shows through.
 
 ### Fixed
 - The **MacroSense** button in the game's macro window: MacroSense opens in front, on the macro chosen there, and

@@ -969,6 +969,14 @@ local function Build()
     frame:SetPoint(pos and pos.point or "TOP", UIParent, pos and pos.relPoint or "TOP", pos and pos.x or 0,
         pos and pos.y or -120)
     ns.Backdrop(frame, "bg", "border", true)
+    -- The game's dialog background lets what is behind show through: here the editor's text, under the form's. In
+    -- the game's look the window gets a solid black under it, inside its rounded border.
+    local solid = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+    solid:SetPoint("TOPLEFT", 4, -4)
+    solid:SetPoint("BOTTOMRIGHT", -4, 4)
+    solid:SetColorTexture(0, 0, 0, 1)
+    ns.OnStyle(function(s) solid:SetShown(s.native and true or false) end)
+    controls.solid = solid
     frame:Hide()
 
     -- Title bar: drag to move.

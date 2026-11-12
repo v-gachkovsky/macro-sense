@@ -71,9 +71,9 @@ function Frame:Hide() if self.shown then self.shown = false; Fire(self, "OnHide"
 function Frame:SetShown(v) if v then self:Show() else self:Hide() end end
 function Frame:IsShown() return self.shown end
 function Frame:IsVisible() return self.shown end
-function Frame:CreateTexture(name)
+function Frame:CreateTexture(name, layer, template, subLevel)
     local t = New("Texture", name)
-    t.parentFrame = self
+    t.parentFrame, t.drawLayer, t.subLevel = self, layer, subLevel
     return t
 end
 function Frame:CreateFontString()
@@ -8190,6 +8190,10 @@ do
     check("game look: a panel inside lets the background show", title and title.backdropColor[4] == 0.6,
         title and tostring(title.backdropColor[4]))
     check("game look: the menu stays solid", MacroSenseMenu.backdropColor[4] == 1, tostring(MacroSenseMenu.backdropColor[4]))
+    -- The wizard over the editor: solid under the game's background, so the editor's text doesn't show through.
+    local solid = ns.WizardWindow.Control("solid")
+    check("game look: the wizard solid under its background", solid:IsShown() and solid.drawLayer == "BACKGROUND"
+        and solid.subLevel == -8)
     local function shown(file)
         local n = 0
         for _, o in ipairs(created) do
@@ -8207,7 +8211,7 @@ do
     check("game look: another scheme takes it all back", not edge:IsShown() and frame.backdrop.edgeSize == 1
         and title.backdropColor[4] == 1 and shown("Interface\\Buttons\\UI-Panel-Button-Up") == 0
         and shown("Interface\\Buttons\\UI-CheckBox-Up") == 0 and shown("Interface\\Common\\Common-Input-Border") == 0
-        and MacroSenseSearch.backdrop.edgeSize == 1)
+        and MacroSenseSearch.backdrop.edgeSize == 1 and not solid:IsShown())
     look(before)
 end
 
