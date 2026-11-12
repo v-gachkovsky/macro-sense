@@ -12,10 +12,10 @@ you find them in combat. The macros stay the game's own, so the Blizzard window,
 addons see every change.
 
 Open it from the **minimap button** (drag it along the edge to move it), with `/ms`, with **Macros** in the
-game menu, with the **MacroSense** button in the game's macro window, or with **Shift + right-click** on a macro
-on your action bars, which opens that macro. On Retail it's in the addon menu by the minimap too. **Macros** in the
-game menu opens MacroSense instead of the game's macro window, and `/macro` can too: each is a choice in the
-settings (`/ms settings`).
+game menu, with the **MacroSense** button in the game's macro window, which opens the macro chosen there, or with
+**Shift + right-click** on a macro on your action bars, which opens that macro. On Retail it's in the addon menu
+by the minimap too. **Macros** in the game menu opens MacroSense instead of the game's macro window, and `/macro`
+can too: each is a choice in the settings (`/ms settings`).
 
 **Works on every client:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever.
 

@@ -68,7 +68,15 @@ end
 
 local IsLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or IsAddOnLoaded
 
--- "MacroSense" button in the title bar of the Blizzard macro window, left of its close button.
+-- The macro chosen in the Blizzard macro window, or nil.
+local function ChosenInMacroFrame()
+    local ok, index = pcall(function() return MacroFrame:GetMacroDataIndex(MacroFrame:GetSelectedIndex()) end)
+    return ok and type(index) == "number" and GetMacroInfo(index) and index or nil
+end
+
+-- "MacroSense" button in the title bar of the Blizzard macro window, left of its close button: MacroSense opens on
+-- the macro chosen there, in front, whether it was open or not. The game's window closes, saving what was typed in
+-- it: its macros and buttons are drawn above other windows, so left open they would cover MacroSense.
 local function AddMacroFrameButton()
     if not MacroFrame or ns.macroFrameButton then return end
     local b = CreateFrame("Button", nil, MacroFrame, "UIPanelButtonTemplate")
@@ -83,7 +91,17 @@ local function AddMacroFrameButton()
     else
         b:SetPoint("TOPRIGHT", MacroFrame, "TOPRIGHT", -26, -3)
     end
-    b:SetScript("OnClick", function() ns.Window.Toggle() end)
+    b:SetScript("OnClick", function()
+        local index = ChosenInMacroFrame()
+        HideUIPanel(MacroFrame)
+        local ok, err = pcall(function() if index then ns.Window.Open(index) else ns.Window.Show() end end)
+        if ok then return end
+        -- The game shows no one its errors at first: the game's window comes back, and the chat tells.
+        ShowUIPanel(MacroFrame)
+        ns.Print("the editor couldn't open because of an error: %s. Please send this line and what /ms bug shows",
+            tostring(err))
+        error(err, 0)
+    end)
     ns.macroFrameButton = b
 end
 

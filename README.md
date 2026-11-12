@@ -31,10 +31,10 @@ focus, party members, modifier keys, trinkets and more. "From Spellbook" makes m
 spellbook, many at once.
 
 Open it with the button on the minimap, `/ms` (or `/macrosense`, `/msense`), **Macros** in the game menu, the
-**MacroSense** button in the title bar of the Blizzard macro window, or **Shift + right-click** on a macro on an
-action bar, which opens that macro. **Macros** in the game menu opens MacroSense instead of the game's macro window,
-and `/macro` can too: each is a choice in the settings (`/ms settings`). Drag the editor's title bar to move it and
-the dotted corner to resize it (840 x 460 at least).
+**MacroSense** button in the title bar of the Blizzard macro window, which opens the macro chosen there, or
+**Shift + right-click** on a macro on an action bar, which opens that macro. **Macros** in the game menu opens
+MacroSense instead of the game's macro window, and `/macro` can too: each is a choice in the settings
+(`/ms settings`). Drag the editor's title bar to move it and the dotted corner to resize it (840 x 460 at least).
 Drag the minimap button to move it along the edge; `/ms minimap` hides it. On Retail, MacroSense is in the
 addon menu by the minimap too.
 

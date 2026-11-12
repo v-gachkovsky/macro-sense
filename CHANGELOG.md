@@ -49,6 +49,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The minimap button shows the new round logo, whole, with its gold ring for a border. It stays whole in minimap
   button collectors too.
 
+### Fixed
+- The **MacroSense** button in the game's macro window: MacroSense opens in front, on the macro chosen there, and
+  the game's window closes. A click no longer closes MacroSense when it is open already. If MacroSense can't open,
+  the game's window stays and the chat says why, with the error to send.
+
 ## [0.17.0] - 2026-11-09
 
 ### Added
