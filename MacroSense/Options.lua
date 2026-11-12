@@ -1,5 +1,5 @@
 -- MacroSense's page of the game's settings (AddOns; /ms settings): the click on a macro on an action bar that
--- opens it in the editor (ActionBars.lua), its keys and mouse button, or none.
+-- opens it in the editor (ActionBars.lua), its keys and mouse button, or none; the keys of the tag macro (Tag.lua).
 local _, ns = ...
 ns = ns or {}
 local L = ns.L
@@ -66,6 +66,23 @@ function Options.Setup()
     note:SetWidth(520)
     note:SetWordWrap(true)
     note:SetText(L["This click opens the macro instead of running it. Pick one your macros don't use, or turn it off."])
+
+    -- The tag macro (Tag.lua): the keys held with a click on a creature or player.
+    local tag = ns.Text(page, 13, "accent")
+    tag:SetPoint("TOPLEFT", note, "BOTTOMLEFT", -20, -24)
+    tag:SetText(L["Tag macro"])
+    local keys = ns.Text(page, 12)
+    keys:SetPoint("TOPLEFT", tag, "BOTTOMLEFT", 20, -14)
+    keys:SetText(L["Keys:"])
+    Options.tagKeys = ns.Dropdown(page, 150, KeyItems, function() return ns.db.tagKeys end,
+        function(picked) ns.db.tagKeys = picked end)
+    Options.tagKeys:SetPoint("LEFT", keys, "RIGHT", 10, 0)
+    local tagNote = ns.Text(page, 12, "dim")
+    tagNote:SetPoint("TOPLEFT", keys, "BOTTOMLEFT", 0, -14)
+    tagNote:SetWidth(520)
+    tagNote:SetWordWrap(true)
+    tagNote:SetText(L["Hold them and click a creature or player: its name goes into your tag macro, which then targets "
+        .. "it. A click on yourself takes the name out. A macro becomes the tag macro in its \"...\" menu."])
     Options.Refresh()
 
     if Settings and Settings.RegisterCanvasLayoutCategory then
@@ -83,6 +100,7 @@ function Options.Refresh()
     Options.on:Refresh()
     Options.keys:Refresh()
     Options.click:Refresh()
+    Options.tagKeys:Refresh()
     Options.keys:SetEnabled(ns.db.barEdit and true or false)
     Options.click:SetEnabled(ns.db.barEdit and true or false)
 end

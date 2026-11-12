@@ -256,7 +256,8 @@ SlashCmdList, ChatTypeInfo = {}, { SAY = true }
 SLASH_CAST1, SLASH_USE1, SLASH_TARGET1, SLASH_SAY1 = "/cast", "/use", "/target", "/say"
 PET_ACTION_ATTACK, PET_ACTION_FOLLOW = "Attack", "Follow" -- the pet bar's commands, as the game names them
 SLASH_PET_MOVE_TO1, SLASH_TEAM_QUIT1 = "/petmoveto", "/teamquit" -- this client has no /teamquit
-local secureKeys = { CAST = true, USE = true, TARGET = true, PET_MOVE_TO = true }
+SLASH_TARGET_EXACT1 = "/targetexact"
+local secureKeys = { CAST = true, USE = true, TARGET = true, TARGET_EXACT = true, PET_MOVE_TO = true }
 function IsSecureCmd(command)
     command = command:upper()
     for key in pairs(secureKeys) do
@@ -5251,6 +5252,113 @@ do
     NextFrame()
 end
 
+-- The tag macro: picked in a macro's "..." menu; a creature or player clicked with Ctrl + Alt held (those keys and
+-- no other) goes into it by name, in its /targetexact line; yourself takes the name out. In combat: once it ends.
+-- It follows the macro renamed, and is let go when the macro is deleted.
+-- The unit under the mouse is the one clicked: a click on a unit frame takes no target in Retail's clients with keys
+-- held (no click binding for them), your own portrait among them.
+do
+    local function row(name)
+        for _, o in ipairs(created) do
+            if o.kind == "Button" and o.alert and o.text and o.text.text == name and o:IsShown() then return o end
+        end
+    end
+    local function menuItem(label)
+        for _, r in ipairs(MacroSenseMenu.rows) do
+            if r:IsShown() and r.text.text == label then return r end
+        end
+    end
+    local ME = {} -- yourself under the mouse
+    local over, realm -- under the mouse: a name (and realm), ME, or nil: no unit
+    local target -- the target's name
+    local unitName, unitIsUnit = UnitName, UnitIsUnit
+    UnitExists = function(unit) return unit == "mouseover" and over ~= nil or unit == "target" and target ~= nil end
+    UnitName = function(unit)
+        if unit == "mouseover" and over ~= ME then return over, realm end
+        if unit == "target" then return target end
+        return unitName(unit)
+    end
+    UnitIsUnit = function(a, b)
+        if a == "mouseover" and b == "player" then return over == ME end
+        if a == "target" and b == "player" then return false end
+        return unitIsUnit(a, b)
+    end
+    local function Holding(keys, event, ...)
+        local function held(key) return function() return (keys or ""):find(key) ~= nil end end
+        IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown = held("shift"), held("ctrl"), held("alt")
+        Send(event, ...)
+        local up = function() return false end
+        IsShiftKeyDown, IsControlKeyDown, IsAltKeyDown = up, up, up
+    end
+    local function Click(who, keys, from, button)
+        over, realm = who, from
+        Holding(keys, "GLOBAL_MOUSE_UP", button or "LeftButton")
+    end
+    local function body() return select(3, GetMacroInfo(GetMacroIndexByName("Tag Rare"))) end
+    CreateMacro("Tag Rare", 1, "#showtooltip\n/cast Shoot", false)
+    Send("UPDATE_MACROS")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    NextFrame()
+    Click("Hogger", "ctrl-alt")
+    check("tag: no tag macro, nothing changes", body() == "#showtooltip\n/cast Shoot", body())
+    Fire(row("Tag Rare"), "OnClick", "RightButton")
+    Fire(menuItem("Make it the tag macro"), "OnClick")
+    check("tag: picked in the menu", ns.Tag.Is("general", "Tag Rare"))
+    Click("Hogger", "ctrl-alt")
+    check("tag: the name, after #showtooltip", body() == "#showtooltip\n/targetexact Hogger\n/cast Shoot", body())
+    Click("Bob", "ctrl-alt", "Silvermoon")
+    check("tag: another one in its place, a player with the realm",
+        body() == "#showtooltip\n/targetexact Bob-Silvermoon\n/cast Shoot", body())
+    Click("Mor'Ladim", "ctrl")
+    Click("Mor'Ladim", "ctrl-alt-shift")
+    Click("Mor'Ladim")
+    check("tag: not without those keys, nor with more", body() == "#showtooltip\n/targetexact Bob-Silvermoon\n/cast Shoot",
+        body())
+    Click("Mor'Ladim", "ctrl-alt", nil, "RightButton")
+    Click(nil, "ctrl-alt")
+    target = "Mor'Ladim"
+    Holding("ctrl-alt", "PLAYER_TARGET_CHANGED") -- taken with a key, no click
+    target = nil
+    check("tag: not with the right button, nor a click on no one, nor a target taken with a key",
+        body() == "#showtooltip\n/targetexact Bob-Silvermoon\n/cast Shoot", body())
+    Click(ME, "ctrl-alt")
+    check("tag: yourself takes the name out", body() == "#showtooltip\n/cast Shoot", body())
+    InCombatLockdown = function() return true end
+    Click("Hogger", "ctrl-alt")
+    check("tag: in combat, the macro as it was", body() == "#showtooltip\n/cast Shoot", body())
+    InCombatLockdown = function() return false end
+    Send("PLAYER_REGEN_ENABLED")
+    check("tag: once combat ends, the name", body() == "#showtooltip\n/targetexact Hogger\n/cast Shoot", body())
+    -- Its own /target line with a name: that one takes it.
+    EditMacro(GetMacroIndexByName("Tag Rare"), nil, nil, "/cast Shoot\n/target Hogger")
+    Click("Rak'shiri", "ctrl-alt")
+    check("tag: its own /target line", body() == "/cast Shoot\n/target Rak'shiri", body())
+    -- The keys picked in the settings.
+    Fire(ns.Options.tagKeys, "OnClick")
+    Fire(menuItem("Shift + Alt"), "OnClick")
+    Click("Hogger", "shift-alt")
+    check("tag: the keys picked in the settings", ns.db.tagKeys == "shift-alt"
+        and body() == "/cast Shoot\n/target Hogger", body())
+    ns.db.tagKeys = "ctrl-alt"
+    -- Renamed in the editor, the tag macro is still the one; deleted, it is let go.
+    ns.History.Renamed("general", "Tag Rare", "Tag Rare 2")
+    check("tag: follows the macro renamed", ns.Tag.Is("general", "Tag Rare 2"))
+    ns.History.Renamed("general", "Tag Rare 2", "Tag Rare")
+    Fire(row("Tag Rare"), "OnClick", "RightButton")
+    Fire(menuItem("Not the tag macro"), "OnClick")
+    check("tag: no longer, in the menu", ns.char.tag == nil)
+    Fire(row("Tag Rare"), "OnClick", "RightButton")
+    Fire(menuItem("Make it the tag macro"), "OnClick")
+    DeleteMacro(GetMacroIndexByName("Tag Rare"))
+    Send("UPDATE_MACROS")
+    check("tag: let go with the macro deleted", ns.char.tag == nil)
+    ns.CloseMenu()
+    UnitExists, UnitName, UnitIsUnit = nil, unitName, unitIsUnit
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- "With mistakes": only the macros with a mistake or a warning, the tabs counting them; off when the editor opens
 -- again.
 do
@@ -6501,6 +6609,7 @@ do
     ns.Window.Revert()
     Blank()
     SLASH_TARGET2, SLASH_DISMOUNT1, SLASH_DISMOUNT2 = "/ziel", "/dismount", "/absitzen" -- the client's: German
+    ns.InvalidateSources("commands") -- as when the game registers commands
     ns.Window.Restore("/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt\n/startattack\n"
         .. "/cast [@mouseover,help][] Heal\n/cast [form:1] Maul; [spec:2] Wrath\n/ziel [@focus]\n/absitzen")
     edit:ClearFocus()
@@ -6642,6 +6751,7 @@ do
     scroll.IsMouseOver = nil
     over = false
     SLASH_TARGET2, SLASH_DISMOUNT1, SLASH_DISMOUNT2 = nil, nil, nil
+    ns.InvalidateSources("commands")
     ns.Window.Revert()
 end
 

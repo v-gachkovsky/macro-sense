@@ -1115,11 +1115,12 @@ function Window.OpenRowMenu(owner, r)
     else
         items = CopyItems(r.index)
     end
-    -- A General one: favorite, folder (WindowFolders.lua). Its note, last (one behind the scenes is the
-    -- character's).
+    -- A General one: favorite, folder (WindowFolders.lua). One in the game may be the tag macro (Tag.lua). Its
+    -- note, last (one behind the scenes is the character's).
     if r.what == "macro" and r.scope == "general" then
         for _, item in ipairs(shared.FolderItems({ r.name })) do items[#items + 1] = item end
     end
+    if r.what == "macro" then items[#items + 1] = ns.Tag.Item(r.scope, r.name) end
     items[#items + 1] = shared.NoteItem(r.what == "stored" and "character" or r.scope, r.name)
     ns.OpenMenu(owner, items, 200, false, true)
 end
