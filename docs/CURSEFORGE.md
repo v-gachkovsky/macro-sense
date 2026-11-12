@@ -145,9 +145,10 @@ They are off until you turn them on: without them, MacroSense works as before.
 | `/` | slash commands, emotes, chat commands, commands of your other addons |
 | `/cast [` | macro conditions: `combat`, `harm`, `mod`, `stance`, ... |
 | `[@` or `[target=` | units: `mouseover`, `focus`, `party1`, `arena2`, ... and `party1target` style chains |
-| `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys |
+| `[mod:` | `shift`, `ctrl`, `alt`, `cmd` on Mac, left / right keys, and the keys you set in the game's settings (`SELFCAST`, `FOCUSCAST`, `MOUSEOVERCAST`, `PICKUPACTION`, `AUTOLOOTTOGGLE`) |
 | `[form:` / `[stance:` | your forms with their names |
-| `[spec:`, `[equipped:`, `[group:`, `[bar:`, `[btn:` | specs, weapon and armor types, party / raid, bar pages, buttons |
+| `[spec:`, `[equipped:`, `[group:`, `[bar:`, `[btn:` | specs in Retail (talent groups 1 and 2 in the other versions), the weapon and armor types your game has items of, party / raid, bar pages, buttons |
+| `[known:` | your spells, every talent of your class (chosen or not), and the spells you learn later |
 | `[pet:` | your pets by family (`Imp`, `Voidwalker`): every pet you had out, and in an English game the demons you can summon |
 | `/cast ` or after `]` / `;` | your spells, your pets' spells, then usable items |
 | `/cast [pet:Imp] ` | only the Imp's spells, once your Imp has been out |

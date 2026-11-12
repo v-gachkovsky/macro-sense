@@ -1081,6 +1081,8 @@ ns.locales.uk = {
     ["\"%s\": a talent you haven't chosen, the macro can't use it now"] =
         "«%s»: талант не вибрано, макрос зараз не може його використати",
     ["talent not chosen"] = "талант не вибрано",
+    ["talent"] = "талант",
+    ["learned later"] = "вивчите пізніше",
     ["\"%s\" belongs to %s: you are in another specialization now"] =
         "«%s» належить до %s: зараз у вас інша спеціалізація",
     ["%s only"] = "лише для %s",
@@ -1315,6 +1317,20 @@ ns.locales.uk = {
     ["without your self-cast key held"] = "без затиснутої клавіші касту на себе",
     ["with your focus-cast key held"] = "із затиснутою клавішею касту на фокус",
     ["without your focus-cast key held"] = "без затиснутої клавіші касту на фокус",
+    ["mouseover-cast key"] = "клавіша касту на того, хто під курсором",
+    ["action pick-up key"] = "клавіша, що знімає дії з панелей",
+    ["auto-loot key"] = "клавіша автозбору здобичі",
+    ["with your mouseover-cast key held"] =
+        "із затиснутою клавішею касту на того, хто під курсором",
+    ["without your mouseover-cast key held"] =
+        "без затиснутої клавіші касту на того, хто під курсором",
+    ["with your action pick-up key held"] =
+        "із затиснутою клавішею, що знімає дії з панелей",
+    ["without your action pick-up key held"] =
+        "без затиснутої клавіші, що знімає дії з панелей",
+    ["with your auto-loot key held"] = "із затиснутою клавішею автозбору здобичі",
+    ["without your auto-loot key held"] =
+        "без затиснутої клавіші автозбору здобичі",
     ["with no key held"] = "без затиснутих клавіш",
     ["with Shift, Ctrl or Alt held"] = "із затиснутим Shift, Ctrl чи Alt",
     ["left %s"] = "%s (лівий)",

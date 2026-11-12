@@ -453,8 +453,8 @@ end
 local TalentInfo = C_SpecializationInfo and C_SpecializationInfo.GetTalentInfo
 
 -- The tree also has the talents of your other specializations, which you can't see. The talents of a hero tree
--- not chosen count as not chosen.
-local function treeTalents(add)
+-- not chosen count as not chosen. `all`: the chosen ones too.
+local function treeTalents(add, all)
     local configID = C_ClassTalents.GetActiveConfigID()
     local config = configID and C_Traits.GetConfigInfo(configID)
     if not config then return end -- not loaded yet: the game tells when it is (TRAIT_CONFIG_LIST_UPDATED)
@@ -462,7 +462,7 @@ local function treeTalents(add)
         for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID) or {}) do
             local node = C_Traits.GetNodeInfo(configID, nodeID)
             if node and node.isVisible then
-                local chosen = node.activeRank > 0 and node.activeEntry and node.activeEntry.entryID
+                local chosen = not all and node.activeRank > 0 and node.activeEntry and node.activeEntry.entryID
                 if node.subTreeID and not node.subTreeActive then chosen = nil end
                 for _, entryID in ipairs(node.entryIDs) do
                     local entry = entryID ~= chosen and C_Traits.GetEntryInfo(configID, entryID)
@@ -479,35 +479,55 @@ end
 
 local function talentName(info) return info.spellID and info.spellID ~= 0 and SpellName(info.spellID) or info.name end
 
-local function rowTalents(add)
+local function rowTalents(add, all)
     local group = ns.ActionBars.Group()
     for tier = 1, MAX_NUM_TALENT_TIERS or 6 do
         for column = 1, 3 do
             local info = TalentInfo({ tier = tier, column = column, groupIndex = group })
-            if info and not info.selected then add(talentName(info)) end
+            if info and (all or not info.selected) then add(talentName(info)) end
         end
     end
 end
 
-local function pointTalents(add)
+local function pointTalents(add, all)
     local group = ns.ActionBars.Group()
     for tab = 1, GetNumTalentTabs and GetNumTalentTabs() or 0 do
         for i = 1, GetNumTalents(tab) do
             local info = TalentInfo({ specializationIndex = tab, talentIndex = i, groupIndex = group })
-            if info and info.rank == 0 then add(talentName(info)) end
+            if info and (all or info.rank == 0) then add(talentName(info)) end
         end
     end
 end
 
--- The names of your class's talents you haven't chosen.
-function ns.sources.talents()
+-- The names of your class's talents you haven't chosen; `all`: every talent of it.
+function ns.sources.talents(all)
     local out = {}
     local function add(name) if name and name ~= "" then out[#out + 1] = name end end
     if C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_Traits then
-        treeTalents(add)
+        treeTalents(add, all)
     elseif TalentInfo then
-        if ns.HasExpansion(4) then rowTalents(add) else pointTalents(add) end
+        if ns.HasExpansion(4) then rowTalents(add, all) else pointTalents(add, all) end
     end
+    return out
+end
+
+-- What "known:" can ask about: your spells, every talent of your class, chosen or not, and the spells you learn
+-- later, each once.
+function ns.sources.known()
+    local out, seen = {}, {}
+    local function add(item)
+        if not seen[item.name:lower()] then
+            seen[item.name:lower()] = true
+            out[#out + 1] = item
+        end
+    end
+    for _, spell in ipairs(ns.sources.spells()) do add(spell) end
+    local ok, talents = pcall(ns.sources.talents, true)
+    for _, name in ipairs(ok and talents or {}) do add({ name = name, hint = "talent" }) end
+    for _, spell in ipairs(ns.sources.laterSpells()) do
+        add({ name = spell.name, hint = spell.offSpec or "learned later" })
+    end
+    table.sort(out, function(a, b) return a.name < b.name end)
     return out
 end
 
@@ -637,9 +657,11 @@ function ns.sources.forms()
     return out
 end
 
--- Retail has the specializations in C_SpecializationInfo (its global function is old since 11.2.0), the others
--- in the global one.
+-- "spec:" takes a specialization in Retail, a talent group of dual specialization elsewhere (ns.SpecsByGroup):
+-- Mists of Pandaria lists specializations too, and WoW Forever its one. Retail has the specializations in
+-- C_SpecializationInfo (its global function is old since 11.2.0).
 function ns.sources.specs()
+    if ns.SpecsByGroup() then return { { name = "1", hint = "primary" }, { name = "2", hint = "secondary" } } end
     local out = {}
     local Info = C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo or GetSpecializationInfo
     if GetNumSpecializations and Info then
@@ -648,13 +670,20 @@ function ns.sources.specs()
             out[#out + 1] = { name = tostring(i), hint = name, icon = icon }
         end
     end
-    if #out == 0 then -- Classic: dual talent specs
-        out = { { name = "1", hint = "primary" }, { name = "2", hint = "secondary" } }
-    end
     return out
 end
 
--- Weapon and armor types for "equipped:", in the client's language.
+-- Weapon (2) and armor (4) types by the game's numbers, with the expansions that have items of them (`since`,
+-- `gone`, as conditions): Warglaives from Legion, Thrown until Mists of Pandaria, the relics until Cataclysm made
+-- them all Relics, and those until Mists of Pandaria. Bear Claws, Cat Claws and Spears (11, 12, 17) never had any.
+local ITEM_TYPES = {
+    { 2, { 0, 1, 2, 3, 4, 5, 6, 7, 8, { 9, since = 6 }, 10, 13, 14, 15, { 16, gone = 4 }, 18, 19, 20 } },
+    { 4, { 0, 1, 2, 3, 4, 5, 6, { 7, gone = 3 }, { 8, gone = 3 }, { 9, gone = 3 }, { 10, since = 2, gone = 3 },
+        { 11, since = 3, gone = 4 } } },
+}
+
+-- Weapon and armor types for "equipped:", in the client's language: those of this client's items (WoW Forever has
+-- those of Classic Era).
 local itemTypeCache
 local SubClassInfo = C_Item and C_Item.GetItemSubClassInfo or GetItemSubClassInfo
 local ClassInfo = C_Item and C_Item.GetItemClassInfo or GetItemClassInfo
@@ -667,10 +696,13 @@ function ns.sources.itemTypes()
             out[#out + 1] = { name = name, hint = hint }
         end
     end
-    for _, class in ipairs({ { 2, 20 }, { 4, 11 } }) do
+    for _, class in ipairs(ITEM_TYPES) do
         local className = ClassInfo and ClassInfo(class[1])
         add(className)
-        for sub = 0, class[2] do add(SubClassInfo and SubClassInfo(class[1], sub), className) end
+        for _, sub in ipairs(class[2]) do
+            local t = type(sub) == "table" and sub or { sub }
+            if ns.HasExpansion(t.since, t.gone) then add(SubClassInfo and SubClassInfo(class[1], t[1]), className) end
+        end
     end
     itemTypeCache = out
     return out
@@ -1148,6 +1180,6 @@ end
 function ns.InvalidateSources(what)
     if not what or what == "commands" then commandCache, commandKeys = nil, nil end
     if not what or what == "spells" then spellCache, gcdCache = nil, {} end
-    if not what or what == "items" then itemCache = nil end
+    if not what or what == "items" then itemCache, itemTypeCache = nil, nil end
     if what ~= "commands" then knownCache = nil end
 end

@@ -166,8 +166,10 @@ ns.data = {
         { name = "lshift", hint = "left" }, { name = "rshift", hint = "right" },
         { name = "lctrl", hint = "left" }, { name = "rctrl", hint = "right" },
         { name = "lalt", hint = "left" }, { name = "ralt", hint = "right" },
-        -- The keys set in the game's settings for these actions.
+        -- The keys set in the game's settings for these actions: the same five in every client.
         { name = "SELFCAST", hint = "self-cast key" }, { name = "FOCUSCAST", hint = "focus-cast key" },
+        { name = "MOUSEOVERCAST", hint = "mouseover-cast key" },
+        { name = "PICKUPACTION", hint = "action pick-up key" }, { name = "AUTOLOOTTOGGLE", hint = "auto-loot key" },
     },
 
     -- Values for "btn:" / "button:".

@@ -323,6 +323,18 @@ C_Item = {
     end,
     IsHelpfulItem = function(item) return item == "Healthstone" end,
     IsHarmfulItem = function() return false end,
+    -- Weapon (2) and armor (4) types, as an English client names them.
+    GetItemClassInfo = function(class) return ({ [2] = "Weapon", [4] = "Armor" })[class] end,
+    GetItemSubClassInfo = function(class, sub)
+        if class == 2 then
+            return ({ [0] = "One-Handed Axes", "Two-Handed Axes", "Bows", "Guns", "One-Handed Maces",
+                "Two-Handed Maces", "Polearms", "One-Handed Swords", "Two-Handed Swords", "Warglaives", "Staves",
+                "Bear Claws", "CatClaws", "Fist Weapons", "Miscellaneous", "Daggers", "Thrown", "Spears", "Crossbows",
+                "Wands", "Fishing Poles" })[sub]
+        end
+        return ({ [0] = "Miscellaneous", "Cloth", "Leather", "Mail", "Plate", "Cosmetic", "Shields", "Librams",
+            "Idols", "Totems", "Sigils", "Relic" })[sub]
+    end,
 }
 -- Whether a spell is for friends or enemies; a name the game doesn't know it refuses.
 -- The game's spells by ID, known or not (icon names): icon, name.
@@ -5722,7 +5734,8 @@ do
     for _, text in ipairs({ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         "General", "Character", "does nothing", "conditions not met", "not reached", "chat", "equip", "cancel", "no form", "primary",
         "secondary", "with you now", "pet family", "equipped", "item", "extra action", "leave the vehicle",
-        "popup: first button", "popup: second button", "highest", "on you now", "buff", "every marker",
+        "popup: first button", "popup: second button", "highest", "on you now", "buff", "every marker", "talent",
+        "learned later",
         "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "inside, plot, editor or neighborhood", "a bar page 1-6",
         "a form number, 0 = no form",
@@ -5971,6 +5984,19 @@ do
         if item.name == "Chaos Bolt" then hint = item.hint end
     end
     check("missing: suggested with its specialization", hint == "Destruction", hint)
+    -- "known:" asks about your spells, every talent of your class, chosen or not, and the spells you learn later.
+    local known = {}
+    for _, item in ipairs(ns.Conditions.Values("known")) do known[item.name] = item.hint or "-" end
+    check("known: talents not chosen", known["Death Coil"] == "talent" and known["Coil"] == "talent"
+        and known["Mortal Coil"] == "talent" and known["Soul Leech"] == "talent", known["Death Coil"])
+    check("known: talents chosen", known["Howl of Terror"] ~= nil and known["Dark Pact"] ~= nil)
+    check("known: not another specialization's talents", known["Fear"] == nil)
+    check("known: spells learned later", known["Shadowfury"] == "learned later"
+        and known["Soul Fire"] == "Destruction", known["Shadowfury"])
+    check("known: your spells, another specialization's with it", known["Fireball"] == "-"
+        and known["Chaos Bolt"] == "Destruction", known["Chaos Bolt"])
+    local item = ns.Completion.Get(ns.Parser.GetContext("/cast [known:Death C", 19))[1]
+    check("known: suggested", item and item.name == "Death Coil", item and item.name)
     -- Talents not loaded yet (just logged in): none, and no talents of the Classic kind either.
     configID = nil
     talentInfo = function() return { name = "Blazing Speed", selected = false, rank = 0, spellID = 0 } end
@@ -6727,24 +6753,70 @@ do
     check("explained: once while the mouse stays", at(696, 1) == "", at(696, 1))
     check("explained: the next unit tried, under the first", at(102, 3) == "Line 3 / • Heal on the unit under the "
         .. "mouse, if it is a friend /      if not, on your target", at(102, 3))
-    -- The game's names of your forms and specializations, and the commands of the client's language.
+    -- The game's names of your forms and specializations (Retail's), and the commands of the client's language.
     GetNumShapeshiftForms, GetShapeshiftFormInfo = function() return 1 end, function() return 1, "Bear Form" end
     GetNumSpecializations = function() return 2 end
     GetSpecializationInfo = function(i) return 100 + i, ({ "Balance", "Feral" })[i], "", 1 end
+    WOW_PROJECT_ID, WOW_PROJECT_MAINLINE = 1, 1
     check("explained: with the game's names", at(102, 4) == "Line 4 / • in Bear Form: Maul / • otherwise, in "
         .. "specialization Feral: Wrath", at(102, 4))
+    WOW_PROJECT_ID, WOW_PROJECT_MAINLINE = nil, nil
     check("explained: a command of the client's language", at(102, 5) == "Line 5 / • targets your focus"
         and at(102, 6) == "Line 6 / • gets off your mount", at(102, 6))
     GetNumShapeshiftForms, GetShapeshiftFormInfo, GetNumSpecializations, GetSpecializationInfo = nil, nil, nil, nil
     -- Retail has the specializations' names in C_SpecializationInfo: its global function is old since 11.2.0.
+    -- Elsewhere "spec:" takes a talent group of dual specialization, though Mists of Pandaria lists specializations
+    -- too and WoW Forever its one.
     do
         local info = C_SpecializationInfo.GetSpecializationInfo
         GetNumSpecializations = function() return 2 end
         C_SpecializationInfo.GetSpecializationInfo = function(i) return 100 + i, ({ "Balance", "Feral" })[i], "", 1 end
+        WOW_PROJECT_ID, WOW_PROJECT_MAINLINE = 1, 1
         local specs = ns.sources.specs()
         check("specializations: their names from C_SpecializationInfo", #specs == 2 and specs[2].hint == "Feral",
             specs[2] and specs[2].hint)
+        local function hints()
+            local out = {}
+            for _, spec in ipairs(ns.sources.specs()) do out[#out + 1] = spec.name .. "=" .. spec.hint end
+            return table.concat(out, ",")
+        end
+        WOW_PROJECT_ID = 18
+        GetNumSpecializations = function() return 1 end
+        check("specializations: talent groups in WoW Forever", hints() == "1=primary,2=secondary", hints())
+        WOW_PROJECT_ID, GetNumSpecializations = 19, function() return 3 end
+        check("specializations: talent groups in Mists of Pandaria", hints() == "1=primary,2=secondary", hints())
         GetNumSpecializations, C_SpecializationInfo.GetSpecializationInfo = nil, info
+        WOW_PROJECT_ID, WOW_PROJECT_MAINLINE = nil, nil
+        check("specializations: talent groups in Classic Era", hints() == "1=primary,2=secondary", hints())
+    end
+    -- "equipped:" takes the weapon and armor types this client has items of: never Bear Claws, Cat Claws or Spears;
+    -- Warglaives from Legion; Thrown and the relics in Classic Era and TBC (and WoW Forever, which has their items).
+    do
+        local function types(level)
+            LE_EXPANSION_LEVEL_CURRENT = level
+            ns.InvalidateSources("items")
+            local out = {}
+            for _, t in ipairs(ns.sources.itemTypes()) do out[#out + 1] = t.name end
+            return table.concat(out, ",")
+        end
+        local era = types(0)
+        check("item types: Classic Era", era == "Weapon,One-Handed Axes,Two-Handed Axes,Bows,Guns,One-Handed Maces,"
+            .. "Two-Handed Maces,Polearms,One-Handed Swords,Two-Handed Swords,Staves,Fist Weapons,Miscellaneous,"
+            .. "Daggers,Thrown,Crossbows,Wands,Fishing Poles,Armor,Cloth,Leather,Mail,Plate,Cosmetic,Shields,"
+            .. "Librams,Idols,Totems", era)
+        local retail = types(11)
+        check("item types: Retail", retail == "Weapon,One-Handed Axes,Two-Handed Axes,Bows,Guns,One-Handed Maces,"
+            .. "Two-Handed Maces,Polearms,One-Handed Swords,Two-Handed Swords,Warglaives,Staves,Fist Weapons,"
+            .. "Miscellaneous,Daggers,Crossbows,Wands,Fishing Poles,Armor,Cloth,Leather,Mail,Plate,Cosmetic,Shields",
+            retail)
+        local mists = types(4)
+        check("item types: Mists of Pandaria, no thrown nor relics", not mists:find("Thrown")
+            and not mists:find("Relic") and not mists:find("Librams") and not mists:find("Warglaives"), mists)
+        local item = ns.Completion.Get(ns.Parser.GetContext("/cast [equipped:Sh", 18))[1]
+        check("item types: suggested after equipped:", item and item.name == "Shields" and item.hint == "Armor",
+            item and item.name)
+        LE_EXPANSION_LEVEL_CURRENT = nil
+        ns.InvalidateSources("items")
     end
     -- Over the text: the word under the mouse. Letter k of a line is at x = text start + 8 (k - 1).
     local w = math.floor((edit.fontSize or 13) * 0.6 + 0.5)
