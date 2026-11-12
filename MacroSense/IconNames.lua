@@ -91,6 +91,17 @@ function IconNames.Step(ms)
     return true
 end
 
+-- The file name of icon `id` ("inv_misc_book_09"), from the community's list of the game's file names
+-- (IconFiles.lua), or nil: the search finds "book" in it, as Wowhead does. Read from the list at the first search.
+local files, filesOf
+function IconNames.File(id)
+    if filesOf ~= ns.ICON_FILES then
+        files, filesOf = {}, ns.ICON_FILES
+        for fid, name in (filesOf or ""):gmatch("(%d+) ([^\n]+)") do files[tonumber(fid)] = name end
+    end
+    return files[id]
+end
+
 -- How far the lookup is: 0 to 1.
 function IconNames.Progress()
     if state.finished then return 1 end

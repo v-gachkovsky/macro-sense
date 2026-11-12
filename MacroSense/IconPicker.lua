@@ -1,7 +1,8 @@
 -- Icon grid for macros: the question mark first (#showtooltip picks the icon), then icons of your spells
 -- and items, then every macro icon the game offers, with icons you put in Interface\Icons yourself. Search
 -- matches the names of your spells and items, of any spell or achievement that uses an icon (IconNames.lua),
--- and icon file names where the game gives them. An icon's file name or file ID typed in finds that icon.
+-- and the icons' file names (IconFiles.lua, or the game's where it gives them). An icon's file name or file ID
+-- typed in finds that icon.
 local _, ns = ...
 
 local MIN_COLS, MIN_ROWS, SIZE, GAP, PAD = 10, 7, 34, 4, 10
@@ -127,6 +128,8 @@ end
 
 local function Matches(entry, q)
     if entry.name and ns.Completion.Lower(entry.name):find(q, 1, true) then return true end
+    local file = ns.IconNames.File(entry.icon)
+    if file and file:find(q, 1, true) then return true end
     local names = ns.IconNames.For(entry.icon)
     return names ~= nil and names.text:find(q, 1, true) ~= nil
 end
@@ -201,16 +204,18 @@ local function Create()
             Refresh()
             if onPick then onPick(current) end
         end)
-        -- Its name, then the names of other spells and achievements that use it.
+        -- Its name, then the names of other spells and achievements that use it, and its file name.
         b:SetScript("OnEnter", function()
             local names = b.entry and ns.IconNames.For(b.entry.icon)
-            local name = b.entry and b.entry.name or names and names[1]
+            local file = b.entry and ns.IconNames.File(b.entry.icon)
+            local name = b.entry and b.entry.name or names and names[1] or file
             if not name then return end
             GameTooltip:SetOwner(b, "ANCHOR_RIGHT")
             GameTooltip:SetText(name)
             for _, other in ipairs(names or {}) do
                 if other ~= name then GameTooltip:AddLine(other, 0.8, 0.8, 0.8) end
             end
+            if file and file ~= name then GameTooltip:AddLine(file, 0.5, 0.5, 0.5) end
             GameTooltip:Show()
         end)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
