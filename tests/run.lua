@@ -1562,6 +1562,19 @@ do
         "/targetenemy [noharm][dead]\n/petattack")
     expectText("pet: with trinkets, an icon", text({ command = "pet", pet = "passive", trinket2 = true }),
         "#showtooltip\n/use 14\n/petpassive")
+    -- /petdismiss takes no conditions in the game: it goes last, after a /stopmacro for when it shouldn't.
+    expectText("pet: dismiss alone", text({ command = "pet", pet = "dismiss" }), "/petdismiss")
+    expectText("pet: Shift dismisses", text({ command = "pet", pet = "follow", keys = { shift = { pet = "dismiss" } } }),
+        "/petfollow [nomod:shift]\n/stopmacro [nomod:shift]\n/petdismiss")
+    expectText("pet: dismiss without a key, in combat, said first", text({ command = "pet", pet = "dismiss",
+        when = { combat = "yes" }, say = "Bye", channel = "say",
+        keys = { shift = { pet = "follow" }, ctrl = { pet = "dismiss" }, alt = { pet = "stay" } } }),
+        "/petfollow [mod:shift,combat]\n/petstay [mod:alt,combat]\n/say Bye\n"
+        .. "/stopmacro [mod:shift/alt,nomod:ctrl][nocombat]\n/petdismiss")
+    expectText("pet: dismiss out of combat, in a raid", text({ command = "pet", pet = "dismiss",
+        when = { combat = "no", group = "raid" } }), "/stopmacro [combat][nogroup:raid]\n/petdismiss")
+    expectText("pet: dismiss with every key", text({ command = "pet", pet = "dismiss",
+        keys = { shift = { pet = "dismiss" } } }), "/petdismiss")
     check("wizard name: the pet's", W.Name(form({ command = "pet" })) == "Pet")
     -- Also: out of the form, off the mount, a buff cancelled first; something said in chat last.
     expectText("also: what goes first and what is said", text({ action = bolt, on = usual, cancelform = true,
@@ -2416,6 +2429,19 @@ do
     read("in water: a list", "/castsequence [swimming] Corruption, Immolate",
         "#showtooltip\n/castsequence [swimming] Corruption, Immolate")
     read("the pet", "/petattack", "/petattack")
+    -- /petdismiss after a /stopmacro: whom it is for. With conditions of its own (the game ignores them), it moves.
+    spec = read("the pet: Shift dismisses", "/petfollow [nomod:shift]\n/stopmacro [nomod:shift]\n/petdismiss",
+        "/petfollow [nomod:shift]\n/stopmacro [nomod:shift]\n/petdismiss")
+    check("wizard read: Shift dismisses, the answers", spec.pet == "follow" and spec.keys.shift.active
+        and spec.keys.shift.pet == "dismiss")
+    local dismiss = "/petfollow [mod:shift,combat]\n/stopmacro [mod:shift,nomod:ctrl][nocombat]\n/petdismiss"
+    spec = read("the pet: dismissed without a key and with Ctrl", dismiss, dismiss)
+    check("wizard read: dismissed without a key and with Ctrl, the answers", spec.pet == "dismiss"
+        and spec.keys.ctrl.pet == "dismiss" and spec.keys.shift.pet == "follow" and spec.when.combat == "yes")
+    spec = read("the pet: dismissed when alone", "/stopmacro [group]\n/petdismiss", "/stopmacro [group]\n/petdismiss")
+    check("wizard read: dismissed when alone, the When row", spec.pet == "dismiss" and spec.when.group == "no")
+    read("the pet: dismiss with a key of its own", "/petfollow [nomod:shift]\n/petdismiss [mod:shift]",
+        "/petfollow [nomod:shift]\n/stopmacro [nomod:shift]\n/petdismiss", "/petdismiss [mod:shift]")
     read("trinkets and the rest", "#showtooltip\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n"
         .. "/s Go!", "#showtooltip Mortal Strike\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n/say Go!")
     read("trinkets alone", "/use 13\n/use 14", "#showtooltip\n/use 13\n/use 14")
