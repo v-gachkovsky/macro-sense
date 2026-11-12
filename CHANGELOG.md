@@ -78,6 +78,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   Classic Era, TBC and WoW Forever.
 - The minimap button shows the new round logo, whole, with its gold ring for a border. It stays whole in minimap
   button collectors too.
+- The wizard's window is wider, so the long names fit whole, in Ukrainian too: **Shift + Ctrl**, **Right click**,
+  the specializations and the types of gear in When. Its fields line up on three equal columns, from the command
+  to Also, and a sequence's six spells take two rows instead of three, so its window is lower.
 
 ### Fixed
 - The **MacroSense** button in the game's macro window: MacroSense opens in front, on the macro chosen there, and
@@ -87,6 +90,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
   key or the When row: the game's `/petdismiss` ignores conditions. The wizard now puts it last, after a
   `/stopmacro` for when it shouldn't: `/stopmacro [nomod:shift]`, then `/petdismiss`. A macro of the old kind opens
   in the wizard as it should be, with the line that will change.
+- The hint in the wizard's **Otherwise** box no longer runs under its **!**: the box is wider.
 
 ## [0.17.0] - 2026-11-09
 
