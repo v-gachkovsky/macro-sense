@@ -847,6 +847,15 @@ ns.locales.uk = {
         .. "shows the buffs you have now and the ones you had before."] =
         "Знімає цей бафф перед усім іншим (/cancelaura Ice Block). Залиште порожнім, щоб нічого не знімати. У списку "
         .. "є баффи, які на вас зараз і які були раніше.",
+    ["Click"] = "Натиснути",
+    ["Click a button"] = "Натиснути кнопку",
+    ["a button's name"] = "назва кнопки",
+    ["Clicks this button too, as if you pressed it (/click ExtraActionButton1): one on your action bars or your "
+        .. "pet's, the extra action button, another addon's. The list shows the buttons there are now, with what is "
+        .. "on them. Leave it empty to click nothing."] =
+        "Натискає й цю кнопку, ніби ви натиснули її самі (/click ExtraActionButton1): на ваших панелях дій чи "
+        .. "панелі улюбленця, кнопку додаткової дії, кнопку іншого аддону. У списку кнопки, які є зараз, і що на них. "
+        .. "Залиште порожнім, щоб нічого не натискати.",
     ["Say in chat"] = "Сказати в чат",
     ["The macro says this after everything else, in the channel on the left. %t is your target's name. Leave it "
         .. "empty to say nothing."] =

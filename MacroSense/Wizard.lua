@@ -787,11 +787,15 @@ function Wizard.Text(spec)
     local uses = {}
     if spec.trinket1 then uses[#uses + 1] = "/use 13" end
     if spec.trinket2 then uses[#uses + 1] = "/use 14" end
-    if not line and #before == 0 and #uses == 0 and #last == 0 then return nil end
-    -- The icon and tooltip of the spell (a /target or pet macro has none to show, but trinkets have). With
-    -- trinkets first, a bare #showtooltip would show the first trinket: it names the spell.
+    -- A button to click (/click ExtraActionButton1): with the trinkets, before the spell.
+    local click = spec.click and Trim(spec.click.name) ~= "" and "/click " .. Trim(spec.click.name) or nil
+    local bare = not line and #before == 0 and #uses == 0 and #last == 0
+    if bare and not click then return nil end
+    -- The icon and tooltip of the spell (a /target or pet macro has none to show, but trinkets have; a click alone
+    -- has nothing to show either). With trinkets first, a bare #showtooltip would show the first trinket: it names
+    -- the spell.
     local lines = {}
-    if not target or #uses > 0 then
+    if (not target or #uses > 0) and not bare then
         local first = First(spec)
         lines[1] = icon and ("#showtooltip " .. icon)
             or #uses > 0 and first and ("#showtooltip " .. Wizard.Spelled(first)) or "#showtooltip"
@@ -809,6 +813,7 @@ function Wizard.Text(spec)
     if spec.cancelaura then lines[#lines + 1] = "/cancelaura " .. spec.cancelaura.name end
     if spec.nearest then lines[#lines + 1] = "/targetenemy [noharm][dead]" end
     for _, use in ipairs(uses) do lines[#lines + 1] = use end
+    lines[#lines + 1] = click
     -- Auto attack right before the spell: on the target the lines before it may have changed (the nearest enemy).
     if spec.startattack then lines[#lines + 1] = "/startattack" end
     if pet then

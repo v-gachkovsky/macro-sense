@@ -572,9 +572,9 @@ local function BuildWhen(parent, prefix, x)
     end
 end
 
--- What else the macro does, in three columns of yes / no, then a buff to cancel first and what to say in chat last:
--- in the form, and as a question. `prefix` names the controls: "" the form's ("stopcasting"), "step" the
--- question's ("stepStopcasting").
+-- What else the macro does, in three columns of yes / no, then a buff to cancel first and a button to click, and
+-- what to say in chat last: in the form, and as a question. `prefix` names the controls: "" the form's
+-- ("stopcasting"), "step" the question's ("stepStopcasting").
 local function BuildAlso(parent, prefix)
     local function named(name) return prefix == "" and name or prefix .. (name:gsub("^%l", string.upper)) end
     -- By name and by place from the top left.
@@ -600,12 +600,24 @@ local function BuildAlso(parent, prefix)
         if c[3] then Tip(check, c[2], c[3]) end
     end
     Text(parent, L["Cancel a buff"], PAD, -78)
-    local buff = SpellBox(parent, 200, L["the buff's name"], function() return spec.cancelaura end,
+    local buff = SpellBox(parent, 180, L["the buff's name"], function() return spec.cancelaura end,
         function(action) spec.cancelaura = action end, ns.sources.buffs)
     buff:SetPoint("TOPLEFT", PAD + 120, -74)
     controls[named("cancelaura")] = buff
     Tip(buff, L["Cancel a buff first"], L["Removes this buff before anything else (/cancelaura Ice Block). Leave it "
         .. "empty to keep your buffs. The list shows the buffs you have now and the ones you had before."])
+    -- A button to click, in the third column.
+    Text(parent, L["Click"], PAD + 312, -78)
+    local click = SpellBox(parent, WIDTH - 2 * PAD - 384, L["a button's name"], function() return spec.click end,
+        function(action) spec.click = action end, ns.sources.clickButtons)
+    click:SetPoint("TOPLEFT", PAD + 384, -74)
+    -- Its list, wider than the box, opens to the left: inside the window.
+    click.list:ClearAllPoints()
+    click.list:SetPoint("TOPRIGHT", click, "BOTTOMRIGHT", 0, -2)
+    controls[named("click")] = click
+    Tip(click, L["Click a button"], L["Clicks this button too, as if you pressed it (/click ExtraActionButton1): "
+        .. "one on your action bars or your pet's, the extra action button, another addon's. The list shows the "
+        .. "buttons there are now, with what is on them. Leave it empty to click nothing."])
     Text(parent, L["Say in chat"], PAD, -110)
     Choice(parent, named("channel"), 100, W.channels, function() return spec.channel end,
         function(key) spec.channel = key end):SetPoint("TOPLEFT", PAD + 120, -107)
