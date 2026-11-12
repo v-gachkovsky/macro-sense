@@ -11,9 +11,11 @@ commands, conditions, units, spells and items as you type, colors the syntax, an
 you find them in combat. The macros stay the game's own, so the Blizzard window, your action bars and other
 addons see every change.
 
-Open it from the **minimap button** (drag it along the edge to move it), with `/ms`, with the
-**MacroSense** button in the game's macro window, or with **Shift + right-click** on a macro on your action
-bars, which opens that macro. On Retail it's in the addon menu by the minimap too.
+Open it from the **minimap button** (drag it along the edge to move it), with `/ms`, with **Macros** in the
+game menu, with the **MacroSense** button in the game's macro window, or with **Shift + right-click** on a macro
+on your action bars, which opens that macro. On Retail it's in the addon menu by the minimap too. **Macros** in the
+game menu opens MacroSense instead of the game's macro window, and `/macro` can too: each is a choice in the
+settings (`/ms settings`).
 
 **Works on every client:** Retail, Mists of Pandaria Classic, TBC Anniversary, Classic Era and WoW Forever.
 
@@ -326,7 +328,7 @@ itself and whenever you ask: restore one, and a backup of how they are now is ma
 | `/ms book` | Macros from the spellbook |
 | `/ms sets` | What macro sets are, and turning them on |
 | `/ms sets log` | What the macro sets did, for a bug report |
-| `/ms settings` | The settings: the click that opens a macro from an action bar |
+| `/ms settings` | The settings: MacroSense instead of the game's macro window, the click that opens a macro from an action bar, the tag macro's keys |
 | `/ms minimap` | Hide or show the minimap button |
 | `/ms bug` | Print the versions to include in a bug report |
 | `/ms conditions` | The macro conditions your game client doesn't know, by the game's own check |

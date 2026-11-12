@@ -14,6 +14,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   keys are yours to choose in the settings.
 - `/ms conditions` lists the macro conditions MacroSense offers that your game client doesn't know, as the game's
   own check tells it: for a bug report, or a client like WoW Forever.
+- **Macros** in the game menu opens MacroSense instead of the game's macro window. `/macro` can open it too. Each
+  is a choice in the settings (`/ms settings`); the menu's is on from the start.
 
 ## [0.17.0] - 2026-11-09
 

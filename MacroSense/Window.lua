@@ -2013,6 +2013,12 @@ function Window.Toggle()
     Load(last >= first and first or nil)
 end
 
+-- The editor opened as Toggle opens it ("Macros" in the game menu, /macro); open already, it comes to the front.
+function Window.Show()
+    if frame and frame:IsShown() then return frame:Raise() end
+    Window.Toggle()
+end
+
 -- The editor on macro `index`, opened if it is closed (Shift + right-click on an action bar). Unsaved changes
 -- to another macro are asked about first; the macro's own stay. Below Build, like Toggle: it may build the
 -- window, and a local function is only seen after it.
