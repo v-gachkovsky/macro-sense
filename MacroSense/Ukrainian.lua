@@ -1034,9 +1034,17 @@ ns.locales.uk = {
     ["the pet's spell"] = "заклинання улюбленця",
     ["The pet's spell"] = "Заклинання улюбленця",
     ["The spell your pet casts by itself, or stops casting, as with a right click on its action bar. The list has "
-        .. "the spells of every pet you had out."] =
+        .. "the spells of every pet you had out. With one of your pets chosen in When, only that pet's."] =
         "Заклинання, яке улюбленець застосовує сам або перестає застосовувати, як після правого кліку по ньому на "
-        .. "панелі улюбленця. У списку заклинання всіх улюбленців, яких ви вже викликали.",
+        .. "панелі улюбленця. У списку заклинання всіх улюбленців, яких ви вже викликали, а якщо в «Коли» обрано "
+        .. "одного з них, то лише його.",
+    ["Which pet is it for?"] = "Для якого улюбленця?",
+    ["Any pet"] = "Для будь-якого",
+    ["If you pick one, the macro works only while that pet is out, and the list has only its spells."] =
+        "Якщо обрати одного, макрос працюватиме, лише коли цей улюбленець викликаний, а в списку будуть лише його "
+        .. "заклинання.",
+    ["The list has your %s's spells. Start typing its name, or pick it from the list."] =
+        "У списку заклинання улюбленця %s. Почніть вводити назву або оберіть зі списку.",
     ["Which of your pet's spells?"] = "Яке заклинання улюбленця?",
     ["Leave it empty for the same one."] = "Залиште порожнім, щоб було те саме.",
     ["The list has the spells of every pet you had out. Start typing its name, or pick it from the list."] =
@@ -1861,6 +1869,7 @@ ns.locales.uk = {
     ["With a pet or not"] = "З улюбленцем чи без",
     ["Your pet is out"] = "Улюбленець викликаний",
     ["No pet out"] = "Улюбленця немає",
+    ["Your %s is out"] = "Викликано %s",
     ["Channeling or not"] = "Під час потоку чи ні",
     ["Not while channeling it"] = "Не поки воно триває",
     ["Not while channeling"] = "Не під час потокового",

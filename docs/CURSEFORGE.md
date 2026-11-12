@@ -79,7 +79,8 @@ Or **All options** shows the whole form, where you pick it all at once:
   same one on someone else, with a fallback of its own
 - **gear**: swap weapons, trinkets or rings, always or with a key held, or put on an equipment set
   (`/equipslot [mod:shift] 14 Lucky Charm`, `/equipset PvP`)
-- **when**: only in or out of combat, in stealth, in a group or alone, with your pet out, not while channeling
+- **when**: only in or out of combat, in stealth, in a group or alone, with your pet out or one of your pets
+  (`[pet:Voidwalker]`), not while channeling
   (`[nochanneling:Drain Soul]`), in a form, where you are (on a mount, in water, indoors, resting...), in a
   specialization, with a shield or another type of gear on, and what it casts otherwise
   (`/cast [stealth] Ambush; Sinister Strike`), or the pet's autocast the other way (Growl on alone, off in a

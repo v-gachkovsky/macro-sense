@@ -69,7 +69,7 @@ questions; the wizard opens as you left it.
 - Then what that needs: the spell or item (type a few letters, or pick it from the list) and
   its rank when it has several (Classic),
   the spells of a list in their order and what starts a sequence over, what the pet does (and which of its
-  spells, for autocast).
+  spells, for autocast: first which of your pets, when you have had more than one, and then only its spells).
 - **Where should Flash Heal go?** On your target as usual, on whoever is under the mouse, on the ground under
   the cursor, on yourself, your focus, a party member... Each answer shows the macro's words for it
   (`@mouseover`), and its tooltip says what it is. When that one may not be there, the next question asks
@@ -158,7 +158,8 @@ is set.
   the macro doesn't turn off what it turned on: Auto Shot, Stealth, a form or an aura. Each spell has its own, the
   macro's, each key's and the one it casts otherwise; in the questions it is **Don't turn it off** under the
   spell.
-- **When**: only in or out of combat, in stealth or not, in a group, a raid or alone, with your pet out or not, in
+- **When**: only in or out of combat, in stealth or not, in a group, a raid or alone, with your pet out or not or with
+  one of your pets (`[pet:Voidwalker]`: then the autocast lists have only its spells), in
   one of your forms or none; where you are (on a mount or not, flying, where you can fly, in water, indoors or
   outdoors, resting, at a house: what your version of the game has); in one of your specializations (outside
   Retail, the primary or secondary talents); with a type of weapon or armor equipped (a shield, daggers); every

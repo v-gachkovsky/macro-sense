@@ -40,7 +40,7 @@ end
 -- What a group of conditions says, in the form's words: the key held, the unit, its check, the When row; what the
 -- mount and pet macros check (nomounted, the place, nomod); `other` for what the form has no place for. Not on a
 -- mount, in water, where you can fly: a mount macro's place, or where a cast works (the When row's), as W.Read
--- finds it reads better. The type of gear as it is written: "Two-Handed Swords".
+-- finds it reads better. The type of gear and the pet as they are written: "Two-Handed Swords", "Voidwalker".
 local function Group(conds)
     local g = { unit = "default", when = {} }
     for _, raw in ipairs(conds) do
@@ -75,6 +75,8 @@ local function Group(conds)
             g.when.spec = c:sub(6)
         elseif c:match("^equipped:[^/]+$") then
             g.when.equipped = Trim(raw:match(":(.*)$"))
+        elseif c:match("^pet:[^/]+$") then
+            g.when.pet = Trim(raw:match(":(.*)$"))
         elseif c == "nomod" or c:match("^nomod:") then
             g.nomod = c:match("^nomod:(.+)$") or ""
         else
@@ -312,14 +314,14 @@ end
 local function ReadDismiss(spec, stop)
     local main, own, when = true, {}, {}
     for group in (stop or ""):gmatch("%[([^%]]*)%]") do
-        local conds = {}
-        for c in group:gmatch("[^,]+") do conds[#conds + 1] = Cond(c) end
+        local raws, conds = {}, {}
+        for c in group:gmatch("[^,]+") do raws[#raws + 1], conds[#conds + 1] = Trim(c), Cond(c) end
         local mods, nomods = (conds[1] or ""):match("^mod:(.+)$"), (conds[#conds] or ""):match("^nomod:(.+)$")
         if mods or (nomods and #conds == 1) then
             main = mods ~= nil
             for key in (nomods or ""):gmatch("[^/]+") do own[#own + 1] = key end
         elseif #conds == 1 then
-            when[#when + 1] = conds[1]:match("^no(.+)$") or "no" .. conds[1]
+            when[#when + 1] = raws[1]:match("^[Nn][Oo](.+)$") or "no" .. raws[1]
         end
     end
     if main then spec.pet = "dismiss" end
