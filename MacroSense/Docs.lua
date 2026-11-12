@@ -88,6 +88,9 @@ local CONDITIONS = {
     unithasvehicleui = "The unit is in a vehicle.",
     canexitvehicle = "You can leave the vehicle you are in.",
     petbattle = "You are in a pet battle.",
+    pvpcombat = "Your PvP talents work here: in War Mode, a battleground or an arena.",
+    house = "You are at a house, inside or on its plot. Or where you name: house:inside, house:plot, house:editor "
+        .. "(its editor is open), house:neighborhood.",
     cursor = "You hold something on the mouse cursor: a spell, an item, a macro.",
 }
 
@@ -129,6 +132,8 @@ local NOT = {
     unithasvehicleui = "The unit is not in a vehicle.",
     canexitvehicle = "You can't leave a vehicle now.",
     petbattle = "You are not in a pet battle.",
+    pvpcombat = "Your PvP talents don't work here.",
+    house = "You are not at a house, or not where you name.",
     cursor = "Nothing is on the mouse cursor.",
 }
 
