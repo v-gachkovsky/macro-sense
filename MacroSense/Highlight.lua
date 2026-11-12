@@ -31,7 +31,7 @@ local LUA_KEYWORDS = {}
 for w in ("and break do else elseif end false for function if in local nil not or repeat return then true until while")
     :gmatch("%a+") do LUA_KEYWORDS[w] = true end
 
--- Condition names (plus their "no" forms) from Data.lua.
+-- Condition names (plus their "no" forms) from Data.lua, each with its entry there.
 local conditionSet
 local function isCondition(name)
     if not conditionSet then
@@ -39,12 +39,9 @@ local function isCondition(name)
         for _, c in ipairs(ns.data.conditions) do
             local n = c.name:match("^%a+$")
             if n then
-                conditionSet[n] = true
-                conditionSet["no" .. n] = true
+                conditionSet[n] = c
+                conditionSet["no" .. n] = conditionSet["no" .. n] or c
             end
-        end
-        for _, n in ipairs({ "modifier", "stance", "flyable", "group", "party", "raid", "shapeshift" }) do
-            conditionSet[n], conditionSet["no" .. n] = true, true
         end
     end
     return conditionSet[name:lower()]
@@ -143,7 +140,12 @@ local function conditionSpans(s, base, add)
     end
     local name, values = body:match("^([^:]*):(.*)$")
     name = name or body
-    if isCondition(name) then
+    local entry = isCondition(name)
+    if entry and not ns.Knows(entry) then
+        add(at + 1, at + #name, "condition",
+            string.format(L["condition \"%s\" doesn't work in this version of the game"], name:lower()), "warning",
+            { short = L["not in this game version"] })
+    elseif entry then
         add(at + 1, at + #name, "condition")
     else
         add(at + 1, at + #name, "error", string.format(L["unknown condition \"%s\""], name), nil,

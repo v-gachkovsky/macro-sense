@@ -55,7 +55,9 @@ ns.data = {
         -- Every condition has a "no" form, the other way round. Those that need a value ([noknown:Name]) insert
         -- ":" through `insert`: an `arg` on a "no" name would hide it from Conditions.Base. `since`: the expansion
         -- that brought it (LE_EXPANSION_LEVEL_CURRENT), not suggested in older clients; `gone`: the one that took it
-        -- away, not suggested from then on.
+        -- away, not suggested from then on; `forever = false`: not in WoW Forever (ns.Knows). Its game knows all
+        -- but [pvptalent] (/ms conditions), but it has no flying, no PvP talents, no extra action bar, no housing and
+        -- Retail's talent tree (its interface's code).
         { name = "combat",           hint = "in combat" },
         { name = "nocombat",         hint = "out of combat" },
         { name = "mod",              hint = "modifier held", arg = true },
@@ -87,12 +89,13 @@ ns.data = {
         { name = "nostealth",        hint = "not stealthed" },
         { name = "mounted",          hint = "on a mount" },
         { name = "nomounted",        hint = "not on a mount" },
-        { name = "flying",           hint = "flying" },
-        { name = "noflying",         hint = "not flying" },
-        { name = "flyable",          hint = "flying allowed" },
-        { name = "noflyable",        hint = "flying not allowed" },
-        { name = "advflyable",       hint = "skyriding allowed", since = 9 },
-        { name = "noadvflyable",     hint = "skyriding not allowed", since = 9 },
+        -- Flying came with The Burning Crusade.
+        { name = "flying",           hint = "flying", since = 1, forever = false },
+        { name = "noflying",         hint = "not flying", since = 1, forever = false },
+        { name = "flyable",          hint = "flying allowed", since = 1, forever = false },
+        { name = "noflyable",        hint = "flying not allowed", since = 1, forever = false },
+        { name = "advflyable",       hint = "skyriding allowed", since = 9, forever = false },
+        { name = "noadvflyable",     hint = "skyriding not allowed", since = 9, forever = false },
         { name = "swimming",         hint = "swimming" },
         { name = "noswimming",       hint = "not swimming" },
         { name = "indoors",          hint = "indoors" },
@@ -112,15 +115,18 @@ ns.data = {
         { name = "nospec",           hint = "another specialization", insert = "nospec:" },
         { name = "known",            hint = "spell is known", arg = true },
         { name = "noknown",          hint = "spell is not known", insert = "noknown:" },
-        { name = "talent",           hint = "talent row/column", arg = true, gone = 9 },
-        { name = "notalent",         hint = "talent not chosen", insert = "notalent:", gone = 9 },
-        { name = "pvptalent",        hint = "pvp talent", arg = true, since = 6 },
-        { name = "nopvptalent",      hint = "pvp talent not chosen", insert = "nopvptalent:", since = 6 },
-        { name = "pvpcombat",        hint = "PvP talents active", since = 6 },
-        { name = "nopvpcombat",      hint = "PvP talents not active", since = 6 },
+        -- The talents in rows of three, from Mists of Pandaria until Retail's tree in Dragonflight.
+        { name = "talent",           hint = "talent row/column", arg = true, since = 4, gone = 9, forever = false },
+        { name = "notalent",         hint = "talent not chosen", insert = "notalent:", since = 4, gone = 9,
+            forever = false },
+        { name = "pvptalent",        hint = "pvp talent", arg = true, since = 6, forever = false },
+        { name = "nopvptalent",      hint = "pvp talent not chosen", insert = "nopvptalent:", since = 6,
+            forever = false },
+        { name = "pvpcombat",        hint = "PvP talents active", since = 6, forever = false },
+        { name = "nopvpcombat",      hint = "PvP talents not active", since = 6, forever = false },
         -- [house] alone: inside a house or on its plot. [nohouse] alone too, as nomod.
-        { name = "house",            hint = "in a house or on its plot", arg = true, since = 10 },
-        { name = "nohouse",          hint = "not at a house", since = 10 },
+        { name = "house",            hint = "in a house or on its plot", arg = true, since = 10, forever = false },
+        { name = "nohouse",          hint = "not at a house", since = 10, forever = false },
         { name = "equipped",         hint = "item type equipped", arg = true },
         { name = "noequipped",       hint = "item type not equipped", insert = "noequipped:" },
         { name = "worn",             hint = "item type equipped", arg = true },
@@ -135,8 +141,8 @@ ns.data = {
         { name = "noactionbar",      hint = "another action bar page", insert = "noactionbar:" },
         { name = "bonusbar",         hint = "bonus bar", arg = true },
         { name = "nobonusbar",       hint = "no bonus bar" },
-        { name = "extrabar",         hint = "extra action bar", since = 3 },
-        { name = "noextrabar",       hint = "no extra action bar", since = 3 },
+        { name = "extrabar",         hint = "extra action bar", since = 3, forever = false },
+        { name = "noextrabar",       hint = "no extra action bar", since = 3, forever = false },
         { name = "overridebar",      hint = "override bar" },
         { name = "nooverridebar",    hint = "no override bar" },
         { name = "possessbar",       hint = "possess bar" },
@@ -239,12 +245,29 @@ local slots = Constants and Constants.MacroConsts or {}
 ns.MAX_GENERAL = slots.MAX_ACCOUNT_MACROS or MAX_ACCOUNT_MACROS or 120
 ns.MAX_CHARACTER = slots.MAX_CHARACTER_MACROS or MAX_CHARACTER_MACROS or 30
 
+-- WoW Forever: the world of Classic Era, whose expansion level it tells, and the game of Retail.
+local function Forever() return WOW_PROJECT_ID == (WOW_PROJECT_CAMELOT or 18) end
+
+-- Whether this client's game carries out what came with `since` (unknown clients do).
+function ns.HasExpansion(since, gone)
+    local level = LE_EXPANSION_LEVEL_CURRENT
+    if not level then return true end
+    return (not since or level >= since) and (not gone or level < gone)
+end
+
 -- The expansion to tell which commands the game carries out by (LE_EXPANSION_LEVEL_CURRENT: 0 Classic Era, 1 TBC,
--- 4 Mists of Pandaria), or nil where it carries out all of them: WoW Forever has the world of Classic Era but the
--- game of Retail (/petmoveto works there); unknown clients too.
+-- 4 Mists of Pandaria), or nil where it carries out all of them: WoW Forever (/petmoveto works there); unknown
+-- clients too.
 function ns.CommandsExpansion()
-    if WOW_PROJECT_ID == (WOW_PROJECT_CAMELOT or 18) then return nil end
+    if Forever() then return nil end
     return LE_EXPANSION_LEVEL_CURRENT
+end
+
+-- Whether this client's game knows condition or unit `entry` (above), by its `since` and `gone`. WoW Forever goes
+-- by neither: its game knows them all but those with `forever = false` (/ms conditions there).
+function ns.Knows(entry)
+    if Forever() then return entry.forever ~= false end
+    return ns.HasExpansion(entry.since, entry.gone)
 end
 
 -- Whether a character's specializations are the two talent groups of dual specialization (Primary, Secondary),

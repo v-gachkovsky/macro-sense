@@ -252,7 +252,7 @@ end
 function Conditions.UnitItems(prefix)
     local out = {}
     for _, u in ipairs(ns.data.units) do
-        if not ns.HasExpansion or ns.HasExpansion(u.since, u.gone) then out[#out + 1] = u end
+        if ns.Knows(u) then out[#out + 1] = u end
     end
     local p = prefix:lower()
     for k = #p, 1, -1 do
