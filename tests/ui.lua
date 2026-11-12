@@ -590,6 +590,49 @@ Send("PLAYER_LOGIN")
 check("welcome note only once per version", #printed == count, #printed - count)
 SlashCmdList.MACROSENSE("bug")
 check("/ms bug prints versions", printedWith("MacroSense dev, WoW 12.1.5 (120105), Mac"))
+-- /ms conditions: the conditions MacroSense offers that this game's own check doesn't know. Asked about each, the game
+-- names in the chat the ones it doesn't know: as a system line, which stays out of the chat while it's asked, or right
+-- into the chat window. A moment later MacroSense tells them in one line. A game that says nothing can't tell.
+do
+    local parse, filters, shown = SecureCmdOptionParse, {}, {}
+    ChatFrameUtil = { AddMessageEventFilter = function(event, fn) filters[event] = fn end }
+    local function System(line) -- a system line: in the chat unless a filter hides it
+        Send("CHAT_MSG_SYSTEM", line)
+        if not (filters.CHAT_MSG_SYSTEM and filters.CHAT_MSG_SYSTEM(nil, "CHAT_MSG_SYSTEM", line)) then
+            shown[#shown + 1] = line
+        end
+    end
+    local say -- how this game says it: System, ChatFrame1:AddMessage, or nothing
+    SecureCmdOptionParse = function(options) -- this game knows only [combat], [mod] and [known]
+        local name = options:match("^%[(%a+)")
+        if say and name and not ({ combat = true, mod = true, known = true })[name] then
+            say("Unknown macro option: " .. name)
+        end
+        return parse(options)
+    end
+    local function Ask(how)
+        say = how
+        SlashCmdList.MACROSENSE("conditions")
+        local now_ = #printed
+        now = now + 1
+        NextFrame()
+        return #printed > now_ and printed[#printed] or nil
+    end
+    local told = Ask(System)
+    check("/ms conditions: those this game doesn't know, its lines out of the chat", told ~= nil
+        and told:find("conditions this game doesn't know: ", 1, true) ~= nil and told:find("[flying]", 1, true) ~= nil
+        and told:find("[combat]", 1, true) == nil and #shown == 0, told)
+    System("You are now Away: AFK")
+    check("/ms conditions: other lines in the chat again", shown[#shown] == "You are now Away: AFK")
+    ChatFrame1 = { AddMessage = function(_, line) shown[#shown + 1] = line end }
+    told = Ask(function(line) ChatFrame1:AddMessage("[20:11:25] " .. line) end)
+    check("/ms conditions: said right into the chat window", told ~= nil
+        and told:find("[flying]", 1, true) ~= nil and told:find("[combat]", 1, true) == nil, told)
+    told = Ask(nil)
+    check("/ms conditions: a game that says nothing", told ~= nil
+        and told:find("this game doesn't tell which conditions it knows", 1, true) ~= nil, told)
+    SecureCmdOptionParse, ChatFrameUtil, ChatFrame1 = parse, nil, nil
+end
 -- A word /ms doesn't know: the commands it does, /ms sets among them, in the addon's language.
 SlashCmdList.MACROSENSE("what")
 check("/ms: its commands, /ms sets too", printed[#printed]:find("/ms sets - macro sets;", 1, true) ~= nil

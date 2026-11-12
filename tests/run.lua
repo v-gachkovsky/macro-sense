@@ -473,6 +473,35 @@ for _, bad in ipairs({ { "mod", "shfit" }, { "btn", "7" }, { "button", "Left" },
 end
 check("invalid message", C.CheckValue("btn", "7") == 'invalid btn value "7" (expected 1-5 or a button name)',
     C.CheckValue("btn", "7"))
+-- The conditions MacroSense offers that this game doesn't know. Its own check is asked about each, a made-up one
+-- first, and names in the chat each one it doesn't know ("Unknown macro option: flying"), whether it holds or not.
+-- Its line about the made-up one shows how it says that: in its language, after a timestamp, in color. One that takes
+-- a value is asked with one that matches nothing. A game that says nothing of the made-up one can't tell.
+do
+    local knows, asked, said = { combat = true, mod = true, known = true }, {}, {}
+    local function parse(options) -- this game says it in the chat, and takes an option it doesn't know as true
+        asked[#asked + 1] = options
+        local name = options:match("^%[(%a+)")
+        if not knows[name] then said[#said + 1] = "|cffffff00[20:11:25] Unknown macro option: " .. name .. "|r" end
+        if name == "pvptalent" then error("bad") end -- one its check stops at: the others are still asked
+        return "x"
+    end
+    C.Ask(parse)
+    local unknown = {}
+    for _, name in ipairs(C.Unknown(said)) do unknown[name] = true end
+    check("conditions: the made-up one asked first", asked[1] == "[macrosensenosuch] x", asked[1])
+    check("conditions: those the game doesn't know", unknown.flying and unknown.stealth and unknown.modifier
+        and unknown.worn and not unknown.combat and not unknown.known and not unknown.macrosensenosuch
+        and not unknown["@"] and not unknown.nocombat)
+    check("conditions: a name, not the start of a longer one the game named", not unknown.mod)
+    local valued
+    for _, options in ipairs(asked) do valued = valued or options == "[known:MacroSenseNoSuchSpell] x" end
+    check("conditions: one with a value asked with one", valued)
+    check("conditions: the game's lines about them, not others", C.Answer(said, said[1]) and C.Answer(said, said[2])
+        and not C.Answer(said, "You are now Away: AFK") and not C.Answer({}, said[2]))
+    check("conditions: a game that says nothing of the made-up one can't tell",
+        C.Unknown({ "Welcome to World of Warcraft!" }) == nil)
+end
 
 ns.sources.forms = function() return { { name = "0", hint = "no form" }, { name = "1", hint = "Bear Form" } } end
 ns.sources.specs = function() return { { name = "1", hint = "Affliction" }, { name = "2", hint = "Demonology" } } end

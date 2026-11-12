@@ -12,6 +12,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   Its name goes into the macro's `/targetexact` line, so a press targets that one: a rare or a quest mob in a
   crowd, a player in PvP. A click on yourself takes the name out; in combat, the name goes in once it ends. The
   keys are yours to choose in the settings.
+- `/ms conditions` lists the macro conditions MacroSense offers that your game client doesn't know, as the game's
+  own check tells it: for a bug report, or a client like WoW Forever.
 
 ## [0.17.0] - 2026-11-09
 

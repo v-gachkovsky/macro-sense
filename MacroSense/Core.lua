@@ -247,6 +247,55 @@ local function SetsCommand(args)
     end
 end
 
+-- /ms conditions: which conditions this game client doesn't know, by its own check: for a bug report, or a new client.
+-- Asked about each one (Conditions.Ask), the game names in the chat those it doesn't know: as system lines, kept out
+-- of the chat while it's asked, or right into a chat window. They're told in one line a moment later: the game may
+-- say them a frame late.
+local heard -- the game's lines in the chat while it's asked; nil: not asked now
+local function Hear(line)
+    if heard and type(line) == "string" then heard[#heard + 1] = line end
+end
+local listen = CreateFrame("Frame")
+listen:SetScript("OnEvent", function(_, _, line) Hear(line) end)
+local filtered, hooked = false, {}
+local function Listen()
+    heard = {}
+    listen:RegisterEvent("CHAT_MSG_SYSTEM")
+    local AddFilter = ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter or ChatFrame_AddMessageEventFilter
+    if AddFilter and not filtered then
+        filtered = true
+        AddFilter("CHAT_MSG_SYSTEM", function(_, _, line)
+            Hear(line) -- the chat may have it before MacroSense does
+            return heard ~= nil and type(line) == "string" and ns.Conditions.Answer(heard, line)
+        end)
+    end
+    for i = 1, NUM_CHAT_WINDOWS or 10 do
+        local chat = _G["ChatFrame" .. i]
+        if chat and not hooked[chat] then
+            hooked[chat] = true
+            hooksecurefunc(chat, "AddMessage", function(_, line) Hear(line) end)
+        end
+    end
+end
+local function ConditionsCommand()
+    if heard then return end -- asked already: the answer comes in a moment
+    if not SecureCmdOptionParse then return ns.Print("this game doesn't tell which conditions it knows") end
+    Listen()
+    ns.Conditions.Ask(SecureCmdOptionParse)
+    C_Timer.After(0.5, function()
+        local unknown = ns.Conditions.Unknown(heard)
+        heard = nil
+        listen:UnregisterEvent("CHAT_MSG_SYSTEM")
+        if not unknown then
+            ns.Print("this game doesn't tell which conditions it knows")
+        elseif #unknown == 0 then
+            ns.Print("this game knows every condition MacroSense offers")
+        else
+            ns.Print("conditions this game doesn't know: %s", "[" .. table.concat(unknown, "], [") .. "]")
+        end
+    end)
+end
+
 SLASH_MACROSENSE1 = "/macrosense"
 SLASH_MACROSENSE2 = "/ms"
 SLASH_MACROSENSE3 = "/msense" -- in case another addon took /ms
@@ -265,6 +314,8 @@ SlashCmdList.MACROSENSE = function(msg)
         ns.SpellbookWindow.Open()
     elseif msg == "settings" then
         ns.Options.Open()
+    elseif msg == "conditions" then
+        ConditionsCommand()
     elseif msg == "sets" or msg:find("^sets ") then
         SetsCommand(raw:match("^%S+%s*(.*)$"))
     elseif msg == "minimap" then
