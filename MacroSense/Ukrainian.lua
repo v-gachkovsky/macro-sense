@@ -989,6 +989,14 @@ ns.locales.uk = {
     ["Pick the keys you want, or none. For each key, the next questions ask what it does."] =
         "Оберіть потрібні клавіші або жодної. Для кожної далі буде питання, що вона робить.",
     ["With %s held"] = "Із затиснутим %s",
+    ["With Shift and Ctrl held"] = "Із затиснутими Shift і Ctrl",
+    ["On a right click"] = "Правим кліком",
+    ["Right click"] = "Правий клік",
+    ["Two keys, right click"] = "Дві клавіші, правий клік",
+    ["Rows for Shift and Ctrl held together ([mod:shift,mod:ctrl]) and for a right click on the macro's button "
+        .. "([btn:2]), each with its own spell or units, as a key."] = "Рядки для Shift і Ctrl, затиснутих разом "
+        .. "([mod:shift,mod:ctrl]), і для правого кліку по кнопці макросу ([btn:2]): кожен зі своїм спелом чи "
+        .. "юнітами, як клавіша.",
     ["Would you like to add anything else?"] = "Бажаєте додати ще щось?",
     ["Pick any of these, or none."] = "Оберіть що завгодно з цього або нічого.",
     ["Which rank of %s?"] = "Який ранг «%s»?",

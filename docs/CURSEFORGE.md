@@ -75,7 +75,8 @@ Or **All options** shows the whole form, where you pick it all at once:
   macro gets their names, written again when your group changes (out of combat) and said in red on the screen,
   and in MacroSense you keep editing it with `@tank`
 - **friends, enemies or anyone**, alive only or dead only (for a resurrection): set from the spell for you
-- **Shift, Ctrl, Alt** (and **Cmd** on a Mac): another spell, or the same one on someone else, with a fallback of its own
+- **Shift, Ctrl, Alt** (and **Cmd** on a Mac), **Shift + Ctrl** together or a **right click**: another spell, or the
+  same one on someone else, with a fallback of its own
 - **gear**: swap weapons, trinkets or rings, always or with a key held, or put on an equipment set
   (`/equipslot [mod:shift] 14 Lucky Charm`, `/equipset PvP`)
 - **when**: only in or out of combat, in stealth, in a group or alone, with your pet out, not while channeling

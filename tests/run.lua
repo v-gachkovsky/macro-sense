@@ -1694,6 +1694,11 @@ do
     check("when: the forms of a character", #W.WhenForms() == 2 and W.WhenForms({ { name = "0" },
         { name = "1", hint = "Bear Form" } })[3].name == "Bear Form" and W.WhenForms({ { name = "2" } })[3].name
         == "form 2")
+    -- Shift and Ctrl together before the keys, a right click after them: each casts its own spell or the macro's.
+    expectText("two keys and a right click", text({ action = heal, only = "friends",
+        keys = { shift = { action = bolt }, shiftctrl = { action = kick }, right = { unit = "player" } } }),
+        "#showtooltip\n/cast [mod:shift,mod:ctrl] Counterspell; [mod:shift] Frostbolt; [btn:2,@player]"
+        .. "[@mouseover,help,nodead][] Flash Heal")
     -- Where you are, the specialization and the gear, after the form.
     expectText("when: where, specialization, gear", text({ action = bolt, on = usual,
         when = { combat = "yes", place = "outdoors", spec = "2", equipped = "Two-Handed Swords" } }),
@@ -1960,6 +1965,14 @@ do
     spec.alive = true
     Q.Choose(spec, "on1", "player")
     check("questions: nothing after yourself", steps(spec) == "what,spell,on1,keys,when,also,finish", steps(spec))
+    -- Shift and Ctrl together and a right click: asked about as a key, for /cast and /use.
+    spec.keys.right.active = true
+    check("questions: a right click", steps(spec) == "what,spell,on1,keys,rightCast,rightOn1,when,also,finish"
+        and ask(spec, "rightCast").context == "On a right click", steps(spec))
+    spec.keys.right.active, spec.keys.shiftctrl.active = false, true
+    check("questions: Shift and Ctrl", ask(spec, "shiftctrlCast").context == "With Shift and Ctrl held"
+        and steps(spec):find("keys,shiftctrlCast,shiftctrlOn1", 1, true) ~= nil, steps(spec))
+    spec.keys.shiftctrl.active = false
     -- The game says what the spell is for: no question about it, and no unit the spell never goes to.
     local bolt = W.Fresh()
     bolt.action, bolt.only, bolt.reaction = { name = "Shadow Bolt" }, "enemies", "enemies"
@@ -2378,6 +2391,15 @@ do
         .. "[nomounted,flyable] Drake; [nomounted] Horse\n/dismount [mounted,noflying]")
     check("wizard read: the mounts", spec.command == "mount" and spec.mounts.fly.name == "Drake"
         and spec.offMount == "safe")
+    -- Shift and Ctrl together, a right click ([button:2] too). Other keys together are not the form's.
+    spec = read("two keys and a right click",
+        "/cast [mod:shift,mod:ctrl] Counterspell; [button:2,@player][] Flash Heal",
+        "#showtooltip\n/cast [mod:shift,mod:ctrl] Counterspell; [btn:2,@player][] Flash Heal")
+    local both, right = spec.keys.shiftctrl, spec.keys.right
+    check("wizard read: two keys, a right click", both.active and both.action.name == "Counterspell" and right.active
+        and right.on[1] == "player" and not right.action)
+    read("other keys together", "/cast [mod:shift,mod:alt] Counterspell; Flash Heal", "#showtooltip\n/cast Flash Heal",
+        "/cast [mod:shift,mod:alt] Counterspell; Flash Heal")
     -- A resurrection: the dead only.
     spec = read("a resurrection", "/cast [@mouseover,help,dead][help,dead] Resurrection",
         "#showtooltip\n/cast [@mouseover,help,dead][help,dead] Resurrection")

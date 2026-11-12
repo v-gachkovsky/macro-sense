@@ -21,13 +21,18 @@ end
 -- Whether a spell has ranks to pick from: two learned at least (Classic; Retail has none).
 local function Ranked(action) return action ~= nil and action.ranks ~= nil and #action.ranks > 1 end
 
--- A key's step ("shiftCast", "shiftPet", "shiftOn2"): the key and what is asked about it.
+-- A key's step ("shiftCast", "shiftPet", "shiftOn2", "rightCast"): the key and what is asked about it.
 local function KeyStep(step)
-    for _, key in ipairs(W.KEYS) do
-        local rest = step:match("^" .. key .. "(%u.*)$")
-        if rest then return key, rest end
+    for _, keys in ipairs({ W.KEYS, W.MORE }) do
+        for _, key in ipairs(keys) do
+            local rest = step:match("^" .. key .. "(%u.*)$")
+            if rest then return key, rest end
+        end
     end
 end
+
+-- What a question about a key is about: "With Shift held", "On a right click".
+local KEY_CONTEXT = { shiftctrl = "With Shift and Ctrl held", right = "On a right click" }
 
 -- The questions for the form as it is, in order: "what" the macro does; "spell" (/cast, /use; "rank" when it has
 -- ranks to pick from), "list" (and "reset" for /castsequence) or "pet"; on whom, "on1" to "on3", each while the one
@@ -95,7 +100,13 @@ function Questions.Steps(spec, keys)
     if (not pet or spec.pet == "attack") and not W.SelfOnly(spec) then units("on", spec.on, 3) end
     if not list then
         add("keys")
-        for _, key in ipairs(keys) do
+        -- Shift and Ctrl together and a right click: for /cast and /use.
+        local held = {}
+        for _, key in ipairs(keys) do held[#held + 1] = key end
+        if command == "cast" or command == "use" then
+            for _, key in ipairs(W.MORE) do held[#held + 1] = key end
+        end
+        for _, key in ipairs(held) do
             local k = spec.keys[key]
             if k.active then
                 if pet then
@@ -335,7 +346,8 @@ end
 -- has mount = its place ("ground"), and `optional` when it may stay empty }.
 function Questions.Ask(spec, step, keys)
     local key, rest = KeyStep(step)
-    local context = key and string.format(L["With %s held"], (key:gsub("^%l", string.upper))) or nil
+    local context = key and (KEY_CONTEXT[key] and L[KEY_CONTEXT[key]]
+        or string.format(L["With %s held"], (key:gsub("^%l", string.upper)))) or nil
     local i = tonumber(step:match("^on(%d)$") or rest and rest:match("^On(%d)$"))
     local place = step:match("^mount(%u%l+)$")
     if place then

@@ -279,6 +279,15 @@ Wizard.units = {
     { key = "cursor", name = "At the cursor" },
 }
 Wizard.KEYS = { "shift", "ctrl", "alt", "cmd" } -- the form shows Cmd on a Mac only
+-- More than a key, for /cast and /use: Shift and Ctrl held together, and a right click on the macro's button. Each
+-- casts a spell of its own, or the macro's on units of its own, as a key does.
+Wizard.MORE = { "shiftctrl", "right" }
+-- The order a /cast or /use line tries them in: two keys before one, a right click after the keys.
+Wizard.CAST_KEYS = { "shiftctrl", "shift", "ctrl", "alt", "cmd", "right" }
+local KEY_CONDS = { shiftctrl = "mod:shift,mod:ctrl", right = "btn:2" }
+
+-- What the macro checks for a key ("mod:shift") or more ("mod:shift,mod:ctrl", "btn:2").
+function Wizard.KeyCond(key) return KEY_CONDS[key] or "mod:" .. key end
 
 local filtered = {}
 for _, u in ipairs(Wizard.units) do filtered[u.key] = u.filters end
@@ -356,6 +365,7 @@ function Wizard.Fresh()
     for _, key in ipairs(Wizard.KEYS) do
         spec.keys[key] = { active = false, on = { "default", "none" }, pet = PET_KEYS[key] }
     end
+    for _, key in ipairs(Wizard.MORE) do spec.keys[key] = { active = false, on = { "default", "none" } } end
     return spec
 end
 
@@ -432,14 +442,14 @@ local function Clauses(spec)
         end
     end
     local keeps = spec.keeps or {}
-    for _, key in ipairs(Wizard.KEYS) do
+    for _, key in ipairs(Wizard.CAST_KEYS) do
         local k = spec.keys[key]
-        local action = k.active and (k.action or spec.action)
+        local action = k and k.active and (k.action or spec.action)
         if action then
             local only = Wizard.Only(spec, key)
             local keep = keeps[k.action and key or "main"]
             for _, unit in ipairs(Chain(k.on)) do
-                add(Group(spec, unit, "mod:" .. key, nil, only, action), action, keep)
+                add(Group(spec, unit, Wizard.KeyCond(key), nil, only, action), action, keep)
             end
         end
     end
