@@ -425,9 +425,9 @@ a set or a folder, delete them (those in the game go into the Trash); with macro
 the scenes into the game (**Take in**) and put those in the game behind the scenes (**Put away**), all at once.
 
 **Add a note**, last in **...**, keeps a line of your own about the macro (`For the Onyxia pull`), outside its 255
-characters: the macro's tooltip in the list shows it. The note follows the macro renamed or moved, goes into the
-Trash with it and comes back with it. General macros keep theirs for the account, character macros for the
-character.
+characters: the macro's tooltip in the list shows it, and so does its button's on an action bar. The note follows
+the macro renamed or moved, goes into the Trash with it and comes back with it. General macros keep theirs for the
+account, character macros for the character.
 
 Your other characters' own macros are in the **Character** tab too, under your macros: each character's name (your
 realm first), and a click shows its macros, as they were when you last played it with MacroSense; with macro sets,

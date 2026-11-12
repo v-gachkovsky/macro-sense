@@ -3751,6 +3751,14 @@ do
     actions[4] = { "spell", 5782 }
     check("action bars: a spell's doesn't", Tip(other, 4) == "", Tip(other, 4))
     check("action bars: nor a button not set up", Tip(refused, 6) == "", Tip(refused, 6))
+    -- A macro's note, first, in yellow as in the list: on any button, the click ours or not.
+    ns.History.SetNote("general", "Bar Fear", "Fear | on the mouseover")
+    check("action bars: the macro's note", Tip(startButton, 2) == "  / |cffffd100Fear || on the mouseover|r / "
+        .. ns.ActionBars.Tip(), Tip(startButton, 2))
+    check("action bars: the note where the click isn't ours", Tip(refused, 6)
+        == "  / |cffffd100Fear || on the mouseover|r", Tip(refused, 6))
+    ns.History.SetNote("general", "Bar Fear", "")
+    check("action bars: no note, no line", Tip(startButton, 2) == "  / " .. ns.ActionBars.Tip(), Tip(startButton, 2))
     -- On a Mac, Cmd with the macro's key may be a macOS shortcut: its tooltip warns, first, on any button.
     local fear = GetMacroIndexByName("Bar Fear")
     EditMacro(fear, "Bar Fear", 1, "/cast [mod:cmd] Fear")
