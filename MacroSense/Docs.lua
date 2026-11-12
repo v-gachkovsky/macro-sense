@@ -153,6 +153,8 @@ local UNITS = {
     softinteract = "What your soft targeting picks to interact with.",
     anyinteract = "Your target if you can interact with it, else what soft targeting picks.",
     nameplate = "The unit of a nameplate shown, by its number.",
+    questnpc = "The quest giver you are talking to, while its quest window is open.",
+    anyleftinteract = "The same as anyinteract.",
 }
 UNITS.heal = "Your group's healer, other than you. MacroSense puts in the name of the one with the role, and a new "
     .. "one when your group changes."

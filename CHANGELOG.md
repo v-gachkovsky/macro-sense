@@ -18,6 +18,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   is a choice in the settings (`/ms settings`); the menu's is on from the start.
 - Retail's `[pvpcombat]` (your PvP talents work) and `[house]` (with `inside`, `plot`, `editor`, `neighborhood`)
   are suggested and explained, and no longer marked as unknown conditions.
+- More of what macros take is suggested: the raid's pets (`@raidpet1`), arena enemies' pets (`@arenapet1`), the
+  quest giver you talk to (`@questnpc`), bosses 6 to 8 in Retail; `mod:SELFCAST` and `mod:FOCUSCAST`, the keys set
+  in the game's settings; `nomodifier`, `nobutton` and `noactionbar`. `@questnpc` is no longer marked as an error.
 
 ### Changed
 - `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight.

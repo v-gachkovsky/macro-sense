@@ -62,6 +62,7 @@ ns.data = {
         { name = "modifier",         hint = "modifier held", arg = true },
         -- [nomod] alone is how it is used: no ":" after it. "nomod:shift" still gets mod's values and checks.
         { name = "nomod",            hint = "no modifier held" },
+        { name = "nomodifier",       hint = "no modifier held" },
         { name = "harm",             hint = "unit is hostile" },
         { name = "noharm",           hint = "unit is not hostile" },
         { name = "help",             hint = "unit is friendly" },
@@ -127,9 +128,11 @@ ns.data = {
         { name = "button",           hint = "mouse button", arg = true },
         { name = "btn",              hint = "mouse button", arg = true },
         { name = "nobtn",            hint = "another mouse button", insert = "nobtn:" },
+        { name = "nobutton",         hint = "another mouse button", insert = "nobutton:" },
         { name = "actionbar",        hint = "action bar page", arg = true },
         { name = "bar",              hint = "action bar page", arg = true },
         { name = "nobar",            hint = "another action bar page", insert = "nobar:" },
+        { name = "noactionbar",      hint = "another action bar page", insert = "noactionbar:" },
         { name = "bonusbar",         hint = "bonus bar", arg = true },
         { name = "nobonusbar",       hint = "no bonus bar" },
         { name = "extrabar",         hint = "extra action bar", since = 3 },
@@ -157,6 +160,8 @@ ns.data = {
         { name = "lshift", hint = "left" }, { name = "rshift", hint = "right" },
         { name = "lctrl", hint = "left" }, { name = "rctrl", hint = "right" },
         { name = "lalt", hint = "left" }, { name = "ralt", hint = "right" },
+        -- The keys set in the game's settings for these actions.
+        { name = "SELFCAST", hint = "self-cast key" }, { name = "FOCUSCAST", hint = "focus-cast key" },
     },
 
     -- Values for "btn:" / "button:".
@@ -204,16 +209,20 @@ ns.data = {
         { name = "tank", hint = "group's tank" }, { name = "heal", hint = "group's healer" },
         { name = "targettarget" }, { name = "focustarget" }, { name = "pettarget" }, { name = "mouseovertarget" },
         { name = "vehicle" }, { name = "npc", hint = "NPC you talk to" },
+        { name = "questnpc", hint = "quest giver you talk to" },
         { name = "anyenemy", hint = "Retail" }, { name = "anyfriend", hint = "Retail" },
-        { name = "anyinteract", hint = "Retail" }, { name = "softenemy", hint = "Retail" },
-        { name = "softfriend", hint = "Retail" }, { name = "softinteract", hint = "Retail" },
+        { name = "anyinteract", hint = "Retail" }, { name = "anyleftinteract", hint = "Retail" },
+        { name = "softenemy", hint = "Retail" }, { name = "softfriend", hint = "Retail" },
+        { name = "softinteract", hint = "Retail" },
     },
 }
 
--- Numbered units: party1-4, raid1-40, ...
-for _, u in ipairs({ { "party", 4 }, { "partypet", 4 }, { "arena", 5 }, { "boss", 5 }, { "raid", 40 } }) do
+-- Numbered units: party1-4, raid1-40, ... Bosses 6-8 in Retail (`since`, as conditions). Nameplates can't be cast
+-- on or targeted: not suggested.
+for _, u in ipairs({ { "party", 4 }, { "partypet", 4 }, { "arena", 5 }, { "arenapet", 5 }, { "boss", 8 },
+    { "raid", 40 }, { "raidpet", 40 } }) do
     for i = 1, u[2] do
-        table.insert(ns.data.units, { name = u[1] .. i })
+        table.insert(ns.data.units, { name = u[1] .. i, since = u[1] == "boss" and i > 5 and 9 or nil })
     end
 end
 
