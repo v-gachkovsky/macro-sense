@@ -61,28 +61,35 @@ local function Tooltip(self)
     GameTooltip:Show()
 end
 
--- Laid out like the game's own mail button on the minimap: the icon at 7,-6 and the round border over it.
+-- The round logo, whole: its gold ring is the button's border, so there's no minimap border round it. It lies in its
+-- texture with a transparent margin (0.0625-0.9375), which keeps the ring whole when minimap button collectors
+-- (Leatrix Plus, LibDBIcon) trim the edges of the icon.
+local ICON = "Interface\\AddOns\\MacroSense\\Media\\minimap"
+local function Logo(name, layer)
+    local t = button:CreateTexture(name, layer)
+    t:SetTexture(ICON)
+    t:SetTexCoord(0.0625, 0.9375, 0.0625, 0.9375)
+    t:SetAllPoints()
+    return t
+end
+
 local function Create()
     button = CreateFrame("Button", "MacroSenseMinimapButton", Minimap)
-    button:SetSize(33, 33)
+    button:SetSize(31, 31)
     button:SetFrameStrata("MEDIUM")
     button:SetFrameLevel(8)
     button:RegisterForClicks("LeftButtonUp")
     button:RegisterForDrag("LeftButton")
-    button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-    local back = button:CreateTexture(nil, "BACKGROUND")
-    back:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
-    back:SetSize(20, 20)
-    back:SetPoint("TOPLEFT", 7, -5)
-    local icon = button:CreateTexture(nil, "ARTWORK")
-    icon:SetTexture("Interface\\AddOns\\MacroSense\\Media\\logo")
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92) -- the logo's rounded corners go, the border covers the rest
-    icon:SetSize(18, 18)
-    icon:SetPoint("TOPLEFT", 7, -6)
-    local border = button:CreateTexture(nil, "OVERLAY")
-    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-    border:SetSize(52, 52)
-    border:SetPoint("TOPLEFT")
+    local icon = Logo("MacroSenseMinimapButtonIcon", "ARTWORK") -- named <button>Icon: collectors take it from there
+    local glow = Logo(nil, "HIGHLIGHT") -- under the mouse, it brightens
+    glow:SetBlendMode("ADD")
+    glow:SetAlpha(0.35)
+    -- Pressed, it sinks a little.
+    button:SetScript("OnMouseDown", function()
+        icon:SetPoint("TOPLEFT", 1, -1)
+        icon:SetPoint("BOTTOMRIGHT", 1, -1)
+    end)
+    button:SetScript("OnMouseUp", function() icon:SetAllPoints() end)
 
     button:SetScript("OnClick", function() ns.Window.Toggle() end)
     button:SetScript("OnDragStart", function(self)

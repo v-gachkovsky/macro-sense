@@ -71,8 +71,8 @@ function Frame:Hide() if self.shown then self.shown = false; Fire(self, "OnHide"
 function Frame:SetShown(v) if v then self:Show() else self:Hide() end end
 function Frame:IsShown() return self.shown end
 function Frame:IsVisible() return self.shown end
-function Frame:CreateTexture()
-    local t = New("Texture")
+function Frame:CreateTexture(name)
+    local t = New("Texture", name)
     t.parentFrame = self
     return t
 end
@@ -109,6 +109,7 @@ function Frame:SetText(t)
 end
 function Frame:GetText() return self.text end
 function Frame:SetTexture(t) self.texture = t end
+function Frame:SetTexCoord(...) self.texCoord = { ... } end
 function Frame:SetDesaturated(on) self.desaturated = on end
 function Frame:SetBackdropColor(r, g, b, a) self.backdropColor = { r, g, b, a } end
 function Frame:SetBackdrop(backdrop) self.backdrop = backdrop end
@@ -2747,6 +2748,17 @@ do
         Fire(b, "OnDragStop")
     end
     check("minimap: the button is on the minimap", b and b:IsShown() and b.point[2] == Minimap)
+    -- The whole logo with its gold ring, no minimap border round it. The transparent margin of its texture keeps the
+    -- ring whole when minimap button collectors trim the icon's edges; they take it from <button>Icon.
+    local icon, bordered = MacroSenseMinimapButtonIcon, false
+    for _, o in ipairs(created) do
+        if o.kind == "Texture" and o.parentFrame == b and tostring(o.texture):find("TrackingBorder", 1, true) then
+            bordered = true
+        end
+    end
+    check("minimap: the whole logo with its ring", icon and icon.parentFrame == b
+        and icon.texture == "Interface\\AddOns\\MacroSense\\Media\\minimap" and icon.texCoord
+        and icon.texCoord[1] == 0.0625 and icon.texCoord[2] == 0.9375 and not bordered, icon and icon.texture)
     check("minimap: where it was left", at() == string.format("%.1f,%.1f", r * math.cos(math.rad(250)),
         r * math.sin(math.rad(250))), at())
     local open = MacroSenseFrame:IsShown()
