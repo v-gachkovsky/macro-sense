@@ -1621,6 +1621,28 @@ do
         == "Growl" and W.Name(form({ command = "pet", pet = "follow", petSpell = growl })) == "Pet")
     check("wizard name: the pet's", W.Name(form({ command = "pet" })) == "Pet")
     -- Also: out of the form, off the mount, a buff cancelled first; something said in chat last.
+    -- More spells: before the spell, after trinkets and a click, each always or at a time of its own, the When row's
+    -- too; /use for an item; the tooltip names the macro's spell.
+    local extra = { { action = { name = "Presence of Mind" }, when = "always" }, nil,
+        { action = { name = "Mana Potion", item = true }, when = "shift" } }
+    expectText("more spells, before the spell", text({ action = { name = "Pyroblast" }, on = usual, trinket1 = true,
+        extra = extra, when = { combat = "yes" }, startattack = true }), "#showtooltip Pyroblast\n/use 13\n"
+        .. "/cast [combat] Presence of Mind\n/use [mod:shift,combat] Mana Potion\n/startattack\n"
+        .. "/cast [combat] Pyroblast")
+    expectText("more spells, each when its own", text({ action = bolt, on = usual, extra = {
+        { action = { name = "Berserking" }, when = "nocombat" },
+        { action = { name = "Blood Fury" }, when = "none" } } }),
+        "#showtooltip Frostbolt\n/cast [nocombat] Berserking\n/cast [nomod] Blood Fury\n/cast Frostbolt")
+    expectText("more spells alone", text({ extra = { { action = { name = "Berserking" }, when = "always" } } }),
+        "#showtooltip\n/cast Berserking")
+    check("wizard: more spells only for /cast and /use", W.Text(form({ command = "castsequence",
+        list = { bolt }, on = usual, extra = extra })) == "#showtooltip\n/castsequence Frostbolt")
+    check("wizard: when a line of more spells goes", table.concat((function()
+        local out = {}
+        for i, w in ipairs(W.ExtraWhens({ "shift", "ctrl", "alt" })) do out[i] = w.key end
+        return out
+    end)(), ",") == "always,combat,nocombat,shift,ctrl,alt,none" and W.HasExtra(form({ extra = extra }))
+        and not W.HasExtra(form({ extra = { { when = "combat" } } })))
     -- A button clicked: with the trinkets, before the spell; alone, a macro with nothing to show.
     expectText("also: a button clicked after the trinkets", text({ action = bolt, on = usual, trinket1 = true,
         click = { name = "ExtraActionButton1" }, startattack = true }),
@@ -2437,7 +2459,26 @@ do
         "#showtooltip\n/cast Fireball", "/run print(1)")
     read("a unit without a check: the wizard checks it", "/cast [@focus] Polymorph",
         "#showtooltip\n/cast [@focus,exists] Polymorph", "/cast [@focus] Polymorph")
-    read("a second cast line", "/cast Fireball\n/cast Frostbolt", "#showtooltip\n/cast Fireball", "/cast Frostbolt")
+    read("a second cast line: the first one more spell cast with it", "/cast Fireball\n/cast Frostbolt",
+        "#showtooltip Frostbolt\n/cast Fireball\n/cast Frostbolt")
+    -- More spells before the form's line: each one spell, always or at a time of its own, the When row's too. A line
+    -- of another kind, one after the form's or a fourth: not the form's.
+    spec = read("more spells cast with it", "#showtooltip\n/cast [combat] Presence of Mind\n/use [mod:shift] "
+        .. "Mana Potion\n/cast Pyroblast", "#showtooltip Pyroblast\n/cast [combat] Presence of Mind\n"
+        .. "/use [mod:shift] Mana Potion\n/cast Pyroblast")
+    check("wizard read: more spells, the answers", spec.command == "cast" and spec.action.name == "Pyroblast"
+        and spec.extra[1].action.name == "Presence of Mind" and spec.extra[1].when == "combat"
+        and spec.extra[2].action.item and spec.extra[2].when == "shift")
+    read("more spells, the When row's too", "/cast [nostealth,nomod] Berserking\n/cast [nostealth] Sinister Strike",
+        "#showtooltip Sinister Strike\n/cast [nomod,nostealth] Berserking\n/cast [nostealth] Sinister Strike")
+    read("more spells, a line of another kind", "/cast [@focus] Polymorph\n/cast [combat] Berserking\n"
+        .. "/cast Fireball\n/cast Frostbolt", "#showtooltip Frostbolt\n/cast [combat] Berserking\n/cast Fireball\n"
+        .. "/cast Frostbolt", "/cast [@focus] Polymorph")
+    read("more spells, a fourth", "/cast A\n/cast B\n/cast C\n/cast D\n/cast E",
+        "#showtooltip E\n/cast A\n/cast B\n/cast C\n/cast E", "/cast D")
+    spec = read("more spells: a /use macro by its last line", "/cast Berserking\n/use Healthstone",
+        "#showtooltip Healthstone\n/cast Berserking\n/use Healthstone")
+    check("wizard read: a /use macro by its last line", spec.command == "use" and spec.action.item)
     -- [nomod] is the macro's own spell: the keys come first in the wizard's text. "!" is each spell's own.
     local body = "#showtooltip\n/startattack\n/cast [nomod,@mouseover,harm,nodead][nomod] Shadow Bolt; "
         .. "[mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot"

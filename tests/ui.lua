@@ -3432,6 +3432,27 @@ do
     TypeIn(C("say"), "")
     check("wizard: and all of it taken back", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt",
         shown())
+    -- More spells cast with it: rows under the spell once asked for, a row more when the last one shown has one;
+    -- each a line before the spell, when its own. Turned off, they cast nothing.
+    local high = MacroSenseWizard.height
+    check("wizard: more spells only when asked for", C("moreSpells"):IsShown()
+        and not C("extra1").parentFrame:IsShown())
+    Fire(C("moreSpells"), "OnClick")
+    check("wizard: more spells, a row", C("extra1").parentFrame:IsShown() and C("extra1"):IsShown()
+        and not C("extra2"):IsShown() and MacroSenseWizard.height == high + 34, MacroSenseWizard.height)
+    TypeIn(C("extra1"), "Berserking")
+    Fire(C("extra1"), "OnEnterPressed")
+    pick(C("extraWhen1"), "In combat")
+    check("wizard: more spells before the spell, a row more", C("extra2"):IsShown() and not C("extra3"):IsShown()
+        and MacroSenseWizard.height == high + 66 and shown() == "#showtooltip Frostbolt\n/cast [combat] Berserking\n"
+        .. "/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    pick(C("command"), "/castsequence")
+    check("wizard: no more spells for a list", not C("moreSpells"):IsShown() and not C("extra1").parentFrame:IsShown())
+    pick(C("command"), "/cast")
+    Fire(C("moreSpells"), "OnClick")
+    check("wizard: more spells turned off cast nothing", not C("extra1").parentFrame:IsShown()
+        and MacroSenseWizard.height == high and C("extra1").text == ""
+        and shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
     -- A button clicked: the buttons there are now, with what is on them; any other name too.
     local extra = CreateFrame("Button", "ExtraActionButton1")
     TypeIn(C("click"), "extra")
@@ -3584,7 +3605,8 @@ do
     Fire(C("next"), "OnClick")
     Fire(C("next"), "OnClick")
     check("steps: no dismount check for a mount", question() == "Would you like to add anything else?"
-        and not C("stepDismount"):IsShown() and not C("stepKeep"):IsShown(), question())
+        and not C("stepDismount"):IsShown() and not C("stepKeep"):IsShown() and not C("stepExtra1"):IsShown()
+        and not C("stepMoreSpells"):IsShown(), question())
     for _ = 1, 6 do Fire(C("back"), "OnClick") end
     check("steps: back to the first", question() == "What should the macro do?", question())
 
@@ -3708,7 +3730,16 @@ do
     pick(C("stepWhenCombat"), "In or out of combat")
     Fire(C("next"), "OnClick")
     check("steps: anything else", question() == "Would you like to add anything else?" and C("context").text == ""
-        and C("stepTrinket1").label.text == "Trinket 1: Lucky Charm", question())
+        and C("stepTrinket1").label.text == "Trinket 1: Lucky Charm" and C("stepExtra3"):IsShown()
+        and C("stepMoreSpells"):IsShown(), question())
+    -- More spells cast with it, among the rest.
+    TypeIn(C("stepExtra1"), "Arcane Power")
+    Fire(C("stepExtra1"), "OnEnterPressed")
+    pick(C("stepExtraWhen1"), "With Alt held")
+    check("steps: more spells cast with it", shown() == "#showtooltip Fireball\n/cast [mod:alt] Arcane Power\n"
+        .. "/cast [mod:shift,@focus,harm,nodead] Polymorph; [@mouseover,harm,nodead][] Fireball", shown())
+    TypeIn(C("stepExtra1"), "")
+    Fire(C("stepExtra1"), "OnEnterPressed")
     Fire(C("stepStopcasting"), "OnClick")
     local burst = "#showtooltip\n/stopcasting\n/cast [mod:shift,@focus,harm,nodead] Polymorph; "
         .. "[@mouseover,harm,nodead][] Fireball"

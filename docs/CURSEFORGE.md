@@ -69,6 +69,8 @@ Or **All options** shows the whole form, where you pick it all at once:
   with a key held, picked from your mounts; on a mount it gets you off, but not in the air
   (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`)
 - **what to cast**: a spell or item, found by a few letters or by the first letters of its words in capitals
+- **more spells with it**: up to three, each on its own line before the spell, always, in or out of combat or
+  with a key held (`/cast Presence of Mind`, then `/cast Pyroblast`)
 - **on whom, in order**: mouseover, focus, your target, your group's tank or healer, yourself, your pet, party
   members 1-4, target's target, arena enemies 1-3, the cursor, or as usual
 - **your group's tank and healer**: `@tank` and `@heal` (`/cast [@tank,help,nodead] Misdirection`). The game's

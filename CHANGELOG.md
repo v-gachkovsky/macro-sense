@@ -49,6 +49,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   chosen, the autocast lists have only that pet's spells, and the other way the rest of the time is still that
   pet's. Step by step asks **Which pet is it for?** before the pet's spell, when you have had more than one. A
   macro with `[pet:...]` opens in the wizard with it.
+- The wizard casts more spells with the macro's: **Also cast** shows up to three rows, each a spell or item on its
+  own line before the spell (Presence of Mind before Pyroblast, Berserking, a potion), always, in or out of
+  combat, or with a key held (`/cast [combat] Berserking`). Step by step they come with the last question's
+  answers. A macro with such lines opens in the wizard with them.
 - The wizard's **Also** clicks a button with the trinkets, before the spell (`/click ExtraActionButton1`). The
   list offers the buttons there are now, with what is on them: your action bars, the pet's, the extra action
   button, Bartender's, Dominos' and ElvUI's; any other name works too.

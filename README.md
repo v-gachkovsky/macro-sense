@@ -89,7 +89,8 @@ questions; the wizard opens as you left it.
 - **Should the macro work only at certain times?** In or out of combat, in stealth, in a group, with your pet out,
   while channeling a spell or not, in a form; then, for a spell or item, what it casts the rest of the time, and
   for the pet's autocast on or off, whether the macro turns it the other way then.
-- **Would you like to add anything else?** The same as the form's Also.
+- **Would you like to add anything else?** The same as the form's Also, and for a spell or item, more spells
+  cast with it.
 - Last, the name and who keeps the macro: all your characters or only this one. **Create macro**, or Enter in
   the name, saves it and opens it in the editor.
 
@@ -143,6 +144,9 @@ is set.
   and your spells and usable items come up; any other name works too. A spell with several learned ranks
   (Classic) then lists them: the spell itself first (the highest rank, also after you learn a new one), then
   each rank (`Fireball(Rank 3)`).
+- **Also cast**: spells or items the macro casts too, up to three, each on its own line before the spell: one with
+  no global cooldown (Presence of Mind, Berserking), a potion. Each goes always, in or out of combat, or with a
+  key held (`/cast [combat] Berserking`), and the When row counts for it too.
 - **On**: who it goes to, in order, up to three: As usual (your target, or you when the game casts on you by
   itself), Your target, Mouseover, Focus, Group's tank, Group's healer (`@tank`, `@heal`), Yourself, Your pet,
   Party member 1-4, Target's target, Arena enemy 1-3, At the cursor. When one is not there, the next one is tried. A spell that goes to nobody but you
@@ -191,6 +195,7 @@ free name (`Frostbolt 2` when a macro has that name) and opens it in the editor,
 | /target Party member 1; Shift on 2, Ctrl on 3, Alt on 4 | `/target [mod:shift,@party2,help,nodead]...[@party1,help,nodead]` |
 | Pet: Attack on Mouseover, then As usual; Shift: Follow; Ctrl: Move to the cursor | `/petattack [nomod:shift/ctrl,@mouseover,harm,nodead][nomod:shift/ctrl]`, `/petfollow [mod:shift]`, `/petmoveto [mod:ctrl,@cursor]` |
 | Pet: Turn autocast on, Growl; When: Alone; Otherwise: turn autocast off | `/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl` |
+| Pyroblast as usual; Also cast: Presence of Mind, in combat | `#showtooltip Pyroblast`, `/cast [combat] Presence of Mind`, `/cast Pyroblast` |
 | Frostbolt as usual; Shift: Polymorph on Focus; trinket 1 | `#showtooltip Frostbolt`, `/use 13`, `/cast [mod:shift,@focus,harm,nodead] Polymorph; Frostbolt` |
 
 ## Macros from the spellbook

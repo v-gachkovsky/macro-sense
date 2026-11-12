@@ -840,6 +840,17 @@ ns.locales.uk = {
     ["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."] =
         "Ставить ! перед заклинанням (!Shoot). Якщо натиснути макрос ще раз, він не вимкне те, що увімкнув: "
         .. "Auto Shot, Shoot із жезла, стелс, форму чи ауру.",
+    ["Also cast"] = "Ще застосувати",
+    ["With it"] = "Разом із ним",
+    ["Spells or items the macro casts too, each on its own line before this one: one with no global cooldown "
+        .. "(Presence of Mind, Berserking), a potion. Each goes always, in or out of combat, or with a key held."] =
+        "Заклинання чи предмети, які макрос застосовує теж, кожне окремим рядком перед цим: без глобального кулдауну "
+        .. "(Presence of Mind, Berserking), зілля. Кожне спрацьовує завжди, у бою чи поза ним або із затиснутою "
+        .. "клавішею.",
+    ["When the macro casts this one too: always, in or out of combat, or with a key held. The macro's When counts "
+        .. "for it as well."] =
+        "Коли макрос застосовує й це: завжди, у бою чи поза ним або із затиснутою клавішею. Умови «Коли» макросу теж "
+        .. "діють на нього.",
     ["Cancel a buff"] = "Скасувати бафф",
     ["Cancel a buff first"] = "Спершу скасувати бафф",
     ["the buff's name"] = "назва баффу",

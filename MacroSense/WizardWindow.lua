@@ -35,6 +35,7 @@ local form, steps -- the form's parts and the questions': one of them is shown
 local blocks = {} -- parts of the form, one under another: what (one / list / name / pet), on whom, the rest
 local keyRows = {} -- per key: its spell box, pet command and unit lists, placed by Arrange
 local moreKeys = false -- Shift + Ctrl and a right click asked for (Wizard.MORE), shown while in use too
+local moreSpells = false -- more spells cast with the macro's asked for (Wizard.EXTRA), shown while in use too
 local panels = {} -- the answers of a question, by its kind (Questions.Ask): a choice, a spell box, checks...
 local controls = {} -- by name: what the tests drive and what starts over with each new form
 local spec -- the answers so far
@@ -455,6 +456,7 @@ end
 function Arrange()
     local list, target, pet = W.IsList(spec.command), W.IsTarget(spec.command), spec.command == "pet"
     local mount = spec.command == "mount"
+    local casts = spec.command == "cast" or spec.command == "use"
     local parts = {}
     local equip = spec.command == "equip"
     if equip then
@@ -469,6 +471,20 @@ function Arrange()
         parts[1] = blocks.one
     elseif spec.command == "target" then
         parts[1] = blocks.name
+    end
+    -- More spells cast with it, for /cast and /use: asked for, or in use; a row more once the last one shown has one.
+    controls.moreSpells:SetShown(casts)
+    if casts and (moreSpells or W.HasExtra(spec)) then
+        local rows = 1
+        for i = 1, W.EXTRA do
+            if spec.extra[i] and spec.extra[i].action then rows = math.min(W.EXTRA, i + 1) end
+        end
+        for i = 1, W.EXTRA do
+            controls["extra" .. i]:SetShown(i <= rows)
+            controls["extraWhen" .. i]:SetShown(i <= rows)
+        end
+        blocks.extra.height = rows * ROW + 2
+        parts[#parts + 1] = blocks.extra
     end
     -- Units for a cast or a target; for the pet only when it attacks.
     if not mount and not equip and (not pet or spec.pet == "attack") then parts[#parts + 1] = blocks.on end
@@ -508,7 +524,6 @@ function Arrange()
     blocks.keys.on:SetShown(not mount and anyUnits)
     -- A mount macro gets you off a mount its own way. "!" is for /cast and /use.
     controls.dismount:SetShown(not mount)
-    local casts = spec.command == "cast" or spec.command == "use"
     -- "!" by each spell: for /cast and /use, not a mount.
     for _, name in ipairs({ "keepMain", "keepOtherwise", "keepShift", "keepCtrl", "keepAlt", "keepCmd" }) do
         if controls[name] then controls[name]:SetShown(casts) end
@@ -645,6 +660,31 @@ local function BuildAlso(parent, prefix)
     controls[named("say")] = say
 end
 
+-- More spells cast with the macro's (Wizard.EXTRA), a row each from `y`: the spell or item, and when it goes. In the
+-- form, and in the question of what else; `prefix` names the controls: "extra1", "stepExtra1", "stepExtraWhen1".
+local function BuildExtra(parent, prefix, y)
+    local function named(name) return prefix == "" and name or prefix .. (name:gsub("^%l", string.upper)) end
+    for i = 1, W.EXTRA do
+        local row = y - (i - 1) * ROW
+        local box = SpellBox(parent, CELL, L["spell or item"],
+            function() return spec.extra[i] and spec.extra[i].action end, function(action)
+                spec.extra[i] = spec.extra[i] or { when = "always" }
+                spec.extra[i].action = action
+                if not stepsShown then Arrange() end
+            end)
+        box:SetPoint("TOPLEFT", X, row)
+        controls[named("extra" .. i)] = box
+        local when = Choice(parent, named("extraWhen" .. i), CELL, function() return W.ExtraWhens(keys) end,
+            function() return spec.extra[i] and spec.extra[i].when or "always" end, function(key)
+                spec.extra[i] = spec.extra[i] or {}
+                spec.extra[i].when = key
+            end)
+        when:SetPoint("TOPLEFT", X + COL, row - 1)
+        Tip(when, L["When"], L["When the macro casts this one too: always, in or out of combat, or with a key held. "
+            .. "The macro's When counts for it as well."])
+    end
+end
+
 -- Cmd on a key macOS keeps for itself: what it does there.
 local function CmdTip(check)
     Tip(check, "Cmd", L["macOS uses some keys with Cmd itself: Tab switches apps, Space opens Spotlight, and others do "
@@ -693,9 +733,13 @@ local function ShowStep()
     controls.question:SetText(asked.text or "")
     controls.hint:SetText(asked.hint or "")
     for kind, panel in pairs(panels) do panel:SetShown(kind == asked.kind) end
-    -- Shift and Ctrl together and a right click are for /cast and /use.
-    for _, key in ipairs(W.MORE) do
-        controls["step" .. KeyId(key)]:SetShown(spec.command == "cast" or spec.command == "use")
+    -- Shift and Ctrl together and a right click are for /cast and /use, and more spells cast with it.
+    local casts = spec.command == "cast" or spec.command == "use"
+    for _, key in ipairs(W.MORE) do controls["step" .. KeyId(key)]:SetShown(casts) end
+    controls.stepMoreSpells:SetShown(casts)
+    for i = 1, W.EXTRA do
+        controls["stepExtra" .. i]:SetShown(casts)
+        controls["stepExtraWhen" .. i]:SetShown(casts)
     end
     for i = 1, ANSWERS do
         local b, answer = controls["answer" .. i], asked.answers and asked.answers[i]
@@ -903,6 +947,8 @@ local function BuildSteps()
 
     BuildWhen(panels.when, "step", PAD)
     BuildAlso(panels.also, "step")
+    controls.stepMoreSpells = Text(panels.also, L["Also cast"], PAD, -150)
+    BuildExtra(panels.also, "step", -146)
 
     -- The name and the tab. Enter in the name creates the macro.
     Text(panels.finish, L["Name"], PAD, -5)
@@ -1043,6 +1089,24 @@ local function Build()
         end)
     controls.cast:SetPoint("TOPLEFT", X, 0)
     KeepCheck(controls.cast, "keepMain", function() return "main" end)
+    -- More spells cast with it, each a line before it: rows under it when asked for. Turned off, they cast nothing.
+    local more = Check(blocks.one, "moreSpells", L["Also cast"], function() return moreSpells or W.HasExtra(spec) end,
+        function(on)
+            moreSpells = on
+            if not on then spec.extra = {} end
+            for i = 1, W.EXTRA do
+                controls["extra" .. i]:Refresh()
+                controls["extraWhen" .. i]:Refresh()
+            end
+            Arrange()
+        end)
+    more:SetPoint("TOPLEFT", X + 2 * COL, -6)
+    Tip(more, L["Also cast"], L["Spells or items the macro casts too, each on its own line before this one: one with "
+        .. "no global cooldown (Presence of Mind, Berserking), a potion. Each goes always, in or out of combat, or "
+        .. "with a key held."])
+    blocks.extra = Block(W.EXTRA * ROW + 2)
+    Text(blocks.extra, L["With it"], PAD, -5)
+    BuildExtra(blocks.extra, "", 0)
 
     -- A list: /castsequence, /castrandom. Three columns, read across; its number before each, in its column.
     blocks.list = Block(22 + math.ceil(W.LIST / 3) * ROW + 2)
@@ -1374,6 +1438,7 @@ local function KnowAll()
         Known(action)
     end
     for i = 1, W.LIST do Known(spec.list[i]) end
+    for i = 1, W.EXTRA do Known(spec.extra[i] and spec.extra[i].action) end
     for _, k in pairs(spec.keys) do Known(k.action) end
     for _, piece in ipairs(spec.equip) do Known(piece.item) end
 end
@@ -1397,7 +1462,7 @@ end
 -- A fresh form, for a macro in `tab`: the questions from the first, or the form.
 function WizardWindow.Open(tab)
     spec, scope, suggested, editing = W.Fresh(), tab or "general", nil, nil -- before the form: its controls read them
-    moreKeys = false
+    moreKeys, moreSpells = false, false
     if not frame then Build() end
     controls.name:SetText("")
     controls.stepName:SetText("")
