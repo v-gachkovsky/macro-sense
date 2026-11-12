@@ -33,12 +33,14 @@ for _, u in ipairs(W.units) do UNIT[u.key] = true end
 local function Cond(c)
     c = Trim(c):lower():gsub("%s+", "")
     c = c:gsub("^target=", "@"):gsub("^modifier", "mod"):gsub("^nomodifier", "nomod")
-    c = c:gsub("^stance", "form"):gsub("^nostance", "noform")
+    c = c:gsub("^stance", "form"):gsub("^nostance", "noform"):gsub("^worn", "equipped"):gsub("^noworn", "noequipped")
     return c
 end
 
 -- What a group of conditions says, in the form's words: the key held, the unit, its check, the When row; what the
--- mount and pet macros check (nomounted, the place, nomod); `other` for what the form has no place for.
+-- mount and pet macros check (nomounted, the place, nomod); `other` for what the form has no place for. Not on a
+-- mount, in water, where you can fly: a mount macro's place, or where a cast works (the When row's), as W.Read
+-- finds it reads better. The type of gear as it is written: "Two-Handed Swords".
 local function Group(conds)
     local g = { unit = "default", when = {} }
     for _, raw in ipairs(conds) do
@@ -52,6 +54,10 @@ local function Group(conds)
             g.check = c
         elseif c == "nodead" then
             g.alive = true
+        elseif c == "nomounted" then
+            g.nomounted, g.when.place = true, c
+        elseif PLACE_OF[c] then
+            g.place, g.when.place = PLACE_OF[c], c
         elseif WHEN_OF[c] then
             g.when[WHEN_OF[c][1]] = WHEN_OF[c][2]
         elseif c:match("^nochanneling:") then
@@ -60,10 +66,10 @@ local function Group(conds)
             g.when.form = "0"
         elseif c:match("^form:%d+$") then
             g.when.form = c:sub(6)
-        elseif c == "nomounted" then
-            g.nomounted = true
-        elseif PLACE_OF[c] then
-            g.place = PLACE_OF[c]
+        elseif c:match("^spec:%d+$") then
+            g.when.spec = c:sub(6)
+        elseif c:match("^equipped:[^/]+$") then
+            g.when.equipped = Trim(raw:match(":(.*)$"))
         elseif c == "nomod" or c:match("^nomod:") then
             g.nomod = c:match("^nomod:(.+)$") or ""
         else
@@ -136,7 +142,7 @@ local function ReadCast(spec, rest, item)
     if not groups then return end
     local main, read, whenSet = {}, {}, false
     for _, g in ipairs(groups) do
-        if g.action ~= "" and not g.other and not g.nomounted and not g.place and Keyless(g) then
+        if g.action ~= "" and not g.other and Keyless(g) then
             if not whenSet then spec.when, whenSet = g.when, true end
             local action, keep = Action(g.action, item)
             if g.key then
@@ -177,7 +183,7 @@ local function ReadList(spec, rest)
     if not groups then return end
     local units, read = {}, {}
     for _, g in ipairs(groups) do
-        if not g.other and not g.key and not g.nomounted and not g.place and Keyless(g) then
+        if not g.other and not g.key and Keyless(g) then
             if #read == 0 then spec.when = g.when end
             units[#units + 1], read[#read + 1] = g.unit, g
         end
@@ -221,7 +227,7 @@ local function ReadTarget(spec, rest)
             -- The name's own group: only the When row, if anything.
             spec.byName = g.action
             if #read == 0 then spec.when = g.when end
-        elseif not g.other and not g.nomounted and not g.place and Keyless(g) then
+        elseif not g.other and Keyless(g) then
             if #read == 0 then spec.when = g.when end
             if g.key then
                 local k = spec.keys[g.key]
@@ -350,36 +356,9 @@ local function Norm(line)
     return "/" .. cmd .. " " .. table.concat(parts, ";")
 end
 
--- The form's answers for the macro `text`, and its lines the wizard's text has not (written otherwise or left
--- out; the empty ones and #showtooltip don't count). nil when the wizard can't make it: nothing in it casts,
--- uses, targets, tells the pet, calls a mount or puts on gear.
-function W.Read(text)
+-- The form's answers for the macro's `lines` read as `kind` of macro, and its lines the wizard's text has not.
+local function ReadAs(lines, kind)
     local spec = W.Fresh()
-    local lines = {}
-    for line in (text .. "\n"):gmatch("([^\n]*)\n") do
-        local trimmed = Trim(line)
-        local cmd, rest = trimmed:match("^/(%S+)%s*(.-)$")
-        cmd = cmd and cmd:lower()
-        lines[#lines + 1] = { text = trimmed, cmd = cmd and (ALIASES[cmd] or cmd), rest = rest }
-    end
-    -- What the macro is: the first line with a command the form makes. A bare "/use 13" or "/petattack" is one
-    -- only when nothing else is.
-    local kind
-    for _, l in ipairs(lines) do
-        local main = MAIN[l.cmd]
-        if main == "use" and (l.rest == "13" or l.rest == "14") then main = nil end
-        if main == "cast" and IsMount(l.rest) then main = "mount" end
-        if not main and PET_OF[l.cmd] and (l.cmd ~= "petattack" or l.rest ~= "") then main = "pet" end
-        if main then
-            kind = main
-            break
-        end
-    end
-    if not kind then
-        for _, l in ipairs(lines) do
-            if l.cmd == "petattack" then kind = "pet" end
-        end
-    end
     spec.command = kind == "list" and "castsequence" or kind == "target" and "target" or kind or "cast"
     local done = false -- the line of a /cast, a list or /target is read; more of them are not the form's
     for _, l in ipairs(lines) do
@@ -445,6 +424,44 @@ function W.Read(text)
         local n = Norm(l.text)
         if n and not has[n] and n ~= "#show" then lost[#lost + 1] = l.text end
     end
+    return spec, lost
+end
+
+-- The form's answers for the macro `text`, and its lines the wizard's text has not (written otherwise or left
+-- out; the empty ones and #showtooltip don't count). nil when the wizard can't make it: nothing in it casts,
+-- uses, targets, tells the pet, calls a mount or puts on gear.
+function W.Read(text)
+    local lines = {}
+    for line in (text .. "\n"):gmatch("([^\n]*)\n") do
+        local trimmed = Trim(line)
+        local cmd, rest = trimmed:match("^/(%S+)%s*(.-)$")
+        cmd = cmd and cmd:lower()
+        lines[#lines + 1] = { text = trimmed, cmd = cmd and (ALIASES[cmd] or cmd), rest = rest }
+    end
+    -- What the macro is: the first line with a command the form makes. A bare "/use 13" or "/petattack" is one
+    -- only when nothing else is.
+    local kind
+    for _, l in ipairs(lines) do
+        local main = MAIN[l.cmd]
+        if main == "use" and (l.rest == "13" or l.rest == "14") then main = nil end
+        if main == "cast" and IsMount(l.rest) then main = "mount" end
+        if not main and PET_OF[l.cmd] and (l.cmd ~= "petattack" or l.rest ~= "") then main = "pet" end
+        if main then
+            kind = main
+            break
+        end
+    end
+    if not kind then
+        for _, l in ipairs(lines) do
+            if l.cmd == "petattack" then kind = "pet" end
+        end
+    end
+    if kind ~= "mount" then return ReadAs(lines, kind) end
+    -- A /cast that checks where you are calls a mount, or casts only there (the When row's place): whichever the
+    -- wizard writes back with fewer lines changed, a mount when the same.
+    local spec, lost = ReadAs(lines, "mount")
+    local cast, castLost = ReadAs(lines, "cast")
+    if cast and (not spec or #castLost < #lost) then return cast, castLost end
     return spec, lost
 end
 

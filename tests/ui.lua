@@ -155,6 +155,7 @@ function Frame:GetPoint() if self.point then return unpack(self.point) end retur
 function Frame:GetLeft() return self.left end
 function Frame:GetBottom() return self.bottom end
 function Frame:GetEffectiveScale() return 1 end
+function Frame:SetScale(s) self.scale = s end
 function Frame:SetAlpha(a) self.alpha = a end
 -- Animations: a group plays its parts, stopped they are gone.
 local Animation = {}
@@ -3183,6 +3184,26 @@ do
     Fire(C("otherwise"), "OnEnterPressed")
     GetNumShapeshiftForms, GetShapeshiftFormInfo = nil, nil
     check("wizard: when taken back", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt", shown())
+    -- The third row: where you are, the specialization (talent groups here), the gear; Otherwise under it.
+    check("wizard: the When row's third row", C("whenPlace").point[3] == -64 and C("whenSpec").point[3] == -64
+        and C("whenEquipped").point[3] == -64 and C("otherwise").point[3] == -96 and C("whenPlace"):IsShown(),
+        tostring(C("whenPlace").point[3]))
+    pick(C("whenPlace"), "Outdoors")
+    pick(C("whenSpec"), "In the secondary specialization")
+    check("wizard: where and the specialization", shown() == "#showtooltip\n/cast [outdoors,spec:2,@mouseover,harm,"
+        .. "nodead][outdoors,spec:2] Frostbolt", shown())
+    pick(C("whenPlace"), "Anywhere")
+    pick(C("whenSpec"), "In any specialization")
+    -- Taller than the screen (the /cast form on a Mac, on the game's interface 768 high at first): it comes
+    -- smaller, to fit whole.
+    UIParent.GetHeight = function() return 768 end
+    pick(C("command"), "/cast")
+    local small = MacroSenseWizard.scale
+    UIParent.GetHeight = function() return 1080 end
+    pick(C("command"), "/cast")
+    check("wizard: smaller to fit the screen", small and small < 1 and math.abs(small * MacroSenseWizard.height - 752)
+        < 0.01 and MacroSenseWizard.scale == 1, tostring(small))
+    UIParent.GetHeight = nil
 
     -- A mount: your mounts offered first, one for each place; a key's own; no units; off it on a press.
     local journal = C_MountJournal
@@ -5798,7 +5819,8 @@ do
         "learned later",
         "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "inside, plot, editor or neighborhood", "a bar page 1-6",
-        "a form number, 0 = no form",
+        "a form number, 0 = no form", "In any specialization", "In the primary specialization",
+        "In the secondary specialization", "With any gear",
         "a specialization number", "Target", "Focus", "Assist", "Pet" }) do add(text) end
     local SAME = { Mac = true, Retail = true, Monokai = true, ["-"] = true, ["1-5"] = true } -- the same in Ukrainian
     local missing, unused, notForms = {}, {}, {}

@@ -1694,6 +1694,40 @@ do
     check("when: the forms of a character", #W.WhenForms() == 2 and W.WhenForms({ { name = "0" },
         { name = "1", hint = "Bear Form" } })[3].name == "Bear Form" and W.WhenForms({ { name = "2" } })[3].name
         == "form 2")
+    -- Where you are, the specialization and the gear, after the form.
+    expectText("when: where, specialization, gear", text({ action = bolt, on = usual,
+        when = { combat = "yes", place = "outdoors", spec = "2", equipped = "Two-Handed Swords" } }),
+        "#showtooltip\n/cast [combat,outdoors,spec:2,equipped:Two-Handed Swords] Frostbolt")
+    -- The places this client's game has: flying from The Burning Crusade on, skyriding and houses in Retail, no
+    -- flying in WoW Forever.
+    local function places()
+        local out = {}
+        for _, p in ipairs(W.WhenPlaces()) do out[#out + 1] = p.key end
+        return table.concat(out, ",")
+    end
+    local everywhere = "any,mounted,nomounted,swimming,noswimming,indoors,outdoors,resting,noresting"
+    LE_EXPANSION_LEVEL_CURRENT = 11
+    check("when: every place in Retail", places() == "any,mounted,nomounted,flying,noflying,flyable,noflyable,"
+        .. "advflyable,swimming,noswimming,indoors,outdoors,resting,noresting,house", places())
+    LE_EXPANSION_LEVEL_CURRENT = 1
+    check("when: flying in TBC", places() == "any,mounted,nomounted,flying,noflying,flyable,noflyable,swimming,"
+        .. "noswimming,indoors,outdoors,resting,noresting", places())
+    LE_EXPANSION_LEVEL_CURRENT = 0
+    check("when: no flying in Classic Era", places() == everywhere, places())
+    WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = 18, 18
+    check("when: nor in WoW Forever", places() == everywhere, places())
+    LE_EXPANSION_LEVEL_CURRENT, WOW_PROJECT_ID, WOW_PROJECT_CAMELOT = nil, nil, nil
+    -- Specializations: Retail's by name, talent groups in the other clients. Gear: the weapon and armor types.
+    local groups = W.WhenSpecs({ { name = "1", hint = "primary" }, { name = "2", hint = "secondary" } })
+    check("when: the talent groups", #groups == 3 and groups[2].name == "In the primary specialization"
+        and groups[3].name == "In the secondary specialization" and groups[3].cond == "spec:2", groups[2].name)
+    local named = W.WhenSpecs({ { name = "1", hint = "Arcane" }, { name = "3", hint = "Frost" } })
+    check("when: Retail's specializations", named[3].name == "In specialization Frost" and named[3].key == "3",
+        named[3].name)
+    local gear = W.WhenGear({ { name = "Weapon" }, { name = "Daggers", hint = "Weapon" }, { name = "Armor" },
+        { name = "Shields", hint = "Armor" } })
+    check("when: the gear types, not weapon or armor itself", #gear == 3 and gear[1].name == "With any gear"
+        and gear[3].name == "With Shields equipped" and gear[3].cond == "equipped:Shields", gear[3] and gear[3].name)
 
     -- Gear: a line per piece, in its own slot or one chosen, always or with a key; a set first; When on each.
     local function gear(set)
@@ -2343,6 +2377,17 @@ do
         .. "[nomounted,flyable] Drake; [nomounted] Horse\n/dismount [mounted,noflying]")
     check("wizard read: the mounts", spec.command == "mount" and spec.mounts.fly.name == "Drake"
         and spec.offMount == "safe")
+    -- The When row's place, specialization and gear. Not on a mount or in water is a cast that works only there,
+    -- not a mount macro, when that is what the wizard writes back.
+    spec = read("where, specialization, gear", "/cast [outdoors,spec:2,equipped:Two-Handed Swords] Whirlwind",
+        "#showtooltip\n/cast [outdoors,spec:2,equipped:Two-Handed Swords] Whirlwind")
+    check("wizard read: the When row's new ones", spec.when.place == "outdoors" and spec.when.spec == "2"
+        and spec.when.equipped == "Two-Handed Swords", tostring(spec.when.equipped))
+    read("worn is equipped", "/cast [worn:Shields] Shield Slam", "#showtooltip\n/cast [equipped:Shields] Shield Slam")
+    spec = read("not on a mount: a cast", "/cast [nomounted] Stealth", "#showtooltip\n/cast [nomounted] Stealth")
+    check("wizard read: not on a mount, a cast", spec.command == "cast" and spec.when.place == "nomounted")
+    read("in water: a list", "/castsequence [swimming] Corruption, Immolate",
+        "#showtooltip\n/castsequence [swimming] Corruption, Immolate")
     read("the pet", "/petattack", "/petattack")
     read("trinkets and the rest", "#showtooltip\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n"
         .. "/s Go!", "#showtooltip Mortal Strike\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n/say Go!")

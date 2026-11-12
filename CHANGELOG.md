@@ -29,6 +29,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
   this version of the game". In WoW Forever that is `[pvptalent]`: the game doesn't know it, takes it as met and
   says so in the chat.
 
+- The wizard's When row has three more choices, in the form and step by step: where you are (on a mount or not,
+  flying, where you can fly, in water, indoors or outdoors, resting, at a house: what your version of the game
+  has), your specialization (the primary or secondary talents outside Retail), and a type of weapon or armor you
+  wear (a shield, daggers). A macro with them opens in the wizard with them too.
+- The wizard's window comes a little smaller when it is taller than your screen, so its buttons stay on it.
+
 ### Changed
 - `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight. Nor in Classic Era and TBC,
   whose talents have no rows.

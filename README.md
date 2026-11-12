@@ -152,7 +152,10 @@ is set.
   macro's, each key's and the one it casts otherwise; in the questions it is **Don't turn it off** under the
   spell.
 - **When**: only in or out of combat, in stealth or not, in a group, a raid or alone, with your pet out or not, in
-  one of your forms or none; every branch checks it (`[combat,@mouseover,harm,nodead][combat] Fireball`). A
+  one of your forms or none; where you are (on a mount or not, flying, where you can fly, in water, indoors or
+  outdoors, resting, at a house: what your version of the game has); in one of your specializations (outside
+  Retail, the primary or secondary talents); with a type of weapon or armor equipped (a shield, daggers); every
+  branch checks it (`[combat,@mouseover,harm,nodead][combat] Fireball`). A
   channeled spell (Drain Soul) stops when you press another one: **Not while channeling it** keeps a press of the
   macro from starting its own spell over (`[nochanneling:Drain Soul]`), **Not while channeling** waits for any of
   them (`[nochanneling]`). For `/cast` and `/use` the box under them says what it casts otherwise (`; Frostbolt`).
