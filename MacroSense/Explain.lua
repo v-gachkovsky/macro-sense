@@ -274,8 +274,15 @@ local ENGLISH = {
     petautocasttoggle = "PET_AUTOCASTTOGGLE", equipset = "EQUIP_SET", targetenemy = "TARGET_NEAREST_ENEMY",
     targetfriend = "TARGET_NEAREST_FRIEND", targetlasttarget = "TARGET_LAST_TARGET",
     targetparty = "TARGET_NEAREST_PARTY", targetraid = "TARGET_NEAREST_RAID", stopspelltarget = "STOPSPELLTARGET",
-    changeactionbar = "CHANGEACTIONBAR",
+    changeactionbar = "CHANGEACTIONBAR", swapactionbar = "SWAPACTIONBAR", worldmarker = "WORLD_MARKER",
+    clearworldmarker = "CLEAR_WORLD_MARKER",
 }
+-- A world marker's name by its number: "white skull".
+local function Marker(n)
+    for _, m in ipairs(ns.data.worldMarkers) do
+        if m.name == n then return L[m.hint] end
+    end
+end
 local SECURE = {
     TARGET = function(unit) return unit and string.format(L["targets %s"], unit) or L["does nothing"] end,
     FOCUS = function(unit) return string.format(L["sets %s as your focus"], unit or L["your target"]) end,
@@ -311,6 +318,24 @@ local SECURE = {
     TARGET_NEAREST_PARTY = function() return L["targets the nearest party member"] end,
     TARGET_NEAREST_RAID = function() return L["targets the nearest raid member"] end,
     CHANGEACTIONBAR = function(unit) return string.format(L["switches to action bar page %s"], unit or "") end,
+    SWAPACTIONBAR = function(pages)
+        local a, b = (pages or ""):match("^(%d+)%s+(%d+)$")
+        if not a then return L["does nothing"] end
+        return string.format(L["switches the action bar between pages %s and %s"], a, b)
+    end,
+    -- `marker` the number, `on` the unit in words (nil: none given; at the cursor: `cursor`).
+    WORLD_MARKER = function(_, cursor, marker, on)
+        local name = Marker(marker)
+        if not name then return L["does nothing"] end
+        if cursor then return string.format(L["places the %s marker at the cursor"], name) end
+        if on then return string.format(L["places the %s marker under %s"], name, on) end
+        return string.format(L["places the %s marker where you click"], name)
+    end,
+    CLEAR_WORLD_MARKER = function(_, _, marker)
+        if marker and marker:lower() == (ALL or "all"):lower() then return L["clears every world marker"] end
+        local name = Marker(marker)
+        return name and string.format(L["clears the %s marker"], name) or L["does nothing"]
+    end,
 }
 -- What branch `action` of command `cmd` does for group `g`: the whole phrase, and the one after "if not," (for a
 -- spell, only where it goes now).
@@ -380,7 +405,8 @@ local function CommandLine(cmd, rest, env)
                 -- The unit, else what the line names (a player, an equipment set, a pet's spell, a bar page).
                 local unit = (g.unit and g.unit:lower() ~= "cursor" and Explain.Unit(g.unit))
                     or (b.action ~= "" and b.action) or nil
-                full = secure(unit, g.unit and g.unit:lower() == "cursor")
+                full = secure(unit, g.unit and g.unit:lower() == "cursor", b.action,
+                    g.unit and g.unit:lower() ~= "cursor" and Explain.Unit(g.unit) or nil)
                 short = full
             else
                 full, short = Does(cmd, b.action, g)

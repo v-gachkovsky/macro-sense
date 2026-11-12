@@ -100,6 +100,16 @@ expect("/click [mod] ActionButton1 |", "clickMouse", "")
 expect("/click ActionButton1 Ri|", "clickMouse", "Ri")
 expect("/click ActionButton1 LeftButton t|", "clickDown", "t")
 expectNil("/click A B true x|")
+-- What the other commands take: a pet's spell to cast by itself, an action bar page (two for /swapactionbar), a world
+-- marker by its number (or all of them, to clear).
+expect("/petautocaston [pet:Imp] Fire Sh|", "petSpell", "Fire Sh")
+expect("/petautocasttoggle |", "petSpell", "")
+expect("/changeactionbar |", "barPage", "")
+expect("/swapactionbar 1 |", "barPage", "")
+expectNil("/swapactionbar 1 2 |")
+expectNil("/changeactionbar 2 |")
+expect("/worldmarker [@cursor] |", "worldMarker", "")
+expect("/clearworldmarker a|", "clearMarker", "a")
 expectNil("/say hel|")
 expectNil("just text|")
 
@@ -565,6 +575,18 @@ do
     check("units: 5 bosses in older clients", names("/cast [@boss|"):find("boss5") ~= nil
         and names("/cast [@boss|"):find("boss6") == nil, names("/cast [@boss|"))
     ns.HasExpansion = nil
+end
+-- The words those commands take.
+do
+    ns.sources.petSpells = function() return { { name = "Torment", hint = "Voidwalker" }, { name = "Fire Shield",
+        hint = "Imp" } } end
+    check("args: a pet's spell", names("/petautocastoff |") == "Torment,Fire Shield", names("/petautocastoff |"))
+    ns.sources.petSpells = nil
+    check("args: bar pages", names("/swapactionbar 1 |") == "1,2,3,4,5,6", names("/swapactionbar 1 |"))
+    check("args: world markers", names("/worldmarker |") == "1,2,3,4,5,6,7,8"
+        and ns.Completion.Get(ctx("/worldmarker |"))[8].hint == "white skull", names("/worldmarker |"))
+    check("args: all markers to clear", names("/clearworldmarker |") == "1,2,3,4,5,6,7,8,all",
+        names("/clearworldmarker |"))
 end
 -- mod: takes the keys the game's settings name: your self-cast key (Alt at first), your focus-cast key.
 check("modifiers: the self-cast and focus-cast keys", names("/cast [mod:SEL|") == "SELFCAST"
@@ -1033,6 +1055,12 @@ do
         { "/cast [mod:SELFCAST,@player][] Flash Heal", "Flash Heal on yourself, with your self-cast key held |   if "
             .. "not, on your target" },
         { "/target [@questnpc]", "targets the quest giver you are talking to" },
+        { "/swapactionbar 1 2", "switches the action bar between pages 1 and 2" },
+        { "/worldmarker [@cursor] 5", "places the yellow star marker at the cursor" },
+        { "/worldmarker [mod] 8", "with Shift, Ctrl or Alt held: places the white skull marker where you click" },
+        { "/worldmarker [@player] 1", "places the blue square marker under yourself" },
+        { "/clearworldmarker 1", "clears the blue square marker" },
+        { "/clearworldmarker all", "clears every world marker" },
         { "/cast [pvpcombat] Gladiator's Medallion; Every Man for Himself", "where PvP talents work: Gladiator's "
             .. "Medallion | otherwise: Every Man for Himself" },
         { "/use [house:inside/plot] Hearthstone; [nohouse] Garrison Hearthstone", "inside a house or on a house's "

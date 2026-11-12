@@ -1179,6 +1179,21 @@ ns.locales.uk = {
     ["targets the nearest party member"] = "бере в ціль найближчого члена групи",
     ["targets the nearest raid member"] = "бере в ціль найближчого члена рейду",
     ["switches to action bar page %s"] = "перемикає на сторінку панелі дій %s",
+    ["switches the action bar between pages %s and %s"] = "перемикає панель дій між сторінками %s і %s",
+    ["places the %s marker at the cursor"] = "ставить маркер «%s» під курсор",
+    ["places the %s marker under %s"] = "ставить маркер «%s» під %s",
+    ["places the %s marker where you click"] = "ставить маркер «%s» туди, куди ви клацнете",
+    ["clears the %s marker"] = "прибирає маркер «%s»",
+    ["clears every world marker"] = "прибирає всі маркери на землі",
+    ["blue square"] = "синій квадрат",
+    ["green triangle"] = "зелений трикутник",
+    ["purple diamond"] = "фіолетовий ромб",
+    ["red cross"] = "червоний хрест",
+    ["yellow star"] = "жовта зірка",
+    ["orange circle"] = "помаранчеве коло",
+    ["silver moon"] = "срібний місяць",
+    ["white skull"] = "білий череп",
+    ["every marker"] = "усі маркери",
     -- units, after "on" (the accusative)
     ["your target"] = "вашу ціль",
     ["your focus"] = "ваш фокус",
@@ -1580,6 +1595,19 @@ ns.locales.uk = {
     ["Shows the text as your emote: \"Bob waves.\" %t is your target's name."] =
         "Показує текст як вашу емоцію: «Bob махає рукою.» %t — ім'я вашої цілі.",
     ["Whispers the text to one player: /whisper Name text."] = "Шепоче текст одному гравцю: /whisper Ім'я текст.",
+    ["Turns your action bar to that page: /changeactionbar 2."] =
+        "Перемикає панель дій на цю сторінку: /changeactionbar 2.",
+    ["Turns your action bar to one of two pages, the one it isn't on: /swapactionbar 1 2."] =
+        "Перемикає панель дій на одну з двох сторінок, на ту, якої зараз немає: /swapactionbar 1 2.",
+    ["Places a marker on the ground by its number, 1-8: /worldmarker [@cursor] 1 puts it under the mouse."] =
+        "Ставить маркер на землю за його номером, 1-8: /worldmarker [@cursor] 1 ставить його під курсор.",
+    ["Clears a marker on the ground by its number, or all of them: /clearworldmarker all."] =
+        "Прибирає маркер із землі за його номером або всі: /clearworldmarker all.",
+    ["Your pet casts that spell by itself from now on: /petautocaston Torment."] =
+        "Відтепер улюбленець сам застосовує це заклинання: /petautocaston Torment.",
+    ["Your pet no longer casts that spell by itself."] = "Улюбленець більше не застосовує це заклинання сам.",
+    ["Your pet starts or stops casting that spell by itself: each press turns it the other way."] =
+        "Улюбленець починає або перестає сам застосовувати це заклинання: кожне натискання перемикає.",
     ["You are in combat."] = "Ви в бою.",
     ["A modifier key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Without a value, any of them."] =
         "Затиснуто клавішу-модифікатор: mod:shift, mod:ctrl, mod:alt, кілька через «/». Без значення — будь-яку.",

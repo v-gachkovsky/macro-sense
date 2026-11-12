@@ -48,6 +48,13 @@ local COMMANDS = {
     raid = "Says the text in your raid's chat. %t is your target's name.",
     emote = "Shows the text as your emote: \"Bob waves.\" %t is your target's name.",
     whisper = "Whispers the text to one player: /whisper Name text.",
+    changeactionbar = "Turns your action bar to that page: /changeactionbar 2.",
+    swapactionbar = "Turns your action bar to one of two pages, the one it isn't on: /swapactionbar 1 2.",
+    worldmarker = "Places a marker on the ground by its number, 1-8: /worldmarker [@cursor] 1 puts it under the mouse.",
+    clearworldmarker = "Clears a marker on the ground by its number, or all of them: /clearworldmarker all.",
+    petautocaston = "Your pet casts that spell by itself from now on: /petautocaston Torment.",
+    petautocastoff = "Your pet no longer casts that spell by itself.",
+    petautocasttoggle = "Your pet starts or stops casting that spell by itself: each press turns it the other way.",
 }
 COMMANDS.script = COMMANDS.run
 
