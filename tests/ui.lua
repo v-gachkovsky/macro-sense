@@ -2925,9 +2925,12 @@ do
     pick(C("on3"), "Yourself")
     check("wizard: on whom, in order",
         shown() == "#showtooltip\n/use [@mouseover,help,nodead][help,nodead][@player] Healthstone", shown())
-    Fire(C("alive"), "OnClick")
+    pick(C("life"), "Dead or alive")
     check("wizard: dead ones too", shown() == "#showtooltip\n/use [@mouseover,help][help][@player] Healthstone", shown())
-    Fire(C("alive"), "OnClick")
+    pick(C("life"), "Dead only")
+    check("wizard: the dead only, for a resurrection",
+        shown() == "#showtooltip\n/use [@mouseover,help,dead][help,dead][@player] Healthstone", shown())
+    pick(C("life"), "Alive only")
 
     TypeIn(cast, "frost")
     Fire(cast, "OnEnterPressed")
@@ -5820,7 +5823,7 @@ do
         "shift, ctrl, alt or a key action like SELFCAST",
         "1-5 or a button name", "party or raid", "inside, plot, editor or neighborhood", "a bar page 1-6",
         "a form number, 0 = no form", "In any specialization", "In the primary specialization",
-        "In the secondary specialization", "With any gear",
+        "In the secondary specialization", "With any gear", "Alive only", "Dead only", "Dead or alive",
         "a specialization number", "Target", "Focus", "Assist", "Pet" }) do add(text) end
     local SAME = { Mac = true, Retail = true, Monokai = true, ["-"] = true, ["1-5"] = true } -- the same in Ukrainian
     local missing, unused, notForms = {}, {}, {}

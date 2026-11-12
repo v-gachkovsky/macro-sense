@@ -76,7 +76,7 @@ questions; the wizard opens as you left it.
   (Demon Armor, Bear Form: the game says it has no range) is not asked about.
 - **On your group's tank** and **On your group's healer** (Group's tank and Group's healer in the form):
   `@tank` and `@heal` in the macro, see below.
-- **Who is it for?** Friends, enemies, anyone, or friends dead or alive (for a resurrection): asked only when
+- **Who is it for?** Friends, enemies, anyone, or dead friends only (for a resurrection): asked only when
   the game doesn't say what the spell is for (an item, Holy Shock). A spell for enemies is not offered for
   yourself, your pet, party members or your group's tank and healer, one for friends not for arena enemies.
 - **Shift, Ctrl, Alt** (and **Cmd** on a Mac): for each key held, what it casts instead and where.
@@ -143,8 +143,9 @@ is set.
   itself), Your target, Mouseover, Focus, Group's tank, Group's healer (`@tank`, `@heal`), Yourself, Your pet,
   Party member 1-4, Target's target, Arena enemy 1-3, At the cursor. When one is not there, the next one is tried. A spell that goes to nobody but you
   (Demon Armor) sets As usual.
-- **Only**: friends, enemies or anyone there, and **Alive only**. It follows the spell you pick, when the game
-  knows what it is for; a key's own spell is checked for what it is for.
+- **Only**: friends, enemies or anyone there, and **Alive only**, **Dead only** (for a resurrection) or **Dead or
+  alive**. It follows the spell you pick, when the game knows what it is for; a key's own spell is checked for what
+  it is for.
 - **With a key held**: Shift, Ctrl and Alt (and Cmd on a Mac) can cast another spell, or the same one on someone else, with a
   fallback of their own (Alt: Frostbolt on Mouseover, then Your target).
 - **!** at the end of each spell's box, for `/cast` and `/use`: `!` before that spell (`!Shoot`). Pressed again,

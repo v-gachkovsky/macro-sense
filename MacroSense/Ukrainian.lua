@@ -791,6 +791,12 @@ ns.locales.uk = {
         .. "перевіряються. Коли гра знає, для кого заклинання, це поле саме підлаштується під нього. Власне "
         .. "заклинання клавіші перевіряється за тим, для кого воно.",
     ["Alive only"] = "Лише живі",
+    ["Dead only"] = "Лише мертві",
+    ["Dead or alive"] = "Живі чи мертві",
+    ["Alive or dead"] = "Живі чи мертві",
+    ["Dead only is for a resurrection: the macro skips those alive. Yourself, As usual and At the cursor aren't "
+        .. "checked."] = "«Лише мертві» — для воскресіння: живих макрос пропускає. Себе, «As usual» і «At the cursor» "
+        .. "не перевіряють.",
     ["With a key held"] = "З клавішею",
     ["same spell"] = "те саме заклинання",
     ["macOS uses some keys with Cmd itself: Tab switches apps, Space opens Spotlight, and others do things too. "
@@ -909,8 +915,8 @@ ns.locales.uk = {
     ["Friends or enemies?"] = "Друзі чи вороги?",
     ["Who is %s for?"] = "Для кого «%s»?",
     ["Who are these spells for?"] = "Для кого ці заклинання?",
-    ["Friends, dead or alive"] = "Друзі, живі чи мертві",
-    ["For a resurrection."] = "Для воскресіння.",
+    ["Dead friends"] = "Мертві друзі",
+    ["For a resurrection: the macro skips those alive."] = "Для воскресіння: живих макрос пропускає.",
     ["On your target, as usual"] = "На вашу ціль, як завжди",
     ["On your target, if a friend"] = "На вашу ціль, якщо це друг",
     ["On your target, if an enemy"] = "На вашу ціль, якщо це ворог",
@@ -972,6 +978,9 @@ ns.locales.uk = {
     ["Or the one there is not an enemy, or is dead."] = "Або той, хто там є, не ворог чи мертвий.",
     ["Or the one there is not an enemy."] = "Або той, хто там є, не ворог.",
     ["Or the one there is dead."] = "Або той, хто там є, мертвий.",
+    ["Or the one there is not a friend, or is alive."] = "Або той, хто там є, не друг чи живий.",
+    ["Or the one there is not an enemy, or is alive."] = "Або той, хто там є, не ворог чи живий.",
+    ["Or the one there is alive."] = "Або той, хто там є, живий.",
     ["What name should it look for?"] = "Яке ім'я шукати?",
     ["The nearest one with this name becomes your target, such as a rare."] =
         "Вашою ціллю стане найближчий з таким ім'ям, наприклад рідкісний монстр.",

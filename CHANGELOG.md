@@ -34,6 +34,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   has), your specialization (the primary or secondary talents outside Retail), and a type of weapon or armor you
   wear (a shield, daggers). A macro with them opens in the wizard with them too.
 - The wizard's window comes a little smaller when it is taller than your screen, so its buttons stay on it.
+- Resurrection macros in the wizard: **Dead only** next to **Only** (`[@mouseover,help,dead][help,dead]`), and
+  **Dead friends** among the answers step by step. A macro with `[dead]` opens in the wizard too. **Alive only**
+  and **Dead or alive** stay.
 
 ### Changed
 - `[talent]` isn't suggested in Retail any more: the game dropped it in Dragonflight. Nor in Classic Era and TBC,

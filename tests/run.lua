@@ -1945,9 +1945,10 @@ do
     macro("a heal: the mouseover, your target, you", spec,
         "#showtooltip\n/cast [@mouseover,help,nodead][help,nodead][@player] Flash Heal")
     Q.Choose(spec, "only", "dead")
-    check("questions: dead friends too, for a resurrection", spec.only == "friends" and not spec.alive
-        and ask(spec, "only").chosen == "dead" and ask(spec, "on2").hint == "Or the one there is not a friend.")
-    macro("a resurrection", spec, "#showtooltip\n/cast [@mouseover,help][help][@player] Flash Heal")
+    check("questions: dead friends only, for a resurrection", spec.only == "friends" and not spec.alive and spec.dead
+        and ask(spec, "only").chosen == "dead" and ask(spec, "on2").hint == "Or the one there is not a friend, or is "
+        .. "alive.", ask(spec, "on2").hint)
+    macro("a resurrection", spec, "#showtooltip\n/cast [@mouseover,help,dead][help,dead][@player] Flash Heal")
     Q.Choose(spec, "only", "enemies")
     check("questions: alive again",
         spec.alive and ask(spec, "on2").hint == "Or the one there is not an enemy, or is dead.")
@@ -2377,6 +2378,10 @@ do
         .. "[nomounted,flyable] Drake; [nomounted] Horse\n/dismount [mounted,noflying]")
     check("wizard read: the mounts", spec.command == "mount" and spec.mounts.fly.name == "Drake"
         and spec.offMount == "safe")
+    -- A resurrection: the dead only.
+    spec = read("a resurrection", "/cast [@mouseover,help,dead][help,dead] Resurrection",
+        "#showtooltip\n/cast [@mouseover,help,dead][help,dead] Resurrection")
+    check("wizard read: the dead only", spec.dead and not spec.alive and spec.only == "friends")
     -- The When row's place, specialization and gear. Not on a mount or in water is a cast that works only there,
     -- not a mount macro, when that is what the wizard writes back.
     spec = read("where, specialization, gear", "/cast [outdoors,spec:2,equipped:Two-Handed Swords] Whirlwind",

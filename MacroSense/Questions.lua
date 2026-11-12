@@ -241,17 +241,19 @@ local function Missing(unit)
         heal = L["And if your group has no healer?"] })[unit]
 end
 
--- Or the one there doesn't do: not a friend, not an enemy, dead.
+-- Or the one there doesn't do: not a friend, not an enemy, dead (alive, for a resurrection).
 local function NotThere(spec, key)
     local only = W.Only(spec, key)
     if only == "friends" then
         return spec.alive and L["Or the one there is not a friend, or is dead."]
+            or spec.dead and L["Or the one there is not a friend, or is alive."]
             or L["Or the one there is not a friend."]
     elseif only == "enemies" then
         return spec.alive and L["Or the one there is not an enemy, or is dead."]
+            or spec.dead and L["Or the one there is not an enemy, or is alive."]
             or L["Or the one there is not an enemy."]
     end
-    return spec.alive and L["Or the one there is dead."] or nil
+    return spec.alive and L["Or the one there is dead."] or spec.dead and L["Or the one there is alive."] or nil
 end
 
 -- The first question of an order of units: whom the command takes, or where its spell or item goes (a key's own or
@@ -313,7 +315,7 @@ end
 local function OnlyAnswers()
     return { { key = "friends", name = L["Friends"] }, { key = "enemies", name = L["Enemies"] },
         { key = "any", name = L["Anyone there"] },
-        { key = "dead", name = L["Friends, dead or alive"], tip = L["For a resurrection."] } }
+        { key = "dead", name = L["Dead friends"], tip = L["For a resurrection: the macro skips those alive."] } }
 end
 
 -- The questions of a mount macro: which mount for each place.
@@ -428,7 +430,7 @@ function Questions.Ask(spec, step, keys)
             text = string.format(L["Who is %s for?"], Subject(spec, (KeyStep(before or ""))))
         end
         return { kind = "choice", text = text, answers = OnlyAnswers(),
-            chosen = (spec.only == "friends" and not spec.alive) and "dead" or spec.only }
+            chosen = (spec.only == "friends" and spec.dead) and "dead" or spec.only }
     elseif step == "byName" then
         return { kind = "byName", text = L["What name should it look for?"],
             hint = L["The nearest one with this name becomes your target, such as a rare."] }
@@ -467,7 +469,8 @@ function Questions.Choose(spec, step, answer)
         if key then spec.keys[key].pet = answer else spec.pet = answer end
         if answer == "attack" then spec.only = "enemies" end
     elseif step == "only" then
-        spec.only, spec.alive = answer == "dead" and "friends" or answer, answer ~= "dead"
+        spec.only = answer == "dead" and "friends" or answer
+        spec.alive, spec.dead = answer ~= "dead", answer == "dead"
     elseif i then
         local on = Units(spec, key)
         if answer == "byName" then
