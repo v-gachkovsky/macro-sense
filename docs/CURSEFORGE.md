@@ -64,7 +64,7 @@ Or **All options** shows the whole form, where you pick it all at once:
 
 - **the command**: `/cast`, `/use`, `/castsequence` (with what starts it over), `/castrandom`, or `/target`,
   `/focus` and `/assist` on units (party members by key, say; `/target` by name too), or **pet commands**
-  (attack your mouseover, follow with Shift, move to the cursor with Ctrl...)
+  (attack your mouseover, follow with Shift, move to the cursor with Ctrl, autocast of a pet's spell...)
 - **a mount macro**: one button for a flying mount where you can fly, another elsewhere, one for water, another
   with a key held, picked from your mounts; on a mount it gets you off, but not in the air
   (`/cast [nomounted,swimming] Sea Turtle; [nomounted,flyable] Gryphon; [nomounted] Steed`)
@@ -82,7 +82,8 @@ Or **All options** shows the whole form, where you pick it all at once:
 - **when**: only in or out of combat, in stealth, in a group or alone, with your pet out, not while channeling
   (`[nochanneling:Drain Soul]`), in a form, where you are (on a mount, in water, indoors, resting...), in a
   specialization, with a shield or another type of gear on, and what it casts otherwise
-  (`/cast [stealth] Ambush; Sinister Strike`)
+  (`/cast [stealth] Ambush; Sinister Strike`), or the pet's autocast the other way (Growl on alone, off in a
+  group)
 - **and also**: stop your cast first, your trinkets, auto attack, your pet, the nearest enemy if none is targeted,
   out of your form or off your mount first, a buff cancelled first, a line in chat (`%t` is your target)
 - **!** by each spell (`!Shoot`): pressed again, the macro doesn't turn off Auto Shot, Stealth or a form

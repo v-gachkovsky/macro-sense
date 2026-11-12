@@ -273,12 +273,21 @@ local function ReadClear(spec, rest)
     end
 end
 
--- "/petattack [nomod:shift,@mouseover,harm,nodead][nomod:shift]", "/petfollow [mod:shift]": what the pet does
--- without a key held, and with each.
-local function ReadPet(spec, command, rest)
+-- "/petattack [nomod:shift,@mouseover,harm,nodead][nomod:shift]", "/petfollow [mod:shift]", "/petautocaston
+-- [nogroup] Growl": what the pet does without a key held, and with each; the spell autocast names. Autocast the other
+-- way after the macro's own, with the same spell: what it does the rest of the time (`spec.petOtherwise`), its
+-- conditions the When row's the other way round. `state.main`: the macro's own was read.
+local function ReadPet(spec, command, rest, state)
     local groups = Groups(rest)
-    if not groups then return end
-    local key, units, read = nil, {}, {}
+    if not groups or #groups == 0 then return end
+    local key = groups[1].key
+    local spell = W.PetTakesSpell(command) and groups[#groups].action ~= "" and Action(groups[#groups].action) or nil
+    if not key and state.main and spell and W.PetOpposite(spec.pet) == command and spec.petSpell
+        and W.Spelled(spell) == W.Spelled(spec.petSpell) then
+        spec.petOtherwise = true
+        return
+    end
+    local units, read = {}, {}
     for _, g in ipairs(groups) do
         key = key or g.key
         if #read == 0 then spec.when = g.when end
@@ -287,10 +296,10 @@ local function ReadPet(spec, command, rest)
     end
     if key then
         local k = spec.keys[key]
-        k.active, k.pet = true, command
+        k.active, k.pet, k.petSpell = true, command, spell
         if command == "attack" then k.on = Pad(units, 2) end
     else
-        spec.pet = command
+        spec.pet, spec.petSpell, state.main = command, spell, true
         if command == "attack" then spec.on = Pad(units, 3) end
     end
     if command == "attack" then Checks(spec, read) end
@@ -405,6 +414,7 @@ local function ReadAs(lines, kind)
     spec.command = kind == "list" and "castsequence" or kind == "target" and "target" or kind or "cast"
     local done = false -- the line of a /cast, a list or /target is read; more of them are not the form's
     local stop -- a pet macro's last /stopmacro: whom the /petdismiss after it is for
+    local pet = {} -- what of a pet macro was read (ReadPet)
     for _, l in ipairs(lines) do
         local cmd, rest = l.cmd, l.rest
         local trinket = cmd == "use" and (rest == "13" or rest == "14")
@@ -431,7 +441,7 @@ local function ReadAs(lines, kind)
         elseif kind == "pet" and cmd == "petdismiss" and rest == "" then
             ReadDismiss(spec, stop)
         elseif kind == "pet" and PET_OF[cmd] then
-            ReadPet(spec, PET_OF[cmd], rest)
+            ReadPet(spec, PET_OF[cmd], rest, pet)
         elseif kind == "equip" and MAIN[cmd] == "equip" then
             ReadEquip(spec, cmd, rest)
         elseif cmd == "stopcasting" and (rest == "" or rest:match("^%[[^;]*%]$")) then
@@ -460,6 +470,13 @@ local function ReadAs(lines, kind)
         local off = spec.dismount
         spec.offMount = off == "mounted,noflying" and "safe" or off and "always" or "no"
         spec.dismount = nil
+    end
+    -- A key's autocast of the macro's own spell: "the same spell".
+    for _, k in pairs(kind == "pet" and spec.keys or {}) do
+        if k.petSpell and W.PetTakesSpell(spec.pet) and spec.petSpell
+            and W.Spelled(k.petSpell) == W.Spelled(spec.petSpell) then
+            k.petSpell = nil
+        end
     end
     local made = W.Text(spec)
     if not made then return nil end

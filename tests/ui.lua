@@ -3208,9 +3208,48 @@ do
     LE_EXPANSION_LEVEL_CURRENT = nil
     Fire(C("shift"), "OnClick")
     Fire(C("ctrl"), "OnClick")
+    -- Autocast: the pet's spell next to the command, a key's own or the same; on or off, the other way the rest of
+    -- the time, under the When rows.
+    local pets = ns.char.pets
+    ns.char.pets = { Wolf = { spells = { Growl = { icon = 1 }, ["Furious Howl"] = { icon = 2 } } } }
+    local high = MacroSenseWizard.height
+    pick(C("pet"), "Turn autocast on")
+    check("wizard: autocast: the pet's spell, the rest of the time", C("petSpell"):IsShown()
+        and C("petOtherwise"):IsShown() and MacroSenseWizard.height == high + 32, MacroSenseWizard.height)
+    TypeIn(C("petSpell"), "gro")
+    check("wizard: autocast offers the pets' spells", offered(C("petSpell")) == "Growl", offered(C("petSpell")))
+    Fire(C("petSpell"), "OnEnterPressed")
+    check("wizard: autocast on, named after the spell", shown() == "/petautocaston Growl" and C("name").text == "Growl",
+        shown())
+    pick(C("whenGroup"), "Alone")
+    pick(C("petOtherwise"), "Otherwise: turn autocast off")
+    check("wizard: Growl on alone, off in a group", shown() == "/petautocaston [nogroup] Growl\n"
+        .. "/petautocastoff [group] Growl", shown())
+    pick(C("pet"), "Turn autocast off")
+    check("wizard: autocast off, on the rest of the time", C("petOtherwise").label.text == "Otherwise: turn autocast on"
+        and shown() == "/petautocastoff [nogroup] Growl\n/petautocaston [group] Growl", shown())
+    pick(C("pet"), "Toggle autocast")
+    check("wizard: a toggle, no rest of the time", not C("petOtherwise"):IsShown() and MacroSenseWizard.height == high
+        and shown() == "/petautocasttoggle [nogroup] Growl", shown())
+    Fire(C("shift"), "OnClick")
+    pick(C("shiftPet"), "Turn autocast off")
+    check("wizard: a key's autocast, the same spell", C("shiftPetSpell"):IsShown() and not C("shiftOn"):IsShown()
+        and C("shiftPetSpell").placeholder.text == "same spell" and shown() == "/petautocasttoggle [nomod:shift,"
+        .. "nogroup] Growl\n/petautocastoff [mod:shift,nogroup] Growl", shown())
+    TypeIn(C("shiftPetSpell"), "fur")
+    Fire(C("shiftPetSpell"), "OnEnterPressed")
+    check("wizard: a key's own spell", shown():find("\n/petautocastoff [mod:shift,nogroup] Furious Howl", 1, true)
+        ~= nil, shown())
+    pick(C("pet"), "Follow")
+    check("wizard: the same spell needs the macro's", not C("petSpell"):IsShown()
+        and C("shiftPetSpell").placeholder.text == "the pet's spell", C("shiftPetSpell").placeholder.text)
+    pick(C("whenGroup"), "In a group or alone")
+    Fire(C("shift"), "OnClick")
+    ns.char.pets = pets
     pick(C("command"), "/cast")
     check("wizard: back to /cast", shown() == "#showtooltip\n/cast [@mouseover,harm,nodead][] Frostbolt"
-        and not C("shiftPet"):IsShown(), shown())
+        and not C("shiftPet"):IsShown() and not C("shiftPetSpell"):IsShown() and not C("petOtherwise"):IsShown(),
+        shown())
 
     -- When: in combat only, otherwise Fire Blast; /target has no otherwise; the forms of this character.
     pick(C("whenCombat"), "In combat")
@@ -3507,6 +3546,35 @@ do
         and not C("stepDismount"):IsShown() and not C("stepKeep"):IsShown(), question())
     for _ = 1, 6 do Fire(C("back"), "OnClick") end
     check("steps: back to the first", question() == "What should the macro do?", question())
+
+    -- The pet's autocast: the spell next, a must; on or off, what it does the rest of the time after When.
+    local pets = ns.char.pets
+    ns.char.pets = { Wolf = { spells = { Growl = { icon = 1 } } } }
+    Pick("Command your pet")
+    Pick("Turn autocast on")
+    check("steps: autocast asks for the pet's spell", question() == "Which of your pet's spells?"
+        and not C("next"):IsEnabled() and C("stepSpell").placeholder.text == "the pet's spell", question())
+    TypeIn(C("stepSpell"), "gr")
+    Fire(C("stepSpell"), "OnEnterPressed")
+    check("steps: the pet's spell picked", C("stepSpell").text == "Growl" and C("next"):IsEnabled()
+        and shown() == "/petautocaston Growl", shown())
+    Fire(C("next"), "OnClick")
+    Fire(C("next"), "OnClick")
+    pick(C("stepWhenGroup"), "Alone")
+    Fire(C("next"), "OnClick")
+    check("steps: autocast the rest of the time", question() == "And the rest of the time?"
+        and answers() == "Turn autocast off, Leave it as it is" and chosen() == "Leave it as it is", answers())
+    Pick("Turn autocast off")
+    check("steps: Growl on alone, off in a group", question() == "Would you like to add anything else?"
+        and shown() == "/petautocaston [nogroup] Growl\n/petautocastoff [group] Growl", shown())
+    Fire(C("back"), "OnClick")
+    Fire(C("back"), "OnClick")
+    pick(C("stepWhenGroup"), "In a group or alone")
+    for _ = 1, 3 do Fire(C("back"), "OnClick") end
+    Fire(answer("Attack"), "OnClick")
+    Fire(C("back"), "OnClick")
+    ns.char.pets = pets
+    check("steps: back to the first from the pet", question() == "What should the macro do?", question())
 
     Pick("Cast a spell")
     check("steps: a click answers and goes on", question() == "Which spell should the macro cast?"
@@ -5889,7 +5957,8 @@ do
         "1-5 or a button name", "party or raid", "inside, plot, editor or neighborhood", "a bar page 1-6",
         "a form number, 0 = no form", "In any specialization", "In the primary specialization",
         "In the secondary specialization", "With any gear", "Alive only", "Dead only", "Dead or alive", "Right click",
-        "With Shift and Ctrl held", "On a right click",
+        "With Shift and Ctrl held", "On a right click", "Otherwise: leave it as it is", "Otherwise: turn autocast on",
+        "Otherwise: turn autocast off",
         "a specialization number", "Target", "Focus", "Assist", "Pet" }) do add(text) end
     local SAME = { Mac = true, Retail = true, Monokai = true, ["-"] = true, ["1-5"] = true } -- the same in Ukrainian
     local missing, unused, notForms = {}, {}, {}

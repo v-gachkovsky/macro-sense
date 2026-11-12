@@ -101,7 +101,8 @@ end
 
 -- What the pet can be told. Attack takes units, Move to goes to the cursor; `since`: the expansion it came with
 -- (Move To with Cataclysm: Classic Era and TBC have the command, but their game does nothing with it; WoW
--- Forever's does).
+-- Forever's does). Autocast takes one of the pet's spells (`spell`): it casts it by itself, or not, or each press
+-- the other way.
 Wizard.petActions = {
     { key = "attack", name = "Attack", command = "/petattack" },
     { key = "follow", name = "Follow", command = "/petfollow" },
@@ -111,9 +112,19 @@ Wizard.petActions = {
     { key = "defensive", name = "Defensive", command = "/petdefensive" },
     { key = "aggressive", name = "Aggressive", command = "/petaggressive" },
     { key = "dismiss", name = "Dismiss", command = "/petdismiss" },
+    { key = "autocaston", name = "Turn autocast on", command = "/petautocaston", spell = true },
+    { key = "autocastoff", name = "Turn autocast off", command = "/petautocastoff", spell = true },
+    { key = "autocasttoggle", name = "Toggle autocast", command = "/petautocasttoggle", spell = true },
 }
-local PET_COMMANDS = {}
-for _, a in ipairs(Wizard.petActions) do PET_COMMANDS[a.key] = a.command end
+local PET_COMMANDS, PET_SPELL = {}, {}
+for _, a in ipairs(Wizard.petActions) do PET_COMMANDS[a.key], PET_SPELL[a.key] = a.command, a.spell end
+
+-- Whether the pet's command `action` names a spell (autocast).
+function Wizard.PetTakesSpell(action) return PET_SPELL[action] == true end
+
+-- Autocast on and off: the other way round, for the rest of the time (Wizard.Text's `spec.petOtherwise`).
+local PET_OPPOSITE = { autocaston = "autocastoff", autocastoff = "autocaston" }
+function Wizard.PetOpposite(action) return PET_OPPOSITE[action] end
 
 -- The pet's commands a game has: `expansion` is the client's (nil: all of them).
 function Wizard.PetActions(expansion)
@@ -256,9 +267,12 @@ Wizard.When = When
 
 -- When the When row doesn't hold: each of its conditions the other way round, a group each, so any of them will
 -- do ("[nocombat][group]" for "combat,nogroup"); "" when it always holds. Every condition has its "no" form.
-local function Unless(spec)
+-- `mod`: what each group checks first as well ("[nomod:shift,group]").
+local function Unless(spec, mod)
     local out = {}
-    for _, c in ipairs(WhenConds(spec)) do out[#out + 1] = "[" .. (c:match("^no(.+)$") or "no" .. c) .. "]" end
+    for _, c in ipairs(WhenConds(spec)) do
+        out[#out + 1] = "[" .. (mod and mod .. "," or "") .. (c:match("^no(.+)$") or "no" .. c) .. "]"
+    end
     return table.concat(out)
 end
 
@@ -577,8 +591,10 @@ local function TargetLines(spec)
 end
 
 -- One line per thing the pet is told: without a key (none of those held), then each key's. Attack goes to the
--- units in order ([nomod:shift,@mouseover,harm,nodead][nomod:shift]), Move to to the cursor.
-local function PetLine(spec, action, units, mod)
+-- units in order ([nomod:shift,@mouseover,harm,nodead][nomod:shift]), Move to to the cursor; autocast names the
+-- pet's `spell`, and is no line (nil) without one.
+local function PetLine(spec, action, units, mod, spell)
+    if PET_SPELL[action] and not spell then return nil end
     local groups = ""
     if action == "attack" then
         for _, unit in ipairs(Chain(units)) do groups = groups .. Group(spec, unit, mod) end
@@ -589,7 +605,25 @@ local function PetLine(spec, action, units, mod)
         if action == "moveto" then conds[#conds + 1] = "@cursor" end
         if #conds > 0 then groups = "[" .. table.concat(conds, ",") .. "]" end
     end
-    return PET_COMMANDS[action] .. (groups ~= "" and groups ~= "[]" and " " .. groups or "")
+    local line = PET_COMMANDS[action] .. (groups ~= "" and groups ~= "[]" and " " .. groups or "")
+    return spell and PET_SPELL[action] and line .. " " .. Wizard.Spelled(spell) or line
+end
+
+-- The pet's spell that autocast names for `key` (nil: the macro's own): a key's own, else the macro's, when the
+-- macro's command names one too.
+function Wizard.PetSpell(spec, key)
+    local k = key and spec.keys[key]
+    if k and k.petSpell then return k.petSpell end
+    return PET_SPELL[spec.pet] and spec.petSpell or nil
+end
+
+-- Autocast on (or off) only when the When row holds, and the other way the rest of the time (`spec.petOtherwise`):
+-- "/petautocastoff [group] Growl" after "/petautocaston [nogroup] Growl". `mod`: the keys not held, as for the line.
+local function OtherwiseLine(spec, mod)
+    local other, spell = spec.petOtherwise and PET_OPPOSITE[spec.pet], Wizard.PetSpell(spec)
+    local unless = other and spell and Unless(spec, mod) or ""
+    if unless == "" then return nil end
+    return PET_COMMANDS[other] .. " " .. unless .. " " .. Wizard.Spelled(spell)
 end
 
 -- The game's /petdismiss takes no conditions: with [mod:shift] or without, it dismisses the pet. So it comes last,
@@ -624,11 +658,15 @@ local function PetLines(spec)
     end
     local lines = {}
     if spec.pet ~= "dismiss" then
-        lines[1] = PetLine(spec, spec.pet, spec.on, #held > 0 and ("nomod:" .. table.concat(held, "/")) or nil)
+        local mod = #held > 0 and ("nomod:" .. table.concat(held, "/")) or nil
+        lines[#lines + 1] = PetLine(spec, spec.pet, spec.on, mod, Wizard.PetSpell(spec))
+        lines[#lines + 1] = OtherwiseLine(spec, mod)
     end
     for _, key in ipairs(held) do
         local k = spec.keys[key]
-        if k.pet ~= "dismiss" then lines[#lines + 1] = PetLine(spec, k.pet, k.on, "mod:" .. key) end
+        if k.pet ~= "dismiss" then
+            lines[#lines + 1] = PetLine(spec, k.pet, k.on, "mod:" .. key, Wizard.PetSpell(spec, key))
+        end
     end
     return lines, DismissLines(spec, held)
 end
@@ -786,9 +824,11 @@ function Wizard.Text(spec)
     return table.concat(lines, "\n")
 end
 
--- A name for the macro: what it casts (the item in a slot, not the slot's number), or what it targets.
+-- A name for the macro: what it casts (the item in a slot, not the slot's number), or what it targets; the pet's
+-- spell it autocasts.
 local TARGET_NAMES = { target = "Target", focus = "Focus", assist = "Assist", pet = "Pet" }
 function Wizard.Name(spec)
+    if spec.command == "pet" and Wizard.PetSpell(spec) then return Wizard.PetSpell(spec).name end
     if Wizard.IsTarget(spec.command) or spec.command == "pet" then
         local name = ByName(spec)
         return name ~= "" and name or ns.L[TARGET_NAMES[spec.command]]

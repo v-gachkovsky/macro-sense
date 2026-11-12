@@ -40,6 +40,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Resurrection macros in the wizard: **Dead only** next to **Only** (`[@mouseover,help,dead][help,dead]`), and
   **Dead friends** among the answers step by step. A macro with `[dead]` opens in the wizard too. **Alive only**
   and **Dead or alive** stay.
+- The wizard's **Pet commands** turn autocast of one of the pet's spells on or off, or the other way each press
+  (`/petautocaston`, `/petautocastoff`, `/petautocasttoggle`), without a key or with one. The spell comes from
+  your pets' spells. With the When row, autocast on or off can go the other way the rest of the time: Growl on
+  when you're alone, off in a group (`/petautocaston [nogroup] Growl`, `/petautocastoff [group] Growl`). Step
+  by step too, and such a macro opens in the wizard.
 
 - The icon search finds an icon by its file name or file ID, as Wowhead shows them: `inv_misc_book_09`,
   `Interface\Icons\INV_Misc_Book_09.blp` or `133741`. That icon comes first, and a click picks it.

@@ -1416,7 +1416,8 @@ end
 do
     local W = ns.Wizard
     local made = {}
-    -- A fresh form with `set` filled in; set.keys = { shift = { action, pet, on = units, or unit = one } } holds keys.
+    -- A fresh form with `set` filled in; set.keys = { shift = { action, pet, petSpell, on = units, or unit = one } }
+    -- holds keys.
     local function form(set)
         local spec = W.Fresh()
         for k, v in pairs(set) do
@@ -1424,7 +1425,7 @@ do
                 for key, row in pairs(v) do
                     local k = spec.keys[key]
                     k.active, k.on = true, row.on or { row.unit or "default", "none" }
-                    k.action, k.pet, k.reaction = row.action, row.pet or k.pet, row.reaction
+                    k.action, k.pet, k.reaction, k.petSpell = row.action, row.pet or k.pet, row.reaction, row.petSpell
                 end
             else
                 spec[k] = v
@@ -1575,6 +1576,28 @@ do
         when = { combat = "no", group = "raid" } }), "/stopmacro [combat][nogroup:raid]\n/petdismiss")
     expectText("pet: dismiss with every key", text({ command = "pet", pet = "dismiss",
         keys = { shift = { pet = "dismiss" } } }), "/petdismiss")
+    -- Autocast names one of the pet's spells, a key's the macro's when it has none of its own; on or off, the other
+    -- way the rest of the time, when the When row has anything.
+    local growl, cower = { name = "Growl" }, { name = "Cower" }
+    expectText("pet: autocast on", text({ command = "pet", pet = "autocaston", petSpell = growl }),
+        "/petautocaston Growl")
+    check("wizard: autocast without a spell, no macro",
+        W.Text(form({ command = "pet", pet = "autocasttoggle" })) == nil)
+    expectText("pet: autocast on alone, off in a group", text({ command = "pet", pet = "autocaston", petSpell = growl,
+        when = { group = "no" }, petOtherwise = true }),
+        "/petautocaston [nogroup] Growl\n/petautocastoff [group] Growl")
+    expectText("pet: autocast off in combat, keys toggle the same and turn on their own", text({ command = "pet",
+        pet = "autocastoff", petSpell = growl, petOtherwise = true, when = { combat = "yes" },
+        keys = { shift = { pet = "autocasttoggle" }, ctrl = { pet = "autocaston", petSpell = cower } } }),
+        "/petautocastoff [nomod:shift/ctrl,combat] Growl\n/petautocaston [nomod:shift/ctrl,nocombat] Growl\n"
+        .. "/petautocasttoggle [mod:shift,combat] Growl\n/petautocaston [mod:ctrl,combat] Cower")
+    expectText("pet: the other way only with the When row", text({ command = "pet", pet = "autocaston",
+        petSpell = growl, petOtherwise = true }), "/petautocaston Growl")
+    check("wizard: a key's autocast, no spell when the macro's command names none", W.Text(form({ command = "pet",
+        pet = "follow", petSpell = growl, keys = { shift = { pet = "autocasttoggle" } } }))
+        == "/petfollow [nomod:shift]")
+    check("wizard name: the pet's spell", W.Name(form({ command = "pet", pet = "autocasttoggle", petSpell = growl }))
+        == "Growl" and W.Name(form({ command = "pet", pet = "follow", petSpell = growl })) == "Pet")
     check("wizard name: the pet's", W.Name(form({ command = "pet" })) == "Pet")
     -- Also: out of the form, off the mount, a buff cancelled first; something said in chat last.
     expectText("also: what goes first and what is said", text({ action = bolt, on = usual, cancelform = true,
@@ -2174,7 +2197,8 @@ do
     check("questions: the pet attacks enemies", spec.only == "enemies"
         and steps(spec) == "what,pet,on1,on2,keys,when,also,finish"
         and ask(spec, "pet").text == "What should your pet do?" and ask(spec, "pet").chosen == "attack"
-        and keys(spec, "pet") == "attack,follow,stay,moveto,passive,defensive,aggressive,dismiss"
+        and keys(spec, "pet") == "attack,follow,stay,moveto,passive,defensive,aggressive,dismiss,"
+            .. "autocaston,autocastoff,autocasttoggle"
         and find(spec, "pet", "follow").hint == "/petfollow", steps(spec))
     check("questions: the pet attacks no friend",
         not find(spec, "on1", "party1") and find(spec, "on1", "arena1") ~= nil)
@@ -2195,6 +2219,35 @@ do
     check("questions: the pet's keys cast nothing of their own", find(spec, "altOn1", "target").name
         == "Your target, if an enemy" and not find(spec, "altOn1", "party1"), find(spec, "altOn1", "target").name)
     macro("pet: follow, Alt attacks", spec, "/petfollow [nomod:alt]\n/petattack [mod:alt]")
+    -- Autocast: the pet's spell next, a key's may stay empty when the macro's names one; on or off, what it does the
+    -- rest of the time once the When row has anything.
+    spec = W.Fresh()
+    Q.Choose(spec, "what", "pet")
+    Q.Choose(spec, "pet", "autocaston")
+    local petSpell = ask(spec, "petSpell")
+    check("questions: autocast asks for the pet's spell", steps(spec) == "what,pet,petSpell,keys,when,also,finish"
+        and petSpell.kind == "spell" and petSpell.slot == "pet" and not petSpell.optional
+        and petSpell.text == "Which of your pet's spells?", steps(spec))
+    spec.petSpell = { name = "Growl" }
+    spec.keys.shift.active = true
+    Q.Choose(spec, "shiftPet", "autocastoff")
+    spec.when.group = "no"
+    local otherwise = ask(spec, "petOtherwise")
+    check("questions: a key's of the same spell, the rest of the time", steps(spec)
+        == "what,pet,petSpell,keys,shiftPet,shiftPetSpell,when,petOtherwise,also,finish"
+        and ask(spec, "shiftPetSpell").optional and ask(spec, "shiftPetSpell").context == "With Shift held"
+        and otherwise.kind == "choice" and otherwise.answers[1].name == "Turn autocast off"
+        and otherwise.answers[1].hint == "/petautocastoff" and otherwise.chosen == "no", steps(spec))
+    Q.Choose(spec, "petOtherwise", "yes")
+    macro("pet: autocast alone, off in a group, Shift off", spec, "/petautocaston [nomod:shift,nogroup] Growl\n"
+        .. "/petautocastoff [nomod:shift,group] Growl\n/petautocastoff [mod:shift,nogroup] Growl")
+    Q.Choose(spec, "pet", "autocasttoggle")
+    check("questions: no rest of the time for a toggle", not steps(spec):find("petOtherwise")
+        and ask(spec, "shiftPetSpell").optional, steps(spec))
+    Q.Choose(spec, "pet", "follow")
+    check("questions: a key's spell its own when the macro's names none", steps(spec)
+        == "what,pet,keys,shiftPet,shiftPetSpell,when,also,finish" and not ask(spec, "shiftPetSpell").optional,
+        steps(spec))
 
     -- Ranks (Classic): a question of their own after the spell, the macro's or a key's, when two are learned.
     spec = W.Fresh()
@@ -2442,6 +2495,19 @@ do
     check("wizard read: dismissed when alone, the When row", spec.pet == "dismiss" and spec.when.group == "no")
     read("the pet: dismiss with a key of its own", "/petfollow [nomod:shift]\n/petdismiss [mod:shift]",
         "/petfollow [nomod:shift]\n/stopmacro [nomod:shift]\n/petdismiss", "/petdismiss [mod:shift]")
+    -- Autocast: the pet's spell, the other way after it for the rest of the time; a key's of the same spell.
+    local growl = "/petautocaston [nogroup] Growl\n/petautocastoff [group] Growl"
+    spec = read("autocast on alone, off in a group", growl, growl)
+    check("wizard read: autocast, the answers", spec.command == "pet" and spec.pet == "autocaston"
+        and spec.petSpell.name == "Growl" and spec.petOtherwise and spec.when.group == "no")
+    local toggle = "/petautocasttoggle [nomod:shift] Growl\n/petautocastoff [mod:shift] Growl"
+    spec = read("autocast: a key's of the same spell", toggle, toggle)
+    check("wizard read: a key's of the same spell, the answers", spec.keys.shift.pet == "autocastoff"
+        and spec.keys.shift.petSpell == nil and not spec.petOtherwise)
+    read("autocast the other way, but not when the When row doesn't hold", "/petautocaston [nogroup] Growl\n"
+        .. "/petautocastoff [combat] Growl", growl, "/petautocastoff [combat] Growl")
+    read("autocast the other way, another spell", "/petautocaston [nogroup] Growl\n/petautocastoff [group] Cower",
+        "/petautocastoff [group] Cower", "/petautocaston [nogroup] Growl")
     read("trinkets and the rest", "#showtooltip\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n"
         .. "/s Go!", "#showtooltip Mortal Strike\n/stopcasting\n/use 13\n/startattack\n/cast Mortal Strike\n/say Go!")
     read("trinkets alone", "/use 13\n/use 14", "#showtooltip\n/use 13\n/use 14")
