@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- The game's own commands and chat types that MacroSense doesn't list itself are no longer marked as unknown:
+  `/tm 8` (a raid marker on your target), `/g`, `/rw`, `/dnd`, and their names in your game's language. The game
+  keeps them out of addons' sight once its chat has loaded.
+
 ## [0.18.0] - 2026-11-12
 
 ### Added

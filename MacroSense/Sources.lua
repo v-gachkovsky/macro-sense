@@ -25,6 +25,21 @@ local function aliases(key)
     return out
 end
 
+-- The keys of SlashCmdList or ChatTypeInfo. As soon as its chat loads, the game moves its own commands to a table
+-- behind the list (the list's metatable's __index), and those addons add later each time it reads a line: pairs
+-- sees only those added since (/tm and /g were marked unknown).
+local function Keys(list)
+    local out = {}
+    local meta = getmetatable(list or {})
+    local behind = type(meta) == "table" and type(meta.__index) == "table" and meta.__index or {}
+    for _, t in ipairs({ list or {}, behind }) do
+        for key in pairs(t) do
+            if type(key) == "string" then out[#out + 1] = key end
+        end
+    end
+    return out
+end
+
 -- Localized aliases of the action commands and /stopmacro go to the parser (/zaubern = /cast in German clients).
 local ACTION_KEYS = {
     CAST = "cast", USE = "use", CASTSEQUENCE = "castsequence", CASTRANDOM = "castrandom",
@@ -44,6 +59,10 @@ function ns.RegisterActionCommands()
     for _, name in ipairs(aliases("CLICK")) do ns.Parser.clickCommands[name] = true end
     for key, kind in pairs(ARG_KEYS) do
         for _, name in ipairs(aliases(key)) do ns.Parser.argCommands[name] = kind end
+    end
+    -- The chat types by all their names (/g, /rw, /gilde): the rest of the line is said as it is.
+    for _, key in ipairs(Keys(ChatTypeInfo)) do
+        for _, name in ipairs(aliases(key)) do ns.Parser.chatCommands[name] = true end
     end
 end
 
@@ -140,8 +159,8 @@ function ns.sources.commands()
     for _, c in ipairs(ns.data.commands) do add(c.name) end
     local extra = secureNames()
     -- Chat types (/say) and emotes (/dance) are not in SlashCmdList.
-    for _, cmdList in ipairs({ SlashCmdList, ChatTypeInfo or {} }) do
-        for key in pairs(cmdList) do
+    for _, cmdList in ipairs({ SlashCmdList, ChatTypeInfo }) do
+        for _, key in ipairs(Keys(cmdList)) do
             for _, name in ipairs(aliases(key)) do extra[#extra + 1] = name end
         end
     end
