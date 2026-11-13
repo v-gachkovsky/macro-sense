@@ -1102,6 +1102,7 @@ ns.locales.uk = {
     ["Trinkets"] = "Трінкети",
     -- Checks of the macro text
     ["unknown command \"/%s\""] = "невідома команда «/%s»",
+    ["there is no chat channel /%s: they go from /1 to /%d"] = "каналу чату /%s немає: вони від /1 до /%d",
     ["\"/%s\" does nothing in this version of the game (it came with a later one)"] =
         "«/%s» нічого не робить у цій версії гри (з'явилася в пізнішій)",
     ["not in this game version"] = "немає в цій версії гри",
@@ -1219,6 +1220,7 @@ ns.locales.uk = {
     ["clicks %s"] = "натискає %s",
     ["runs Lua code"] = "виконує код Lua",
     ["writes in chat: %s"] = "пише в чат: %s",
+    ["writes in chat channel %d: %s"] = "пише в канал чату %d: %s",
     ["runs /%s"] = "виконує /%s",
     ["shows the icon and tooltip of %s"] = "показує іконку й підказку %s",
     ["shows the icon of %s"] = "показує іконку %s",

@@ -10,6 +10,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The game's own commands and chat types that MacroSense doesn't list itself are no longer marked as unknown:
   `/tm 8` (a raid marker on your target), `/g`, `/rw`, `/dnd`, and their names in your game's language. The game
   keeps them out of addons' sight once its chat has loaded.
+- `/1` to `/20`, a chat channel by its number (`/2 WTS ...` in Trade), are no longer marked as unknown commands:
+  the rest of the line is said in that channel as it is. A number with no channel, `/21`, is marked as such.
 
 ## [0.18.0] - 2026-11-12
 
