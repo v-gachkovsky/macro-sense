@@ -471,6 +471,13 @@ ns.locales.uk = {
         "Очистити кошик? Видалені макроси (%s) зникнуть назавжди.",
     ["Delete \"%s\" from the trash? It will be gone for good."] = "Видалити «%s» з кошика? Він зникне назавжди.",
     ["could not restore the macro"] = "не вдалося повернути макрос",
+    ["You can make better items now than some of your macros use:\n\n%s\n\nPut the new ones in these macros?"] =
+        "Тепер ви вмієте створювати кращі предмети, ніж ті, що стоять у деяких ваших макросах:\n\n%s\n\n"
+        .. "Поставити нові в ці макроси?",
+    ["Update"] = "Оновити",
+    ["Not now"] = "Не зараз",
+    ["%s instead of %s: %s"] = "%s замість %s: %s",
+    ["%s (for all characters)"] = "%s (для всіх персонажів)",
     ["Backups"] = "Бекапи",
     ["Your macros are saved by themselves the first time you log in each day, if they changed since. You can also "
         .. "make a backup yourself, any time. To get your macros back as they were, just pick a backup. Each "

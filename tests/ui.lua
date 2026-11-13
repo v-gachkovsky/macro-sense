@@ -7927,6 +7927,109 @@ do
     ns.sources.spells = spells
 end
 
+-- Better items: a warlock who makes Major Healthstones now is offered to put them in the macros with worse ones.
+do
+    local C = ns.Conjured
+    local swap = { ["greater healthstone"] = "Major Healthstone" }
+    check("conjured: put in where the macro uses it", C.Swap("#showtooltip Greater Healthstone\n/use [combat] "
+        .. "greater healthstone; Lesser Healthstone", swap) == "#showtooltip Major Healthstone\n/use [combat] Major "
+        .. "Healthstone; Lesser Healthstone")
+    local other = "/say Greater Healthstone\n/use [known:Greater Healthstone] Some Greater Healthstone"
+    check("conjured: not in chat, a condition or another name", C.Swap(other, swap) == other)
+    check("conjured: in a list, after a reset, a slot or !", C.Swap("/castsequence reset=60 Greater Healthstone, Fear"
+        .. "\n/equipslot 17 Greater Healthstone\n/use !Greater Healthstone", swap) == "/castsequence reset=60 Major "
+        .. "Healthstone, Fear\n/equipslot 17 Major Healthstone\n/use !Major Healthstone")
+    local stones = { "Minor Healthstone", false, "Healthstone", "Greater Healthstone", false, "Master Healthstone" }
+    check("conjured: the best a macro uses, by its whole name", C.Top("/use Healthstone\n/use Greater Healthstone",
+        stones) == 4 and C.Top("/use Healthstone", stones) == 3 and C.Top("/say Healthstone", stones) == nil
+        and C.Top("/use Master Healthstone", stones) == 6)
+
+    local known, names, asked, shown = {}, {}, {}, {}
+    local isKnown, nameByID, request = C_SpellBook.IsSpellKnown, C_Item.GetItemNameByID, C_Item.RequestLoadItemDataByID
+    local show = StaticPopup_Show
+    C_SpellBook.IsSpellKnown = function(id) return known[id] == true end
+    C_Item.GetItemNameByID = function(id) return names[id] end
+    C_Item.RequestLoadItemDataByID = function(id) asked[id] = true end
+    StaticPopup_Show = function(which, text, _, data) shown[#shown + 1] = { which = which, text = text, data = data } end
+    names = { [5512] = "Minor Healthstone", [5511] = "Lesser Healthstone", [5509] = "Healthstone",
+        [5510] = "Greater Healthstone", [9421] = "Major Healthstone", [22103] = "Master Healthstone",
+        [2288] = "Conjured Fresh Water" }
+    for _, id in ipairs({ 6201, 6202, 5699, 11729 }) do known[id] = true end -- up to Greater
+    CreateMacro("Cj Heal", 134400, "#showtooltip\n/use Greater Healthstone\n/use Healthstone", false)
+    CreateMacro("Cj Gift", 134400, "/use Master Healthstone\n/use Greater Healthstone", true)
+    CreateMacro("Cj Water", 134400, "/use Conjured Water", true)
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    LE_EXPANSION_LEVEL_CURRENT = 0
+    C.Check()
+    check("conjured: the macros have the best you make, nothing offered", #shown == 0)
+    known[11730] = true -- Create Healthstone (Major)
+    C.Check()
+    check("conjured: a better one learned, offered for the macro with the old one", #shown == 1
+        and shown[1].which == "MACROSENSE_CONJURED" and shown[1].text == "Major Healthstone instead of Greater "
+        .. "Healthstone: Cj Heal (for all characters)", shown[1] and shown[1].text)
+    StaticPopupDialogs.MACROSENSE_CONJURED.OnAccept(nil, shown[1].data)
+    check("conjured: put in, the worse one after it kept", body("Cj Heal")
+        == "#showtooltip\n/use Major Healthstone\n/use Healthstone", body("Cj Heal"))
+    check("conjured: a better one than you make left alone", body("Cj Gift")
+        == "/use Master Healthstone\n/use Greater Healthstone")
+    shown = {}
+    C.Check()
+    check("conjured: offered once", #shown == 0)
+    -- Not now: not offered again until a better one comes.
+    LE_EXPANSION_LEVEL_CURRENT, known[27230] = 1, true -- TBC: Master
+    C.Check()
+    check("conjured: Master in TBC, offered", #shown == 1 and shown[1].text == "Master Healthstone instead of Major "
+        .. "Healthstone: Cj Heal (for all characters)", shown[1] and shown[1].text)
+    -- The game couldn't show it (its popups all taken): offered again.
+    StaticPopupDialogs.MACROSENSE_CONJURED.OnCancel(nil, shown[1].data)
+    shown = {}
+    C.Check()
+    check("conjured: not shown, offered again", #shown == 1)
+    StaticPopupDialogs.MACROSENSE_CONJURED.OnCancel(nil, shown[1].data, "clicked")
+    shown = {}
+    C.Check()
+    check("conjured: not now, not offered again", #shown == 0 and body("Cj Heal")
+        == "#showtooltip\n/use Major Healthstone\n/use Healthstone")
+    -- A name the game doesn't have yet is asked for; the look comes when it arrives.
+    known[5504], known[5505] = true, true -- Conjure Water, Rank 2
+    C.Check()
+    check("conjured: a name not known yet asked for, not those of ranks you don't know", #shown == 0
+        and asked[5350] == true and asked[8079] == nil)
+    names[5350] = "Conjured Water"
+    Send("GET_ITEM_INFO_RECEIVED", 5350)
+    Wait(1.1)
+    check("conjured: offered when it came", #shown == 1 and shown[1].text == "Conjured Fresh Water instead of "
+        .. "Conjured Water: Cj Water", shown[1] and shown[1].text)
+    -- In combat macros can't change: after it.
+    shown = {}
+    InCombatLockdown = function() return true end
+    C.Check()
+    check("conjured: in combat, it waits", #shown == 0)
+    InCombatLockdown = function() return false end
+    Send("PLAYER_REGEN_ENABLED")
+    check("conjured: after combat, offered", #shown == 1)
+    InCombatLockdown = function() return true end
+    StaticPopupDialogs.MACROSENSE_CONJURED.OnAccept(nil, shown[1].data)
+    check("conjured: updated in combat, it waits", body("Cj Water") == "/use Conjured Water")
+    InCombatLockdown = function() return false end
+    Send("PLAYER_REGEN_ENABLED")
+    check("conjured: after combat, updated", body("Cj Water") == "/use Conjured Fresh Water", body("Cj Water"))
+    -- The later games make one item at every level.
+    shown = {}
+    ns.char.conjured = {}
+    known[10140] = true
+    LE_EXPANSION_LEVEL_CURRENT = 4
+    C.Check()
+    LE_EXPANSION_LEVEL_CURRENT = nil
+    C.Check()
+    check("conjured: nothing in Mists of Pandaria or Retail", #shown == 0)
+
+    C_SpellBook.IsSpellKnown, C_Item.GetItemNameByID, C_Item.RequestLoadItemDataByID = isKnown, nameByID, request
+    StaticPopup_Show = show
+    for _, name in ipairs({ "Cj Heal", "Cj Gift", "Cj Water" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    ns.History.Scan()
+end
+
 -- Macros from the spellbook: the window offers the spells of the book, makes their macros in the character's tab
 -- and puts each one on the bars in place of its spell; the next time the spells with a macro are not checked.
 do

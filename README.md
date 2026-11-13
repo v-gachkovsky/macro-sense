@@ -233,6 +233,14 @@ new one, until you edited it. MacroSense now saves such macros again by itself, 
 and the history keeps no version of it. Your pet's spells too: when the Imp learns Fire Shield Rank 2, a macro
 with `/cast Fire Shield` shows and casts Rank 2.
 
+**Better stones, water and food.** In Classic Era, TBC and WoW Forever a warlock's healthstones, soulstones,
+spellstones and firestones, and a mage's water and food, get better with each rank of the spell that makes them.
+Learn a rank that makes a better one than a macro uses (`/use Greater Healthstone`, and you make Major
+Healthstones now), and MacroSense asks whether to put the new one in. The list in its question marks the macros
+that every character on your account shares. Only the best item a macro names changes: a worse one after it stays
+as a backup. A macro with a better one than you make, such as stones from another warlock, stays as it is. Answer
+**Not now**, and it doesn't ask again until your next rank.
+
 ## Autocomplete
 
 <p align="center"><img src="docs/guide-editor.gif" width="720" alt="Writing a macro"></p>
