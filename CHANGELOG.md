@@ -25,6 +25,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the rest of the line is said in that channel as it is. A number with no channel, `/21`, is marked as such.
 - A macro that casts your pet's spell now takes its new rank as soon as the pet learns it (the Imp's Fire Shield
   Rank 2), as it does for your own spells: before, its button kept showing the old rank.
+- The wizard's **Start auto attack** no longer gets in the way of a wand: on a key that casts Shoot or Auto Shot,
+  the macro doesn't start auto attack (`/startattack [nomod:alt]`), since melee auto attack would stop the
+  shooting. When the macro's own spell is Auto Shot, auto attack starts only with the keys of other spells.
 
 ## [0.18.0] - 2026-11-12
 

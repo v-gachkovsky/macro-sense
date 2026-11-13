@@ -5137,7 +5137,15 @@ do
     NextFrame()
     ns.db.wizardForm = true
     Fire(open, "OnClick")
-    local bolt = "#showtooltip\n/startattack\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
+    -- A spell that shoots by itself by the ID of the one you know, in any language: a German client's wand.
+    local spellID = ns.SpellID
+    ns.SpellID = function(name) return ({ ["Schießen"] = 5019, Feuerball = 133, Shoot = 133 })[name] end
+    check("wizard: shoots by itself, by the spell you know", ns.Wizard.Repeats({ name = "Schießen" })
+        and not ns.Wizard.Repeats({ name = "Feuerball" }) and not ns.Wizard.Repeats({ name = "Shoot" })
+        and not ns.Wizard.Repeats({ name = "Schießen", item = true }))
+    ns.SpellID = spellID
+    -- Auto attack not on Alt, the wand's key: it would stop the wand.
+    local bolt = "#showtooltip\n/startattack [nomod:alt]\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
         .. "[@mouseover,harm,nodead][] Shadow Bolt"
     -- "!" by each spell: Shoot's on, Shadow Bolt's off.
     check("open in wizard: none held is the macro's spell", C("cast").text == "Shadow Bolt"

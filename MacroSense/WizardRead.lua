@@ -44,6 +44,19 @@ local function Cond(c)
     return c
 end
 
+-- Whether `rest` is only groups of keys held or not, no unit after them: "[nomod:alt]", "[nomod:shift][nomod:ctrl]"
+-- (/startattack).
+local function KeysOnly(rest)
+    if not rest:gsub("%b[]", ""):match("^%s*$") then return false end
+    for group in rest:gmatch("%b[]") do
+        for cond in (group:sub(2, -2) .. ","):gmatch("([^,]*),") do
+            local c = (Cond(cond):gsub("^no", ""))
+            if not (c:match("^mod:%a+$") or c:match("^btn:%d$")) then return false end
+        end
+    end
+    return true
+end
+
 -- What a group of conditions says, in the form's words: the key held, the unit, its check, the When row; what the
 -- mount and pet macros check (nomounted, the place, nomod); `other` for what the form has no place for. Not on a
 -- mount, in water, where you can fly: a mount macro's place, or where a cast works (the When row's), as W.Read
@@ -499,7 +512,7 @@ local function ReadAs(lines, kind)
             spec.nearest = true
         elseif trinket then
             spec[rest == "13" and "trinket1" or "trinket2"] = true
-        elseif cmd == "startattack" and rest == "" then
+        elseif cmd == "startattack" and (rest == "" or KeysOnly(rest)) then
             spec.startattack = true
         elseif cmd == "petattack" and rest == "" then
             spec.petattack = true

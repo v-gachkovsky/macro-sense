@@ -545,6 +545,53 @@ local function Clauses(spec)
     return out
 end
 
+-- The spells that shoot again by themselves once on: a wand's Shoot and Auto Shot, the only ones of a class in the
+-- game's tables. Melee auto attack and they don't run together: /startattack would stop them, and the /cast after it
+-- start them over. By the ID of a spell you know (any language), else by its English name.
+local REPEATS = { [75] = true, [5019] = true }
+local REPEAT_NAMES = { ["auto shot"] = true, shoot = true }
+function Wizard.Repeats(action)
+    if not action or action.item then return false end
+    local id = ns.SpellID and ns.SpellID(action.name)
+    if id then return REPEATS[id] == true end
+    return REPEAT_NAMES[action.name:lower()] == true
+end
+
+-- What a key held must not be, for /startattack: "nomod:alt"; of Shift and Ctrl together, one not held.
+local NOT_KEY = { shiftctrl = { "nomod:shift", "nomod:ctrl" }, right = { "nobtn:2" } }
+
+-- "/startattack", but not with the keys whose spell repeats by itself ("[nomod:alt]" for Alt with !Shoot); when the
+-- macro's own spell does, only with the keys whose spell doesn't. Nil when no spell of it wants auto attack.
+local function StartAttack(spec)
+    local repeats, others = {}, {}
+    for _, key in ipairs(Wizard.CAST_KEYS) do
+        local k = spec.keys[key]
+        local action = k and k.active and (k.action or spec.action)
+        if action then table.insert(Wizard.Repeats(action) and repeats or others, key) end
+    end
+    local groups = {}
+    if spec.action and Wizard.Repeats(spec.action) then
+        for _, key in ipairs(others) do groups[#groups + 1] = "[" .. Wizard.KeyCond(key) .. "]" end
+        return #groups > 0 and "/startattack " .. table.concat(groups) or nil
+    end
+    local alternatives = { {} }
+    for _, key in ipairs(repeats) do
+        local grown = {}
+        for _, conds in ipairs(alternatives) do
+            for _, cond in ipairs(NOT_KEY[key] or { "no" .. Wizard.KeyCond(key) }) do
+                local copy = {}
+                for i, c in ipairs(conds) do copy[i] = c end
+                copy[#copy + 1] = cond
+                grown[#grown + 1] = copy
+            end
+        end
+        alternatives = grown
+    end
+    if #repeats == 0 then return "/startattack" end
+    for i, conds in ipairs(alternatives) do groups[i] = "[" .. table.concat(conds, ",") .. "]" end
+    return "/startattack " .. table.concat(groups)
+end
+
 local function CastLine(spec)
     local clauses = Clauses(spec)
     if #clauses == 0 then return nil end
@@ -896,7 +943,7 @@ function Wizard.Text(spec)
     lines[#lines + 1] = click
     for _, l in ipairs(extra) do lines[#lines + 1] = l end
     -- Auto attack right before the spell: on the target the lines before it may have changed (the nearest enemy).
-    if spec.startattack then lines[#lines + 1] = "/startattack" end
+    if spec.startattack then lines[#lines + 1] = StartAttack(spec) end
     if pet then
         for _, l in ipairs(before) do lines[#lines + 1] = l end
     end
