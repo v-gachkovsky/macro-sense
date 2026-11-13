@@ -1270,6 +1270,12 @@ ns.locales.uk = {
     ["places the %s marker where you click"] = "ставить маркер «%s» туди, куди ви клацнете",
     ["clears the %s marker"] = "прибирає маркер «%s»",
     ["clears every world marker"] = "прибирає всі маркери на землі",
+    ["puts the %s marker on %s (a second press takes it off)"] =
+        "ставить мітку «%s» на %s (друге натискання її знімає)",
+    ["puts the %s marker on %s (a second press keeps it)"] = "ставить мітку «%s» на %s (друге натискання її лишає)",
+    ["puts the %s marker on %s if it has no marker yet"] = "ставить мітку «%s» на %s, якщо мітки ще немає",
+    ["takes the marker off %s"] = "знімає мітку, поставлену на %s",
+    ["takes the marker off"] = "знімає мітку",
     ["blue square"] = "синій квадрат",
     ["green triangle"] = "зелений трикутник",
     ["purple diamond"] = "фіолетовий ромб",
@@ -1707,6 +1713,14 @@ ns.locales.uk = {
         "Ставить маркер на землю за його номером, 1-8: /worldmarker [@cursor] 1 ставить його під курсор.",
     ["Clears a marker on the ground by its number, or all of them: /clearworldmarker all."] =
         "Прибирає маркер із землі за його номером або всі: /clearworldmarker all.",
+    ["Puts a raid marker on your target by its number, 1-8, and 0 takes it off: /tm [@mouseover] 8 puts the skull on "
+        .. "the unit under the mouse. A second press takes the marker off. With ! in front it stays (/tm !8), "
+        .. "with ~ it goes only on a unit with no marker yet (/tm ~8)."] =
+        "Ставить мітку на вашу ціль за її номером, 1-8, а 0 її знімає: /tm [@mouseover] 8 ставить череп на того, хто "
+        .. "під мишею. Друге натискання знімає мітку. З ! на початку вона лишається (/tm !8), з ~ ставиться лише на "
+        .. "того, хто ще без мітки (/tm ~8).",
+    ["Puts the marker on and never takes it off: a second press keeps it."] =
+        "Ставить мітку й ніколи її не знімає: друге натискання її лишає.",
     ["Your pet casts that spell by itself from now on: /petautocaston Torment."] =
         "Відтепер улюбленець сам застосовує це заклинання: /petautocaston Torment.",
     ["Your pet no longer casts that spell by itself."] = "Улюбленець більше не застосовує це заклинання сам.",

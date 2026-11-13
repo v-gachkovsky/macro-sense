@@ -216,6 +216,14 @@ ns.data = {
         { name = "5", hint = "yellow star" }, { name = "6", hint = "orange circle" },
         { name = "7", hint = "silver moon" }, { name = "8", hint = "white skull" },
     },
+    -- /tm: the raid markers by their numbers, with the game's pictures of them; 0 takes the marker off.
+    raidMarkers = {
+        { name = "1", hint = "yellow star" }, { name = "2", hint = "orange circle" },
+        { name = "3", hint = "purple diamond" }, { name = "4", hint = "green triangle" },
+        { name = "5", hint = "silver moon" }, { name = "6", hint = "blue square" },
+        { name = "7", hint = "red cross" }, { name = "8", hint = "white skull" },
+        { name = "0", hint = "takes the marker off" },
+    },
     bonusbars = { { name = "1" }, { name = "2" }, { name = "3" }, { name = "4" }, { name = "5" } },
 
     units = {
@@ -231,6 +239,8 @@ ns.data = {
         { name = "softinteract", hint = "Retail" },
     },
 }
+
+for i = 1, 8 do ns.data.raidMarkers[i].icon = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_" .. i end
 
 -- Numbered units: party1-4, raid1-40, ... Bosses 6-8 in Retail (`since`, as conditions). Nameplates can't be cast
 -- on or targeted: not suggested.

@@ -110,6 +110,10 @@ expectNil("/swapactionbar 1 2 |")
 expectNil("/changeactionbar 2 |")
 expect("/worldmarker [@cursor] |", "worldMarker", "")
 expect("/clearworldmarker a|", "clearMarker", "a")
+-- /tm: a raid marker, after its "!" or "~".
+expect("/tm [@mouseover] |", "raidMarker", "")
+expect("/tm !|", "raidMarker", "", { start = 6 })
+expect("/targetmarker ~8|", "raidMarker", "8", { start = 16 })
 expectNil("/say hel|")
 expectNil("just text|")
 
@@ -211,9 +215,12 @@ do
         and names("/cast [nohouse:|") == "inside,plot,editor,neighborhood", names("/cast [house:|"))
     check("retail: no [talent]", names("/cast [talen|") == "pvptalent,nopvptalent", names("/cast [talen|"))
     local function about(raw, word)
-        local at = ns.Docs.At(raw, raw:find(word, 1, true))
+        local at = ns.Docs.At(raw, (raw:find(word, 1, true)))
         return at and at.lines[1] or "-"
     end
+    check("/tm on the mouse: the command, and its ! of its own", about("/tm !8", "/tm"):find("^Puts a raid marker")
+        ~= nil and about("/tm !8", "!"):find("^Puts the marker on") ~= nil and about("/cast !Shoot", "!")
+        :find("^Only turns it on") ~= nil, about("/tm !8", "!"))
     check("retail: what they mean, on the mouse", about("/use [nopvpcombat] X", "nopvp")
         == "Your PvP talents don't work here." and about("/use [house:editor] X", "editor"):find("^You are at a house")
         ~= nil, about("/use [house:editor] X", "editor"))
@@ -641,6 +648,11 @@ do
         and ns.Completion.Get(ctx("/worldmarker |"))[8].hint == "white skull", names("/worldmarker |"))
     check("args: all markers to clear", names("/clearworldmarker |") == "1,2,3,4,5,6,7,8,all",
         names("/clearworldmarker |"))
+    local raid = ns.Completion.Get(ctx("/tm |"))
+    check("args: raid markers, 0 to take one off", names("/tm |") == "1,2,3,4,5,6,7,8,0" and raid[8].hint
+        == "white skull" and raid[9].hint == "takes the marker off", names("/tm |"))
+    check("args: raid markers with the game's pictures", raid[1].icon
+        == "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1" and raid[8].icon:find("Icon_8$") and not raid[9].icon)
 end
 -- mod: takes the keys the game's settings name: your self-cast key (Alt at first), your focus-cast key, your
 -- mouseover-cast key, the key that picks up actions from the bars, the auto-loot key. Every client has these five.
@@ -1123,6 +1135,12 @@ do
         { "/worldmarker [@player] 1", "places the blue square marker under yourself" },
         { "/clearworldmarker 1", "clears the blue square marker" },
         { "/clearworldmarker all", "clears every world marker" },
+        { "/tm 8", "puts the white skull marker on your target (a second press takes it off)" },
+        { "/tm [@mouseover,harm] !1", "puts the yellow star marker on the unit under the mouse (a second press keeps "
+            .. "it), if it is an enemy" },
+        { "/targetmarker [@player] ~6", "puts the blue square marker on yourself if it has no marker yet" },
+        { "/tm 0", "takes the marker off your target" },
+        { "/tm skull", "does nothing" },
         { "/cast [pvpcombat] Gladiator's Medallion; Every Man for Himself", "where PvP talents work: Gladiator's "
             .. "Medallion | otherwise: Every Man for Himself" },
         { "/use [house:inside/plot] Hearthstone; [nohouse] Garrison Hearthstone", "inside a house or on a house's "

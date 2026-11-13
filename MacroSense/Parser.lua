@@ -32,12 +32,12 @@ Parser.luaCommands = { run = true, script = true, dump = true }
 Parser.stopCommands = { stopmacro = true }
 -- "/click Name [mouse button] [down]"; Sources adds localized aliases.
 Parser.clickCommands = { click = true }
--- Commands that take a pet's spell, an action bar page (two for /swapactionbar) or a world marker: what they take.
--- Sources adds localized aliases.
+-- Commands that take a pet's spell, an action bar page (two for /swapactionbar), a world marker or a raid marker:
+-- what they take. Sources adds localized aliases.
 Parser.argCommands = {
     petautocaston = "petSpell", petautocastoff = "petSpell", petautocasttoggle = "petSpell",
     changeactionbar = "barPage", swapactionbar = "barPages", worldmarker = "worldMarker",
-    clearworldmarker = "clearMarker",
+    clearworldmarker = "clearMarker", tm = "raidMarker", targetmarker = "raidMarker",
 }
 
 -- Conditions whose value is a modifier key list (mod:shift/ctrl).
@@ -67,7 +67,7 @@ end
 -- Returns nil or a table:
 --   kind    = "command" | "meta" | "condition" | "unit" | "modifier" | "conditionValue" | "action" | "reset"
 --             | "slot" | "bagSlot" | "clickButton" | "clickMouse" | "clickDown" | "petSpell" | "barPage"
---             | "worldMarker" | "clearMarker"
+--             | "worldMarker" | "clearMarker" | "raidMarker"
 --             ("action" = a spell or item name, "rank" = inside "Spell(" -> `spell`, "reset" = a value after
 --             "/castsequence reset=", with `used` = the values before it, "slot" = an equipment slot number,
 --             "bagSlot" = the slot after a bag number: "/use 0 1" -> `bag` 0, "click..." = the words of /click)
@@ -217,8 +217,10 @@ function Parser.GetContext(text, cursor)
         if token:find("%s$") or token == "" then words[#words + 1] = "" end
         if #words > (arg == "barPages" and 2 or 1) then return nil end
         local last = words[#words]
-        return { kind = arg == "barPages" and "barPage" or arg, prefix = last, start = tokenAbs + #token - #last,
-            command = cmd }
+        -- "/tm !8": a "!" or "~" before the marker's number.
+        local mark = arg == "raidMarker" and last:match("^[!~]") or ""
+        return { kind = arg == "barPages" and "barPage" or arg, prefix = last:sub(#mark + 1),
+            start = tokenAbs + #token - #last + #mark, command = cmd }
     end
     return nil
 end
