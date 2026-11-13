@@ -220,9 +220,10 @@ StaticPopupDialogs.MACROSENSE_CONJURED = {
     text = "You can make better items now than some of your macros use:\n\n%s\n\nPut the new ones in these macros?",
     button1 = "Update", button2 = "Not now",
     OnAccept = function(_, list) Conjured.Apply(list) end,
-    -- Not now: not offered again until a better one comes.
+    -- Not now (or Esc): not offered again until a better one comes. With no reason the game couldn't show it (all
+    -- its popups taken): the next look offers it again.
     OnCancel = function(_, list, reason)
-        if reason == "override" or reason == "timeout" then return end
+        if reason ~= "clicked" then return end
         for _, kind in ipairs(list or {}) do ns.char.conjured[kind.item] = true end
     end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,

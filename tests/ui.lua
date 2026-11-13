@@ -7980,6 +7980,11 @@ do
     C.Check()
     check("conjured: Master in TBC, offered", #shown == 1 and shown[1].text == "Master Healthstone instead of Major "
         .. "Healthstone: Cj Heal (for all characters)", shown[1] and shown[1].text)
+    -- The game couldn't show it (its popups all taken): offered again.
+    StaticPopupDialogs.MACROSENSE_CONJURED.OnCancel(nil, shown[1].data)
+    shown = {}
+    C.Check()
+    check("conjured: not shown, offered again", #shown == 1)
     StaticPopupDialogs.MACROSENSE_CONJURED.OnCancel(nil, shown[1].data, "clicked")
     shown = {}
     C.Check()
