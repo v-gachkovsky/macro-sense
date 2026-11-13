@@ -121,7 +121,8 @@ new one.
 - **Select all** ticks every spell at once (then it is **Clear all**), and **Offer all again** offers every spell
   with no macro, as the first time.
 
-In the Classic clients, a macro with `/cast Shadow Bolt` now follows the new rank as soon as you learn it.
+In the Classic clients, a macro with `/cast Shadow Bolt` now follows the new rank as soon as you learn it, and a
+macro with your pet's spell as soon as the pet learns one (the Imp's Fire Shield Rank 2).
 
 ## Macro sets: more than 30 macros
 

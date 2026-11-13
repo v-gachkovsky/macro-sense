@@ -230,7 +230,8 @@ says which.
 
 **A new rank.** In the Classic clients a macro with `/cast Shadow Bolt` kept the rank it had when you learned a
 new one, until you edited it. MacroSense now saves such macros again by itself, after combat if you are in one,
-and the history keeps no version of it.
+and the history keeps no version of it. Your pet's spells too: when the Imp learns Fire Shield Rank 2, a macro
+with `/cast Fire Shield` shows and casts Rank 2.
 
 ## Autocomplete
 
