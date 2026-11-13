@@ -1536,6 +1536,31 @@ do
     expectText("attack right before the spell, after trinkets", text({ action = bolt, only = "enemies",
         on = usual, stopcasting = true, nearest = true, startattack = true, trinket1 = true }),
         "#showtooltip Frostbolt\n/stopcasting\n/targetenemy [noharm][dead]\n/use 13\n/startattack\n/cast Frostbolt")
+    -- A wand's Shoot and Auto Shot shoot again by themselves; melee auto attack would stop them: no /startattack on
+    -- their keys, and with the macro's own one only on the keys of other spells.
+    local shoot, autoShot, raptor = { name = "Shoot" }, { name = "Auto Shot" }, { name = "Raptor Strike" }
+    expectText("attack, not on the key with the wand", text({ action = { name = "Shadow Bolt" }, only = "enemies",
+        startattack = true, keeps = { alt = true }, keys = { alt = { action = shoot, on = { "mouseover", "default" } } } }),
+        "#showtooltip\n/startattack [nomod:alt]\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
+        .. "[@mouseover,harm,nodead][] Shadow Bolt")
+    expectText("attack, not on Shift and Ctrl with Auto Shot, nor right click", text({ action = raptor, on = usual,
+        startattack = true, keys = { shiftctrl = { action = autoShot }, right = { action = shoot } } }),
+        "#showtooltip\n/startattack [nomod:shift,nobtn:2][nomod:ctrl,nobtn:2]\n/cast [mod:shift,mod:ctrl] Auto Shot; "
+        .. "[btn:2] Shoot; Raptor Strike")
+    expectText("attack only on the key with a melee spell", text({ action = autoShot, on = usual, startattack = true,
+        keys = { alt = { action = raptor } } }), "#showtooltip\n/startattack [mod:alt]\n/cast [mod:alt] Raptor Strike; Auto Shot")
+    expectText("no attack when every spell shoots by itself", text({ action = autoShot, on = usual,
+        startattack = true }), "#showtooltip\n/cast Auto Shot")
+    local oldKind = "#showtooltip\n/startattack\n/cast [mod:alt] !Shoot; Shadow Bolt"
+    local read, gone = W.Read(oldKind)
+    check("wizard read: plain /startattack with a wand key, made right", read and read.startattack
+        and gone and #gone == 1 and gone[1] == "/startattack" and W.Text(read)
+        == "#showtooltip\n/startattack [nomod:alt]\n/cast [mod:alt] !Shoot; Shadow Bolt", read and W.Text(read))
+    check("wizard read: /startattack with other conditions or a unit is not the form's", not (W.Read("/startattack "
+        .. "[harm]\n/cast Shadow Bolt") or {}).startattack and not (W.Read("/startattack [nomod:alt] focus\n"
+        .. "/cast [mod:alt] !Shoot; Shadow Bolt") or {}).startattack)
+    check("wizard read: /startattack's key groups with a space between", (W.Read("/startattack [nomod:shift] "
+        .. "[nomod:ctrl]\n/cast [mod:shift] !Shoot; Shadow Bolt") or {}).startattack)
     expectText("an item", text({ command = "use", action = { name = "Wool Bandage", item = true }, only = "friends",
         on = { "mouseover", "player", "none" } }), "#showtooltip\n/use [@mouseover,help,nodead][@player] Wool Bandage")
     -- Other commands: a slot for /use; a list for /castsequence (with what starts it over) and /castrandom.
@@ -2503,13 +2528,14 @@ do
     spec = read("more spells: a /use macro by its last line", "/cast Berserking\n/use Healthstone",
         "#showtooltip Healthstone\n/cast Berserking\n/use Healthstone")
     check("wizard read: a /use macro by its last line", spec.command == "use" and spec.action.item)
-    -- [nomod] is the macro's own spell: the keys come first in the wizard's text. "!" is each spell's own.
+    -- [nomod] is the macro's own spell: the keys come first in the wizard's text. "!" is each spell's own. Auto
+    -- attack not on the wand's key: it would stop the wand.
     local body = "#showtooltip\n/startattack\n/cast [nomod,@mouseover,harm,nodead][nomod] Shadow Bolt; "
         .. "[mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot"
     spec = read("none held: the macro's spell, the key's after", body,
-        "#showtooltip\n/startattack\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
-        .. "[@mouseover,harm,nodead][] Shadow Bolt",
-        "/cast [nomod,@mouseover,harm,nodead][nomod] Shadow Bolt; [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot")
+        "#showtooltip\n/startattack [nomod:alt]\n/cast [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot; "
+        .. "[@mouseover,harm,nodead][] Shadow Bolt", "/startattack | /cast [nomod,@mouseover,harm,nodead][nomod] "
+        .. "Shadow Bolt; [mod:alt,@mouseover,harm,nodead][mod:alt] !Shoot")
     check("wizard read: none held, the answers", spec.action.name == "Shadow Bolt" and spec.keys.alt.active
         and spec.keys.alt.action.name == "Shoot" and spec.keeps.alt and not spec.keeps.main and spec.only == "enemies"
         and table.concat(spec.on, ",") == "mouseover,default,none" and spec.startattack)
