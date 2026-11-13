@@ -19,6 +19,13 @@ Parser.chatCommands = {
     guild = true, g = true, officer = true, o = true, instance = true, i = true, emote = true, e = true,
     me = true, whisper = true, w = true, tell = true, t = true, reply = true, r = true, bg = true,
 }
+-- "/2 WTS ...": a chat channel by its number, 1 to 20 in every client (the game's MaxChatChannels), the rest of the
+-- line said there. Its number, or nil for any other command.
+Parser.MAX_CHANNELS = 20
+function Parser.Channel(cmd)
+    local n = tonumber((cmd or ""):match("^%d+$") or "")
+    return n and n >= 1 and n <= Parser.MAX_CHANNELS and n or nil
+end
 -- Commands that run Lua.
 Parser.luaCommands = { run = true, script = true, dump = true }
 -- "/stopmacro"; Sources adds localized aliases.

@@ -390,6 +390,8 @@ local function CommandLine(cmd, rest, env)
     local P = ns.Parser
     if P.luaCommands[cmd] then return { L["runs Lua code"] } end
     if P.chatCommands[cmd] then return { string.format(L["writes in chat: %s"], rest) } end
+    local channel = P.Channel(cmd)
+    if channel then return { string.format(L["writes in chat channel %d: %s"], channel, rest) } end
     local key = (env.commandKey and env.commandKey(cmd)) or ENGLISH[cmd]
     local secure = key and SECURE[key]
     if not (secure or P.actionCommands[cmd] or P.stopCommands[cmd] or P.clickCommands[cmd]) then

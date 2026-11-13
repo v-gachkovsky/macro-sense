@@ -50,7 +50,7 @@ end
 local function command(name, rest, env)
     local P = ns.Parser
     if P.luaCommands[name] then return { kind = "runs", command = name } end
-    if P.chatCommands[name] then return { kind = "runs", command = name } end
+    if P.chatCommands[name] or P.Channel(name) then return { kind = "runs", command = name } end
     local ok, action, unit = pcall(env.parse, rest)
     if not ok then return nil end
     if action == nil then return { kind = "nomatch" } end

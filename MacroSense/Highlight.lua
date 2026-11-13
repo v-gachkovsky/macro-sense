@@ -468,19 +468,23 @@ local function lineSpans(line, base, add, info)
     if not lead then return end
     local cmdFrom, cmdTo = base + #lead + 1, base + #lead + 1 + #cmd
     local name = cmd:lower()
-    local known = name == "" or not Highlight.isCommand or Highlight.isCommand(name)
+    local P = ns.Parser
+    local channel = P.Channel(name)
+    local known = name == "" or channel ~= nil or not Highlight.isCommand or Highlight.isCommand(name)
     if known then
         local problem, short
         if Highlight.checkCommand and name ~= "" then problem, short = Highlight.checkCommand(name) end
         add(cmdFrom, cmdTo, "command", problem, "warning", short and { short = short })
+    elseif name:find("^%d+$") then
+        add(cmdFrom, cmdTo, "error", string.format(L["there is no chat channel /%s: they go from /1 to /%d"], cmd,
+            P.MAX_CHANNELS))
     else
         add(cmdFrom, cmdTo, "error", string.format(L["unknown command \"/%s\""], cmd), nil,
             guess(cmd, namesOf(ns.data.commands), "/"))
     end
     local restBase = cmdTo - base
     local rest = line:sub(restBase + 1)
-    local P = ns.Parser
-    if P.chatCommands[name] then return end
+    if P.chatCommands[name] or channel then return end
     if P.luaCommands[name] then return luaSpans(rest, cmdTo, add) end
     local action = P.actionCommands[name]
     local argKind = UNIT_ARGS[name] and "unit" or (action and "action") or (P.clickCommands[name] and "click") or "option"

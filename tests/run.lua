@@ -457,6 +457,10 @@ expectErrs("/cast [ ] X", "")
 expectErrs("#showtooltip\n/cast [nocombat] A\n/cast [bogus] B", 'bogus=unknown condition "bogus"@3')
 H.isCommand = function(name) return name == "cast" end
 expectErrs("/cats X", '/cats=unknown command "/cats"@1')
+-- A chat channel by its number: no command the game registers, its chat knows 1 to 20. The rest is said there.
+expectErrs("/2 WTS [Fireball] cheap; [harmm]\n/20 hi", "")
+expectErrs("/21 hi", "/21=there is no chat channel /21: they go from /1 to /20@1")
+expectErrs("/0 hi", "/0=there is no chat channel /0: they go from /1 to /20@1")
 H.isCommand = nil
 
 local scheme = { text = "ffffff", command = "111111", action = "222222", operator = "333333",
@@ -1020,6 +1024,7 @@ end
 local stop = "/stopmacro [nocombat]\n/cast Fireball\n\n/say hi\n# a comment"
 expectPreview("stopmacro stops", stop, {}, "stops here | not reached |  | not reached | ")
 expectPreview("stopmacro in combat", stop, { combat = true }, "conditions not met | Fireball |  | runs /say | ")
+expectPreview("chat channel", "/2 WTS [Fireball]", {}, "runs /2")
 -- #showtooltip with a name, or with conditions of its own.
 local tip = "#showtooltip [mod:alt] Fear; Corruption\n/cast Shadow Bolt"
 expectPreview("showtooltip names the icon", tip, {}, "icon: Corruption | Shadow Bolt")
@@ -1162,6 +1167,7 @@ do
         { "/equipset PvP", "puts on the equipment set PvP" },
         { "/dismount [mounted]", "mounted: gets off your mount" },
         { "/say Hello %t", "writes in chat: Hello %t" },
+        { "/2 WTS Fireball", "writes in chat channel 2: WTS Fireball" },
         { "/run print(1)", "runs Lua code" },
         { "/dance", "runs /dance" },
         { "/click ActionButton1 RightButton", "clicks ActionButton1" },
