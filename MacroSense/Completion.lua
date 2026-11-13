@@ -71,6 +71,7 @@ local function list(kind, ctx)
     if kind == "petSpell" then return source("petSpells") end
     if kind == "barPage" then return d.bars end
     if kind == "worldMarker" then return d.worldMarkers end
+    if kind == "raidMarker" then return d.raidMarkers end
     if kind == "clearMarker" then
         return concat(d.worldMarkers, { { name = (ALL or "all"):lower(), hint = "every marker" } })
     end

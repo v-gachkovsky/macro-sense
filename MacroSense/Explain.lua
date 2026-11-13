@@ -278,11 +278,11 @@ local ENGLISH = {
     targetfriend = "TARGET_NEAREST_FRIEND", targetlasttarget = "TARGET_LAST_TARGET",
     targetparty = "TARGET_NEAREST_PARTY", targetraid = "TARGET_NEAREST_RAID", stopspelltarget = "STOPSPELLTARGET",
     changeactionbar = "CHANGEACTIONBAR", swapactionbar = "SWAPACTIONBAR", worldmarker = "WORLD_MARKER",
-    clearworldmarker = "CLEAR_WORLD_MARKER",
+    clearworldmarker = "CLEAR_WORLD_MARKER", tm = "TARGET_MARKER", targetmarker = "TARGET_MARKER",
 }
--- A world marker's name by its number: "white skull".
-local function Marker(n)
-    for _, m in ipairs(ns.data.worldMarkers) do
+-- A marker's name by its number, of the world markers or the raid markers (`list`): "white skull".
+local function Marker(n, list)
+    for _, m in ipairs(list or ns.data.worldMarkers) do
         if m.name == n then return L[m.hint] end
     end
 end
@@ -338,6 +338,22 @@ local SECURE = {
         if marker and marker:lower() == (ALL or "all"):lower() then return L["clears every world marker"] end
         local name = Marker(marker)
         return name and string.format(L["clears the %s marker"], name) or L["does nothing"]
+    end,
+    -- /tm: a press with the same marker takes it off; "!8" keeps it on, "~8" puts it only on a unit with none.
+    TARGET_MARKER = function(_, _, marker, on)
+        local keep, n = (marker or ""):match("^%s*([!~]?)(%d+)%s*$")
+        local unit = on or L["your target"]
+        if n == "0" then
+            return keep == "~" and L["does nothing"] or string.format(L["takes the marker off %s"], unit)
+        end
+        local name = n and n ~= "0" and Marker(n, ns.data.raidMarkers)
+        if not name then return L["does nothing"] end
+        if keep == "!" then
+            return string.format(L["puts the %s marker on %s (a second press keeps it)"], name, unit)
+        elseif keep == "~" then
+            return string.format(L["puts the %s marker on %s if it has no marker yet"], name, unit)
+        end
+        return string.format(L["puts the %s marker on %s (a second press takes it off)"], name, unit)
     end,
 }
 -- What branch `action` of command `cmd` does for group `g`: the whole phrase, and the one after "if not," (for a

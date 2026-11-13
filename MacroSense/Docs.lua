@@ -52,11 +52,15 @@ local COMMANDS = {
     swapactionbar = "Turns your action bar to one of two pages, the one it isn't on: /swapactionbar 1 2.",
     worldmarker = "Places a marker on the ground by its number, 1-8: /worldmarker [@cursor] 1 puts it under the mouse.",
     clearworldmarker = "Clears a marker on the ground by its number, or all of them: /clearworldmarker all.",
+    tm = "Puts a raid marker on your target by its number, 1-8, and 0 takes it off: /tm [@mouseover] 8 puts the "
+        .. "skull on the unit under the mouse. A second press takes the marker off. With ! in front it stays (/tm !8), "
+        .. "with ~ it goes only on a unit with no marker yet (/tm ~8).",
     petautocaston = "Your pet casts that spell by itself from now on: /petautocaston Torment.",
     petautocastoff = "Your pet no longer casts that spell by itself.",
     petautocasttoggle = "Your pet starts or stops casting that spell by itself: each press turns it the other way.",
 }
 COMMANDS.script = COMMANDS.run
+COMMANDS.targetmarker = COMMANDS.tm
 
 local CONDITIONS = {
     combat = "You are in combat.",
@@ -177,10 +181,12 @@ local RESET = "When the sequence starts over: seconds without a press, target, c
 local BANG = "Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a "
     .. "form. With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
     .. "out of stealth."
+-- Before a raid marker's number: /tm !8.
+local BANG_MARKER = "Puts the marker on and never takes it off: a second press keeps it."
 
 -- Every text, for the translation check.
 function Docs.Texts()
-    local out = { AT, RESET, BANG }
+    local out = { AT, RESET, BANG, BANG_MARKER }
     for _, set in ipairs({ COMMANDS, CONDITIONS, NOT, UNITS, META }) do
         for _, text in pairs(set) do out[#out + 1] = text end
     end
@@ -210,7 +216,8 @@ function Docs.At(raw, pos, env)
     if kind == "command" then
         local name = word:sub(2):lower()
         local key = env and env.commandKey and env.commandKey(name)
-        local text = COMMANDS[name] or (key and COMMANDS[key:lower()])
+        -- By the key, any name of the command: "WORLD_MARKER" is /worldmarker.
+        local text = COMMANDS[name] or (key and (COMMANDS[key:lower()] or COMMANDS[(key:lower():gsub("_", ""))]))
         if text then return { title = word, lines = { L[text] } } end
     elseif kind == "meta" then
         local text = META[word:sub(2):lower()]
@@ -228,7 +235,9 @@ function Docs.At(raw, pos, env)
     elseif kind == "operator" and (word == "@" or word == "target=") then
         return { title = word, lines = { L[AT] } }
     elseif kind == "operator" and word == "!" then
-        return { title = "!", lines = { L[BANG] } }
+        local cmd = raw:sub(1, span[1]):match("([^\n]*)$"):match("^%s*/(%S+)")
+        local marker = cmd and ns.Parser.argCommands[cmd:lower()] == "raidMarker"
+        return { title = "!", lines = { L[marker and BANG_MARKER or BANG] } }
     elseif kind == "unit" then
         local u = word:lower()
         local lines = { (ns.Explain.Unit(u):gsub("^%l", string.upper)) }

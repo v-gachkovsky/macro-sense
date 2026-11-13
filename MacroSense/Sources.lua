@@ -49,7 +49,7 @@ local ACTION_KEYS = {
 local ARG_KEYS = {
     PET_AUTOCASTON = "petSpell", PET_AUTOCASTOFF = "petSpell", PET_AUTOCASTTOGGLE = "petSpell",
     CHANGEACTIONBAR = "barPage", SWAPACTIONBAR = "barPages", WORLD_MARKER = "worldMarker",
-    CLEAR_WORLD_MARKER = "clearMarker",
+    CLEAR_WORLD_MARKER = "clearMarker", TARGET_MARKER = "raidMarker",
 }
 function ns.RegisterActionCommands()
     for key, base in pairs(ACTION_KEYS) do
@@ -108,7 +108,7 @@ local SECURE_KEYS = {
     "TEAM_DISBAND", "TEAM_INVITE", "TEAM_QUIT", "TEAM_UNINVITE", "USE", "USERANDOM", "WORLD_MARKER",
 }
 
--- The key of a secure command (or /dismount) by any of its names in this client: "ziel" -> "TARGET", or nil.
+-- The key of a secure command (or /dismount, /tm) by any of its names in this client: "ziel" -> "TARGET", or nil.
 local commandKeys
 function ns.CommandKey(name)
     if not commandKeys then
@@ -116,7 +116,9 @@ function ns.CommandKey(name)
         for _, key in ipairs(SECURE_KEYS) do
             for _, alias in ipairs(aliases(key)) do commandKeys[alias] = key end
         end
-        for _, alias in ipairs(aliases("DISMOUNT")) do commandKeys[alias] = "DISMOUNT" end
+        for _, key in ipairs({ "DISMOUNT", "TARGET_MARKER" }) do
+            for _, alias in ipairs(aliases(key)) do commandKeys[alias] = key end
+        end
     end
     return commandKeys[name]
 end

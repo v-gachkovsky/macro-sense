@@ -259,7 +259,7 @@ local SLOTS = Constants.MacroConsts
 -- where pairs doesn't see them: /tm and the guild chat, here with its German name too.
 SlashCmdList = setmetatable({}, { __index = { TARGET_MARKER = function() end } })
 ChatTypeInfo = setmetatable({}, { __index = { SAY = {}, GUILD = {} } })
-SLASH_TARGET_MARKER1, SLASH_GUILD1, SLASH_GUILD2 = "/tm", "/g", "/Gilde"
+SLASH_TARGET_MARKER1, SLASH_TARGET_MARKER2, SLASH_GUILD1, SLASH_GUILD2 = "/tm", "/zm", "/g", "/Gilde"
 -- The game's macro window, opened by the game menu's "Macros" and by /macro. The chat runs /macro from
 -- hash_SlashCmdList once it was used.
 gameMacroWindowShown, MACROS, SLASH_MACRO1 = 0, "Macros", "/macro"
@@ -2211,6 +2211,17 @@ check("chat is a command", kindOf("/say hi", "/say") == "command")
 check("a command the game hides is a command", kindOf("/tm 8", "/tm") == "command")
 check("a chat type the game hides is a command", kindOf("/g hi", "/g") == "command")
 check("a chat type's other name says the rest as it is", #ns.Highlight.Errors("/gilde [harmm] hi") == 0)
+-- /tm by its German name: the same raid markers, help and explanation.
+do
+    local env = { commandKey = ns.CommandKey }
+    local zm = ns.Docs.At("/zm 8", 2, env)
+    local typed = ns.Parser.GetContext("/zm ", 4)
+    check("/zm takes a raid marker", typed and typed.kind == "raidMarker")
+    check("/zm has the help of /tm", zm and zm.lines[1]:find("^Puts a raid marker") ~= nil)
+    local said = ns.Explain.Line("/zm 8", env)
+    check("/zm explained as /tm", said and said[1] == "puts the white skull marker on your target (a second press "
+        .. "takes it off)", said and said[1])
+end
 check("unknown command is an error", kindOf("/bogus", "/bogus") == "error")
 -- Secure commands: the game hides their list, IsSecureCmd knows them ("/petmoveto" was marked unknown).
 check("secure command is a command", kindOf("/petmoveto [nomod]", "/petmoveto") == "command")

@@ -12,6 +12,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   to put the new one in that macro. Macros that every character shares are marked in the question. Only the best
   item a macro names changes, a worse one after it stays as a backup, and a macro with a better one than you make
   (stones from another warlock) stays as it is. **Not now** doesn't ask again until your next rank.
+- What `/tm` takes is suggested and explained: the raid markers 1 to 8 with their pictures and colors, and 0 to
+  take a marker off. A second press with the same marker takes it off; `/tm !8` keeps it on, and `/tm ~8` puts it
+  only on a unit with no marker yet, as the help on `/tm` and on its `!` says. Its name in your game's language
+  (`/zm` in German) works the same.
 
 ### Fixed
 - The game's own commands and chat types that MacroSense doesn't list itself are no longer marked as unknown:
