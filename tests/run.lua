@@ -3076,6 +3076,8 @@ do
     local R = ns.Ranks
     local count = R.Count({ { name = "Shadow Bolt", ranks = { "Rank 1", "Rank 2" } }, { name = "Fear", ranks = {} } })
     check("ranks: counted, a spell with none left out", count["Shadow Bolt"] == 2 and count.Fear == nil)
+    count = R.Count({ { name = "Shadow Bolt", ranks = { "Rank 1" } } }, { ["Fire Shield"] = 2, ["Shadow Bolt"] = 3 })
+    check("ranks: the pet's by its highest", count["Fire Shield"] == 2 and count["Shadow Bolt"] == 3)
     local learned = R.Learned({ ["Shadow Bolt"] = 2, Immolate = 1 }, { ["Shadow Bolt"] = 3, Immolate = 1, Corruption = 1 })
     check("ranks: a new rank learned; a spell new to the book is none", #learned == 1 and learned[1] == "Shadow Bolt",
         table.concat(learned, ","))

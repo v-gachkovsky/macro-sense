@@ -286,8 +286,8 @@ end
 EMOTE1_TOKEN, EMOTE1_CMD1 = "DANCE", "/dance"
 
 Enum = { SpellBookSpellBank = { Player = 0, Pet = 1 }, SpellBookItemType = { Spell = 1, FutureSpell = 2, PetAction = 3 } }
--- The pet's spells: each its name, or { name, passive = true }; empty = no pet. The game lists them as pet actions,
--- as it does the commands of the pet's bar (Attack, Follow).
+-- The pet's spells: each its name, or { name, passive = true, rank = "Rank 2" }; empty = no pet. The game lists them
+-- as pet actions, as it does the commands of the pet's bar (Attack, Follow).
 local petBook = {}
 local book = { -- name, rank: Classic lists every learned rank
     { "Fireball", "Rank 1" }, { "Fireball", "Rank 2" }, { "Fireball", "Rank 3" },
@@ -303,7 +303,8 @@ C_SpellBook = {
     GetSpellBookItemInfo = function(slot, bank)
         if bank == 1 then
             local e = type(petBook[slot]) == "table" and petBook[slot] or { petBook[slot] }
-            return { name = e[1], itemType = 3, isPassive = e.passive == true, iconID = 900 + slot }
+            return { name = e[1], subName = e.rank or "", itemType = 3, isPassive = e.passive == true,
+                iconID = 900 + slot }
         end
         return { name = book[slot][1], subName = book[slot][2], itemType = 1, isPassive = false, iconID = slot,
             spellID = 100 + slot }
@@ -7904,8 +7905,24 @@ do
     InCombatLockdown = function() return false end
     ns.Ranks.Update()
     check("ranks: after combat, saved", edits["Rk A"] == 2)
+    -- The pet's spells too: the Imp learned Fire Shield Rank 2 from a book, and its macro still showed Rank 1.
+    CreateMacro("Rk D", 134400, "#showtooltip\n/cast [pet:Imp,nomod,@player] Fire Shield", true)
+    petBook = { { "Fire Shield", rank = "Rank 1" }, "Firebolt" }
+    ns.Ranks.Update()
+    edits = {}
+    petBook[1].rank = "Rank 2"
+    ns.Ranks.Update()
+    check("ranks: the pet's new rank, its macro saved", edits["Rk D"] == 2 and not edits["Rk A"],
+        tostring(edits["Rk D"]))
+    edits = {}
+    petBook = {}
+    ns.Ranks.Update()
+    petBook = { { "Fire Shield", rank = "Rank 2" } }
+    ns.Ranks.Update()
+    check("ranks: the pet out again, nothing saved", next(edits) == nil)
+    petBook = {}
     EditMacro = editMacro
-    for _, name in ipairs({ "Rk A", "Rk B", "Rk C" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    for _, name in ipairs({ "Rk A", "Rk B", "Rk C", "Rk D" }) do DeleteMacro(GetMacroIndexByName(name)) end
     ns.History.Scan()
     ns.sources.spells = spells
 end
