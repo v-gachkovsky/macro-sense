@@ -266,7 +266,8 @@ behind the scenes.
 - **Empty brackets** `[]` are always true: "otherwise, as usual".
 - **`!` before a spell** means "only turn it on". A press turns some spells on and off: Shoot, Auto Shot,
   Stealth, Prowl, a form. With `!`, pressing again while it is on keeps it on: `/cast !Shoot` doesn't stop your
-  shooting, `/cast !Stealth` doesn't take you out of stealth. Point at the `!` in the editor to read this.
+  shooting, `/cast !Stealth` doesn't take you out of stealth. Moving still stops a wand's Shoot: press again once
+  you stand. Point at the `!` in the editor to read this.
 
 A line that starts with `#` is not a command but a setting. `#showtooltip` makes the macro show the tooltip of
 the spell it would cast, and its icon too while the macro's icon is the question mark.
@@ -401,7 +402,8 @@ Heals whoever is under the mouse; if nobody, your target if it is a friend; if n
 #showtooltip
 /cast !Shoot
 ```
-Without `!`, a second press would stop the shooting.
+Without `!`, a second press would stop the shooting. Moving stops a wand all the same, so press again once you
+stand.
 
 **The pet attacks what you point at, follows with Shift:**
 ```

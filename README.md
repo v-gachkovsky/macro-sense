@@ -159,9 +159,9 @@ is set.
   click** adds two more rows: Shift and Ctrl held together (`[mod:shift,mod:ctrl]`, tried before the keys), and a
   right click on the macro's button (`[btn:2]`, tried after them).
 - **!** at the end of each spell's box, for `/cast` and `/use`: `!` before that spell (`!Shoot`). Pressed again,
-  the macro doesn't turn off what it turned on: Auto Shot, Stealth, a form or an aura. Each spell has its own, the
-  macro's, each key's and the one it casts otherwise; in the questions it is **Don't turn it off** under the
-  spell.
+  the macro doesn't turn off what it turned on: Auto Shot, Stealth, a form or an aura (moving still stops a
+  wand's Shoot). Each spell has its own, the macro's, each key's and the one it casts otherwise; in the questions
+  it is **Don't turn it off** under the spell.
 - **When**: only in or out of combat, in stealth or not, in a group, a raid or alone, with your pet out or not or with
   one of your pets (`[pet:Voidwalker]`: then the autocast lists have only its spells), in
   one of your forms or none; where you are (on a mount or not, flying, where you can fly, in water, indoors or
