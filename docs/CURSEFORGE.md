@@ -124,6 +124,10 @@ new one.
 In the Classic clients, a macro with `/cast Shadow Bolt` now follows the new rank as soon as you learn it, and a
 macro with your pet's spell as soon as the pet learns one (the Imp's Fire Shield Rank 2).
 
+In Classic Era, TBC and WoW Forever, learn a rank that makes a better stone, water or food than a macro uses
+(`/use Greater Healthstone`, and you make Major Healthstones now), and MacroSense asks whether to put the new one
+in. A worse one after it stays as a backup, and a macro with a better one than you make stays as it is.
+
 ## Macro sets: more than 30 macros
 
 A character has only 30 macro slots. Tick **Macro sets**, and MacroSense keeps more:

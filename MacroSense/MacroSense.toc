@@ -36,6 +36,7 @@ Spellbook.lua
 Questions.lua
 Roles.lua
 Ranks.lua
+Conjured.lua
 Sets.lua
 Widgets.lua
 Popup.lua

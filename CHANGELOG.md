@@ -6,6 +6,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Better stones, water and food: in Classic Era, TBC and WoW Forever, when you learn a rank that makes a better
+  healthstone, soulstone, spellstone, firestone, conjured water or food than a macro uses, MacroSense asks whether
+  to put the new one in that macro. Macros that every character shares are marked in the question. Only the best
+  item a macro names changes, a worse one after it stays as a backup, and a macro with a better one than you make
+  (stones from another warlock) stays as it is. **Not now** doesn't ask again until your next rank.
+
 ### Fixed
 - The game's own commands and chat types that MacroSense doesn't list itself are no longer marked as unknown:
   `/tm 8` (a raid marker on your target), `/g`, `/rw`, `/dnd`, and their names in your game's language. The game

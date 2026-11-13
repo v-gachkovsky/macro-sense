@@ -155,6 +155,7 @@ local function SpellsChangedSoon(talents)
         ns.ActionBars.Tint()
         ns.ActionBars.TellBroken(talentsChanged)
         ns.Ranks.Update()
+        ns.Conjured.Check()
         ns.Sets.LearnSpells() -- which macros work in this specialization
         ns.Sets.Update() -- another specialization: its macros
         talentsChanged = false
@@ -195,7 +196,7 @@ end
 local f = CreateFrame("Frame")
 for _, e in ipairs({ "ADDON_LOADED", "PLAYER_LOGIN", "SPELLS_CHANGED", "BAG_UPDATE_DELAYED",
     "PLAYER_EQUIPMENT_CHANGED", "UPDATE_MACROS", "UPDATE_BINDINGS", "ACTIONBAR_SLOT_CHANGED", "UNIT_PET",
-    "PET_BAR_UPDATE", "PLAYER_REGEN_ENABLED" }) do
+    "PET_BAR_UPDATE", "PLAYER_REGEN_ENABLED", "GET_ITEM_INFO_RECEIVED" }) do
     f:RegisterEvent(e)
 end
 for e in pairs(TALENT_EVENTS) do pcall(f.RegisterEvent, f, e) end
@@ -213,6 +214,7 @@ f:SetScript("OnEvent", function(_, event, name)
             MacroSenseCharDB.petSpells = MacroSenseCharDB.petSpells or {}
             MacroSenseCharDB.pets = MacroSenseCharDB.pets or {}
             MacroSenseCharDB.buffs = MacroSenseCharDB.buffs or {}
+            MacroSenseCharDB.conjured = MacroSenseCharDB.conjured or {} -- the better items offered: [item ID] = true
             ns.char = MacroSenseCharDB
             if IsLoaded("Blizzard_MacroUI") then AddMacroFrameButton() end
         elseif name == "Blizzard_MacroUI" then
@@ -224,6 +226,7 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.RegisterActionCommands()
         ns.History.Scan()
         ns.Ranks.Update()
+        ns.Conjured.Check()
         ns.Window.DailyBackup()
         ns.Sets.Update()
         ns.RememberBuffs()
@@ -241,10 +244,13 @@ f:SetScript("OnEvent", function(_, event, name)
         ns.Window.CombatEnded()
         ns.ActionBars.Setup()
         ns.Ranks.Update()
+        ns.Conjured.CombatEnded()
         if ns.Sets.Pending() then ns.Sets.Update() end
     elseif event == "SPELLS_CHANGED" or event == "PET_BAR_UPDATE" or (event == "UNIT_PET" and name == "player")
         or TALENT_EVENTS[event] then
         SpellsChangedSoon(TALENT_EVENTS[event])
+    elseif event == "GET_ITEM_INFO_RECEIVED" then
+        ns.Conjured.ItemArrived()
     elseif event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" then
         ns.InvalidateSources("items")
     elseif event == "UPDATE_MACROS" then
