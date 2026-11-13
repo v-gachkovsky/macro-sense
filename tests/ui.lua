@@ -254,8 +254,12 @@ YES, NO, CANCEL, DELETE = "Yes", "No", "Cancel", "Delete"
 Constants = { MacroConsts = { MAX_ACCOUNT_MACROS = 120, MAX_CHARACTER_MACROS = 30 } }
 local SLOTS = Constants.MacroConsts
 
--- Like the game: the list of secure commands is hidden from addons, IsSecureCmd("/cast") tells.
-SlashCmdList, ChatTypeInfo = {}, { SAY = true }
+-- Like the game: the list of secure commands is hidden from addons, IsSecureCmd("/cast") tells. As its chat loads,
+-- the game moves its own commands and chat types behind SlashCmdList and ChatTypeInfo (their metatable's __index),
+-- where pairs doesn't see them: /tm and the guild chat, here with its German name too.
+SlashCmdList = setmetatable({}, { __index = { TARGET_MARKER = function() end } })
+ChatTypeInfo = setmetatable({}, { __index = { SAY = {}, GUILD = {} } })
+SLASH_TARGET_MARKER1, SLASH_GUILD1, SLASH_GUILD2 = "/tm", "/g", "/Gilde"
 -- The game's macro window, opened by the game menu's "Macros" and by /macro. The chat runs /macro from
 -- hash_SlashCmdList once it was used.
 gameMacroWindowShown, MACROS, SLASH_MACRO1 = 0, "Macros", "/macro"
@@ -2202,6 +2206,10 @@ local function kindOf(text, word)
 end
 check("emote is a command", kindOf("/dance", "/dance") == "command")
 check("chat is a command", kindOf("/say hi", "/say") == "command")
+-- The game's own commands and chat types, which it hides from pairs ("/tm 8" and "/g" were marked unknown).
+check("a command the game hides is a command", kindOf("/tm 8", "/tm") == "command")
+check("a chat type the game hides is a command", kindOf("/g hi", "/g") == "command")
+check("a chat type's other name says the rest as it is", #ns.Highlight.Errors("/gilde [harmm] hi") == 0)
 check("unknown command is an error", kindOf("/bogus", "/bogus") == "error")
 -- Secure commands: the game hides their list, IsSecureCmd knows them ("/petmoveto" was marked unknown).
 check("secure command is a command", kindOf("/petmoveto [nomod]", "/petmoveto") == "command")
@@ -2214,6 +2222,7 @@ do
     for _, c in ipairs(ns.sources.commands()) do offered[c.name] = true end
     check("secure commands offered after /", offered.petmoveto == true)
     check("only those this client has", offered.teamquit == nil)
+    check("the commands the game hides offered after /", offered.tm and offered.g and offered.gilde)
     edit:SetFocus()
     edit:SetCursorPosition(#edit.text)
     Type("\n/petm")
