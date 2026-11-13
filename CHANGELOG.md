@@ -28,6 +28,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - The wizard's **Start auto attack** no longer gets in the way of a wand: on a key that casts Shoot or Auto Shot,
   the macro doesn't start auto attack (`/startattack [nomod:alt]`), since melee auto attack would stop the
   shooting. When the macro's own spell is Auto Shot, auto attack starts only with the keys of other spells.
+- The help on `!`, the wizard's **Don't turn it off** and the macro guide now say that moving still stops a wand's
+  Shoot, `!` or not: press again once you stand.
 
 ## [0.18.0] - 2026-11-12
 

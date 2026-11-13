@@ -138,7 +138,8 @@ local function Sections()
             } },
             { "p", L["Two more things you will meet in macros:"] },
             { "rows", {
-                { "!Shoot", L["Only turns it on: a press doesn't stop your shooting or take you out of stealth."] },
+                { "!Shoot", L["Only turns it on: a press doesn't stop your shooting or take you out of stealth. "
+                    .. "Moving still stops a wand."] },
                 { "#showtooltip", L["A setting, not a command: the macro shows the tooltip of what it would cast, "
                     .. "and its icon while the macro's icon is the question mark."] },
             } },
@@ -195,7 +196,8 @@ local function Sections()
             { "code", "#showtooltip Arcane Power\n/use 13\n/cast Arcane Power", "Trinket" },
             { "p", L["Two curses in turn, from the start on a new target:"] },
             { "code", "#showtooltip\n/castsequence reset=target Corruption, Curse of Agony", "Curses" },
-            { "p", L["Shoot with a wand, and keep shooting however often you press:"] },
+            { "p", L["Shoot with a wand, and keep shooting however often you press. Moving stops a wand all the same, "
+                .. "so press again once you stand:"] },
             { "code", "#showtooltip\n/cast !Shoot", "Wand" },
             { "p", L["The pet attacks what you point at, and follows you with Shift:"] },
             { "code", "/petattack [nomod,@mouseover,harm,nodead][nomod]\n/petfollow [mod:shift]", "Pet" },

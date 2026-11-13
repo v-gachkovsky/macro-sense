@@ -180,7 +180,7 @@ local AT = "On whom the branch acts: @mouseover, @focus, @player... target= is t
 local RESET = "When the sequence starts over: seconds without a press, target, combat, shift, ctrl or alt."
 local BANG = "Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a "
     .. "form. With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
-    .. "out of stealth."
+    .. "out of stealth. Moving still stops a wand's Shoot: press again once you stand."
 -- Before a raid marker's number: /tm !8.
 local BANG_MARKER = "Puts the marker on and never takes it off: a second press keeps it."
 

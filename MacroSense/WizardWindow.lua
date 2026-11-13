@@ -337,7 +337,7 @@ local function KeepCheck(box, name, slot)
     box:SetTextInsets(6, 30, 0, 0)
     controls[name] = c
     Tip(c, L["Don't turn it off"], L["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off what "
-        .. "it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."])
+        .. "it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura. Moving still stops a wand's Shoot."])
     return c
 end
 
@@ -875,7 +875,8 @@ local function BuildSteps()
         function(on) spec.keeps[slotOf()] = on or nil end)
     keep:SetPoint("TOPLEFT", PAD, -32)
     Tip(keep, L["Don't turn it off"], L["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off "
-        .. "what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."])
+        .. "what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura. Moving still stops a wand's "
+        .. "Shoot."])
     local pick = box.Pick
     function box:Pick(item)
         if pick(self, item) then

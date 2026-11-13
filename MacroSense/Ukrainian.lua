@@ -32,10 +32,11 @@ ns.locales.uk = {
         .. "подробиці для звіту про помилку; /ms autocomplete | debug — увімкнути чи вимкнути",
     ["Only turns it on, never off. A press turns some spells on and off: Shoot, Auto Shot, Stealth, Prowl, a form. "
         .. "With !, a press while it is on keeps it on: !Shoot doesn't stop your shooting, !Stealth doesn't take you "
-        .. "out of stealth."] =
+        .. "out of stealth. Moving still stops a wand's Shoot: press again once you stand."] =
         "Лише вмикає, ніколи не вимикає. Деякі заклинання одне натискання вмикає, а наступне вимикає: Shoot, Auto "
         .. "Shot, Stealth, Prowl, форми. Із ! натискання, коли воно вже увімкнене, нічого не вимикає: !Shoot не "
-        .. "зупиняє стрільбу, !Stealth не виводить зі стелсу.",
+        .. "зупиняє стрільбу, !Stealth не виводить зі стелсу. Рух однаково зупиняє Shoot жезла: коли станете, "
+        .. "натисніть ще раз.",
     ["%s (only turns it on)"] = "%s (лише вмикає)",
     -- The macro guide (HelpWindow)
     ["Macro guide"] = "Довідка з макросів",
@@ -111,8 +112,8 @@ ns.locales.uk = {
     ["Empty brackets are always true: otherwise, as usual."] =
         "Порожні дужки виконуються завжди: інакше — як зазвичай.",
     ["Two more things you will meet in macros:"] = "Ще дві речі, які трапляються в макросах:",
-    ["Only turns it on: a press doesn't stop your shooting or take you out of stealth."] =
-        "Лише вмикає: натискання не зупиняє стрільбу й не виводить зі стелсу.",
+    ["Only turns it on: a press doesn't stop your shooting or take you out of stealth. Moving still stops a wand."] =
+        "Лише вмикає: натискання не зупиняє стрільбу й не виводить зі стелсу. Рух однаково зупиняє жезл.",
     ["A setting, not a command: the macro shows the tooltip of what it would cast, and its icon while the macro's "
         .. "icon is the question mark."] =
         "Налаштування, а не команда: макрос показує підказку того, що скастує, а поки іконка макросу — знак питання, "
@@ -175,8 +176,10 @@ ns.locales.uk = {
     ["Another spell with Shift held:"] = "Інше заклинання із затиснутим Shift:",
     ["A trinket with your big spell:"] = "Трінкет разом із великим заклинанням:",
     ["Two curses in turn, from the start on a new target:"] = "Два прокляття по черзі, з початку на новій цілі:",
-    ["Shoot with a wand, and keep shooting however often you press:"] =
-        "Стрільба з жезла, яку не зупиняють повторні натискання:",
+    ["Shoot with a wand, and keep shooting however often you press. Moving stops a wand all the same, so press "
+        .. "again once you stand:"] =
+        "Стрільба з жезла, яку не зупиняють повторні натискання. Рух однаково зупиняє жезл, тож коли станете, "
+        .. "натисніть ще раз:",
     ["The pet attacks what you point at, and follows you with Shift:"] =
         "Улюбленець атакує того, на кого ви наводите мишу, а з Shift іде за вами:",
     ["One mount button:"] = "Одна кнопка для всіх маунтів:",
@@ -844,9 +847,10 @@ ns.locales.uk = {
     ["Gets you off your mount first (/dismount [mounted]), so the spell doesn't fail."] =
         "Спершу знімає вас із маунта (/dismount [mounted]), щоб заклинання не зірвалося.",
     ["Don't turn it off"] = "Не вимикати повторно",
-    ["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off what it turned on: Auto Shot, a wand's Shoot, Stealth, a form or an aura."] =
+    ["Puts ! before the spell (!Shoot). Pressed again, the macro doesn't turn off what it turned on: Auto Shot, a "
+        .. "wand's Shoot, Stealth, a form or an aura. Moving still stops a wand's Shoot."] =
         "Ставить ! перед заклинанням (!Shoot). Якщо натиснути макрос ще раз, він не вимкне те, що увімкнув: "
-        .. "Auto Shot, Shoot із жезла, стелс, форму чи ауру.",
+        .. "Auto Shot, Shoot із жезла, стелс, форму чи ауру. Рух однаково зупиняє Shoot жезла.",
     ["Also cast"] = "Ще застосувати",
     ["With it"] = "Разом із ним",
     ["Spells or items the macro casts too, each on its own line before this one: one with no global cooldown "
