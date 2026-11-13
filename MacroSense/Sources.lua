@@ -748,27 +748,41 @@ for _, key in ipairs({ "PET_ACTION_ATTACK", "PET_ACTION_FOLLOW", "PET_ACTION_WAI
     if type(_G[key]) == "string" then PET_COMMANDS[_G[key]] = true end
 end
 
--- The spells of the pet that is out, to cast: { name, icon }. Not its passive ones, those it learns later, nor the
--- commands.
+-- The spells of the pet that is out, to cast: { name, icon, rank = the rank its book shows ("Rank 2") or nil }. Not
+-- its passive ones, those it learns later, nor the commands.
 local function PetSpellsNow()
     local out = {}
-    local function add(name, icon, passive, later)
+    local function add(name, icon, passive, later, rank)
         if name and not passive and not later and not PET_COMMANDS[name] then
-            out[#out + 1] = { name = name, icon = icon }
+            out[#out + 1] = { name = name, icon = icon, rank = rank and rank:match("%d") and rank or nil }
         end
     end
     if C_SpellBook and C_SpellBook.GetSpellBookItemInfo and PetBank then
         local future = Enum.SpellBookItemType and Enum.SpellBookItemType.FutureSpell
         for i = 1, C_SpellBook.HasPetSpells() or 0 do
             local item = C_SpellBook.GetSpellBookItemInfo(i, PetBank)
-            if item then add(item.name, item.iconID, item.isPassive, future and item.itemType == future) end
+            if item then
+                add(item.name, item.iconID, item.isPassive, future and item.itemType == future, item.subName)
+            end
         end
     elseif HasPetSpells and GetSpellBookItemInfo then
         local book = BOOKTYPE_PET or "pet"
         for i = 1, HasPetSpells() or 0 do
-            add(GetSpellBookItemName(i, book), GetSpellBookItemTexture(i, book), IsPassiveSpell(i, book),
-                GetSpellBookItemInfo(i, book) == "FUTURESPELL")
+            local name, rank = GetSpellBookItemName(i, book)
+            add(name, GetSpellBookItemTexture(i, book), IsPassiveSpell(i, book),
+                GetSpellBookItemInfo(i, book) == "FUTURESPELL", rank)
         end
+    end
+    return out
+end
+
+-- The ranks of the spells of the pet that is out: name -> the highest its book shows ("Rank 2" -> 2). A demon
+-- learns them from a book, a hunter's pet from the hunter.
+function ns.sources.petRanks()
+    local out = {}
+    for _, spell in ipairs(PetSpellsNow()) do
+        local rank = tonumber(spell.rank and spell.rank:match("%d+") or "")
+        if rank and rank > (out[spell.name] or 0) then out[spell.name] = rank end
     end
     return out
 end

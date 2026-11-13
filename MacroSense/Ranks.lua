@@ -1,19 +1,21 @@
--- A new rank of a spell: the macros that cast it with no rank are saved again. In the older flavors the game keeps
--- the rank such a macro had (/cast Shadow Bolt shows and casts Rank 2 after Rank 3 is learned) until the macro's
--- text changes, so it is changed and put back, as one would by hand. The history keeps no version of it. Not in
--- combat, when macros can't be changed: after it. Retail has no ranks: nothing to do there.
+-- A new rank of a spell, yours or your pet's: the macros that cast it with no rank are saved again. In the older
+-- flavors the game keeps the rank such a macro had (/cast Shadow Bolt shows and casts Rank 2 after Rank 3 is
+-- learned) until the macro's text changes, so it is changed and put back, as one would by hand. The history keeps no
+-- version of it. Not in combat, when macros can't be changed: after it. Retail has no ranks: nothing to do there.
 local _, ns = ...
 ns = ns or {}
 
 local Ranks = {}
 ns.Ranks = Ranks
 
--- How many ranks each spell has: name -> count; spells with none are left out.
-function Ranks.Count(spells)
+-- How many ranks each spell has: name -> count; spells with none are left out. The pet's spells (`pet`: name -> the
+-- highest rank its book shows) count by that number.
+function Ranks.Count(spells, pet)
     local out = {}
     for _, s in ipairs(spells or {}) do
         if s.ranks and #s.ranks > 0 then out[s.name] = #s.ranks end
     end
+    for name, rank in pairs(pet or {}) do out[name] = math.max(out[name] or 0, rank) end
     return out
 end
 
@@ -63,9 +65,10 @@ local function Resave(scope, index)
     EditMacro(index, nil, nil, body)
 end
 
--- Spells changed: the macros of spells with a new rank are saved again.
+-- Spells changed: the macros of spells with a new rank are saved again, the pet's spells too (the Imp's Fire Shield
+-- Rank 2 left a macro on Rank 1).
 function Ranks.Update()
-    local now = Ranks.Count(ns.sources.spells())
+    local now = Ranks.Count(ns.sources.spells(), ns.sources.petRanks())
     if known then
         for _, name in ipairs(Ranks.Learned(known, now)) do due[name] = true end
     end

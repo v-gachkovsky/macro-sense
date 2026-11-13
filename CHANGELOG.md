@@ -12,6 +12,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   keeps them out of addons' sight once its chat has loaded.
 - `/1` to `/20`, a chat channel by its number (`/2 WTS ...` in Trade), are no longer marked as unknown commands:
   the rest of the line is said in that channel as it is. A number with no channel, `/21`, is marked as such.
+- A macro that casts your pet's spell now takes its new rank as soon as the pet learns it (the Imp's Fire Shield
+  Rank 2), as it does for your own spells: before, its button kept showing the old rank.
 
 ## [0.18.0] - 2026-11-12
 
