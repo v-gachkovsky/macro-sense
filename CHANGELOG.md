@@ -21,6 +21,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   imported as text.
 - A `#` line other than `#showtooltip` and `#show`, such as `# a note`, is no longer explained as said in chat, and
   its words are no longer checked as spell names: it is dimmed like a comment.
+- `#showtooltip` after spaces is no longer explained as showing the icon: the live preview and the colors never took
+  it for one.
 
 ## [0.19.0] - 2026-11-13
 
