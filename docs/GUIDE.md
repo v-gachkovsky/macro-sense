@@ -322,6 +322,7 @@ The conditions you will use most. Each of them works the other way round with `n
 | `help` / `harm` | the unit is a friend / an enemy |
 | `dead`, `exists` | the unit is dead / is there at all |
 | `mod`, `mod:shift`, `mod:ctrl`, `mod:alt` | a key is held (any, or that one) |
+| `mod:ctrlshift` | both keys are held together |
 | `combat` | you are in combat |
 | `stealth` | you are in stealth |
 | `mounted`, `flying`, `swimming`, `flyable` | you are mounted / flying / swimming / you can fly here |

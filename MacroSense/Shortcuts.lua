@@ -48,10 +48,14 @@ function Shortcuts.CmdGroups(raw)
                 local list = {}
                 for v in values:gmatch("[^/]+") do list[#list + 1] = v:lower() end
                 for _, v in ipairs(list) do
-                    if v == "cmd" then cmd = true end
+                    for _, key in ipairs(ns.Conditions.Keys(v) or { v }) do
+                        if key == "cmd" then cmd = true end
+                    end
                 end
-                -- "mod:shift/ctrl" means either one: only a single value is surely held.
-                if #list == 1 and MOD_NAMES[list[1]] then mods[MOD_NAMES[list[1]]] = true end
+                -- "mod:shift/ctrl" means either one: only a single value is surely held, keys joined all of them.
+                for _, key in ipairs(#list == 1 and (ns.Conditions.Keys(list[1]) or list) or {}) do
+                    if MOD_NAMES[key] then mods[MOD_NAMES[key]] = true end
+                end
             end
         end
         if cmd then
