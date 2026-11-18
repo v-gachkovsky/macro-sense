@@ -19,6 +19,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   the live preview leaves it out and its tooltip says it's a comment. `// a note` is one too (the game finds no
   such command and does nothing), no longer marked as an unknown command, and a guide's macro with comments can be
   imported as text.
+- A `#` line other than `#showtooltip` and `#show`, such as `# a note`, is no longer explained as said in chat, and
+  its words are no longer checked as spell names: it is dimmed like a comment.
 
 ## [0.19.0] - 2026-11-13
 

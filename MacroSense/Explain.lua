@@ -496,7 +496,7 @@ function Explain.Line(line, env)
         end
         return out
     end
-    if meta then return nil end
+    if line:find("^%s*#") then return nil end -- another "#" line runs nothing, and is not said in chat
     local cmd, rest = line:match("^%s*/(%S+)%s*(.*)$")
     if not cmd then return { L["says it in chat"] } end
     return CommandLine(cmd:lower(), rest, env)
