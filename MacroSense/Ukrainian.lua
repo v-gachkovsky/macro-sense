@@ -481,6 +481,8 @@ ns.locales.uk = {
     ["Not now"] = "Не зараз",
     ["%s instead of %s: %s"] = "%s замість %s: %s",
     ["%s (for all characters)"] = "%s (для всіх персонажів)",
+    ["could not put %s into \"%s\": it would be longer than %d characters"] =
+        "не вдалося вписати %s у «%s»: макрос був би довшим за %d символів",
     ["Backups"] = "Бекапи",
     ["Your macros are saved by themselves the first time you log in each day, if they changed since. You can also "
         .. "make a backup yourself, any time. To get your macros back as they were, just pick a backup. Each "
