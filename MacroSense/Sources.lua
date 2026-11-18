@@ -148,6 +148,11 @@ local function secureNames()
     return out
 end
 
+-- How many commands and chat types the game has now. One more than when the list was made: an addon registered it
+-- since (its login came after MacroSense's, which reads the macros on the bars), and the list is made again.
+local commandCount
+local function CommandCount() return #Keys(SlashCmdList) + #Keys(ChatTypeInfo) end
+
 function ns.sources.commands()
     if commandCache then return commandCache end
     local seen, out = {}, {}
@@ -176,7 +181,7 @@ function ns.sources.commands()
     end
     table.sort(extra)
     for _, name in ipairs(extra) do add(name) end
-    commandCache = out
+    commandCache, commandCount = out, CommandCount()
     return out
 end
 
@@ -233,7 +238,11 @@ function ns.Highlight.isCommand(name)
         commandSet, commandSetFor = {}, list
         for _, c in ipairs(list) do commandSet[c.name] = true end
     end
-    return commandSet[name] or isSecure(name)
+    if commandSet[name] or isSecure(name) then return true end
+    -- Not in the list: the game may have more commands than when it was made.
+    if CommandCount() == commandCount then return false end
+    ns.InvalidateSources("commands")
+    return ns.Highlight.isCommand(name)
 end
 
 ------------------------------------------------------------------------

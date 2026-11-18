@@ -2210,6 +2210,15 @@ check("chat is a command", kindOf("/say hi", "/say") == "command")
 -- The game's own commands and chat types, which it hides from pairs ("/tm 8" and "/g" were marked unknown).
 check("a command the game hides is a command", kindOf("/tm 8", "/tm") == "command")
 check("a chat type the game hides is a command", kindOf("/g hi", "/g") == "command")
+-- An addon's command registered after the list was made (its login came after MacroSense's, which reads the macros
+-- on the bars) is a command as soon as it is there.
+do
+    check("the list is made", ns.Highlight.isCommand("tm"))
+    SlashCmdList.LATECOMER, SLASH_LATECOMER1 = function() end, "/latecomer"
+    check("a command registered later is a command", kindOf("/latecomer", "/latecomer") == "command")
+    SlashCmdList.LATECOMER, SLASH_LATECOMER1 = nil, nil
+    ns.InvalidateSources("commands")
+end
 check("a chat type's other name says the rest as it is", #ns.Highlight.Errors("/gilde [harmm] hi") == 0)
 -- /tm by its German name: the same raid markers, help and explanation.
 do
