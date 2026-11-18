@@ -381,6 +381,9 @@ expectKinds("/cast [@focus,mod:shift] Polymorph; Fireball",
     "/cast=command [=bracket @=operator focus=unit ,=operator mod=condition :=operator shift=value ]=bracket"
     .. " Polymorph=action ;=operator Fireball=action")
 expectKinds("#showtooltip Fireball", "#showtooltip=meta Fireball=action")
+-- A comment: "--" the game skips, "//" is no command. Not said in chat, no errors.
+expectKinds("--hide previous marker", "--hide previous marker=comment")
+expectKinds("  // a note, /cast Fear", "// a note, /cast Fear=comment")
 expectKinds("/cast Fireball(Rank 3); X", "/cast=command Fireball=action (Rank 3)=value ;=operator X=action")
 expectKinds("/cast [nocombat, bogus] !Fire Ball", "/cast=command [=bracket nocombat=condition ,=operator"
     .. " bogus=error ]=bracket !=operator Fire Ball=action")
@@ -414,6 +417,7 @@ local function expectErrs(raw, want)
 end
 expectErrs("/cast [@mouseover, harm, nodead] Spell", "")     -- spaces after commas are fine (checked in game)
 expectErrs("/cast [@mouseover,harm,nodead][] Spell", "")
+expectErrs("--hide previous marker\n/tm 0\n// a note", "")
 expectErrs("/cast [harmm] Spell", 'harmm=unknown condition "harmm"@1')
 expectErrs("/cast [pvpcombat] A; [house] B; [nohouse:plot/editor] C; [house:neighborhood] D", "")
 expectErrs("/cast [house:garden] A", 'garden=invalid house value "garden" (expected inside, plot, editor or '
@@ -1071,6 +1075,7 @@ expectPreview("an empty clause casts nothing", "/cast [mod:alt]; Fear", { mods =
 expectPreview("target with a unit", "/target party1\n/focus [@mouseover,exists]", { units = { mouseover = {} } },
     "runs /target party1 | runs /focus @mouseover")
 expectPreview("lua, chat", "/run print(1)\n/s hi\nhello", {}, "runs /run | runs /s | says it in chat")
+expectPreview("comments", "--hide previous marker\n/tm 0\n  // a note", {}, " | runs /tm 0 | ")
 expectPreview("lines with errors: no note", "/cast [harmm] Fear\n/cast Fear", {}, " | Fear", nil, { [1] = true })
 expectPreview("a failing check: no note", "/cast Fear", nil, "", { parse = function() error("no") end })
 -- Colors: the spell in the action color, the unit in the unit color, quiet notes dim.
@@ -1206,6 +1211,8 @@ do
             .. "otherwise: shows the icon and tooltip of Frostbolt" },
         { "#show Hearthstone", "shows the icon of Hearthstone" },
         { "Hello there", "says it in chat" },
+        { "--hide previous marker", "a comment: the game skips this line" },
+        { "  // a note", "a comment: the game skips this line" },
         { "/cast [form:1] Maul; [form:2/0] Shred; [noform] Wrath", "in Bear Form: Maul | otherwise, in Cat Form or no "
             .. "form: Shred | otherwise, in no form: Wrath" },
         { "/cast [stance:3] X", "in form 3: X" },
@@ -2723,6 +2730,9 @@ do
     local two = S.FromText("/startattack\r\n\r\n\r\n/cast Fear", "general")
     check("text: two, named after a spell or the first command", two and #two == 2 and two[1].name == "startattack"
         and two[2].name == "Fear", two and two[1].name)
+    local noted = S.FromText("#showtooltip\n-- my note\n/cast Fear", "general")
+    check("text: a comment line in it", noted and #noted == 1 and noted[1].body == "#showtooltip\n-- my note\n"
+        .. "/cast Fear" and noted[1].name == "Fear", noted and noted[1].body)
     check("text: words around it are no macro", S.FromText("Use this macro:\n/cast Fear", "general") == nil
         and S.FromText("  \n ", "general") == nil)
     check("text: \"/\" or \"#\" alone, as it is typed or deleted, is no macro yet", S.FromText("/", "general") == nil

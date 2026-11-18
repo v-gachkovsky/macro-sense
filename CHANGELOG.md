@@ -15,6 +15,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   help on `mod` shows them, and on a Mac `[mod:cmdshift]` gets the warning about macOS shortcuts like any Cmd.
 - Another addon's command is no longer marked as unknown when that addon makes it after you log in: with a macro
   on your action bars, MacroSense read the game's commands once at login and kept them until another addon loaded.
+- A comment line, `-- a note`, is no longer shown as said in chat: the game skips it. The editor shows it dimmed,
+  the live preview leaves it out and its tooltip says it's a comment. `// a note` is one too (the game finds no
+  such command and does nothing), no longer marked as an unknown command, and a guide's macro with comments can be
+  imported as text.
 
 ## [0.19.0] - 2026-11-13
 

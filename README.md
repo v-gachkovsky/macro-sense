@@ -358,7 +358,8 @@ Next to each line, a note says what it would do if you pressed the macro right n
 - `conditions not met` when none of its conditions hold, so the line does nothing; `does nothing` when one
   holds but names no spell or item
 - the other commands it runs, by name: `runs /startattack`, `runs /target @focus`, chat and emotes
-  (`runs /yell`); `says it in chat` for a line without a command
+  (`runs /yell`); `says it in chat` for a line without a command, and nothing for a comment (`--` or `//`),
+  which the game skips
 - `stops here` for a `/stopmacro` that fires, and `not reached` for the lines after it
 - for `#showtooltip`, the icon the macro shows (`?` when nothing would be cast)
 

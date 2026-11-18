@@ -32,6 +32,7 @@ ns.TOKEN_ROLES = {
     string = "string",
     number = "number",
     error = "invalid",         -- unknown command or condition
+    comment = "dim",           -- a line the game skips: -- or //
 }
 
 -- Colors are "rrggbb". UI: bg, panel, border, selection, accent, warning, text, dim.

@@ -97,6 +97,9 @@ function Preview.Evaluate(raw, env, skip)
             local cmd, rest = line:match("^%s*/(%S+)%s*(.*)$")
             local said = line:find("%S") and not line:find("^%s*[#/]") -- a line without a command is said in chat
             meta = meta and meta:lower()
+            if ns.Parser.IsComment(line) then -- a comment: the game skips it
+                cmd, said = nil, false
+            end
             if meta == "showtooltip" or meta == "show" then
                 metas[#metas + 1] = { line = n, options = options }
             elseif stopped and (cmd or said) then
