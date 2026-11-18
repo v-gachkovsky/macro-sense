@@ -128,10 +128,12 @@ ns.locales.uk = {
     ["If not: is there an enemy under the mouse? Then Frostbolt on it."] =
         "Якщо ні: під мишею є ворог? Тоді Frostbolt у нього.",
     ["If not: Frostbolt on your target."] = "Якщо ні: Frostbolt у вашу ціль.",
-    ["The editor warns about a part that never runs: one after [], or a spell with the global cooldown below a line "
-        .. "that always casts one. When a key chooses it, Ctrl+click on the warning puts it first."] =
-        "Редактор попереджає про частину, що ніколи не спрацює: після [] або заклинання з глобальним кулдауном під "
-        .. "рядком, що завжди кастує таке. Коли її вибирає клавіша, Ctrl+клік по попередженню ставить її першою.",
+    ["The editor warns about a part that never runs, one after [], and about a spell with the global cooldown below a "
+        .. "line that always casts one: it casts only when that one can't. When a key chooses it, Ctrl+click on the "
+        .. "warning puts it first."] =
+        "Редактор попереджає про частину, що ніколи не спрацює, — після [], і про заклинання з глобальним кулдауном "
+        .. "під рядком, що завжди кастує таке: воно скаститься лише тоді, коли те не можна застосувати. Коли частину "
+        .. "вибирає клавіша, Ctrl+клік по попередженню ставить її першою.",
     ["So put the special cases first and the usual one last."] =
         "Тож особливі випадки ставте першими, а звичайний — останнім.",
     ["One press casts only one spell that starts the global cooldown. Lines after it still run if they don't need "
@@ -1127,20 +1129,16 @@ ns.locales.uk = {
         "ніколи не спрацює: частина перед нею спрацьовує завжди (у неї [] або немає умов). Поставте цю частину "
         .. "перед нею",
     ["never runs"] = "ніколи не спрацює",
-    ["won't cast: the line above always casts %s first, and its global cooldown stops this one. To choose between "
-        .. "them, put both into one /cast, this part first"] = "не скаститься: рядок вище завжди спершу кастує %s, і "
-        .. "його глобальний кулдаун зупиняє цей. Щоб вибирати між ними, поставте обидва в один /cast, цю частину "
-        .. "першою",
-    ["won't cast"] = "не скаститься",
+    ["works only when %s can't be cast (on cooldown, or not usable now): the line above tries it first, and its "
+        .. "global cooldown stops this one. To choose with a key, put both into one /cast, this part first"] =
+        "спрацює лише тоді, коли %s не можна застосувати (на кулдауні або зараз недоступне): рядок вище пробує його "
+        .. "першим, і його глобальний кулдаун зупиняє цей. Щоб вибирати клавішею, поставте обидва в один /cast, цю "
+        .. "частину першою",
+    ["only when %s can't be cast"] = "лише коли %s не можна застосувати",
     ["Ctrl+click to put the parts with a key first"] = "Ctrl+клік, щоб поставити частини з клавішею першими",
     ["Ctrl+click to put this line into the line above, first"] =
         "Ctrl+клік, щоб перенести цей рядок у рядок вище, на початок",
     ["Ctrl+click to fix it"] = "Ctrl+клік — виправити",
-    ["works only while %s is on cooldown: the line above always casts it first, and its global cooldown stops this "
-        .. "one. To choose with a key, put both into one /cast, this part first"] = "спрацює лише поки %s на "
-        .. "кулдауні: рядок вище завжди спершу кастує його, і його глобальний кулдаун зупиняє цей. Щоб вибирати "
-        .. "клавішею, поставте обидва в один /cast, цю частину першою",
-    ["only while %s is on cooldown"] = "лише поки %s на кулдауні",
     ["unknown condition \"%s\""] = "невідома умова «%s»",
     ["%s: needs a value"] = "%s: потрібне значення",
     ["%s takes no value"] = "%s не приймає значення",

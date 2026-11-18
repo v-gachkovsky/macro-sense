@@ -286,8 +286,8 @@ warning puts it first.
 Most spells start the global cooldown, the short pause after a cast. **One press casts only one such spell.**
 Lines after it still run if they don't need the cooldown: `/startattack`, `/use` for a trinket, a chat
 message. A spell with the global cooldown on a line below one that always casts such a spell is a warning too: it
-won't cast, or, when the spell above has a cooldown of its own, only while that one is on cooldown. Ctrl+click puts
-a line chosen by a key into the line above, first.
+casts only when the spell above can't, because that one is on cooldown or not usable now (Execute while the target
+has more than 20% health). Ctrl+click puts a line chosen by a key into the line above, first.
 
 ## 7. What macros can do
 

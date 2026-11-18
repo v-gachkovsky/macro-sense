@@ -546,16 +546,14 @@ local function GlobalCooldowns(raw, lines, add)
         for _, sp in ipairs(blocking and info.spells or {}) do
             local gcd = Highlight.gcdOf(sp.name)
             local extra = { fix = merged.fix, fixFrom = merged.fixFrom, fixTo = merged.fixTo, fixTip = merged.fixTip }
-            if (gcd == "gcd" or gcd == "cooldown") and blocking.kind == "gcd" then
-                extra.short = L["won't cast"]
-                add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["won't cast: the line above always casts "
-                    .. "%s first, and its global cooldown stops this one. To choose between them, put both into one "
-                    .. "/cast, this part first"], blocking.names), "warning", extra)
-            elseif gcd == "gcd" or gcd == "cooldown" then
-                extra.short = string.format(L["only while %s is on cooldown"], blocking.names)
-                add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only while %s is on cooldown: the "
-                    .. "line above always casts it first, and its global cooldown stops this one. To choose with a "
-                    .. "key, put both into one /cast, this part first"], blocking.names), "warning", extra)
+            -- Only when the one above can't be cast: on cooldown, or not usable now (Execute above 20% health
+            -- starts no global cooldown, so "/cast Execute" then "/cast Bloodthirst" casts one or the other).
+            if gcd == "gcd" or gcd == "cooldown" then
+                extra.short = string.format(L["only when %s can't be cast"], blocking.names)
+                add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only when %s can't be cast (on "
+                    .. "cooldown, or not usable now): the line above tries it first, and its global cooldown stops "
+                    .. "this one. To choose with a key, put both into one /cast, this part first"], blocking.names),
+                    "warning", extra)
             end
         end
         -- One that never lets the lines after cast is the stronger.

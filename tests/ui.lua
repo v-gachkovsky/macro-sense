@@ -5880,7 +5880,8 @@ do
     check("gcd: as the game gives it", G("Arcane Shot") == "gcd" and G("Aimed Shot") == "cooldown"
         and G("Berserking") == "free" and G("Fireballl") == nil)
     local e = ns.Highlight.Errors("/cast Arcane Shot\n/cast [mod:alt] Hunter's Mark")[1]
-    check("gcd: the line after is a warning", e and e.severity == "warning" and e.short == "won't cast" and e.line == 2)
+    check("gcd: the line after is a warning", e and e.severity == "warning"
+        and e.short == "only when Arcane Shot can't be cast" and e.line == 2, e and e.short)
     base[1][1] = 6000
     check("gcd: kept until the spells change", G("Arcane Shot") == "gcd")
     ns.InvalidateSources("spells")
