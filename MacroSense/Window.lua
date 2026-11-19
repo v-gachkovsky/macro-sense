@@ -887,6 +887,22 @@ local function MakeMacro(scope, name, icon, body)
     return index
 end
 
+-- Macro `index` of tab `scope` given `body` as MacroSense keeps it, and `icon`, as MakeMacro makes one: the game's
+-- has the names for @tank and @heal, and gets the new ones from then on. Its index, or nil when the game took none.
+local function ChangeMacro(scope, index, icon, body)
+    local name = GetMacroInfo(index)
+    local written = ns.Roles.Fill(body)
+    if Letters(written) > MAX_BODY then written = ns.Conditions.Fill(body, {}) end
+    local undo = ns.Roles.Saved(scope, nil, name, body, written) -- known before the game tells of it
+    local now = EditMacro(index, nil, icon, written)
+    if not now or now == 0 then
+        undo()
+        return nil
+    end
+    ns.Roles.Saved(scope, nil, name, body, select(3, GetMacroInfo(now)))
+    return now
+end
+
 -- With macro sets on and no free slot, a new character macro is kept behind the scenes, in this character's: under a
 -- name free in the game and there. Opened, and told in the chat (`quiet`: neither). Returns its name.
 function Window.MakeBehind(name, icon, body, quiet)
@@ -1238,7 +1254,7 @@ for key, value in pairs({
     ShowFound = ShowFound, LockMark = LockMark, Locked = Locked,
     MacroRange = MacroRange, IndexIn = IndexIn, Letters = Letters, TabName = TabName, When = When, Load = Load,
     Guard = Guard, Full = Full, FreeName = FreeName, FirstLetters = FirstLetters, Macros = Macros,
-    MakeMacro = MakeMacro,
+    MakeMacro = MakeMacro, ChangeMacro = ChangeMacro,
 }) do shared[key] = value end
 
 ------------------------------------------------------------------------

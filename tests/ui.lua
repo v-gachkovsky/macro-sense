@@ -7905,6 +7905,59 @@ do
     Wait(1.1)
 end
 
+-- A backup keeps the texts as MacroSense shows them, with @tank and @heal: restored, a macro gets them back, the
+-- game's macro the names of your group now, and keeps up with them.
+do
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local nameBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 and not nameBox then nameBox = o end
+    end
+    local function healer(name)
+        group.members = { { name = name, role = "HEALER" } }
+        Send("GROUP_ROSTER_UPDATE")
+        Wait(1.1)
+    end
+    healer("Ann")
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    local tagged = "/cast [@heal,help] Flash Heal"
+    ns.Window.New()
+    nameBox:SetText("Bk Heal")
+    ns.Window.Restore(tagged)
+    ns.Window.Save()
+    local backups = #ns.char.backups
+    ns.Window.BackupNow()
+    local backup = ns.char.backups[#ns.char.backups]
+    local kept
+    for _, m in ipairs(backup.macros) do
+        if m.name == "Bk Heal" then kept = m end
+    end
+    check("backup, tags: it keeps @heal", kept and kept.body == tagged, kept and kept.body)
+    ns.Window.Restore(tagged .. "\n/sit")
+    ns.Window.Save()
+    healer("Bea")
+    ns.Window.RestoreBackup(backup)
+    check("backup, tags: restored with @heal, the healer now in the game's", body("Bk Heal")
+        == "/cast [@Bea,help] Flash Heal" and raw() == tagged, body("Bk Heal"))
+    DeleteMacro(GetMacroIndexByName("Bk Heal"))
+    Send("UPDATE_MACROS")
+    ns.Window.RestoreBackup(backup)
+    healer("Cid")
+    check("backup, tags: made again with @heal, and kept up", body("Bk Heal") == "/cast [@Cid,help] Flash Heal"
+        and ns.Roles.Text("general", "Bk Heal", body("Bk Heal")) == tagged, body("Bk Heal"))
+    DeleteMacro(GetMacroIndexByName("Bk Heal"))
+    Send("UPDATE_MACROS")
+    local trash = ns.History.Trash("general")
+    for i = #trash, 1, -1 do
+        if trash[i].name == "Bk Heal" then table.remove(trash, i) end
+    end
+    while #ns.char.backups > backups do table.remove(ns.char.backups) end
+    group.members = {}
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"

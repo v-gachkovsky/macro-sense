@@ -36,6 +36,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   `@heal`: brought back or copied in, they had the names of that time (or `@none`) in their place. Those kept
   before this version still have the names. Another character's macro kept behind the scenes, copied in, went into
   the game with `@tank` itself, which the game doesn't know: now it gets the names of your group.
+- A backup keeps `@tank` and `@heal`: restored, a macro with them got the names of that time (or `@none`) in their
+  place, and no longer followed your group. Backups made before this version still have the names.
 
 ## [0.19.0] - 2026-11-13
 

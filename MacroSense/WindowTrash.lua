@@ -8,7 +8,7 @@ local state = shared.state
 local NEW_ICON = shared.NEW_ICON
 local MacroRange, IndexIn, TabName, When = shared.MacroRange, shared.IndexIn, shared.TabName, shared.When
 local Load, Guard, Full, FreeName = shared.Load, shared.Guard, shared.Full, shared.FreeName
-local Macros, MakeMacro = shared.Macros, shared.MakeMacro
+local Macros, MakeMacro, ChangeMacro = shared.Macros, shared.MakeMacro, shared.ChangeMacro
 
 ------------------------------------------------------------------------
 -- Trash: macros deleted anywhere, to bring back (History.lua keeps them)
@@ -110,9 +110,10 @@ local function BackupList()
     return ns.char.backups
 end
 
--- What a backup holds: the macros in the game, and with the sets on those behind the scenes, each in its set.
+-- What a backup holds: the macros in the game, and with the sets on those behind the scenes, each in its set. Each
+-- text as MacroSense shows it: with @tank and @heal, not the names of your group then.
 local function All()
-    local out = Macros()
+    local out = Macros(nil, true)
     if ns.Sets.Mine().enabled then
         for _, c in ipairs((ns.Sets.OffChoice())) do
             out[#out + 1] = { scope = "stored", set = c.id, name = c.m.name, icon = c.m.icon, body = c.m.body or "" }
@@ -143,10 +144,10 @@ function Window.RestoreBackup(backup)
         end
         local plan = ns.Backups.Plan(backup.macros, All(), room)
         local back, again = 0, 0
+        -- With @tank and @heal: the game's macros get the names of your group now.
         for _, m in ipairs(plan.back) do
             if m.scope ~= "stored" then
-                EditMacro(IndexIn(m.scope, m.name), m.name, m.icon, m.body)
-                back = back + 1
+                if ChangeMacro(m.scope, IndexIn(m.scope, m.name), m.icon, m.body) then back = back + 1 end
             elseif ns.Sets.Write(m.set, m.name, m.name, m.icon, m.body) then
                 back = back + 1
             end
@@ -154,8 +155,7 @@ function Window.RestoreBackup(backup)
         -- One behind the scenes comes back there; not with the sets off, nor when its set has it in the game now.
         for _, m in ipairs(plan.again) do
             if m.scope ~= "stored" then
-                CreateMacro(m.name, m.icon or NEW_ICON, m.body, m.scope == "character")
-                again = again + 1
+                if MakeMacro(m.scope, m.name, m.icon, m.body) then again = again + 1 end
             elseif ns.Sets.Write(m.set, nil, m.name, m.icon or NEW_ICON, m.body) then
                 again = again + 1
             end
