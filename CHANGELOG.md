@@ -30,6 +30,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
   (or `@none`) in their place when you save, copy or change it with "Replace all": it could come back that way, a
   class macro at your next login. The tag macro open in the editor no longer shows the names in place of `@tank`
   and `@heal` once a name goes in, so saving it from there keeps them.
+- A macro with `@tank` or `@heal` renamed in the game's macro window no longer shows the names (or `@none`) in
+  their place until your group changes: saved from there, it lost them. It keeps them at once.
 
 ## [0.19.0] - 2026-11-13
 

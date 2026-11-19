@@ -123,6 +123,30 @@ local function Find(scope, name, written, store)
     if renamed then return renamed, (GetMacroInfo(renamed)) end
 end
 
+-- The macros changed (UPDATE_MACROS): one renamed elsewhere (the game's macro window, another addon) is followed at
+-- once, as Roles.Update follows it, so what MacroSense shows of it keeps the tags until the group changes. Nothing
+-- is written, nothing let go.
+function Roles.Follow()
+    for _, scope in ipairs({ "general", "character" }) do
+        local store = Store(scope)
+        local first, last = Range(scope)
+        local have = {}
+        for index = first, last do
+            local name = GetMacroInfo(index)
+            if name then have[name] = true end
+        end
+        local gone = {}
+        for name in pairs(store) do
+            if not have[name] then gone[#gone + 1] = name end
+        end
+        table.sort(gone)
+        for _, name in ipairs(gone) do
+            local index, now = Find(scope, name, store[name].written, store)
+            if index then store[now], store[name] = store[name], nil end
+        end
+    end
+end
+
 local told = {} -- the texts too long to write, said once
 local shown -- the names last told on the screen: { tank = "Bob" }; nil before the first look of a session
 
