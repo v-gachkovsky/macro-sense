@@ -40,6 +40,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   place, and no longer followed your group. Backups made before this version still have the names.
 - A change MacroSense undoes after an error ("your macros and sets are as they were") no longer takes `@tank` and
   `@heal` from the macros it puts back.
+- A macro whose `@tank` or `@heal` has another name in the game's macro than MacroSense last wrote there keeps its
+  tags: the game may keep a change that MacroSense's saved data missed, when the game closed before saving it.
+  A unit put there instead, such as `@target`, is still taken as your own change.
 
 ## [0.19.0] - 2026-11-13
 

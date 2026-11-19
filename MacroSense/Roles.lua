@@ -2,7 +2,7 @@
 -- name of the one with the role ("/cast [@Bob,help,nodead] Misdirection"), and MacroSense keeps the text with the
 -- tags: the editor shows and saves that, and when your group changes MacroSense writes the game's macro again for
 -- the names then, out of combat, and says a new name on the screen. A macro changed outside MacroSense since is let
--- go. Needs the game.
+-- go; other names in the places of the tags are no change. Needs the game.
 local _, ns = ...
 local L = ns.L
 
@@ -74,11 +74,29 @@ end
 -- `text` as the game takes it: the names of your group now for @tank and @heal.
 function Roles.Fill(text) return ns.Conditions.Fill(text, Roles.Names()) end
 
+-- Whether `body` is `text` with a name in the place of each @tank and @heal ("Bob", "Ann-Realm", or "none"): the
+-- game's macro as MacroSense wrote it for some group, now or before. The game may keep a write that MacroSense's
+-- saved data missed (the game closed before it saved them). A unit there ("target") is no name: a change.
+local function Filled(text, body)
+    local from, at = 1, 1
+    for start, lead, tag, after in text:gmatch("()([@=])(%l+)()") do
+        if ns.Conditions.TAGS[tag] then
+            local same = text:sub(from, start - 1) .. lead
+            if body:sub(at, at + #same - 1) ~= same then return false end
+            at = at + #same
+            local name = body:match("^none", at) or body:match("^[%u\128-\255][^%s,;%[%]]*", at)
+            if not name then return false end
+            at, from = at + #name, after
+        end
+    end
+    return body:sub(at) == text:sub(from)
+end
+
 -- What MacroSense shows of macro `name` in tab `scope`, saved as `body`: its text with the tags, while the game's
 -- macro is as MacroSense wrote it.
 function Roles.Text(scope, name, body)
     local kept = Store(scope)[name]
-    return kept and kept.written == body and kept.text or body
+    return kept and (kept.written == body or Filled(kept.text, body)) and kept.text or body
 end
 
 -- MacroSense saved macro `name` (`old` before, when renamed) as `text`, the game's as `written`: kept up to date
@@ -108,17 +126,15 @@ local function Range(scope)
     return MAX_GENERAL + 1, MAX_GENERAL + character
 end
 
--- The macro of an entry in its tab: the one with its name and the text it was given, or, renamed since, one with
--- that text no other entry names. Nil once it was deleted or changed.
-local function Find(scope, name, written, store)
+-- The macro of `entry` in its tab: the one with its name and its text as MacroSense wrote it (Filled), or, renamed
+-- since, one with the text it was given that no other entry names. Nil once it was deleted or changed.
+local function Find(scope, name, entry, store)
     local first, last = Range(scope)
     local renamed
     for index = first, last do
         local n, _, body = GetMacroInfo(index)
-        if body == written then
-            if n == name then return index, n end
-            if not store[n] then renamed = index end
-        end
+        if n == name and (body == entry.written or Filled(entry.text, body or "")) then return index, n end
+        if n ~= name and body == entry.written and not store[n] then renamed = index end
     end
     if renamed then return renamed, (GetMacroInfo(renamed)) end
 end
@@ -141,7 +157,7 @@ function Roles.Follow()
         end
         table.sort(gone)
         for _, name in ipairs(gone) do
-            local index, now = Find(scope, name, store[name].written, store)
+            local index, now = Find(scope, name, store[name], store)
             if index then store[now], store[name] = store[name], nil end
         end
     end
@@ -189,10 +205,11 @@ function Roles.Update()
         table.sort(list)
         for _, name in ipairs(list) do
             local entry = store[name]
-            local index, now = Find(scope, name, entry.written, store)
+            local index, now = Find(scope, name, entry, store)
             store[name] = nil
             if index then
                 store[now] = entry
+                entry.written = select(3, GetMacroInfo(index)) -- as the game has it: maybe the names of another time
                 local text = ns.Conditions.Fill(entry.text, names)
                 if Letters(text) > MAX_BODY then
                     for tag in pairs(ns.Conditions.Tags(entry.text)) do failed[tag] = true end

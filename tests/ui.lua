@@ -7982,6 +7982,36 @@ do
     Wait(1.1)
 end
 
+-- The game's macro with other names in the places of @tank and @heal is still as MacroSense wrote it, for another
+-- group: the game kept a write that MacroSense's saved data missed (the game closed before saving it). It keeps the
+-- tags and follows the group. A unit put there instead is a change made outside: let go.
+do
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local tagged = "#showtooltip\n/cast [@heal,help][@tank,exists] Flash Heal"
+    local function named(heal, tank) return (tagged:gsub("@heal", "@" .. heal):gsub("@tank", "@" .. tank)) end
+    group.members = { { name = "Bea", role = "HEALER" } }
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+    CreateMacro("Any Heal", 1, named("none", "Bob-Silvermoon"), false)
+    ns.Roles.Saved("general", nil, "Any Heal", tagged, named("Ann", "none"))
+    Send("UPDATE_MACROS")
+    check("roles, other names: shown with the tags", ns.Roles.Text("general", "Any Heal", body("Any Heal")) == tagged,
+        body("Any Heal"))
+    ns.Roles.Update()
+    check("roles, other names: the group's names now", body("Any Heal") == named("Bea", "none")
+        and ns.Roles.Text("general", "Any Heal", body("Any Heal")) == tagged, body("Any Heal"))
+    EditMacro(GetMacroIndexByName("Any Heal"), nil, nil, named("target", "none"))
+    Send("UPDATE_MACROS")
+    ns.Roles.Update()
+    check("roles, other names: a unit there is a change, let go", ns.db.roleMacros["Any Heal"] == nil
+        and body("Any Heal") == named("target", "none"), body("Any Heal"))
+    DeleteMacro(GetMacroIndexByName("Any Heal"))
+    Send("UPDATE_MACROS")
+    group.members = {}
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"
