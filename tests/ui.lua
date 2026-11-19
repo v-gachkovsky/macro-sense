@@ -7958,6 +7958,30 @@ do
     Wait(1.1)
 end
 
+-- A change that breaks half way is undone, the macros as they were: one with @heal keeps it, and follows the group.
+do
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local tagged, ann = "/cast [@heal,help] Flash Heal", "/cast [@Ann,help] Flash Heal"
+    group.members = { { name = "Ann", role = "HEALER" } }
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+    CreateMacro("Undo Heal", 1, ann, true)
+    ns.Roles.Saved("character", nil, "Undo Heal", tagged, ann)
+    Send("UPDATE_MACROS")
+    local ok = pcall(ns.Sets.Atomic, function()
+        ns.Roles.Saved("character", nil, "Undo Heal", "/cast Flash Heal", "/cast Flash Heal")
+        EditMacro(GetMacroIndexByName("Undo Heal"), nil, nil, "/cast Flash Heal")
+        error("broken on purpose")
+    end)
+    check("undone: @heal kept", not ok and body("Undo Heal") == ann
+        and ns.Roles.Text("character", "Undo Heal", body("Undo Heal")) == tagged, body("Undo Heal"))
+    DeleteMacro(GetMacroIndexByName("Undo Heal"))
+    Send("UPDATE_MACROS")
+    group.members = {}
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"
