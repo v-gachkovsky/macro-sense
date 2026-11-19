@@ -93,7 +93,7 @@ function Preview.Evaluate(raw, env, skip)
     for line in (raw .. "\n"):gmatch("([^\n]*)\n") do
         n = n + 1
         if not (skip and skip[n]) then
-            local meta, options = line:match("^#(%a+)(.*)$")
+            local meta, options = line:match("^%s*#(%a+)(.*)$") -- after spaces too, as the game takes it
             local cmd, rest = line:match("^%s*/(%S+)%s*(.*)$")
             local said = line:find("%S") and not line:find("^%s*[#/]") -- a line without a command is said in chat
             meta = meta and meta:lower()

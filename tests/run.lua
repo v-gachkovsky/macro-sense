@@ -49,7 +49,10 @@ expect("/|", "command", "")
 expect("/ca|", "command", "ca")
 expect("#showtooltip\n/ca|", "command", "ca")
 expect("#sh|", "meta", "sh")
+-- After spaces too: the game takes #showtooltip so.
+expect("  #sh|", "meta", "sh")
 expect("#showtooltip Fire|", "action", "Fire")
+expect("  #showtooltip Fire|", "action", "Fire")
 expect("/cast [|", "condition", "")
 expect("/cast [comb|", "condition", "comb")
 expect("/cast [combat,ha|", "condition", "ha")
@@ -381,9 +384,12 @@ expectKinds("/cast [@focus,mod:shift] Polymorph; Fireball",
     "/cast=command [=bracket @=operator focus=unit ,=operator mod=condition :=operator shift=value ]=bracket"
     .. " Polymorph=action ;=operator Fireball=action")
 expectKinds("#showtooltip Fireball", "#showtooltip=meta Fireball=action")
+-- After spaces too, as the game takes it.
+expectKinds("  #showtooltip Fireball", "#showtooltip=meta Fireball=action")
 -- Another "#" line runs nothing: no directive, its words no spell names.
 expectKinds("#my Fireball macro", "#my Fireball macro=comment")
 expectKinds("# a note", "# a note=comment")
+expectKinds("  # a note", "# a note=comment")
 -- A comment: "--" the game skips, "//" is no command. Not said in chat, no errors.
 expectKinds("--hide previous marker", "--hide previous marker=comment")
 expectKinds("  // a note, /cast Fear", "// a note, /cast Fear=comment")
@@ -1006,6 +1012,8 @@ expectPreview("demons, cmd", fixtures.demons, { mods = { cmd = true } },
 expectPreview("drains, alt", fixtures.drains, { mods = { alt = true } }, "icon: Drain Soul | conditions not met | Drain Soul | conditions not met")
 -- @mouseover: only a living enemy under the mouse takes the first branch.
 expectPreview("agony, no mouseover", fixtures.agony, {}, "icon: Bane of Agony | Bane of Agony")
+-- #showtooltip after spaces: the game shows its icon.
+expectPreview("#showtooltip after spaces", "  #showtooltip Fear\n/cast Shadow Bolt", {}, "icon: Fear | Shadow Bolt")
 expectPreview("agony on an enemy", fixtures.agony, { units = { mouseover = harmful } },
     "icon: Bane of Agony | Bane of Agony @mouseover")
 expectPreview("agony on a dead enemy", fixtures.agony, { units = { mouseover = { harm = true, dead = true } } },
@@ -1217,11 +1225,10 @@ do
         { "#showtooltip [mod:shift] Polymorph; Frostbolt", "with Shift held: shows the icon and tooltip of Polymorph | "
             .. "otherwise: shows the icon and tooltip of Frostbolt" },
         { "#show Hearthstone", "shows the icon of Hearthstone" },
+        { "  #show Hearthstone", "shows the icon of Hearthstone" },
         { "Hello there", "says it in chat" },
         { "--hide previous marker", "a comment: the game skips this line" },
         { "# a note", "(none)" },
-        -- Not at the start of its line: no directive, as the preview and the colors take it.
-        { "  #showtooltip", "(none)" },
         { "#", "(none)" },
         { "  // a note", "a comment: the game skips this line" },
         { "/cast [form:1] Maul; [form:2/0] Shred; [noform] Wrath", "in Bear Form: Maul | otherwise, in Cat Form or no "
