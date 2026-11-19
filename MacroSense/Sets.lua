@@ -1505,7 +1505,8 @@ local depth = 0
 local function Snapshot()
     local c = ns.Character()
     return { sets = Copy(c.sets), class = Copy(ClassList()), macros = AllMacros(), buttons = Buttons(),
-        seen = Copy(seen), expect = Copy(expect), fresh = Copy(fresh) }
+        seen = Copy(seen), expect = Copy(expect), fresh = Copy(fresh),
+        roles = { general = Copy(ns.db.roleMacros), character = Copy(ns.char.roleMacros) } }
 end
 
 local function Restore(snap)
@@ -1515,6 +1516,8 @@ local function Restore(snap)
     if c.sets and lines then c.sets.log = lines end
     ns.db.classMacros[ns.Character().class or "?"] = snap.class
     seen, expect, fresh = snap.seen, snap.expect, snap.fresh
+    -- The macros with @tank and @heal (Roles.lua) as they were, for the texts that come back.
+    ns.db.roleMacros, ns.char.roleMacros = snap.roles.general, snap.roles.character
     if InCombatLockdown() then return Log("undone in the sets only: in combat, the macros can't be changed") end
     busy = true
     local ok, err = pcall(function()
