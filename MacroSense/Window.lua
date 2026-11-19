@@ -1100,8 +1100,8 @@ function Window.CopyIn(scope, m)
     end
     Guard(function()
         local name = FreeName(FirstLetters(m.name, MAX_NAME))
-        local made = CreateMacro(name, m.icon or NEW_ICON, m.body, scope == "character")
-        if not made or made == 0 then return ns.Print("could not copy the macro") end
+        -- Kept with @tank and @heal: the game's gets the names of your group.
+        if not MakeMacro(scope, name, m.icon, m.body) then return ns.Print("could not copy the macro") end
         ns.History.Scan()
         state.scope, ns.db.scope = scope, scope
         Load(IndexIn(scope, name))

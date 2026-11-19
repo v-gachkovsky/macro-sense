@@ -174,12 +174,17 @@ local function MoveNote(from, old, to, new)
 end
 History.MoveNote = MoveNote
 
+-- The macros now, each text as MacroSense shows it: with @tank and @heal (Roles.lua), so the versions, the trash and
+-- your other characters' copies keep the tags, not the names of your group then.
+local function Text(scope, name, body)
+    return ns.Roles and ns.Roles.Text(scope, name, body) or body
+end
 local function Macros()
     local now = { general = {}, character = {} }
     local general, character = GetNumMacros()
     local function add(scope, index)
         local name, _, body = GetMacroInfo(index)
-        if name then now[scope][name] = { body = body or "", icon = ns.MacroIcon(index) } end
+        if name then now[scope][name] = { body = Text(scope, name, body or ""), icon = ns.MacroIcon(index) } end
     end
     for index = 1, general do add("general", index) end
     for index = MAX_GENERAL + 1, MAX_GENERAL + character do add("character", index) end
@@ -236,9 +241,9 @@ end
 function History.Settle() known = Macros() end
 
 -- MacroSense wrote macro `name` again by itself (your group's new tank, Roles.lua): the text it replaced is no
--- version to keep.
+-- version to keep. `body`: the game's text.
 function History.Rewritten(scope, name, body)
-    if known and known[scope][name] then known[scope][name].body = body end
+    if known and known[scope][name] then known[scope][name].body = Text(scope, name, body) end
 end
 
 -- This editor is about to rename a macro: its versions and its last text go with the name.

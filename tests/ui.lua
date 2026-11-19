@@ -7852,6 +7852,59 @@ do
     Wait(1.1)
 end
 
+-- The history keeps the texts as MacroSense shows them, with @tank and @heal: a version, a macro in the trash and
+-- the copy your other characters see keep the tags, and come back with them, the game's macro with the names.
+do
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local nameBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 and not nameBox then nameBox = o end
+    end
+    group.members = { { name = "Ann", role = "HEALER" } }
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("character")
+    local tagged = "/cast [@heal,help] Flash Heal"
+    local ann = "/cast [@Ann,help] Flash Heal"
+    ns.Window.New()
+    nameBox:SetText("Hist Heal")
+    ns.Window.Restore(tagged)
+    ns.Window.Save()
+    ns.Window.Restore(tagged .. "\n/sit")
+    ns.Window.Save()
+    local versions = ns.History.Versions(ns.History.Store("character"), "Hist Heal", tagged .. "\n/sit")
+    check("history, tags: a version keeps @heal", #versions == 1 and versions[1].body == tagged,
+        versions[1] and versions[1].body)
+    local mine = ns.Character().macros["Hist Heal"]
+    check("history, tags: your other characters see @heal", mine and mine.body == tagged .. "\n/sit",
+        mine and mine.body)
+    ns.Window.Delete(GetMacroIndexByName("Hist Heal"))
+    Send("UPDATE_MACROS")
+    local trash = ns.History.Trash("character")
+    local entry = trash[#trash]
+    check("history, tags: the trash keeps @heal", entry and entry.name == "Hist Heal"
+        and entry.body == tagged .. "\n/sit", entry and entry.body)
+    ns.Window.Undelete("character", entry)
+    check("history, tags: back from the trash with @heal", raw() == tagged .. "\n/sit"
+        and body("Hist Heal") == ann .. "\n/sit", raw())
+    -- Another character's macro, copied in: the names of your group go in.
+    ns.Window.CopyIn("general", { name = "Alt Heal", icon = 1, body = tagged })
+    check("history, tags: another character's macro copied", raw() == tagged and body("Alt Heal") == ann,
+        body("Alt Heal"))
+    for _, name in ipairs({ "Hist Heal", "Alt Heal" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    Send("UPDATE_MACROS")
+    for _, scope in ipairs({ "general", "character" }) do
+        local list = ns.History.Trash(scope)
+        for i = #list, 1, -1 do
+            if list[i].name == "Hist Heal" or list[i].name == "Alt Heal" then table.remove(list, i) end
+        end
+    end
+    group.members = {}
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"
