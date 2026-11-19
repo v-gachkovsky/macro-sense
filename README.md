@@ -317,11 +317,11 @@ an empty `[]` removes both.
 - A part that never runs is a warning: in `/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark`
   the game always stops at `[]` (empty brackets are always true, and so is a part with no conditions), so
   the Alt part has to come first, and Ctrl+click puts it there. The same for a line after one that always
-  casts a spell with the global cooldown: that cooldown stops the spells with it below, so the warning says the
-  line below works only when the spell above can't be cast, on cooldown or not usable now (Execute above 20%
-  health starts no global cooldown). A spell below without the global cooldown is fine. When a key chooses each
-  part of the line below (`[mod:alt]`), Ctrl+click moves them into the line above, first; without a key it is not
-  clear what the macro was meant to do, and nothing is changed.
+  casts a spell with the global cooldown: the game tries that spell first on every press, and the spells with
+  the global cooldown below never cast, even while the spell above is on cooldown. A spell below without the
+  global cooldown is fine. When a key chooses each part of the line below (`[mod:alt]`), Ctrl+click moves them
+  into the line above, first; without a key it is not clear what the macro was meant to do, and nothing is
+  changed.
 - In the macro list, a macro with errors has a red name and the warning sign, one with only warnings a
   yellow name; hover it to see the issues. The marks follow the saved text. **With mistakes** under the search
   keeps only those, from every macro at once; the tabs say how many each has.

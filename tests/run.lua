@@ -723,14 +723,14 @@ expectErrs("/cast [ ] A; B", "B=" .. NEVER .. "@1")
 expectErrs("/cast [mod:alt] Hunter's Mark; [@mouseover,harm,nodead][] Arcane Shot", "")
 expectErrs("/cast [mod] A; B; ", "")
 expectErrs("/castsequence reset=10 A, B", "")
--- A line that always casts a spell with the global cooldown: the spells with it in the lines after cast only when
--- that one can't (on cooldown, or not usable now: Execute above 20% health starts no global cooldown).
+-- A line that always casts a spell with the global cooldown and no cooldown of its own: the spells with it in the
+-- lines after don't cast.
 do
     local GCD = { ["Arcane Shot"] = "gcd", ["Hunter's Mark"] = "gcd", ["Aimed Shot"] = "cooldown",
         Berserking = "free", ["Kill Command"] = "cooldown" }
     H.gcdOf = function(name) return GCD[name] end
-    local WONT = "works only when %s can't be cast (on cooldown, or not usable now): the line above tries it first, "
-        .. "and its global cooldown stops this one. To choose with a key, put both into one /cast, this part first"
+    local WONT = "won't cast: the line above always casts %s first, and its global cooldown stops this one. To "
+        .. "choose between them, put both into one /cast, this part first"
     expectErrs("#showtooltip\n/cast [@mouseover,harm][] Arcane Shot;\n/cast [mod:alt] Hunter's Mark",
         "Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")
     expectErrs("/cast Arcane Shot\n/startattack\n/cast Kill Command", "Kill Command=" .. WONT:format("Arcane Shot")
@@ -739,13 +739,15 @@ do
         "Aimed Shot=" .. WONT:format("Hunter's Mark or Arcane Shot") .. "@2")
     expectErrs("/cast Berserking\n/cast Arcane Shot", "")                -- no global cooldown: the next one casts
     expectErrs("/cast Arcane Shot\n/cast Berserking", "")
-    -- A spell above with a cooldown of its own: the line below casts while it waits, the same words.
-    local ONLY = WONT
-    expectErrs("/cast Aimed Shot\n/cast [mod:alt] Hunter's Mark", "Hunter's Mark=" .. ONLY:format("Aimed Shot") .. "@2")
-    check("gcd: said short, with the spell", H.Errors("/cast Aimed Shot\n/cast Arcane Shot")[1].short
-        == "only when Aimed Shot can't be cast", H.Errors("/cast Aimed Shot\n/cast Arcane Shot")[1].short)
-    expectErrs("/cast Aimed Shot\n/cast Arcane Shot\n/cast Hunter's Mark", "Arcane Shot=" .. ONLY:format("Aimed Shot")
-        .. "@2 | Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")  -- Arcane Shot always casts when it can
+    -- A spell above with a cooldown of its own: the line below doesn't cast while it waits either. The game tries the
+    -- one above each time and stops there (tested in game: Shadow Ward on cooldown, Life Tap below it didn't cast).
+    local TRIES = "won't cast: the line above always tries %s first, and that stops this one, even while it's on "
+        .. "cooldown. To choose between them, put both into one /cast, this part first"
+    expectErrs("/cast Aimed Shot\n/cast [mod:alt] Hunter's Mark",
+        "Hunter's Mark=" .. TRIES:format("Aimed Shot") .. "@2")
+    check("gcd: said short", H.Errors("/cast Aimed Shot\n/cast Arcane Shot")[1].short == "won't cast")
+    expectErrs("/cast Aimed Shot\n/cast Arcane Shot\n/cast Hunter's Mark", "Arcane Shot=" .. TRIES:format("Aimed Shot")
+        .. "@2 | Hunter's Mark=" .. TRIES:format("Aimed Shot") .. "@3")  -- the first one stops them all
     expectErrs("/cast Arcane Shot\n/cast Aimed Shot\n/cast Hunter's Mark", "Aimed Shot=" .. WONT:format("Arcane Shot")
         .. "@2 | Hunter's Mark=" .. WONT:format("Arcane Shot") .. "@3")
     expectErrs("/cast [mod:alt] Arcane Shot\n/cast Hunter's Mark", "")    -- not always
