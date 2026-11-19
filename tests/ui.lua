@@ -2182,6 +2182,50 @@ do
     NextFrame()
 end
 
+-- "What if" for a macro with @tank or @heal: a row for your group's tank and healer, each while its tag is in the
+-- text, and the notes as set up there, with @tank in them.
+do
+    local function notes()
+        local shown = {}
+        for _, o in ipairs(created) do
+            if o.isNote and o:IsShown() then shown[#shown + 1] = o end
+        end
+        table.sort(shown, function(a, b) return a.point[5] > b.point[5] end)
+        local texts = {}
+        for i, o in ipairs(shown) do texts[i] = ns.Highlight.Strip(o.text) end
+        return table.concat(texts, " | ")
+    end
+    local function label(text)
+        for _, o in ipairs(created) do
+            if o.kind == "FontString" and o.text == text then return o end
+        end
+    end
+    local function shown(text) return label(text) ~= nil and label(text):IsShown() end
+    local preview, whatIf = ns.db.preview, ns.db.whatIf
+    ns.db.preview, ns.db.whatIf = true, true
+    ns.Window.RefreshWhatIf()
+    Blank()
+    Type("/cast Smite")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(0.2)
+    check("what if: no @tank or @heal, no row for them", label("Tank") ~= nil and not shown("Tank")
+        and not shown("Healer"))
+    Blank()
+    Type("/cast [@tank,help,nodead] Flash Heal; Smite")
+    Key("ESCAPE", "OnEscapePressed")
+    Wait(0.2)
+    check("what if: @tank, its row", shown("Tank") and not shown("Healer") and notes() == "Flash Heal @tank", notes())
+    local moment = ns.Window.WhatIfMoment()
+    moment.units.tank = "deadfriend"
+    ns.Window.RefreshPreview()
+    check("what if: the tank dead", notes() == "Smite", notes())
+    moment.units.tank = "friend"
+    ns.db.preview, ns.db.whatIf = preview, whatIf
+    ns.Window.RefreshWhatIf()
+    ns.Window.Select(1)
+    NextFrame()
+end
+
 -- A command that runs is named in the live preview, in the color commands have in the text.
 do
     Blank()

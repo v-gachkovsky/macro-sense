@@ -362,9 +362,11 @@ local function UpdatePreview()
         if e.severity == "error" then skip[e.line] = true end
     end
     -- As the game would run it: with the names of your group's tank and healer.
-    -- "What if" on: the moment set up by hand instead of the game's now (WindowWhatIf.lua).
-    local env = Window.PreviewEnv and Window.PreviewEnv() or ns.previewEnv
-    local results = ns.Preview.Evaluate(ns.Roles.Fill(code:GetRaw()), env, skip)
+    -- "What if" on: the moment set up by hand instead of the game's now (WindowWhatIf.lua), @tank and @heal too.
+    local raw = code:GetRaw()
+    local whatIf = Window.PreviewEnv and Window.PreviewEnv()
+    if Window.WhatIfTags then Window.WhatIfTags(ns.Conditions.Tags(raw)) end
+    local results = ns.Preview.Evaluate(whatIf and raw or ns.Roles.Fill(raw), whatIf or ns.previewEnv, skip)
     local notes = {}
     for i = 1, results.n do notes[i] = ns.Preview.Note(results[i], noteColors) end
     code:SetLineNotes(notes)

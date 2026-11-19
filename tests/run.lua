@@ -997,6 +997,15 @@ do
     verdict("a heal on the mouseover, nobody", "/cast [@mouseover] Flash Heal", {},
         "Flash Heal @mouseover  won't cast: nobody is under the mouse")
     verdict("not known what it is for: as it is", "/cast Life Tap", { target = "friend" }, "Life Tap")
+    -- Your group's tank and healer set up too: @tank and @heal, MacroSense's own, are units here.
+    local healing = "/cast [@tank,help,nodead] Flash Heal; [@heal,help,nodead] Renew; Smite"
+    verdict("the tank there", healing, {}, "Flash Heal @tank")
+    verdict("the tank dead, the healer there", healing, { tank = "deadfriend" }, "Renew @heal")
+    verdict("no tank, no healer", healing, { tank = "none", heal = "none" }, "Smite")
+    verdict("a heal on the tank, nobody", "/cast [@tank] Flash Heal", { tank = "none" },
+        "Flash Heal @tank  won't cast: your group has no tank")
+    verdict("a spell for enemies on the healer", "/cast [@heal] Bane of Agony", {},
+        "Bane of Agony @heal  won't cast: the healer is a friend")
     -- Not set up here: the game's answer, for the unit of the group.
     local asked = {}
     local real = function(cond, unit) asked[#asked + 1] = cond .. "@" .. unit; return false end

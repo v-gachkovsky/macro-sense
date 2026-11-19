@@ -1,6 +1,7 @@
 -- "What if", by Live preview: the notes next to the lines for a moment you set up yourself (WhatIf.lua) instead
 -- of the game's now. The keys held, combat, and who your target, mouseover and focus are; with the editor open the
--- mouse can't be over someone in the world, so this is how a mouseover macro is checked.
+-- mouse can't be over someone in the world, so this is how a mouseover macro is checked. For a macro with @tank or
+-- @heal, your group's tank and healer too, in a row of their own.
 local _, ns = ...
 local L = ns.L
 
@@ -8,14 +9,18 @@ local Window = ns.Window
 
 local ROW = 26
 local moment = ns.WhatIf.Fresh() -- for the session: the editor opened again keeps it
-local strip, editorBg, bar, keysRow, unitsRow, hint
+local strip, editorBg, bar, keysRow, unitsRow, rolesRow, hint
 local controls = {}
+local roleParts = {} -- tank / heal -> { label, dropdown }
+local tags = {} -- the tags in the macro shown: { tank = true }
 
 -- The env for Preview.Evaluate: the moment set up, while "What if" is on; else nil (the game's now).
 function Window.PreviewEnv()
     if not (ns.db.preview and ns.db.whatIf) then return nil end
     -- What the moment doesn't set up, the game tells: one condition, for the unit of its group.
     local function real(cond, unit)
+        -- @tank and @heal: the one with the role in your group now, as the game's macro names them.
+        if unit == "tank" or unit == "heal" then unit = ns.Roles.Names()[unit] or "none" end
         local ok, action = pcall(SecureCmdOptionParse, "[@" .. unit .. "," .. cond .. "] x")
         return ok and action == "x"
     end
@@ -30,7 +35,22 @@ function Window.RefreshWhatIf()
     keysRow:SetShown(on)
     unitsRow:SetShown(on)
     hint:SetShown(not on)
-    strip:SetHeight(on and 2 * ROW or ROW)
+    -- The tank and the healer, each while the macro has its tag, one after the other.
+    local prev
+    for _, role in ipairs(ns.WhatIf.ROLES) do
+        local part = roleParts[role]
+        local shown = tags[role] == true
+        part.label:SetShown(shown)
+        part.dropdown:SetShown(shown)
+        if shown then
+            part.label:ClearAllPoints()
+            if prev then part.label:SetPoint("LEFT", prev, "RIGHT", 12, 0) else part.label:SetPoint("LEFT", 0, 0) end
+            prev = part.dropdown
+        end
+    end
+    local roles = on and prev ~= nil
+    rolesRow:SetShown(roles)
+    strip:SetHeight(on and (roles and 3 or 2) * ROW or ROW)
     editorBg:ClearAllPoints()
     editorBg:SetPoint("TOPLEFT", 12, -58)
     editorBg:SetPoint("BOTTOMRIGHT", live and strip or bar, "TOPRIGHT", live and 0 or -12, live and 4 or 10)
@@ -39,6 +59,13 @@ end
 
 local function Changed()
     Window.RefreshPreview()
+end
+
+-- The tags in the macro shown, as the preview finds them: its row follows.
+function Window.WhatIfTags(now)
+    if (now.tank == true) == (tags.tank == true) and (now.heal == true) == (tags.heal == true) then return end
+    tags = now
+    Window.RefreshWhatIf()
 end
 
 -- Made with the window (Window.lua), over the status bar `barFrame`, the editor `bg` above it.
@@ -58,9 +85,10 @@ function Window.BuildWhatIf(main, bg, barFrame)
     check:HookScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         GameTooltip:AddLine(L["What if"], 1, 1, 1)
-        GameTooltip:AddLine(L["The notes next to the lines for a moment you set up: the keys held, combat, and who "
-            .. "your target, mouseover and focus are. With the editor open your mouse can't be over someone, so this "
-            .. "is how to check a mouseover macro. Anything else the macro checks is as in the game now."],
+        GameTooltip:AddLine(L["The notes next to the lines for a moment you set up: the keys held, combat, who your "
+            .. "target, mouseover and focus are, and for a macro with @tank or @heal, your group's tank and healer. "
+            .. "With the editor open your mouse can't be over someone, so this is how to check a mouseover macro. "
+            .. "Anything else the macro checks is as in the game now."],
             0.8, 0.8, 0.8, true)
         GameTooltip:Show()
     end)
@@ -115,6 +143,28 @@ function Window.BuildWhatIf(main, bg, barFrame)
         d:SetPoint("LEFT", label, "RIGHT", 6, 0)
         controls[unit] = d
         prev = d
+    end
+
+    -- Your group's tank and healer, below: shown for a macro with @tank or @heal (RefreshWhatIf lays them out).
+    rolesRow = CreateFrame("Frame", nil, strip)
+    rolesRow:SetPoint("TOPLEFT", 0, -2 * ROW)
+    rolesRow:SetPoint("TOPRIGHT", 0, -2 * ROW)
+    rolesRow:SetHeight(ROW)
+    local roleKinds = { friend = L["A friend"], deadfriend = L["A dead friend"], none = L["Nobody"] }
+    local roleItems = {}
+    for i, kind in ipairs(ns.WhatIf.ROLE_KINDS) do roleItems[i] = { key = kind, name = roleKinds[kind] } end
+    local roleLabels = { tank = L["Tank"], heal = L["Healer"] }
+    for _, role in ipairs(ns.WhatIf.ROLES) do
+        local label = ns.Text(rolesRow, 12)
+        label:SetText(roleLabels[role])
+        local d = ns.Dropdown(rolesRow, 104, function() return roleItems end, function() return moment.units[role] end,
+            function(kind)
+                moment.units[role] = kind
+                Changed()
+            end)
+        d:SetPoint("LEFT", label, "RIGHT", 6, 0)
+        controls[role] = d
+        roleParts[role] = { label = label, dropdown = d }
     end
     Window.RefreshWhatIf()
 end

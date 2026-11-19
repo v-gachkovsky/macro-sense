@@ -9,6 +9,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Added
 - **Ctrl+S** (Cmd+S on a Mac) saves the macro while you type its name too: rename it and save without going to
   its text.
+- "What if" sets up your group's tank and healer too, for a macro with `@tank` or `@heal`: each a friend, a dead
+  friend, or nobody, in a row that shows for such a macro. The notes then name them `@tank` and `@heal`, and say
+  when there is nobody to cast on (`won't cast: your group has no tank`).
 
 ### Fixed
 - A better stone, water or food put into a macro no longer takes away its `@tank` or `@heal`: the macro still
