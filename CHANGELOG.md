@@ -6,6 +6,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Ctrl+S** (Cmd+S on a Mac) saves the macro while you type its name too: rename it and save without going to
+  its text.
+
 ### Fixed
 - A better stone, water or food put into a macro no longer takes away its `@tank` or `@heal`: the macro still
   follows your group's tank or healer (a soulstone for your healer stayed on the old one). A macro the new name

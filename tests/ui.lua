@@ -8011,6 +8011,47 @@ do
     Wait(1.1)
 end
 
+-- Ctrl+S (Cmd+S on a Mac) saves from the name box too: a macro renamed is saved without going to its text.
+do
+    local nameBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 and not nameBox then nameBox = o end
+    end
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    local state = ns.WindowShared.state
+    -- The editor as it is, shown again at the end for the tests after.
+    local was, wasScope, wasText, wasName = state.index, state.scope, raw(), nameBox:GetText()
+    CreateMacro("Name Key", 1, "/sit", false)
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope("general")
+    ns.Window.Select(GetMacroIndexByName("Name Key"))
+    NextFrame()
+    nameBox:SetFocus()
+    nameBox:SetText("Name Key 2")
+    Fire(nameBox, "OnKeyDown", "S")
+    check("name box: S alone saves nothing", GetMacroIndexByName("Name Key 2") == 0)
+    IsControlKeyDown = function() return true end
+    Fire(nameBox, "OnKeyDown", "S")
+    IsControlKeyDown = function() return false end
+    check("name box: Ctrl+S saves the new name", GetMacroIndexByName("Name Key 2") > 0
+        and GetMacroIndexByName("Name Key") == 0)
+    nameBox:SetText("Name Key 3")
+    IsMetaKeyDown = function() return true end -- Cmd, on a Mac
+    Fire(nameBox, "OnKeyDown", "S")
+    IsMetaKeyDown = nil
+    check("name box: Cmd+S on a Mac", GetMacroIndexByName("Name Key 3") > 0)
+    DeleteMacro(GetMacroIndexByName("Name Key 3"))
+    Send("UPDATE_MACROS")
+    ns.Window.SetScope(wasScope)
+    if was then
+        ns.Window.Select(was)
+    else
+        ns.Window.Restore(wasText)
+        nameBox:SetText(wasName)
+    end
+    NextFrame()
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"
