@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.20.0] - 2026-11-19
 
 ### Added
 - **Ctrl+S** (Cmd+S on a Mac) saves the macro while you type its name too: rename it and save without going to
