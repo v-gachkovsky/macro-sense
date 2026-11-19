@@ -97,14 +97,14 @@ function Parser.GetContext(text, cursor)
         return { kind = "command", prefix = cmdPrefix, start = lineStart + #lead }
     end
 
-    -- "#sho|" -> meta lines
-    local metaPrefix = line:match("^#(%w*)$")
+    -- "#sho|" -> meta lines, after spaces too (the game takes "  #showtooltip")
+    local space, metaPrefix = line:match("^(%s*)#(%w*)$")
     if metaPrefix then
-        return { kind = "meta", prefix = metaPrefix, start = lineStart + 1 }
+        return { kind = "meta", prefix = metaPrefix, start = lineStart + #space + 1 }
     end
 
     local head, cmd, rest
-    head, rest = line:match("^(#show%a*%s+)(.*)$")
+    head, rest = line:match("^(%s*#show%a*%s+)(.*)$")
     if head then
         cmd = "showtooltip"
     else

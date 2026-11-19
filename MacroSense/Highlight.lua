@@ -462,14 +462,15 @@ local function lineSpans(line, base, add, info)
         local lead = #line:match("^%s*")
         return add(base + lead + 1, base + #line, "comment")
     end
-    local meta = line:match("^#%a+")
+    -- After spaces too: the game takes "  #showtooltip" for one.
+    local space, meta = line:match("^(%s*)(#%a+)")
     if meta and (meta:lower() == "#show" or meta:lower() == "#showtooltip") then
-        add(base + 1, base + #meta, "meta")
-        argSpans(line:sub(#meta + 1), base + #meta, add, "action", false, "cast")
+        add(base + #space + 1, base + #space + #meta, "meta")
+        argSpans(line:sub(#space + #meta + 1), base + #space + #meta, add, "action", false, "cast")
         return
-    elseif line:find("^#") then
+    elseif line:find("^%s*#") then
         -- Another "#" line runs nothing: its words are no spells.
-        return add(base + 1, base + #line, "comment")
+        return add(base + #line:match("^%s*") + 1, base + #line, "comment")
     end
     local lead, cmd = line:match("^(%s*)/(%S*)")
     if not lead then return end
