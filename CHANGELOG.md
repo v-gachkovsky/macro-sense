@@ -11,8 +11,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   follows your group's tank or healer (a soulstone for your healer stayed on the old one). A macro the new name
   would make longer than 255 characters stays as it is, and the chat says so.
 - Keys joined in one value, `[mod:ctrlshift]` (also `[mod:shiftctrl]`, `[mod:altctrlshift]`), are no longer marked
-  as wrong: the game takes them as those keys held together. The line is explained as "with Ctrl + Shift held", the
-  help on `mod` shows them, and on a Mac `[mod:cmdshift]` gets the warning about macOS shortcuts like any Cmd.
+  as wrong: the game takes them as those keys held together, and no other (with Alt held too, `[mod:ctrlshift]`
+  doesn't apply, and "What if" shows it so). The line is explained as "with Ctrl + Shift held", the help on `mod`
+  shows them, and on a Mac `[mod:cmdshift]` gets the warning about macOS shortcuts like any Cmd.
 - Another addon's command is no longer marked as unknown when that addon makes it after you log in: with a macro
   on your action bars, MacroSense read the game's commands once at login and kept them until another addon loaded.
 - A comment line, `-- a note`, is no longer shown as said in chat: the game skips it. The editor shows it dimmed,

@@ -963,6 +963,11 @@ do
         W.Env({ mods = { ctrl = true, shift = true }, combat = false, units = { target = "enemy" } }))
     expectPreview("what if: keys joined, one held", "/cast [mod:ctrlshift] A; B", nil, "B",
         W.Env({ mods = { ctrl = true }, combat = false, units = { target = "enemy" } }))
+    -- As the game takes it: another key held too, and they don't hold ([mod:ctrlshift] with Alt).
+    expectPreview("what if: keys joined, another held too", "/cast [mod:ctrlshift] A; B", nil, "B",
+        W.Env({ mods = { ctrl = true, shift = true, alt = true }, combat = false, units = { target = "enemy" } }))
+    expectPreview("what if: one key, another held too", "/cast [mod:ctrl] A; B", nil, "A",
+        W.Env({ mods = { ctrl = true, shift = true }, combat = false, units = { target = "enemy" } }))
     -- Whether it can go there at all: a spell for enemies won't on a friend, a dead one or nobody; one for friends
     -- named for an enemy won't, and goes to you when the game picks.
     local reaction = function(name) return ({ ["Bane of Agony"] = "enemies", ["Flash Heal"] = "friends" })[name] end

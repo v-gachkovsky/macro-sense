@@ -1732,10 +1732,10 @@ ns.locales.uk = {
     ["Your pet starts or stops casting that spell by itself: each press turns it the other way."] =
         "Улюбленець починає або перестає сам застосовувати це заклинання: кожне натискання перемикає.",
     ["You are in combat."] = "Ви в бою.",
-    ["A modifier key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Joined, they are held together: "
-        .. "mod:ctrlshift. Without a value, any of them."] =
-        "Затиснуто клавішу-модифікатор: mod:shift, mod:ctrl, mod:alt, кілька через «/». Написані разом, вони "
-        .. "затиснуті одночасно: mod:ctrlshift. Без значення — будь-яку.",
+    ["A modifier key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Joined, those keys are held "
+        .. "together and no other: mod:ctrlshift. Without a value, any of them."] =
+        "Затиснуто клавішу-модифікатор: mod:shift, mod:ctrl, mod:alt, кілька через «/». Написані разом — затиснуто "
+        .. "саме ці клавіші, і жодної іншої: mod:ctrlshift. Без значення — будь-яку.",
     ["The unit is an enemy you can attack."] = "Юніт — ворог, якого можна атакувати.",
     ["The unit is friendly: you can heal or buff it."] = "Юніт дружній: його можна лікувати чи баффати.",
     ["The unit is there. With nobody under the mouse, @mouseover is not."] =
