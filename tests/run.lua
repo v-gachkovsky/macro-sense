@@ -381,6 +381,9 @@ expectKinds("/cast [@focus,mod:shift] Polymorph; Fireball",
     "/cast=command [=bracket @=operator focus=unit ,=operator mod=condition :=operator shift=value ]=bracket"
     .. " Polymorph=action ;=operator Fireball=action")
 expectKinds("#showtooltip Fireball", "#showtooltip=meta Fireball=action")
+-- Another "#" line runs nothing: no directive, its words no spell names.
+expectKinds("#my Fireball macro", "#my Fireball macro=comment")
+expectKinds("# a note", "# a note=comment")
 -- A comment: "--" the game skips, "//" is no command. Not said in chat, no errors.
 expectKinds("--hide previous marker", "--hide previous marker=comment")
 expectKinds("  // a note, /cast Fear", "// a note, /cast Fear=comment")
@@ -1212,6 +1215,8 @@ do
         { "#show Hearthstone", "shows the icon of Hearthstone" },
         { "Hello there", "says it in chat" },
         { "--hide previous marker", "a comment: the game skips this line" },
+        { "# a note", "(none)" },
+        { "#", "(none)" },
         { "  // a note", "a comment: the game skips this line" },
         { "/cast [form:1] Maul; [form:2/0] Shred; [noform] Wrath", "in Bear Form: Maul | otherwise, in Cat Form or no "
             .. "form: Shred | otherwise, in no form: Wrath" },

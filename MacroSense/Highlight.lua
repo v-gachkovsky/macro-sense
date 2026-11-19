@@ -463,10 +463,13 @@ local function lineSpans(line, base, add, info)
         return add(base + lead + 1, base + #line, "comment")
     end
     local meta = line:match("^#%a+")
-    if meta then
+    if meta and (meta:lower() == "#show" or meta:lower() == "#showtooltip") then
         add(base + 1, base + #meta, "meta")
         argSpans(line:sub(#meta + 1), base + #meta, add, "action", false, "cast")
         return
+    elseif line:find("^#") then
+        -- Another "#" line runs nothing: its words are no spells.
+        return add(base + 1, base + #line, "comment")
     end
     local lead, cmd = line:match("^(%s*)/(%S*)")
     if not lead then return end
