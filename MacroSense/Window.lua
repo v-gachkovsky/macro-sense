@@ -1777,6 +1777,10 @@ local function Build()
     end
     nameBox:SetScript("OnEnterPressed", NameDone)
     nameBox:SetScript("OnTabPressed", NameDone)
+    -- Ctrl+S (Cmd+S on a Mac) saves from here too, as from the text: a new name, saved where it is typed.
+    nameBox:HookScript("OnKeyDown", function(_, key)
+        if key == "S" and ns.CtrlDown() then Window.Save() end
+    end)
 
     -- Shorten at the right end of the header.
     shortenBtn = ns.Button(main, L["Shorten"], 90, function() Window.Shorten() end)
