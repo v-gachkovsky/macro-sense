@@ -13,6 +13,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Keys joined in one value, `[mod:ctrlshift]` (also `[mod:shiftctrl]`, `[mod:altctrlshift]`), are no longer marked
   as wrong: the game takes them as those keys held together. The line is explained as "with Ctrl + Shift held", the
   help on `mod` shows them, and on a Mac `[mod:cmdshift]` gets the warning about macOS shortcuts like any Cmd.
+- Another addon's command is no longer marked as unknown when that addon makes it after you log in: with a macro
+  on your action bars, MacroSense read the game's commands once at login and kept them until another addon loaded.
 
 ## [0.19.0] - 2026-11-13
 
