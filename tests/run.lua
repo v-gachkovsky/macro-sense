@@ -1216,6 +1216,8 @@ do
         { "Hello there", "says it in chat" },
         { "--hide previous marker", "a comment: the game skips this line" },
         { "# a note", "(none)" },
+        -- Not at the start of its line: no directive, as the preview and the colors take it.
+        { "  #showtooltip", "(none)" },
         { "#", "(none)" },
         { "  // a note", "a comment: the game skips this line" },
         { "/cast [form:1] Maul; [form:2/0] Shred; [noform] Wrath", "in Bear Form: Maul | otherwise, in Cat Form or no "

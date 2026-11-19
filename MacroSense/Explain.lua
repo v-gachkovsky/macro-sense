@@ -473,7 +473,8 @@ function Explain.Line(line, env)
     env = env or {}
     if not line:find("%S") then return nil end
     if ns.Parser.IsComment(line) then return { L["a comment: the game skips this line"] } end
-    local meta, options = line:match("^%s*#(%a+)(.*)$")
+    -- A directive starts its line, as the preview and the colors take it.
+    local meta, options = line:match("^#(%a+)(.*)$")
     meta = meta and meta:lower()
     if meta == "showtooltip" or meta == "show" then
         local shows = meta == "show" and L["shows the icon of %s"] or L["shows the icon and tooltip of %s"]
