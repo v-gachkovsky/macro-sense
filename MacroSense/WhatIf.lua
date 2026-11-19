@@ -1,7 +1,7 @@
 -- "What if": the preview for a moment you set up yourself, not the one in the game now. The keys held, who your
--- target, mouseover and focus are, and combat come from `state`; any other condition (a form, your pet, a
--- specialization...) is the game's own, as `real(cond, unit)` tells. The same reading of the options as the game's
--- SecureCmdOptionParse, for Preview.Evaluate. Pure Lua (5.1).
+-- target, mouseover and focus are, your group's tank and healer (@tank, @heal), and combat come from `state`; any
+-- other condition (a form, your pet, a specialization...) is the game's own, as `real(cond, unit)` tells. The same
+-- reading of the options as the game's SecureCmdOptionParse, for Preview.Evaluate. Pure Lua (5.1).
 local _, ns = ...
 ns = ns or {}
 
@@ -11,19 +11,34 @@ ns.WhatIf = WhatIf
 -- The units set up: "none", "enemy", "friend" or "dead" (an enemy, dead).
 WhatIf.UNITS = { "target", "mouseover", "focus" }
 WhatIf.KINDS = { "none", "enemy", "friend", "dead" }
+-- Your group's tank and healer, for @tank and @heal: "friend", "deadfriend" or "none" (nobody has the role).
+WhatIf.ROLES = { "tank", "heal" }
+WhatIf.ROLE_KINDS = { "friend", "deadfriend", "none" }
 
--- A fresh moment: no key held, out of combat, an enemy targeted, nobody under the mouse, no focus.
+-- A fresh moment: no key held, out of combat, an enemy targeted, nobody under the mouse, no focus; a tank and a
+-- healer in your group.
 function WhatIf.Fresh()
-    return { mods = {}, combat = false, units = { target = "enemy", mouseover = "none", focus = "none" } }
+    return { mods = {}, combat = false,
+        units = { target = "enemy", mouseover = "none", focus = "none", tank = "friend", heal = "friend" } }
 end
 
 local function trim(s) return s:match("^%s*(.-)%s*$") end
 local ALIASES = { modifier = "mod" }
 
+-- The key of `unit` among the units set up: "target" for "Target"; @tank and @heal only as MacroSense writes them,
+-- in lowercase ("Tank" is someone's name). Nil for one not set up.
+local ROLE = { tank = true, heal = true }
+local function Key(unit)
+    if ROLE[unit] then return unit end
+    local lower = unit:lower()
+    if ROLE[lower] then return nil end
+    return lower
+end
+
 -- What a unit set up is now: nil for one not set up (the game's then), else its kind.
 local function Kind(state, unit)
-    unit = unit:lower()
-    return state.units[unit]
+    local key = Key(unit)
+    return key and state.units[key]
 end
 
 -- The conditions this moment answers itself: true / false, or nil for the game's.
@@ -50,8 +65,8 @@ local function Own(state, name, value, unit)
     if kind == nil then return nil end
     if name == "exists" then return kind ~= "none" end
     if name == "harm" then return kind == "enemy" or kind == "dead" end
-    if name == "help" then return kind == "friend" end
-    if name == "dead" then return kind == "dead" end
+    if name == "help" then return kind == "friend" or kind == "deadfriend" end
+    if name == "dead" then return kind == "dead" or kind == "deadfriend" end
     return nil
 end
 
@@ -59,8 +74,10 @@ end
 -- "enemies" or nil, as Sources does). One for enemies won't cast on a friend, a dead one or nobody; one for friends
 -- won't on an enemy named in the macro, and goes to you when the game picks (Auto Self Cast). Nil: as it is.
 local NOBODY = { target = "won't cast: you have no target", mouseover = "won't cast: nobody is under the mouse",
-    focus = "won't cast: you have no focus" }
-local WORDS = { target = "the target", mouseover = "the mouseover", focus = "the focus" }
+    focus = "won't cast: you have no focus", tank = "won't cast: your group has no tank",
+    heal = "won't cast: your group has no healer" }
+local WORDS = { target = "the target", mouseover = "the mouseover", focus = "the focus", tank = "the tank",
+    heal = "the healer" }
 -- Its texts kept in these tables, for the check that each has its translation.
 function WhatIf.Texts()
     local out = {}
@@ -69,19 +86,21 @@ function WhatIf.Texts()
 end
 
 function WhatIf.Verdict(state, reaction, name, unit, item)
-    local u = (unit or "target"):lower()
-    local kind = state.units[u]
+    local u = Key(unit or "target")
+    local kind = u and state.units[u]
     local what = kind and reaction and reaction(name, item)
     if not what then return nil end
     local L = ns.L or setmetatable({}, { __index = function(_, k) return k end })
     local who = L[WORDS[u]]
+    local friend = kind == "friend" or kind == "deadfriend"
     if what == "enemies" then
         if kind == "none" then return { fails = L[NOBODY[u]] } end
-        if kind == "friend" then return { fails = string.format(L["won't cast: %s is a friend"], who) } end
+        if friend then return { fails = string.format(L["won't cast: %s is a friend"], who) } end
         if kind == "dead" then return { fails = string.format(L["won't cast: %s is a dead enemy"], who) } end
         return nil
     end
-    if kind == "friend" then return nil end
+    -- A friend, dead too: as it is (a dead one may be raised, and [nodead] in the macro tells it apart).
+    if friend then return nil end
     -- For friends, on an enemy or nobody: named in the macro, it won't; else the game casts it on you.
     if unit then
         if kind == "none" then return { fails = L[NOBODY[u]] } end

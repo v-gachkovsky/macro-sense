@@ -551,24 +551,35 @@ ns.locales.uk = {
         .. "вибір. Потім ними можна поділитися, перенести їх, додати в набір чи видалити всі одразу.",
     ["All"] = "Усі",
     ["What if"] = "Що, як...",
-    ["The notes next to the lines for a moment you set up: the keys held, combat, and who your target, mouseover and focus are. With the editor open your mouse can't be over someone, so this is how to check a mouseover macro. Anything else the macro checks is as in the game now."] =
-        "Підказки біля рядків для моменту, який ви задаєте самі: затиснуті клавіші, бій, і хто ваша ціль, хто "
-        .. "під мишею і хто у фокусі. Поки відкритий редактор, миша не може бути над кимось у світі, тож так "
-        .. "перевіряють макрос із маусовером. Усе інше, що перевіряє макрос, — як у грі зараз.",
+    ["The notes next to the lines for a moment you set up: the keys held, combat, who your target, mouseover and "
+        .. "focus are, and for a macro with @tank or @heal, your group's tank and healer. With the editor open your "
+        .. "mouse can't be over someone, so this is how to check a mouseover macro. Anything else the macro checks is "
+        .. "as in the game now."] =
+        "Підказки біля рядків для моменту, який ви задаєте самі: затиснуті клавіші, бій, хто ваша ціль, хто під "
+        .. "мишею і хто у фокусі, а для макросу з @tank чи @heal — танк і хілер вашої групи. Поки відкритий "
+        .. "редактор, миша не може бути над кимось у світі, тож так перевіряють макрос із маусовером. Усе інше, що "
+        .. "перевіряє макрос, — як у грі зараз.",
     ["set up the keys, the target and the mouseover yourself"] = "задайте клавіші, ціль і маусовер самі",
     ["Nobody"] = "Нікого",
     ["won't cast: you have no target"] = "не скастується: у вас немає цілі",
     ["won't cast: nobody is under the mouse"] = "не скастується: під мишею нікого",
     ["won't cast: you have no focus"] = "не скастується: у вас немає фокуса",
+    ["won't cast: your group has no tank"] = "не скастується: у вашій групі немає танка",
+    ["won't cast: your group has no healer"] = "не скастується: у вашій групі немає хілера",
     ["the target"] = "ціль",
     ["the mouseover"] = "маусовер",
     ["the focus"] = "фокус",
+    ["the tank"] = "танк",
+    ["the healer"] = "хілер",
     ["won't cast: %s is a friend"] = "не скастується: %s — друг",
     ["won't cast: %s is a dead enemy"] = "не скастується: %s — мертвий ворог",
     ["won't cast: %s is an enemy"] = "не скастується: %s — ворог",
     ["An enemy"] = "Ворог",
     ["A friend"] = "Друг",
     ["A dead enemy"] = "Мертвий ворог",
+    ["A dead friend"] = "Мертвий друг",
+    ["Tank"] = "Танк",
+    ["Healer"] = "Хілер",
     ["Favorites"] = "Улюблені",
     ["The macros you marked as favorites: always at the top."] = "Макроси, які ви позначили як улюблені: завжди вгорі.",
     ["A folder of your own. A right click renames or deletes it; \"...\" on a macro puts it in or takes it out."] =
