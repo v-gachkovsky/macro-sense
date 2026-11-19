@@ -23,6 +23,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   its words are no longer checked as spell names: it is dimmed like a comment.
 - `#showtooltip` after spaces is no longer explained as showing the icon: the live preview and the colors never took
   it for one.
+- A spell on the line below one like `/cast Execute` is no longer said to never cast. A spell that can't be cast now
+  (Execute while the target has more than 20% health) starts no global cooldown, so the line below casts then: the
+  warning now says it works only when the spell above can't be cast, on cooldown or not usable now.
 
 ## [0.19.0] - 2026-11-13
 
