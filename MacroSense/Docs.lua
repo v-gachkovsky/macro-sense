@@ -64,7 +64,8 @@ COMMANDS.targetmarker = COMMANDS.tm
 
 local CONDITIONS = {
     combat = "You are in combat.",
-    mod = "A modifier key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Without a value, any of them.",
+    mod = "A modifier key is held: mod:shift, mod:ctrl, mod:alt, several with \"/\". Joined, they are held "
+        .. "together: mod:ctrlshift. Without a value, any of them.",
     harm = "The unit is an enemy you can attack.",
     help = "The unit is friendly: you can heal or buff it.",
     exists = "The unit is there. With nobody under the mouse, @mouseover is not.",

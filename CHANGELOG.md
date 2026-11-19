@@ -10,6 +10,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A better stone, water or food put into a macro no longer takes away its `@tank` or `@heal`: the macro still
   follows your group's tank or healer (a soulstone for your healer stayed on the old one). A macro the new name
   would make longer than 255 characters stays as it is, and the chat says so.
+- Keys joined in one value, `[mod:ctrlshift]` (also `[mod:shiftctrl]`, `[mod:altctrlshift]`), are no longer marked
+  as wrong: the game takes them as those keys held together. The line is explained as "with Ctrl + Shift held", the
+  help on `mod` shows them, and on a Mac `[mod:cmdshift]` gets the warning about macOS shortcuts like any Cmd.
 
 ## [0.19.0] - 2026-11-13
 

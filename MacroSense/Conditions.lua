@@ -104,10 +104,32 @@ local function inRange(lo, hi)
     end
 end
 
+-- The keys one "mod:" value holds together: "ctrlshift" -> { "ctrl", "shift" }, in the order written (the game takes
+-- any: [mod:shiftctrl] too). Nil for anything else: one key, or a word that isn't keys joined.
+local KEY_NAMES = { "lshift", "rshift", "lctrl", "rctrl", "lalt", "ralt", "shift", "ctrl", "alt", "cmd" }
+function Conditions.Keys(value)
+    local rest, out, seen = value:lower(), {}, {}
+    while rest ~= "" do
+        local key
+        for _, k in ipairs(KEY_NAMES) do
+            if rest:sub(1, #k) == k then
+                key = k
+                break
+            end
+        end
+        if not key or seen[key] then return nil end
+        seen[key], out[#out + 1], rest = true, key, rest:sub(#key + 1)
+    end
+    return #out > 1 and out or nil
+end
+
 -- Base condition -> function(value) -> ok, plus what to say when it is not.
 local RULES = {
     mod = {
-        check = function(v) return names(ns.data.modifiers)[v:lower()] or v == "cmd" or v:find("^%u[%u_]+$") ~= nil end,
+        check = function(v)
+            return names(ns.data.modifiers)[v:lower()] or v == "cmd" or v:find("^%u[%u_]+$") ~= nil
+                or Conditions.Keys(v) ~= nil
+        end,
         expect = "shift, ctrl, alt or a key action like SELFCAST",
     },
     btn = { check = function(v) return names(ns.data.buttons)[v:lower()] end, expect = "1-5 or a button name" },

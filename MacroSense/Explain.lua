@@ -143,6 +143,12 @@ local function Key(k)
     if KEYS[lower] then return KEYS[lower] end
     local side, key = lower:match("^([lr])(%a+)$")
     if side and KEYS[key] then return string.format(L[SIDES[side]], KEYS[key]) end
+    -- Keys joined, held together: "ctrlshift" -> "Ctrl + Shift".
+    local joined = ns.Conditions and ns.Conditions.Keys(k)
+    if joined then
+        for i, each in ipairs(joined) do joined[i] = Key(each) end
+        return table.concat(joined, " + ")
+    end
     return k
 end
 

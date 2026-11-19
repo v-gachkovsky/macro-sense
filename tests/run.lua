@@ -515,6 +515,10 @@ check("option label", conflicts("/cast [mod:cmd,mod:alt] A", { "ESCAPE" }) == "C
 check("unclosed bracket before", conflicts("/cast [@mouse\n/cast [mod:cmd] A", { "TAB" }) == "Cmd+Tab",
     conflicts("/cast [@mouse\n/cast [mod:cmd] A", { "TAB" }))
 check("several keys", conflicts("/cast [mod:cmd] A", { "TAB", "W" }) == "Cmd+Tab,Cmd+W")
+check("cmd joined with shift", conflicts("/cast [mod:cmdshift] A", { "4" }) == "Cmd+Shift+4",
+    conflicts("/cast [mod:cmdshift] A", { "4" }))
+check("cmd joined, in a list", conflicts("/cast [mod:alt/cmdshift] A", { "W" }) == "Cmd+W",
+    conflicts("/cast [mod:alt/cmdshift] A", { "W" }))
 check("message one", S.Message(S.Conflicts("/cast [mod:cmd] A", { "TAB" })) == "Cmd+Tab is a macOS shortcut (switches apps)")
 check("message many", S.Message(S.Conflicts("/cast [mod:cmd] A", { "TAB", "W" })) == "Cmd+Tab, Cmd+W are macOS shortcuts")
 check("message none", S.Message({}) == nil)
@@ -562,13 +566,15 @@ check("base stance", C.Base("stance") == "form")
 check("base nomodifier", C.Base("nomodifier") == "mod")
 check("combat takes no value", not C.TakesValue("combat"))
 check("nopet takes a value", C.TakesValue("nopet"))
-for _, ok in ipairs({ { "mod", "shift" }, { "mod", "LSHIFT" }, { "mod", "SELFCAST" }, { "btn", "2" },
+-- Keys joined are held together: [mod:ctrlshift], in any order.
+for _, ok in ipairs({ { "mod", "shift" }, { "mod", "LSHIFT" }, { "mod", "SELFCAST" }, { "mod", "ctrlshift" },
+    { "mod", "shiftctrl" }, { "mod", "AltCtrlShift" }, { "nomod", "lshiftalt" }, { "btn", "2" },
     { "btn", "RightButton" }, { "group", "raid" }, { "bar", "6" }, { "form", "0" }, { "stance", "3" }, { "spec", "2" },
     { "equipped", "Shields" }, { "pet", "Fluffy" } }) do
     check("valid " .. ok[1] .. ":" .. ok[2], C.CheckValue(ok[1], ok[2]) == nil, C.CheckValue(ok[1], ok[2]))
 end
-for _, bad in ipairs({ { "mod", "shfit" }, { "btn", "7" }, { "button", "Left" }, { "group", "arena" },
-    { "bar", "7" }, { "bar", "x" }, { "form", "1.5" }, { "spec", "0" } }) do
+for _, bad in ipairs({ { "mod", "shfit" }, { "mod", "ctrlshfit" }, { "mod", "shiftshift" }, { "btn", "7" },
+    { "button", "Left" }, { "group", "arena" }, { "bar", "7" }, { "bar", "x" }, { "form", "1.5" }, { "spec", "0" } }) do
     check("invalid " .. bad[1] .. ":" .. bad[2], C.CheckValue(bad[1], bad[2]) ~= nil)
 end
 check("invalid message", C.CheckValue("btn", "7") == 'invalid btn value "7" (expected 1-5 or a button name)',
@@ -773,6 +779,8 @@ check("unknown unit is a warning", issues("/cast [@mousover] X") == "warning:mou
 check("player name is only a warning", issues("/cast [target=Thrall] X") == "warning:Thrall")
 check("bad value is an error", issues("/cast [btn:7] X") == "error:7", issues("/cast [btn:7] X"))
 check("second bad value", issues("/cast [mod:shift/shfit] X") == "error:shfit", issues("/cast [mod:shift/shfit] X"))
+check("keys joined: no issue", issues("/cast [mod:ctrlshift] X; [nomod:shiftctrl] Y") == "",
+    issues("/cast [mod:ctrlshift] X; [nomod:shiftctrl] Y"))
 check("nomod: alone or with modifiers", issues("/cast [nomod] X; [nomod:shift/ctrl] Y; [nomodifier:alt] Z") == "",
     issues("/cast [nomod] X; [nomod:shift/ctrl] Y; [nomodifier:alt] Z"))
 check("nomod: a bad modifier", issues("/cast [nomod:shfit] X") == "error:shfit", issues("/cast [nomod:shfit] X"))
@@ -945,6 +953,10 @@ do
     whatIf("Alt held", { mods = { alt = true } }, "icon: Hunter's Mark | Hunter's Mark")
     expectPreview("what if: nomod, combat, a key list", "/cast [nomod:shift/ctrl,combat] A; [nocombat] B; C", nil,
         "A", W.Env({ mods = { alt = true }, combat = true, units = { target = "enemy" } }))
+    expectPreview("what if: keys joined, both held", "/cast [mod:ctrlshift] A; B", nil, "A",
+        W.Env({ mods = { ctrl = true, shift = true }, combat = false, units = { target = "enemy" } }))
+    expectPreview("what if: keys joined, one held", "/cast [mod:ctrlshift] A; B", nil, "B",
+        W.Env({ mods = { ctrl = true }, combat = false, units = { target = "enemy" } }))
     -- Whether it can go there at all: a spell for enemies won't on a friend, a dead one or nobody; one for friends
     -- named for an enemy won't, and goes to you when the game picks.
     local reaction = function(name) return ({ ["Bane of Agony"] = "enemies", ["Flash Heal"] = "friends" })[name] end
@@ -1203,6 +1215,8 @@ do
             .. "otherwise, with Shift or Ctrl held: Howl of Terror | otherwise, without Alt held: Death Coil" },
         { "/cast [mod] Fear; [modifier:lshift] Death Coil", "with Shift, Ctrl or Alt held: Fear | otherwise, with left "
             .. "Shift held: Death Coil" },
+        { "/cast [mod:ctrlshift] Fear; [nomod:altshift] Death Coil", "with Ctrl + Shift held: Fear | otherwise, "
+            .. "without Alt + Shift held: Death Coil" },
         { "/cast [@focustarget,exists] Kick", "Kick on the target of your focus, if there is one" },
         { "/cast [@party2target] Kick; [@arena1] Kick", "Kick on the target of party member 2" },
         { "/cast [@arena1,noexists] Kick", "Kick on arena enemy 1, if there is none" },
