@@ -32,6 +32,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   and `@heal` once a name goes in, so saving it from there keeps them.
 - A macro with `@tank` or `@heal` renamed in the game's macro window no longer shows the names (or `@none`) in
   their place until your group changes: saved from there, it lost them. It keeps them at once.
+- The earlier versions of a macro, the trash and the macros your other characters can copy keep `@tank` and
+  `@heal`: brought back or copied in, they had the names of that time (or `@none`) in their place. Those kept
+  before this version still have the names. Another character's macro kept behind the scenes, copied in, went into
+  the game with `@tank` itself, which the game doesn't know: now it gets the names of your group.
 
 ## [0.19.0] - 2026-11-13
 
