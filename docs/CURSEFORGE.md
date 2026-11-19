@@ -203,8 +203,7 @@ the status bar names them (hover for the full list, click to go there), and the 
 - unknown units like `@mousover` are a yellow **warning**: they may be a player's name
 - a part that **never runs**, a yellow warning: in `/cast [@mouseover,harm][] Arcane Shot; [mod:alt] Hunter's Mark`
   the game always stops at `[]`, so the Alt part has to come first; the same for a spell on a line below one
-  that always casts a spell with the global cooldown: it casts only when the spell above can't be cast (on
-  cooldown, or not usable now), and the warning says so
+  that always casts a spell with the global cooldown, even while that spell is on cooldown
 - **typos in spell and item names**: `Shadwo Bolt` gets `did you mean "Shadow Bolt"?`, and a click fixes it.
   Your pets' spells are remembered from every pet you summon, so a Succubus macro stays fine while the
   Felhunter is out

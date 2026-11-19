@@ -547,19 +547,20 @@ local function GlobalCooldowns(raw, lines, add)
         for _, sp in ipairs(blocking and info.spells or {}) do
             local gcd = Highlight.gcdOf(sp.name)
             local extra = { fix = merged.fix, fixFrom = merged.fixFrom, fixTo = merged.fixTo, fixTip = merged.fixTip }
-            -- Only when the one above can't be cast: on cooldown, or not usable now (Execute above 20% health
-            -- starts no global cooldown, so "/cast Execute" then "/cast Bloodthirst" casts one or the other).
+            -- The game tries the spell above each time and stops there, also while it is on cooldown (tested in
+            -- game: Shadow Ward on cooldown, the Life Tap below it still didn't cast).
             if gcd == "gcd" or gcd == "cooldown" then
-                extra.short = string.format(L["only when %s can't be cast"], blocking.names)
-                add(sp.from, sp.from + #sp.name - 1, "note", string.format(L["works only when %s can't be cast (on "
-                    .. "cooldown, or not usable now): the line above tries it first, and its global cooldown stops "
-                    .. "this one. To choose with a key, put both into one /cast, this part first"], blocking.names),
-                    "warning", extra)
+                extra.short = L["won't cast"]
+                local why = blocking.kind == "gcd" and L["won't cast: the line above always casts %s first, and its "
+                    .. "global cooldown stops this one. To choose between them, put both into one /cast, this part "
+                    .. "first"] or L["won't cast: the line above always tries %s first, and that stops this one, "
+                    .. "even while it's on cooldown. To choose between them, put both into one /cast, this part first"]
+                add(sp.from, sp.from + #sp.name - 1, "note", string.format(why, blocking.names), "warning", extra)
             end
         end
-        -- One that never lets the lines after cast is the stronger.
+        -- The first line that always casts one stops all the lines after it.
         local now = Blocking(info)
-        if now and (not blocking or now.kind == "gcd" and blocking.kind ~= "gcd") then blocking = now end
+        if now and not blocking then blocking = now end
     end
 end
 

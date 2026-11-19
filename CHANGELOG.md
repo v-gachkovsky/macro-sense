@@ -22,9 +22,6 @@ and the project uses [Semantic Versioning](https://semver.org/).
   imported as text.
 - A `#` line other than `#showtooltip` and `#show`, such as `# a note`, is no longer explained as said in chat, and
   its words are no longer checked as spell names: it is dimmed like a comment.
-- A spell on the line below one like `/cast Execute` is no longer said to never cast. A spell that can't be cast now
-  (Execute while the target has more than 20% health) starts no global cooldown, so the line below casts then: the
-  warning now says it works only when the spell above can't be cast, on cooldown or not usable now.
 - With macro sets on, a macro with `@tank` or `@heal` no longer goes into its set with the names of your group
   (or `@none`) in their place when you save, copy or change it with "Replace all": it could come back that way, a
   class macro at your next login. The tag macro open in the editor no longer shows the names in place of `@tank`
@@ -44,6 +41,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
   A unit put there instead, such as `@target`, is still taken as your own change.
 - `#showtooltip` and `#show` after spaces count, as the game takes them: the live preview shows their icon, they
   get their colors, and the spell after them is checked and completed.
+- A spell with the global cooldown below a line that always casts one with a cooldown of its own is no longer said
+  to work while that one is on cooldown: the game tries the spell above every time, on cooldown or not, and stops
+  there. The warning now says it won't cast, as below a spell without a cooldown.
 
 ## [0.19.0] - 2026-11-13
 
