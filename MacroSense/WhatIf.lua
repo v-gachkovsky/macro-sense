@@ -33,10 +33,15 @@ local function Own(state, name, value, unit)
         if not value or value == "" then return m.shift or m.ctrl or m.alt or m.cmd or false end
         for key in value:gmatch("[^/]+") do
             if m[key:lower()] then return true end
-            -- Keys joined ("ctrlshift"): all of them held.
-            local joined, all = ns.Conditions.Keys(key), true
-            for _, k in ipairs(joined or {}) do all = all and m[k] == true end
-            if joined and all then return true end
+            -- Keys joined ("ctrlshift"): those held, and no other. The game takes it so: with Alt held too,
+            -- [mod:ctrlshift] doesn't hold.
+            local joined, exact = ns.Conditions.Keys(key), true
+            local want = {}
+            for _, k in ipairs(joined or {}) do want[k] = true end
+            for _, k in ipairs({ "shift", "ctrl", "alt", "cmd" }) do
+                if (m[k] == true) ~= (want[k] == true) then exact = false end
+            end
+            if joined and exact then return true end
         end
         return false
     end
