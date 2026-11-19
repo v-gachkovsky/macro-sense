@@ -26,6 +26,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - A spell on the line below one like `/cast Execute` is no longer said to never cast. A spell that can't be cast now
   (Execute while the target has more than 20% health) starts no global cooldown, so the line below casts then: the
   warning now says it works only when the spell above can't be cast, on cooldown or not usable now.
+- With macro sets on, a macro with `@tank` or `@heal` no longer goes into its set with the names of your group
+  (or `@none`) in their place when you save, copy or change it with "Replace all": it could come back that way, a
+  class macro at your next login. The tag macro open in the editor no longer shows the names in place of `@tank`
+  and `@heal` once a name goes in, so saving it from there keeps them.
 
 ## [0.19.0] - 2026-11-13
 

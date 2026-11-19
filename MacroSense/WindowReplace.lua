@@ -113,9 +113,15 @@ local function ReplaceAll()
                 long[#long + 1] = m.name
             elseif m.set then
                 if ns.Sets.Write(m.set, m.name, m.name, m.icon, p.text) then done = done + 1 end
-            elseif EditMacro(m.index, nil, nil, written) then
-                ns.Roles.Saved(m.scope, m.name, m.name, p.text, select(3, GetMacroInfo(m.index)))
-                done = done + 1
+            else
+                -- Known with its tags before the game tells of it.
+                local undo = ns.Roles.Saved(m.scope, nil, m.name, p.text, written)
+                if EditMacro(m.index, nil, nil, written) then
+                    ns.Roles.Saved(m.scope, nil, m.name, p.text, select(3, GetMacroInfo(m.index)))
+                    done = done + 1
+                else
+                    undo()
+                end
             end
         end
         ns.History.Scan()

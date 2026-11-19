@@ -103,6 +103,7 @@ local function Write(name)
             return ns.Print("tag macro \"%s\": %s doesn't fit, the macro would be longer than %d characters",
                 tag.name, name, MAX_BODY)
         end
+        ns.Roles.Saved(tag.scope, nil, tag.name, text, game) -- known before the game tells of it
         ns.History.Rewritten(tag.scope, tag.name, game)
         EditMacro(index, nil, nil, game) -- as the game's macro window does: the name and icon stay
         local now = select(3, GetMacroInfo(index))
