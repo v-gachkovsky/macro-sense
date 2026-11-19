@@ -8033,6 +8033,38 @@ do
     InCombatLockdown = function() return false end
     Send("PLAYER_REGEN_ENABLED")
     check("conjured: after combat, updated", body("Cj Water") == "/use Conjured Fresh Water", body("Cj Water"))
+    -- A macro with @heal keeps it: the stone changes in its text with the tag, and the macro still follows the
+    -- group's healer.
+    local roles = ns.Roles.Names
+    ns.Roles.Names = function() return { heal = "Ann" } end
+    names[16895], names[16896] = "Greater Soulstone", "Major Soulstone"
+    for _, id in ipairs({ 693, 20752, 20755, 20756 }) do known[id] = true end -- Create Soulstone up to Greater
+    local tagged = "/use [@heal,help,nodead] Greater Soulstone"
+    CreateMacro("Cj Stone", 134400, ns.Roles.Fill(tagged), false)
+    ns.Roles.Saved("general", nil, "Cj Stone", tagged, body("Cj Stone"))
+    known[20757] = true -- Create Soulstone (Major)
+    shown = {}
+    C.Check()
+    StaticPopupDialogs.MACROSENSE_CONJURED.OnAccept(nil, shown[1].data)
+    check("conjured: a macro's @heal stays", ns.Roles.Text("general", "Cj Stone", body("Cj Stone"))
+        == "/use [@heal,help,nodead] Major Soulstone", ns.Roles.Text("general", "Cj Stone", body("Cj Stone")))
+    ns.Roles.Names = function() return { heal = "Bea" } end
+    ns.Roles.Update()
+    check("conjured: the macro follows the next healer", body("Cj Stone") == "/use [@Bea,help,nodead] Major Soulstone",
+        body("Cj Stone"))
+    ns.Roles.Names = roles
+    -- One the new name would make longer than 255 characters stays as it is, and the chat says so.
+    names[2136] = "Conjured Purified Water"
+    known[5506] = true -- Conjure Water, Rank 3
+    local full = "/use Conjured Fresh Water\n/say " .. string.rep("x", 255 - 31)
+    CreateMacro("Cj Long", 134400, full, false)
+    shown = {}
+    C.Check()
+    StaticPopupDialogs.MACROSENSE_CONJURED.OnAccept(nil, shown[1].data)
+    check("conjured: too long, left as it is", body("Cj Long") == full and body("Cj Water")
+        == "/use Conjured Purified Water", body("Cj Water"))
+    check("conjured: too long, the chat says so",
+        printedWith("could not put Conjured Purified Water into \"Cj Long\": it would be longer than 255 characters"))
     -- The later games make one item at every level.
     shown = {}
     ns.char.conjured = {}
@@ -8045,7 +8077,9 @@ do
 
     C_SpellBook.IsSpellKnown, C_Item.GetItemNameByID, C_Item.RequestLoadItemDataByID = isKnown, nameByID, request
     StaticPopup_Show = show
-    for _, name in ipairs({ "Cj Heal", "Cj Gift", "Cj Water" }) do DeleteMacro(GetMacroIndexByName(name)) end
+    for _, name in ipairs({ "Cj Heal", "Cj Gift", "Cj Water", "Cj Stone", "Cj Long" }) do
+        DeleteMacro(GetMacroIndexByName(name))
+    end
     ns.History.Scan()
 end
 

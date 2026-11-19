@@ -8,6 +8,9 @@ local L = ns.L
 local Conjured = {}
 ns.Conjured = Conjured
 
+local MAX_BODY = MAX_MACRO_CHARACTERS or 255
+local function Letters(s) return select(2, s:gsub("[^\128-\191]", "")) end
+
 -- Each kind by its ranks, worst first: the spell of the rank and the item it makes (the game's tables of Classic
 -- Era 1.15.9, TBC 2.5.6 and WoW Forever 1.60.1). A healthstone of each rank is three items, by the talent, with one
 -- name: macros name it. Mana gems are left out: a mage keeps one of each and uses them all.
@@ -190,7 +193,9 @@ end
 
 local due -- a look or an update that waits for the end of combat: true, or the list to put in
 
--- Puts the new items in the macros of `list` (Outdated), out of combat; those offered are not offered again.
+-- Puts the new items in the macros of `list` (Outdated), out of combat; those offered are not offered again. The
+-- names go into the text MacroSense shows, so @tank and @heal stay (Roles.lua). One the new names would make longer
+-- than the game takes stays as it is, and the chat says so.
 function Conjured.Apply(list)
     if InCombatLockdown() then
         due = list
@@ -201,17 +206,29 @@ function Conjured.Apply(list)
         ns.char.conjured[kind.item] = true
         for _, m in ipairs(kind.macros) do
             if not swaps[m.index] then
-                swaps[m.index] = { name = m.name, swap = {} }
+                swaps[m.index] = { name = m.name, swap = {}, new = {} }
                 order[#order + 1] = m.index
             end
             swaps[m.index].swap[m.old:lower()] = kind.new
+            table.insert(swaps[m.index].new, kind.new)
         end
     end
     for _, index in ipairs(order) do
         local name, _, body = GetMacroInfo(index)
         if name == swaps[index].name then
-            local text, count = Conjured.Swap(body, swaps[index].swap)
-            if count > 0 then EditMacro(index, nil, nil, text) end
+            local scope = index > ns.MAX_GENERAL and "character" or "general"
+            local text, count = Conjured.Swap(ns.Roles.Text(scope, name, body), swaps[index].swap)
+            local written = ns.Roles.Fill(text)
+            if count > 0 and Letters(written) > MAX_BODY then
+                ns.Print("could not put %s into \"%s\": it would be longer than %d characters",
+                    table.concat(swaps[index].new, ", "), name, MAX_BODY)
+            elseif count > 0 then
+                -- The game tells the macro changed while EditMacro runs: by then its tags must be known, or the
+                -- editor would show the names in their place.
+                ns.Roles.Saved(scope, nil, name, text, written)
+                EditMacro(index, nil, nil, written)
+                ns.Roles.Saved(scope, nil, name, text, select(3, GetMacroInfo(index)))
+            end
         end
     end
 end
