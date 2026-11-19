@@ -7766,6 +7766,89 @@ do
     Send("GROUP_ROSTER_UPDATE")
 end
 
+-- The game tells of a macro written while EditMacro and CreateMacro run (UPDATE_MACROS): MacroSense knows it as
+-- written by then, so what it shows of it keeps @tank and @heal. Else the editor would load the names (@none), the
+-- macro sets keep them for its text, and a save from there lose the tags.
+do
+    local function find(kind, text)
+        for _, o in ipairs(created) do
+            if o.kind == kind and (o.label and o.label.text == text or o.text == text) and o:IsShown() then return o end
+        end
+    end
+    local function body(name) return select(3, GetMacroInfo(GetMacroIndexByName(name))) end
+    local nameBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.maxLetters == 16 and not nameBox then nameBox = o end
+    end
+    local edit, create = EditMacro, CreateMacro
+    local seen -- what MacroSense showed of the macro while the game told of it
+    local function told(index)
+        if not index or index == 0 then return end
+        local name, _, text = GetMacroInfo(index)
+        seen = ns.Roles.Text(index > ns.MAX_GENERAL and "character" or "general", name, text)
+        Send("UPDATE_MACROS")
+    end
+    EditMacro = function(...)
+        local index = edit(...)
+        told(index)
+        return index
+    end
+    CreateMacro = function(...)
+        local index = create(...)
+        told(index)
+        return index
+    end
+    group.members = { { name = "Ann", role = "HEALER" } }
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+    if not MacroSenseFrame:IsShown() then ns.Window.Toggle() end
+    ns.Window.SetScope("general")
+    local tagged = "/cast [@heal,help] Flash Heal"
+    ns.Window.New()
+    nameBox:SetText("Told Heal")
+    ns.Window.Restore(tagged)
+    ns.Window.Save()
+    check("roles, told: made in the editor", seen == tagged and body("Told Heal") == "/cast [@Ann,help] Flash Heal",
+        seen)
+    ns.Window.Restore(tagged .. "\n/sit")
+    ns.Window.Save()
+    check("roles, told: changed in the editor", seen == tagged .. "\n/sit", seen)
+    ns.Window.Copy("general", GetMacroIndexByName("Told Heal"))
+    check("roles, told: copied", seen == tagged .. "\n/sit" and raw() == tagged .. "\n/sit", seen)
+    DeleteMacro(GetMacroIndexByName("Told Heal 2"))
+    Send("UPDATE_MACROS")
+    -- The tag macro, open in the editor: it shows the name put in, and @heal.
+    ns.Window.Select(GetMacroIndexByName("Told Heal"))
+    NextFrame()
+    ns.char.tag = { scope = "general", name = "Told Heal" }
+    ns.Tag.Take("Hogger")
+    local hogger = "/targetexact Hogger\n" .. tagged .. "\n/sit"
+    check("roles, told: the tag macro", seen == hogger and raw() == hogger, raw())
+    ns.char.tag = nil
+    -- Replace all.
+    Fire(find("Button", "Replace"), "OnClick")
+    local findBox = focused
+    findBox:SetText("/sit")
+    Fire(findBox, "OnTextChanged", true)
+    local withBox
+    for _, o in ipairs(created) do
+        if o.kind == "EditBox" and o.parentFrame == MacroSenseReplace and o ~= findBox then withBox = o end
+    end
+    withBox:SetText("/kneel")
+    Fire(withBox, "OnTextChanged", true)
+    Fire(find("Button", "Replace all"), "OnClick")
+    MacroSenseReplace:Hide()
+    local kneel = "/targetexact Hogger\n" .. tagged .. "\n/kneel"
+    check("roles, told: replace all", seen == kneel and ns.Roles.Text("general", "Told Heal", body("Told Heal"))
+        == kneel, seen)
+    EditMacro, CreateMacro = edit, create
+    DeleteMacro(GetMacroIndexByName("Told Heal"))
+    Send("UPDATE_MACROS")
+    group.members = {}
+    Send("GROUP_ROSTER_UPDATE")
+    Wait(1.1)
+end
+
 -- Theme switch recolors without touching the text.
 local body = raw()
 ns.db.scheme = "darcula"

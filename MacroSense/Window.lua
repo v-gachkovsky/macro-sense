@@ -663,8 +663,10 @@ local function Write(w)
     local renamed = w.old and w.name ~= w.old
     -- Earlier versions follow a new name.
     if renamed then ns.History.Renamed(w.scope, w.old, w.name) end
-    -- The game's macro has the names of your group's tank and healer for @tank and @heal.
+    -- The game's macro has the names of your group's tank and healer for @tank and @heal; known with its tags before
+    -- the game tells of it.
     local written = ns.Roles.Fill(w.body)
+    local undo = ns.Roles.Saved(w.scope, w.old, w.name, w.body, written)
     local index
     if w.index then
         -- The game keeps macros sorted by name, so the index may change.
@@ -673,10 +675,11 @@ local function Write(w)
         index = CreateMacro(w.name, w.icon or NEW_ICON, written, w.scope == "character")
     end
     if not index or index == 0 then
+        undo()
         if renamed then ns.History.Renamed(w.scope, w.name, w.old) end
         return
     end
-    ns.Roles.Saved(w.scope, w.old, w.name, w.body, select(3, GetMacroInfo(index)))
+    ns.Roles.Saved(w.scope, nil, w.name, w.body, select(3, GetMacroInfo(index)))
     -- The text it replaced is kept now, not only when the game reports the change.
     ns.History.Scan()
     return index
@@ -873,10 +876,14 @@ end
 local function MakeMacro(scope, name, icon, body)
     local written = ns.Roles.Fill(body)
     if Letters(written) > MAX_BODY then written = ns.Conditions.Fill(body, {}) end
+    local undo = ns.Roles.Saved(scope, nil, name, body, written) -- known before the game tells of it
     local index = CreateMacro(name, icon or NEW_ICON, written, scope == "character")
-    if not index or index == 0 then return nil end
+    if not index or index == 0 then
+        undo()
+        return nil
+    end
     local made, _, text = GetMacroInfo(index)
-    ns.Roles.Saved(scope, nil, made, body, text)
+    ns.Roles.Saved(scope, made ~= name and name or nil, made, body, text)
     return index
 end
 

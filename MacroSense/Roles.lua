@@ -82,11 +82,18 @@ function Roles.Text(scope, name, body)
 end
 
 -- MacroSense saved macro `name` (`old` before, when renamed) as `text`, the game's as `written`: kept up to date
--- while it has a tag, else let go.
+-- while it has a tag, else let go. The game tells the macro changed while EditMacro and CreateMacro run, so this
+-- comes before them, and again after with the text the game has. Returns what puts back the entries as they were,
+-- for a macro the game didn't take.
 function Roles.Saved(scope, old, name, text, written)
     local store = Store(scope)
+    local was, wasOld = store[name], old and store[old]
     if old then store[old] = nil end
     store[name] = text ~= written and { text = text, written = written } or nil
+    return function()
+        store[name] = was
+        if old then store[old] = wasOld end
+    end
 end
 
 -- This editor moves a macro into the other tab: it is kept up to date there.
