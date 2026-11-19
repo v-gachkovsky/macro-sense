@@ -1197,6 +1197,7 @@ ns.locales.uk = {
     ["does nothing"] = "нічого не робить",
     ["conditions not met"] = "умови не виконано",
     ["says it in chat"] = "пише в чат",
+    ["a comment: the game skips this line"] = "коментар: гра пропускає цей рядок",
     ["not reached"] = "не дійде",
     ["equip"] = "вдягає",
     ["cancel"] = "скасовує",

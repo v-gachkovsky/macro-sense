@@ -141,15 +141,16 @@ function Share.DecodeSets(text)
 end
 
 -- The macros in a macro's text, as guides and forums write it (Wowhead, Icy Veins: plain text): every line
--- starts with "/" or "#", several macros are split by an empty line. Each goes into tab `scope`, named after its
--- first spell or item (else its first command), with no icon of its own. Nil when the text is no macro.
+-- starts with "/" or "#", or is a comment ("--"), several macros are split by an empty line. Each goes into tab
+-- `scope`, named after its first spell or item (else its first command), with no icon of its own. Nil when the
+-- text is no macro.
 function Share.FromText(text, scope)
     local chunks, chunk = {}, nil
     for raw in (text:gsub("\r", ""):gsub("```%a*", "") .. "\n"):gmatch("([^\n]*)\n") do
         local line = raw:match("^%s*(.-)%s*$")
         if line == "" then
             chunk = nil
-        elseif not line:find("^[/#]") then
+        elseif not line:find("^[/#]") and not ns.Parser.IsComment(line) then
             return nil
         else
             if not chunk then

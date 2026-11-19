@@ -458,6 +458,10 @@ local function argSpans(s, base, add, argKind, sequence, command, info)
 end
 
 local function lineSpans(line, base, add, info)
+    if ns.Parser.IsComment(line) then
+        local lead = #line:match("^%s*")
+        return add(base + lead + 1, base + #line, "comment")
+    end
     local meta = line:match("^#%a+")
     if meta then
         add(base + 1, base + #meta, "meta")

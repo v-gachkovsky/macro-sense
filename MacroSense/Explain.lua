@@ -472,6 +472,7 @@ end
 function Explain.Line(line, env)
     env = env or {}
     if not line:find("%S") then return nil end
+    if ns.Parser.IsComment(line) then return { L["a comment: the game skips this line"] } end
     local meta, options = line:match("^%s*#(%a+)(.*)$")
     meta = meta and meta:lower()
     if meta == "showtooltip" or meta == "show" then

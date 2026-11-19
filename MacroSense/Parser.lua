@@ -26,6 +26,11 @@ function Parser.Channel(cmd)
     local n = tonumber((cmd or ""):match("^%d+$") or "")
     return n and n >= 1 and n <= Parser.MAX_CHANNELS and n or nil
 end
+-- A comment in a macro: a line the game skips ("-- a note"), or one starting with "//", which is no command: a
+-- macro's line with a command the game doesn't know does nothing and says nothing.
+function Parser.IsComment(line)
+    return line:find("^%s*%-%-") ~= nil or line:find("^%s*//") ~= nil
+end
 -- Commands that run Lua.
 Parser.luaCommands = { run = true, script = true, dump = true }
 -- "/stopmacro"; Sources adds localized aliases.
