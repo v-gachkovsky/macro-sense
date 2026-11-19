@@ -7660,6 +7660,9 @@ do
     check("roles: renamed in the editor", ns.db.roleMacros["Heal Tank"] ~= nil and ns.db.roleMacros["Tank Heal"] == nil)
     EditMacro(GetMacroIndexByName("Heal Tank"), "Tank Heal")
     Send("UPDATE_MACROS")
+    check("roles: renamed elsewhere, shown with @tank at once", ns.db.roleMacros["Tank Heal"] ~= nil
+        and ns.db.roleMacros["Heal Tank"] == nil and ns.Roles.Text("general", "Tank Heal", body("Tank Heal"))
+        == tagged, body("Tank Heal"))
     regroup({ CARL, DEE })
     check("roles: renamed elsewhere, followed", body("Tank Heal") == named("Carl")
         and ns.db.roleMacros["Tank Heal"] ~= nil and ns.db.roleMacros["Heal Tank"] == nil, body("Tank Heal"))

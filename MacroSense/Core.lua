@@ -168,6 +168,7 @@ local TALENT_EVENTS = { PLAYER_TALENT_UPDATE = true, TRAIT_CONFIG_UPDATED = true
 
 -- The macros changed: what depends on them, again.
 function ns.MacrosChanged()
+    ns.Roles.Follow() -- first: a macro renamed elsewhere keeps @tank and @heal in what the rest sees of it
     ns.History.Scan()
     ns.Sets.Scan()
     ns.Shortcuts.Invalidate()
